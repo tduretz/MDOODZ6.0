@@ -1,0 +1,155 @@
+**** RESTART ****/
+istep = 001000
+irestart = 0
+
+/**** OUTPUT FILES ****/
+writer = 1
+writer_step = 50
+writer_markers = 0
+
+/**** INPUT FILE FOR PARTICLES ****/
+input_file = setup_r501x501_fsp40.bin
+
+/**** MULTIGRID SWITCH ****/ 
+MMG = 0
+
+/**** SCALES ****/
+eta = 1e23
+L   = 1e4
+V   = 1e-9
+T   = 400
+ 
+/**** SPACE-TIME ****/
+Nx      = 400
+Nz      = 300
+Nt      = 1000
+xmin    = -1500.000000e3
+zmin    =  -700.0000000e3
+xmax    =  1500.000000e3
+zmax    =  100.0000000e3 
+dt          = 2.5e+11
+Courant     = 0.45
+penalty     = 1e4
+eta_avg     = 1
+cpc         =-1
+surf_remesh = 1
+abs_tol_div = 1e-15
+rel_tol_div = 1e-9
+
+/**** SWITCHES ****/
+ismechanical    = 1
+dt_constant     = 0
+RK              = 4
+isperiodic_x    = 0
+ispureshear_ALE = 0
+isinertial      = 0
+iselastic       = 0
+isthermal       = 0
+line_search     = 0
+free_surf       = 1
+free_surf_stab  = 1
+eqn_state       = 0
+thermal_eq      = 0
+subgrid_diff    = 0
+shear_heat      = 0
+adiab_heat      = 0
+isPl_soft       = 0
+
+/**** SETUP DEPENDANT ****/
+EpsBG           = 0 /Background strain rate
+user0           = 0 /Activate open BC EAST side
+user1           = 0 /Activate upper plate
+user2           = 0 /Activate slab dip 
+user3           = 0
+
+/**** GRAVITY ****/
+gx = 0.0000
+gz = -9.8100
+
+/**** PHASE PROPERTIES ****/
+Nb_phases = 2
+
+ID   = 0
+rho  = 3300.00
+mu   = 1e10
+Cv   = 1050
+k    = 2.3
+Qr   = 1.5e-6
+C    = 1e70
+phi  = 30
+Slim = 500e9
+alp  = 10.0e-6
+bet  = 1e-11
+drho = 0
+cstv = 1
+pwlv = 0
+linv = 0
+gbsv = 0
+expv = 0
+gsel = 0
+eta0 = 1e23
+npwl = 3.3
+Qpwl = 186.5e3
+
+ID   = 1
+rho  = 3200.00
+mu   = 1e10
+Cv   = 1050
+k    = 2.3
+Qr   = 1.5e-6
+C    = 1e70
+phi  = 30
+Slim = 500e9
+alp  = 10.0e-6
+bet  = 1e-11
+drho = 0
+cstv = 1
+pwlv = 0
+linv = 0
+gbsv = 0
+expv = 0
+gsel = 0
+eta0 = 1e21
+npwl = 3.3
+Qpwl = 186.5e3
+
+/**** PARTICLES ****/
+Nx_part  = 4
+Nz_part  = 4
+min_part_cell = 16
+
+/**** PICARD ITERATIONS ****/
+nit_max = 3
+tol_u   = 1e-6
+tol_p   = 1e-6
+
+/**** DIRECT SOLVER SETTINGS ****/
+direct_iter = 31
+pivot_pert  = 9
+
+/**** MULTIGRID SETTINGS ****/
+n_level     = 1
+nit_out_max = 100
+tol_u       = 1e-6
+tol_p       = 1e-6
+coarsen     = 0               0/coarsen homogeneously                       1/control the coarser resolution (semi-coarsening)
+Nx_min      = 10
+Nz_min      = 10
+
+/**** Smoothers ****/
+urlx  = 0.9
+vrlx  = 0.9
+prlx  = 0.35
+ucoef = 1.0
+vcoef = 1.0
+pcoef = 1.0
+smoother = 0             0/smooth proportionally to resolution            1/fixed number of smoothing cycles           
+SmoothElse     = 10               /smoothing cycles per level
+SmoothCoarse  = 1000        /smoothing cycles on corser level
+
+/**** Viscosity continuation ****/
+eta_min   = 1.0e4
+eta_max   = 1.0e11
+eta_n_stp = 5
+eta_cyc   = 3
+eta_nnn   = 0
