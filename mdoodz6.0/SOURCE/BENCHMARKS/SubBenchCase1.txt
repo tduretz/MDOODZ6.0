@@ -1,11 +1,13 @@
 **** RESTART ****/
-istep = 02650
-irestart = 1
+istep = 000050
+irestart = 0
 
 /**** OUTPUT FILES ****/
 writer = 1
-writer_step = 10
-writer_markers = 0
+writer_step = 50
+
+/**** INPUT FILE ****/
+input_file = setup_r501x501_fsp40.bin
 
 /**** SCALES ****/
 eta = 1e23
@@ -21,15 +23,15 @@ xmin    = -1500.000000e3
 zmin    =  -700.0000000e3
 xmax    =  1500.000000e3
 zmax    =  100.0000000e3 
-dt      = 2.5e+11
-Courant = 0.45
+dt          = 2.5e+11
+Courant     = 0.45
 
 /**** SWITCHES ****/
 penalty         = 1e4
 eta_avg         = 1
-cpc             = 1
+cpc             =-1
 surf_remesh     = 1
-abs_tol_div     = 1e-25
+abs_tol_div     = 1e-15
 rel_tol_div     = 1e-9
 ismechanical    = 1
 dt_constant     = 0
@@ -110,4 +112,3 @@ gsel = 0
 eta0 = 1e21
 npwl = 3.3
 Qpwl = 186.5e3
-

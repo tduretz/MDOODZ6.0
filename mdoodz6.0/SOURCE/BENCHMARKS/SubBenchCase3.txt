@@ -6,6 +6,9 @@ irestart = 0
 writer = 1
 writer_step = 50
 
+/**** INPUT FILE ****/
+input_file = setup_r501x501_fsp40.bin
+
 /**** SCALES ****/
 eta = 1e4
 L   = 1e-1
