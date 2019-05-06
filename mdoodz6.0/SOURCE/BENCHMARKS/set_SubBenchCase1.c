@@ -55,51 +55,9 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     int np;
     double Lx = (double) (model.xmax - model.xmin);
     double Lz = (double) (model.zmax - model.zmin);
-    double Tbot = 773.15/scaling.T;
-    double gsbg   = 2e-3/scaling.L;                           // reference grain size
-    
-    double  H = 1.2e-2/scaling.L;
-    double x0 = 20.0e-2/scaling.L, y0 = -H;
-    double x1 = x0 - 4.974e-2/scaling.L, y1 = -3.3552e-2/scaling.L-H;
-    double L = sqrt( pow(x0-x1,2) + pow(y0-y1,2) );
-    double dip = acos( (x0-x1)/L );
-    double delta_z = H/ cos(dip);
-        double x2 = x1, y2 = y1 + delta_z;
-        double x4 = x0, y4 = 0.0;
-        double a1 = (y0-y1)/(x0-x1);
-        double a2 = (y4-y2)/(x4-x1);
-        double b1 = y1  - (x1*a1);
-        double b2 = y2  - (x2*a2);
-        double width_channel = 30e3/scaling.L;
-        double a3 = a2;
-        double b3 = y2  - ((x2-width_channel)*a3);
-    
-    
-    double ax0 = 20.0e-2/scaling.L, ay0 = 0e-2/scaling.L;
-    double ax1 = ax0 - 4.974e-2/scaling.L, ay1 = ay0 - 3.3552e-2/scaling.L;
-    double ax2 = ax1 + 0.0049/scaling.L, ay2 = ay1 - 0.0110/scaling.L;
-    double ax3 = ax0 + 0.0049/scaling.L, ay3 = ay0 - 0.0110/scaling.L;
-    
-    // Upper slab limit
-    double aa0 = (ay0-ay1)/(ax0-ax1);
-    double bb0 = ay1  - (ax1*aa0);
-    
-    // Lower slab limit
-    double aa2 = (ay3-ay2)/(ax3-ax2);
-    double bb2 = ay2  - (ax2*aa2);
-    
-    // Left slab limit
-    double aa1 = (ay2-ay1)/(ax2-ax1);
-    double bb1 = ay2  - (ax2*aa1);
-    
-    // Right slab limit
-    double aa3 = (ay3-ay0)/(ax3-ax0);
-    double bb3 = ay0  - (ax0*aa3);
-    
-    
-//    // right end of plate
-//    double xright = 1000e3/scaling.L;
-    
+    double Tbg  = 773.15/scaling.T;                           // reference temperature
+    double gsbg =   2e-3/scaling.L;                           // reference grain size
+
     for( np=0; np<particles->Nb_part; np++ ) {
         
         particles->Vx[np]    = -1.0*particles->x[np]*model.EpsBG;
@@ -107,7 +65,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         particles->d[np]     = gsbg;                          // same grain size everywhere
         particles->phi[np]   = 0.0;                           // zero porosity everywhere
         particles->X[np]     = 0.0;                           // X set to 0
-        particles->T[np]     = Tbot;                          // same temperature everywhere
+        particles->T[np]     = Tbg;                           // same temperature everywhere
         
         particles->phase[np] = 1;
         
@@ -116,59 +74,11 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
             particles->phase[np] = 0;
         }
         
-        // Draw dipping slap
-        if (particles->x[np] > x1 && particles->x[np] < x0 && particles->z[np] > a1*particles->x[np]+b1 && particles->z[np] < a2*particles->x[np]+b2 && model.user2 == 1 ) {
-            particles->phase[np] = 0;
-        }
-        
         // Lower plate
         if (particles->x[np] > -400e3/scaling.L && particles->z[np] > -100e3/scaling.L) {
             particles->phase[np] = 0;
         }
-        
-        // Draw upper plate (Harro's slab)
-        if (particles->x[np] < -530e3/scaling.L && particles->z[np] > -100e3/scaling.L && model.user1 == 1 && model.user2 == 0 ) {
-            particles->phase[np] = 0;
-        }
-        
-        // Draw upper plate (dipping slap)
-        if (particles->x[np] < x2-width_channel && particles->z[np] > -100e3/scaling.L && model.user1 == 1 && model.user2 == 1 ) {
-            particles->phase[np] = 0;
-        }
-        if (particles->x[np] > x2-width_channel && particles->z[np] > -100e3/scaling.L && particles->z[np] > a3*particles->x[np]+b3 && model.user1 == 1 && model.user2 == 1 ) {
-            particles->phase[np] = 0;
-        }
-        
-//        // End of plate
-//        if (particles->x[np] > xright )  particles->phase[np] = 1;
     }
-//    for( np=0; np<particles->Nb_part; np++ ) {
-//
-//        particles->Vx[np]    = -1.0*particles->x[np]*model.EpsBG;
-//        particles->Vz[np]    =  particles->z[np]*model.EpsBG;
-//        particles->d[np]     = gsbg;                          // same grain size everywhere
-//        particles->phi[np]   = 0.0;                           // zero porosity everywhere
-//        particles->X[np]     = 0.0;                           // X set to 0
-//        particles->T[np]     = Tbot;                          // same temperature everywhere
-//
-//        particles->phase[np] = 1;
-//
-//        // Draw dipping slap
-//        if ( particles->z[np] < aa0*particles->x[np]+bb0 && particles->z[np] > aa2*particles->x[np]+bb2 && particles->z[np] > aa1*particles->x[np]+bb1 && particles->z[np] < aa3*particles->x[np]+bb3 ) {
-//            particles->phase[np] = 0;
-//        }
-//
-//        // Lower plate
-//        if (particles->x[np] > 20.0e-1 && particles->z[np] > -H) {
-//            particles->phase[np] = 0;
-//        }
-//
-//        // Sticky air
-//        if ( particles->z[np] > 0.0 ) {
-//            particles->phase[np] = 2;
-//        }
-//
-//    }
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -182,18 +92,18 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     double *X, *Z, *XC, *ZC;
     int   NX, NZ, NCX, NCZ;
     
-    int StressBC_W=0;
-    int StressBC_E=0;
+    int StressBC_W=0, StressBC_E=0;
     if ( model->user0 == 1 ) StressBC_E = 1;
+    double TN = 273.15/scaling.T, TS = 1330/scaling.T;
+    double TW = 273.15/scaling.T, TE = 1330/scaling.T;
     
     NX  = mesh->Nx;
     NZ  = mesh->Nz;
     NCX = NX-1;
     NCZ = NZ-1;
 
-    
-    X  = malloc (NX*sizeof(double));
-    Z  = malloc (NZ*sizeof(double));
+    X  = malloc ( NX*sizeof(double));
+    Z  = malloc ( NZ*sizeof(double));
     XC = malloc (NCX*sizeof(double));
     ZC = malloc (NCZ*sizeof(double));
     
@@ -376,9 +286,6 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     /* Type -1: not a BC point (tag for inner points)                                                         */
     /* Type 30: not calculated (part of the "air")                                                            */
     /* -------------------------------------------------------------------------------------------------------*/
-    
-    double TN = 273.15/scaling.T, TS = 1330/scaling.T;
-    double TW = 273.15/scaling.T, TE = 1330/scaling.T;
     
     for (l=0; l<mesh->Nz-1; l++) {
         for (k=0; k<mesh->Nx-1; k++) {

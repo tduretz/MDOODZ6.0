@@ -492,9 +492,9 @@ int main( int nargs, char *args[] ) {
         
         while ( Nmodel.nit <= Nmax_picard ) {
             
-            printf("*************************************\n");
-            printf("*** Picard iteration %02d out of %02d ***\n", Nmodel.nit, Nmodel.nit_max);
-            printf("*************************************\n");
+            printf("******************************************\n");
+            printf("*** Picard it. %02d of %02d (step = %05d) ***\n", Nmodel.nit, Nmodel.nit_max, model.step);
+            printf("******************************************\n");
             
             // Non-Linearity
             UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 ); //!!!!!!!!!!!!

@@ -29,7 +29,6 @@
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-// SIMPLE
 void BuildInitialTopography( surface *topo, markers *topo_chain, params model, grid mesh, scale scaling ) {
     
     int k;
@@ -52,30 +51,15 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
 	int np;
     double Lx = (double) (model.xmax - model.xmin);
     double Lz = (double) (model.zmax - model.zmin);
-    double Tbot = 773.15/scaling.T;
-    double gsbg   = 2e-3/scaling.L;                           // reference grain size
-    
-    double  H = 1.2e-2/scaling.L;
-    double x0 = 20.0e-2/scaling.L, y0 = -H;
-    double x1 = x0 - 4.974e-2/scaling.L, y1 = -3.3552e-2/scaling.L-H;
-    double L = sqrt( pow(x0-x1,2) + pow(y0-y1,2) );
-    double dip = acos( (x0-x1)/L );
-    double delta_z = H/ cos(dip);
-//    double x2 = x1, y2 = y1 + delta_z;
-//    double x4 = x0, y4 = 0.0;
-//    double a1 = (y0-y1)/(x0-x1);
-//    double a2 = (y4-y2)/(x4-x1);
-//    double b1 = y1  - (x1*a1);
-//    double b2 = y2  - (x2*a2);
-//    double width_channel = 30e3/scaling.L;
-//    double a3 = a2;
-//    double b3 = y2  - ((x2-width_channel)*a3);
-    
-    
-    double ax0 = 20.0e-2/scaling.L, ay0 = 0e-2/scaling.L;
+    double Tbg  = 773.15/scaling.T;                         // reference temperature
+    double gsbg = 2e-3/scaling.L;                           // reference grain size
+    double H    = 1.2e-2/scaling.L;                         // plate thickness
+
+    // set polygon vertices coordinates
+    double ax0 = 20.0e-2/scaling.L,        ay0 = 0e-2/scaling.L;
     double ax1 = ax0 - 4.974e-2/scaling.L, ay1 = ay0 - 3.3552e-2/scaling.L;
-    double ax2 = ax1 + 0.0049/scaling.L, ay2 = ay1 - 0.0110/scaling.L;
-    double ax3 = ax0 + 0.0049/scaling.L, ay3 = ay0 - 0.0110/scaling.L;
+    double ax2 = ax1 + 0.0049/scaling.L,   ay2 = ay1 - 0.0110/scaling.L;
+    double ax3 = ax0 + 0.0049/scaling.L,   ay3 = ay0 - 0.0110/scaling.L;
     
     // Upper slab limit
     double aa0 = (ay0-ay1)/(ax0-ax1);
@@ -92,12 +76,8 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     // Right slab limit
     double aa3 = (ay3-ay0)/(ax3-ax0);
     double bb3 = ay0  - (ax0*aa3);
-    
-    
-    // right end of plate
-    double xright = 1000e3/scaling.L;
 
-    
+    // Loop over particles
     for( np=0; np<particles->Nb_part; np++ ) {
         
         particles->Vx[np]    = -1.0*particles->x[np]*model.EpsBG;
@@ -105,7 +85,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         particles->d[np]     = gsbg;                          // same grain size everywhere
         particles->phi[np]   = 0.0;                           // zero porosity everywhere
         particles->X[np]     = 0.0;                           // X set to 0
-        particles->T[np]     = Tbot;                          // same temperature everywhere
+        particles->T[np]     = Tbg;                           // same temperature everywhere
 
         particles->phase[np] = 1;
         
@@ -117,11 +97,6 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         // Lower plate
         if (particles->x[np] > 20.0e-1 && particles->z[np] > -H) {
             particles->phase[np] = 0;
-        }
-        
-        // Sticky air
-        if ( particles->z[np] > 0.0 ) {
-            particles->phase[np] = 2;
         }
         
         }
@@ -138,15 +113,15 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     double *X, *Z, *XC, *ZC;
     int   NX, NZ, NCX, NCZ;
     
-    int StressBC_W=0;
-    int StressBC_E=0;
+    int StressBC_W=0, StressBC_E=0;
     if ( model->user0 == 1 ) StressBC_E = 1;
+    double TN = 273.15/scaling.T, TS = 1330/scaling.T;
+    double TW = 273.15/scaling.T, TE = 1330/scaling.T;
     
     NX  = mesh->Nx;
     NZ  = mesh->Nz;
     NCX = NX-1;
     NCZ = NZ-1;
-    
     
     X  = malloc (NX*sizeof(double));
     Z  = malloc (NZ*sizeof(double));
@@ -185,7 +160,6 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
             c = k + l*(mesh->Nx);
             
             if ( mesh->BCu.type[c] != 30 ) {
-                
                 
                 // Internal points:  -1
                 mesh->BCu.type[c] = -1;
@@ -246,7 +220,6 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     /* Type -1: not a BC point (tag for inner points)                                                          */
     /* Type 30: not calculated (part of the "air")                                                             */
     /* --------------------------------------------------------------------------------------------------------*/
-    int numVz = 0, numVz0 = 0;
 
     for (l=0; l<mesh->Nz; l++) {
         for (k=0; k<mesh->Nx+1; k++) {
@@ -254,8 +227,6 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
             c  = k + l*(mesh->Nx+1);
             
             if ( mesh->BCv.type[c] != 30 ) {
-
-                numVz++;
 
                 // Internal points:  -1
                 mesh->BCv.type[c] = -1;
@@ -303,41 +274,6 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                 //                        if (mesh->BCp.type[0][c1]==31) mesh->BCv.val[c]  =  -0*mesh->p_lith[c1-(mesh->Nx-1)];
                 //                    }
             }
-         if ( mesh->BCv.type[c] == 0) numVz0 ++;
-            
-//            if ( mesh->BCv.type[c] != 30 ) {
-//
-//                numVz++;
-//
-////                                // Internal points:  -1
-////                                mesh->BCv.type[c] = -1;
-////                                mesh->BCv.val[c]  =  0;
-//
-//                // Non-matching boundary points
-//                if ( (k==0) ) {
-//                    mesh->BCv.type[c] =   13;
-//                    mesh->BCv.val[c]  =   0;
-//                }
-//
-//                // Non-matching boundary points
-//                if ( (k==mesh->Nx) ) {
-//                    mesh->BCv.type[c] =   13;
-//                    mesh->BCv.val[c]  =   0;
-//                }
-//
-//                // Matching BC nodes SOUTH
-//                if (l==0 ) {
-//                    mesh->BCv.type[c] = 0;
-//                    mesh->BCv.val[c]  = 0.0;
-//                }
-//
-//                // Matching BC nodes NORTH
-//                if (l==mesh->Nz-1 ) {
-//                    mesh->BCv.type[c] = 0;
-//                    mesh->BCv.val[c]  = 0.0;
-//                }
-//
-//            }
         }
     }
 
@@ -372,9 +308,6 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     /* Type -1: not a BC point (tag for inner points)                                                         */
     /* Type 30: not calculated (part of the "air")                                                            */
     /* -------------------------------------------------------------------------------------------------------*/
-    
-    double TN = 273.15/scaling.T, TS = 1330/scaling.T;
-    double TW = 273.15/scaling.T, TE = 1330/scaling.T;
     
     for (l=0; l<mesh->Nz-1; l++) {
         for (k=0; k<mesh->Nx-1; k++) {
