@@ -104,101 +104,18 @@ void ExtractSolutions( SparseMat *Stokes, grid* mesh, params model ) {
         mesh->p_in[cc] = 0.0;
         if ( mesh->BCp.type[cc] != 30 ) {
             if ( mesh->BCp.type[cc] == 0 || mesh->BCp.type[cc] == 31 ) {
+                mesh->dp[cc]   = 0.0;
                 mesh->p_in[cc] = mesh->BCp.val[cc];
             }
             else {
+                mesh->dp[cc]   = Stokes->x[Stokes->eqn_p[cc]] - mesh->p_in[cc];
                 mesh->p_in[cc] = Stokes->x[Stokes->eqn_p[cc]];
             }
         }
     }
     
-    //    mean_p /=num_p;
-    //
-    //    for( cc=0; cc<ncz*ncx; cc++) {
-    //
-    //        mesh->p_in[cc] = 0.0;
-    //        if ( mesh->BCp.type[cc] != 30 ) {
-    //            if ( mesh->BCp.type[cc] == 0 || mesh->BCp.type[cc] == 31 ) {
-    //                mesh->p_in[cc] = mesh->BCp.val[cc];
-    //            }
-    //            else {
-    //                mesh->p_in[cc]  = 0*Stokes->x[Stokes->eqn_p[cc]] - mean_p;
-    //            }
-    //        }
-    //    }
-    
-    
-    
     // Apply Bc to Vx and Vz
     ApplyBC( mesh, model );
-    
-    //            int c1, i, j;
-    //
-    //    double symVx[nx*(nz+1)];
-    //    double symVz[nz*(nx+1)];
-    //
-    //    printf("%lf\n", ceil(nx/2));
-    //    for( j=0; j<nz+1; j++) {
-    //        for( i=0; i<(int)ceil(nx/2); i++) {
-    //            cc = i + j*(nx);
-    //            c1 =-i + j*(nx) + nx-1;
-    //            symVx[cc] = fabs(mesh->u_in[cc] + mesh->u_in[c1]);
-    //            printf("%.2e ", symVx[cc]);
-    //        }
-    //        printf("\n");
-    //    }
-    
-    
-    //    printf("Vx\n");
-    //
-    //    for( j=0; j<nz+1; j++) {
-    //        for( i=0; i<nx; i++) {
-    //            cc = i + j*(nx);
-    //            c1 = i + j*(nx-0);
-    //            printf("%.2e ", mesh->u_in[cc]);
-    //        }
-    //        printf("\n");
-    //    }
-    
-    
-    
-    //   printf("%d\n", (int)ceil((nx+1)/2)+0);
-    //    //    int c1, i, j;
-    //    for( j=0; j<nz; j++) {
-    //        for( i=0; i<(int)ceil((nx+1)/2)+0; i++) {
-    //            cc = i + j*(nx+1);
-    //            c1 =-i + j*(nx+1) + nx;
-    //            symVz[cc] = fabs(mesh->v_in[cc] - mesh->v_in[c1]);
-    //            printf("%.2e ", symVz[cc]);
-    //        }
-    //        printf("\n");
-    //    }
-    
-    
-    //    printf("Vz\n");
-    ////    int c1, i, j;
-    //    for( j=0; j<nz; j++) {
-    //        for( i=0; i<nx+1; i++) {
-    //            cc = i + j*(nx+1);
-    //            c1 = i + j*(nx-0);
-    //            printf("%.6e ", mesh->v_in[cc]);
-    //        }
-    //        printf("\n");
-    //    }
-    
-    //    printf("p\n");
-    //    //    int c1, i, j;
-    //    for( j=0; j<nz-1; j++) {
-    //        for( i=0; i<nx-1; i++) {
-    //            cc = i + j*(nx-1);
-    //            c1 = i + j*(nx-0);
-    //            printf("%.6e ", mesh->p_in[cc]);
-    //        }
-    //        printf("\n");
-    //    }
-    
-    
-    
     
 }
 

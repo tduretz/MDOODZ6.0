@@ -401,14 +401,16 @@ int main( int nargs, char *args[] ) {
             ShearModulusGrid( &mesh, materials, model, scaling );
         }
 
-        // Grain size
-        Interp_P2C ( particles, particles.d, &mesh, mesh.d0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
-
-        // Melt fraction
-        Interp_P2C ( particles, particles.phi, &mesh, mesh.phi,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
-        //        Interp_P2G ( particles, particles.phi,   &mesh, mesh.phi,  mesh.xg_coord,   mesh.zg_coord, Ncx, Ncz, xmin_c, zmin_c, 1, 0, &model, mesh.BCp.type );
-
+        // Interpolate Grain size
+        Interp_P2C ( particles,   particles.d, &mesh, mesh.d0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
         ArrayEqualArray(  mesh.d,  mesh.d0, Ncx*Ncz );
+
+        // Interpolate Melt fraction
+        Interp_P2C ( particles, particles.phi, &mesh, mesh.phi,  mesh.xg_coord, mesh.zg_coord, 1, 0 );
+        //        Interp_P2G ( particles, particles.phi,   &mesh, mesh.phi,  mesh.xg_coord,   mesh.zg_coord, Ncx, Ncz, xmin_c, zmin_c, 1, 0, &model, mesh.BCp.type );
+        
+        // Interpolate pressure
+        Interp_P2C ( particles, particles.P, &mesh, mesh.p_in,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
 
         if (model.isPl_soft == 1) {
             Interp_P2C ( particles, particles.strain_pl, &mesh, mesh.strain_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
@@ -502,33 +504,6 @@ int main( int nargs, char *args[] ) {
             MinMaxArrayTag( mesh.eta_phys_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_phys_n", mesh.BCp.type );
             MinMaxArrayTag( mesh.eta_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),   "eta_eff_n", mesh.BCp.type );
             MinMaxArrayTag( mesh.eta_s, scaling.eta, (mesh.Nx)*(mesh.Nz),       "eta_eff_s", mesh.BCg.type );
-            
-//            // Calculate pressure scaling factor (for the direct solve)
-//            PressureScaling_BEN( &mesh, materials, model );
-//
-//            // Build discrete system of equations
-//            BuildStokesOperator( &mesh, model, 0, mesh.p_in,  mesh.u_in,  mesh.v_in, &Stokes, 1 );
-//
-//            // Direct solve
-//            t_omp = (double)omp_get_wtime();
-//
-//            SolveStokes( &Stokes, &CholmodSolver );
-//
-//            ExtractSolutions( &Stokes, &mesh, model );
-//
-//            if ( Nmodel.nit == 0 && model.isinertial == 0 ) {
-//
-//                printf("---- Direct solve residual ----\n");
-//                EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
-//                printf("---- Direct solve residual ----\n");
-//
-////                if ( Nmodel.resx>1e-8/(scaling.F/pow(scaling.L,3)) || Nmodel.resz>1e-8/(scaling.F/pow(scaling.L,3)) || Nmodel.resp>1e-8/scaling.E ) {
-////                    printf("Direct solve residuals are too large !\n Stopping now !");
-////                    exit(22);
-////                }
-//            }
-//            printf("** Time for direct Stokes solver = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
-//            FreeMat( &Stokes );
             
             // Stokes solver
             if ( model.ismechanical == 1 ) {
@@ -692,7 +667,7 @@ int main( int nargs, char *args[] ) {
         // Update stresses on markers
         if (model.iselastic == 1 ) {
             // Compute stress changes on the grid and update stress on the particles
-            StressChange(  &mesh, &particles, &model, &materials, &scaling );
+            UpdateParticleStress(  &mesh, &particles, &model, &materials, &scaling );
         }
         else {
             Interp_Grid2P( particles, particles.sxxd, &mesh, mesh.sxxd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
@@ -730,6 +705,9 @@ int main( int nargs, char *args[] ) {
         MinMaxArrayTag( mesh.d0    , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d0", mesh.BCp.type );
         MinMaxArrayTag( mesh.d     , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d ", mesh.BCp.type );
         MinMaxArrayPart( particles.d, scaling.L, particles.Nb_part, "d on markers", particles.phase ) ;
+        
+        // Compute stress changes on the grid and update stress on the particles
+        UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
         
         //------------------------------------------------------------------------------------------------------------------------------//
         

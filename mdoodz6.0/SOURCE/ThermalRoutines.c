@@ -243,13 +243,12 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
                         Hs[c2]  = Wth;
                         dW     += Wtot*model.dx*model.dz*dt;
                     }
-//
+                    
                     // Contribution from adiabatic heat
-                    if ( adiab_heating == 1 ) {
-                        Ha[c2] = -mesh->T[c2]*mesh->alp[c2]*0.5*(mesh->v_in[c3+1]+mesh->v_in[c3+1+nxvz])*model.gz*mesh->rho_n[c2];
-//                        Ha[c2] = mesh->T[c2]*mesh->alp[c2]*(mesh->p_in[c2]-mesh->p0[c2])/model.dt;
-                        b[eqn] += Ha[c2];
-                    }
+                    if ( adiab_heating == 1 ) Ha[c2]  = mesh->T[c2]*mesh->alp[c2]*0.5*(mesh->v_in[c3+1]+mesh->v_in[c3+1+nxvz])*model.gz*mesh->rho_n[c2];
+                    if ( adiab_heating == 2 ) Ha[c2]  = mesh->T[c2]*mesh->alp[c2]*(mesh->dp[c2])/model.dt;
+                    if ( adiab_heating  > 0 ) b[eqn] += Ha[c2];
+                    
                 }
             
         }

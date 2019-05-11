@@ -800,7 +800,30 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void StressChange( grid* mesh, markers* particles, params* model, mat_prop* materials, scale *scaling ) {
+void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* particles, mat_prop* materials ) {
+    
+    DoodzFP *P_inc_mark;
+    int Nx, Nz, Ncx, Ncz, k, c0, p;
+    Nx = mesh->Nx; Ncx = Nx-1;
+    Nz = mesh->Nz; Ncz = Nz-1;
+
+    P_inc_mark = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
+    
+    // Interp increments to particles
+    Interp_Grid2P( *particles, P_inc_mark, mesh, mesh->dp, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
+    
+    // Increment pressure on particles
+    ArrayPlusArray( particles->P, P_inc_mark, particles->Nb_part );
+    
+    DoodzFree(P_inc_mark);
+    
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_prop* materials, scale *scaling ) {
     
     int k, l, c0, c1, Nx, Nz, Ncx, Ncz, p;
     DoodzFP *mdsxxd, *mdsxz,*dsxxd, *dsxz, d=1.0, dtaum;

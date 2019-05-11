@@ -418,7 +418,6 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->BCt.valE = DoodzCalloc ((Nz-1),sizeof(double));
     mesh->BCt.valS = DoodzCalloc ((Nx-1),sizeof(double));
     mesh->BCt.valN = DoodzCalloc ((Nx-1),sizeof(double));
-    mesh->Hs0      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     
     // Grid tagging (free surf)
     mesh->BCg.type = DoodzCalloc ((Nx)*(Nz),sizeof(char));
@@ -426,6 +425,7 @@ void GridAlloc ( grid* mesh, params* model ) {
     
     // Volumetric deformation
     mesh->p_lith   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->dp       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->alp      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->bet      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     
@@ -622,7 +622,6 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->BCt.typE);
     DoodzFree(mesh->BCt.typS);
     DoodzFree(mesh->BCt.typN);
-    DoodzFree(mesh->Hs0);
     
     // Grid tagging
     DoodzFree(mesh->BCg.val);
@@ -630,6 +629,7 @@ void GridFree( grid* mesh, params* model ) {
     
     // Volumetric deformation
     DoodzFree(mesh->p_lith);
+    DoodzFree(mesh->dp);
     DoodzFree(mesh->alp);
     DoodzFree(mesh->bet);
     

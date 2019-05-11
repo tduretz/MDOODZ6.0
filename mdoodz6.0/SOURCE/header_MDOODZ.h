@@ -145,7 +145,7 @@ typedef struct _grid grid;
 struct _grid {
 	int    Nx, Nz, NN, NC;
 	double dx,dz;
-	double *roger_x, *roger_z, *div_u, *u_in, *v_in, *p_in, *sxxd, *sxz, *exxd, *exz, *VE_s, *VE_n, *sxxd0, *sxz0, *mu_s, *mu_n, *u_adv, *v_adv, *eta_phys_n, *kx, *kz, *Cv, *Qr, *eta_phys_s, *u_start, *v_start, *p_start, *Hs0;
+	double *roger_x, *roger_z, *div_u, *u_in, *v_in, *p_in, *sxxd, *sxz, *exxd, *exz, *VE_s, *VE_n, *sxxd0, *sxz0, *mu_s, *mu_n, *u_adv, *v_adv, *eta_phys_n, *kx, *kz, *Cv, *Qr, *eta_phys_s, *u_start, *v_start, *p_start;
 	int    *iter_smooth;
 	int    *nb_part_cell, *nb_part_vert;
 	BC     BCu, BCv, BCp;
@@ -157,12 +157,12 @@ struct _grid {
 	double *ru, *rv, *rp;
 	double *rhs_u, *rhs_v, *rhs_p, *rhs_t;
 	double p_scale;
-    double *alp, *bet, *p_lith;
+    double *alp, *bet, *p_lith, *dp;
     double *dVx, *dVz, *VxVz, *VzVx;
+    int    *P2N, *P2C;
     int    *kvx, *lvx, *kvz, *lvz, *kp, *lp, *kn, *ln;
     double **phase_perc_n, **phase_perc_s;
     double *sxxd0_s, *sxz0_n, *exxd_s, *exz_n, *sxz_n;
-    int   *P2N, *P2C;
     double *rho_app_s0, *rho_app_n0;
     double Ut, Ue, W, *Work, *Uelastic, *Uthermal, *Time, *Short;
     double *T, *dT, *d, *d0, *phi, *X;
@@ -365,7 +365,7 @@ void InitialiseSolutionVector( grid*, SparseMat*, params* );
 //void EffectiveViscosityCalcGrid(  grid*, mat_prop, params, scaleOutputSparseMatrix  );
 //void StrainStressCalcVE( grid* );
 void RotateStresses( grid, markers*, params, scale* );
-void StressChange( grid*, markers*, params*, mat_prop*, scale* );
+void UpdateParticleStress( grid*, markers*, params*, mat_prop*, scale* );
 void ShearModulusGrid( grid*, mat_prop, params, scale );
 void CohesionFrictionGrid( grid* , mat_prop, params, scale  );
 //
@@ -531,3 +531,4 @@ void AccumulatedStrainII( grid*, scale, params, markers*, double*, double*, int,
 void AdvectFreeSurf( markers*, params, scale );
 
 void RotateDirectorVector( grid, markers*, params, scale* );
+void UpdateParticlePressure( grid*, scale, params, markers*, mat_prop* );
