@@ -23,29 +23,115 @@
 \addchap{Installation}
 \section{Prequisites}
 
-So far MDOODZ has been successfully built on LINUX/UNIX and MAC OS systems. The code can be built with GCC compiler from GNU (http://gcc.gnu.org) or with ICC compiler from Intel MKL library (https://software.intel.com/en-us/intel-mkl). \\ \\The code relies on two libraries: 
-\begin{enumerate}\item SuiteSparse provides efficient linear algebra and matrix manipulation routines. It is available at: http://www.suitesparse.com \\\item HDF5 is the main format for output files and is readable into MATLAB. It is available at: http://www.hdfgroup.org
+So far MDOODZ has been successfully built on LINUX/UNIX and MAC OS systems. 
+The code can be built with GCC compiler from GNU (http://gcc.gnu.org) or with ICC compiler from Intel MKL library (https://software.intel.com/en-us/intel-mkl).
+ \\ \\
+The code relies on two libraries: 
+\begin{enumerate}
+\item SuiteSparse provides efficient linear algebra and matrix manipulation routines. It is available at: http://www.suitesparse.com \\
+\item HDF5 is the main format for output files and is readable into MATLAB. It is available at: http://www.hdfgroup.org
 \end{enumerate}
 
-\section{Installation on Mac OS using MacPorts}All components that are required to build the code can be installed via the MacPorts platform on Mac OS by the following steps:
+\section{Installation on Mac OS using MacPorts}
 
-\begin{enumerate}\item Download the MacPorts platform following the instructions on the webpage: https://www.macports.org/install.php\item Install the required components by opening a terminal window and type
-\begin{enumerate}\item sudo port install git\item sudo port install gccX		(f.e., gcc7 for version 7)\item sudo port install suitesparse\item sudo port install hdf5
-\end{enumerate}\item Make sure the installed gcc compiler is active
-\begin{enumerate}\item sudo port select --list gcc  		(list of all installed versions of gcc)\item sudo port select --set gcc mp-gccX	(activate gcc compiler version X)	
+All components that are required to build the code can be installed via the MacPorts platform on Mac OS by the following steps:
+
+\begin{enumerate}
+\item Download the MacPorts platform following the instructions on the webpage: https://www.macports.org/install.php
+\item Install the required components by opening a terminal window and type
+\begin{enumerate}
+\item \verb|sudo port install git|
+\item \verb|sudo port install gccX|		(f.e., gcc7 for version 7)
+\item \verb|sudo port install suitesparse|
+\item \verb|sudo port install hdf5|
 \end{enumerate}
-\end{enumerate}For a successful build the user has to link libraries and set certain environmental variables in the bash script named: ``.profile''			(usually located at /Users/YOUR\_USERNAME/) \\If this file doesn’t exist, one has to create it. The first line of .profile has to be:\begin{verbatim} 
+\item Make sure the installed gcc compiler is active
+\begin{enumerate}
+\item \verb|sudo port select --list gcc|  		(list of all installed versions of gcc)
+\item \verb|sudo port select --set gcc mp-gccX|	(activate gcc compiler version X)	
+\end{enumerate}
+\end{enumerate}
+
+
+Alternatively, one can use Homebrew instead of macports. In this case use the command \verb|brew install| instead of \verb|sudo|
+
+For a successful build the user has to link libraries and set certain environmental variables in the bash script named: ``.profile''			(usually located at /Users/YOUR\_USERNAME/) \\
+
+
+If this file doesn't exist, one has to create it. The first line of .profile has to be:
+\begin{verbatim} 
 \#!/usr/bin/env bash 
-\end{verbatim}Further, one has to set: 
-\begin{verbatim} export HDF5\_USE\_FILE\_LOCKING='FALSE' \end{verbatim}For the HDF5 libraries, to include the C path via: \begin{verbatim} export C\_INCLUDE\_PATH=/opt/local/include 
-\end{verbatim}And finally link the libraries: \begin{verbatim} export LIBRARY\_PATH=/opt/local/lib\end{verbatim}Note that .profile is executed once each time a new terminal session is started, thus it is very useful to set frequently used commands, global variables etc. in this file to avoid finger pain.The user has installed all required components and linked all libraries correctly now. Prior to compilation, one needs to figure out which makefile to use (or to design your own makefile). Examples of makefiles valid for different systems are available in the Makefiles folder.The user needs to copy the appropriate makefile into the source folder (../) and to rename it ``makefile\_XXXX'' into simply "makefile". One has to be careful and set the compiler accordingly in the makefile like:
-\begin{verbatim} 		# Compiler		ifeq ($(GNU),yes)        		CC=/opt/local/bin/gcc-mp-7
+\end{verbatim}
+
+Further, one has to set: 
+\begin{verbatim} 
+export HDF5\_USE\_FILE\_LOCKING='FALSE' 
+\end{verbatim}
+
+For the HDF5 libraries, to include the C path via: 
+\begin{verbatim} 
+export C\_INCLUDE\_PATH=/opt/local/include 
+\end{verbatim}
+
+And finally link the libraries: 
+\begin{verbatim} 
+export LIBRARY\_PATH=/opt/local/lib
+\end{verbatim}
+
+Note that .profile is executed once each time a new terminal session is started, thus it is very useful to set frequently used commands, global variables etc. in this file to avoid finger pain. 
+
+If using Homebrew replace \verb|/opt/local/| by \verb|/usr/local/| in the above.
+
+
+The user has installed all required components and linked all libraries correctly now. 
+Prior to compilation, one needs to figure out which makefile to use (or to design your own makefile). Examples of makefiles valid for different systems are available in the Makefiles folder.
+
+The user needs to copy the appropriate makefile into the source folder (../) and to rename it ``makefile\_XXXX'' into simply "makefile". One has to be careful and set the compiler accordingly in the makefile like:
+\begin{verbatim} 
+		# Compiler
+		ifeq ($(GNU),yes)
+        		CC=/opt/local/bin/gcc-mp-7
 		#endif
 \end{verbatim}
 
+To avoid changing the compiler in the makefile one can create a link between the command "gcc" and the desired version. For example, the makefile would contain the line
+
+\begin{verbatim} 
+	CC=gcc
+\end{verbatim}
+
+Then in a terminal:
+\begin{verbatim} 
+	cd /opt/local/bin/
+	ln -s  gcc-mp-7  gcc
+\end{verbatim}
+
+Then, when the makefile calls \verb|gcc| it will be bumped back to \verb|gcc-mp-7|. Note that \verb|/opt/local/bin/| should be \verb|/usr/local/bin/| when using homebrew. To verify that the links work type:
+
+\begin{verbatim} 
+	gcc --version
+\end{verbatim}
+
+which should return something like
+\begin{verbatim} 
+gcc (Homebrew GCC 9.1.0) 9.1.0
+Copyright (C) 2019 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+\end{verbatim}
+
+In this particular case the link goes to gcc 9.1.0 installed with homebrew.
+
+
+
 \section{Source files}
 
-The source consists of one ``.h'' file and a several ``.c'' files.The file ``head.h''' contains the definition of data structures uses in the codes as well as function headers.The ``.c'' files contains all the functions of the codes. Key files are for example ``Main\_MDOODZ\_GREAT.c'' that contains the main function, ``flow\_laws.c'' that contains the flow law database, and the file ``set\_XXXX.c'' in which user-defined setups are constructed (XXXX is a user defined name). For compiling the source a ``makefile'' is provided.In order to run a simulation, an additional "XXXX.txt" that contains run-time parameters (solver options, material properties, key parameters) is also required. 
+The source consists of one ``.h'' file and a several ``.c'' files.
+The file ``head.h''' contains the definition of data structures uses in the codes as well as function headers.
+The ``.c'' files contains all the functions of the codes. Key files are for example ``Main\_MDOODZ\_GREAT.c'' that contains the main function, ``flow\_laws.c'' that contains the flow law database, and the file ``set\_XXXX.c'' in which user-defined setups are constructed (XXXX is a user defined name). 
+For compiling the source a ``makefile'' is provided.
+In order to run a simulation, an additional "XXXX.txt" that contains run-time parameters (solver options, material properties, key parameters) is also required. 
+
 
 \section{Compilation}
 
