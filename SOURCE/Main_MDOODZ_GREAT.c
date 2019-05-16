@@ -291,6 +291,7 @@ int main( int nargs, char *args[] ) {
         // Set initial stresses and pressure to zero
         //        Initialise1DArrayDouble( mesh.p_in,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
         Initialise1DArrayDouble( mesh.sxxd,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
+        Initialise1DArrayDouble( mesh.szzd,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
         Initialise1DArrayDouble( mesh.sxz,   (mesh.Nx)  *(mesh.Nz)  , 0.0 );
         // Generate deformation maps
         if ( model.def_maps == 1 ) GenerateDeformationMaps( &mesh, &materials, &model, Nmodel, &scaling, 1 );
@@ -391,6 +392,9 @@ int main( int nargs, char *args[] ) {
             // Get old stresses from particles
             Interp_P2C ( particles, particles.sxxd, &mesh, mesh.sxxd0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
             Interp_P2N ( particles, particles.sxxd, &mesh, mesh.sxxd0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+            Interp_P2C ( particles, particles.szzd, &mesh, mesh.szzd0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
+            Interp_P2N ( particles, particles.szzd, &mesh, mesh.szzd0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+
             Interp_P2N ( particles, particles.sxz,  &mesh, mesh.sxz0,    mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
             Interp_P2C ( particles, particles.sxz,  &mesh, mesh.sxz0_n,  mesh.xg_coord, mesh.zg_coord, 1, 0 );
 
@@ -425,6 +429,7 @@ int main( int nargs, char *args[] ) {
         MinMaxArrayTag( mesh.rho_n,    scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n   ", mesh.BCp.type );
         MinMaxArrayTag( mesh.sxz0,     scaling.S,   (mesh.Nx)*(mesh.Nz),     "sxz0    ", mesh.BCg.type );
         MinMaxArrayTag( mesh.sxxd0,    scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "sxx0    ", mesh.BCp.type );
+        MinMaxArrayTag( mesh.szzd0,    scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "szz0    ", mesh.BCp.type );
         MinMaxArrayTag( mesh.mu_s,     scaling.S,   (mesh.Nx)*(mesh.Nz),     "mu_s    ", mesh.BCg.type );
         MinMaxArrayTag( mesh.mu_n,     scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "mu_n    ", mesh.BCp.type );
         MinMaxArrayTag( mesh.C_s,      scaling.S,   (mesh.Nx)*(mesh.Nz),     "C_s     ", mesh.BCg.type );
@@ -458,11 +463,6 @@ int main( int nargs, char *args[] ) {
         printf( "Linear systems allocated\n");
         printf( "neq_tot = %d, neq_mom = %d, neq_cont = %d\n", Stokes.neq, Stokes.neq_mom, Stokes.neq_cont );
 
-        // Save velocity from the previous timestep
-        Initialise2DArray( mesh.dVx, mesh.Nx, (mesh.Nz+1), 0.0 );
-        Initialise2DArray( mesh.dVz, (mesh.Nx+1), mesh.Nz, 0.0 );
-        ArrayMinusArray( mesh.dVx, mesh.u_in,  mesh.Nx*(mesh.Nz+1));
-        ArrayMinusArray( mesh.dVz, mesh.v_in, (mesh.Nx+1)* mesh.Nz);
         // Set vector x = [u;p]
         InitialiseSolutionVector( &mesh, &Stokes, &model );
 
@@ -488,8 +488,6 @@ int main( int nargs, char *args[] ) {
             printf("Run CHOLMOD analysis yes/no: %d \n", CholmodSolver.Analyze);
         }
         
-        
-        
         int Nmax_picard = Nmodel.nit_max;
         
         while ( Nmodel.nit <= Nmax_picard ) {
@@ -502,8 +500,12 @@ int main( int nargs, char *args[] ) {
             UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 ); //!!!!!!!!!!!!
 
             MinMaxArrayTag( mesh.eta_phys_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_phys_n", mesh.BCp.type );
+            MinMaxArrayTag( mesh.eta_phys_s, scaling.eta, (mesh.Nx-0)*(mesh.Nz-0), "eta_phys_s", mesh.BCg.type );
             MinMaxArrayTag( mesh.eta_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),   "eta_eff_n", mesh.BCp.type );
             MinMaxArrayTag( mesh.eta_s, scaling.eta, (mesh.Nx)*(mesh.Nz),       "eta_eff_s", mesh.BCg.type );
+            
+            MinMaxArrayTag( mesh.sxxd, scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "sxxd", mesh.BCp.type );
+            MinMaxArrayTag( mesh.szzd, scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "szzd", mesh.BCp.type );
             
             // Stokes solver
             if ( model.ismechanical == 1 ) {
@@ -671,6 +673,7 @@ int main( int nargs, char *args[] ) {
         }
         else {
             Interp_Grid2P( particles, particles.sxxd, &mesh, mesh.sxxd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+            Interp_Grid2P( particles, particles.szzd, &mesh, mesh.szzd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
             Interp_Grid2P( particles, particles.sxz,  &mesh, mesh.sxz , mesh.xg_coord,  mesh.zg_coord,  mesh.Nx  , mesh.Nz, mesh.BCg.type   );
         }
         

@@ -57,7 +57,7 @@ struct _mat_prop {
 typedef struct _p_markers markers;
 struct _p_markers {
 	int    Nx_part, Nz_part, Nb_part, Nb_part_max, min_part_cell;
-	DoodzFP *x, *z, *Vx, *Vz, *P, *sxxd, *sxz, *progress, *rho, *om_p, *T, *d, *phi, *X;
+	DoodzFP *x, *z, *Vx, *Vz, *P, *sxxd, *szzd, *sxz, *progress, *rho, *om_p, *T, *d, *phi, *X;
     DoodzFP *strain, *strain_el, *strain_pl, *strain_pwl, *strain_exp, *strain_lin, *strain_gbs;
 	int    *phase, *generation;
     markers* marker_chain;
@@ -145,7 +145,7 @@ typedef struct _grid grid;
 struct _grid {
 	int    Nx, Nz, NN, NC;
 	double dx,dz;
-	double *roger_x, *roger_z, *div_u, *u_in, *v_in, *p_in, *sxxd, *sxz, *exxd, *exz, *VE_s, *VE_n, *sxxd0, *sxz0, *mu_s, *mu_n, *u_adv, *v_adv, *eta_phys_n, *kx, *kz, *Cv, *Qr, *eta_phys_s, *u_start, *v_start, *p_start;
+	double *roger_x, *roger_z, *div_u, *u_in, *v_in, *p_in, *sxxd, *szzd, *sxz, *exxd, *ezzd, *exz, *VE_s, *VE_n, *sxxd0, *szzd0, *sxz0, *mu_s, *mu_n, *u_adv, *v_adv, *eta_phys_n, *kx, *kz, *Cv, *Qr, *eta_phys_s, *u_start, *v_start, *p_start;
 	int    *iter_smooth;
 	int    *nb_part_cell, *nb_part_vert;
 	BC     BCu, BCv, BCp;
@@ -158,17 +158,21 @@ struct _grid {
 	double *rhs_u, *rhs_v, *rhs_p, *rhs_t;
 	double p_scale;
     double *alp, *bet, *p_lith, *dp;
-    double *dVx, *dVz, *VxVz, *VzVx;
+    double *VxVz, *VzVx;
     int    *P2N, *P2C;
     int    *kvx, *lvx, *kvz, *lvz, *kp, *lp, *kn, *ln;
     double **phase_perc_n, **phase_perc_s;
-    double *sxxd0_s, *sxz0_n, *exxd_s, *exz_n, *sxz_n;
+    double *sxxd0_s, *szzd0_s, *sxz0_n, *exxd_s, *ezzd_s, *exz_n, *sxz_n;
     double *rho_app_s0, *rho_app_n0;
     double Ut, Ue, W, *Work, *Uelastic, *Uthermal, *Time, *Short;
     double *T, *dT, *d, *d0, *phi, *X;
     double *eII_el, *eII_pl, *eII_pl_s, *eII_pwl, *eII_exp, *eII_lin, *eII_gbs, *eII_cst, *A2_pwl_n, *eii_n, *eii_s, *tii0_n, *tii0_s;
     double *eII_pwl_s, *A2_pwl_s;
-    double *exx_pwl_n, *exz_pwl_n, *exx_pwl_s, *exz_pwl_s, *exx_el, *exz_el, *exx_diss, *exz_diss, *exx_pl, *exz_pl;
+    double *exx_el, *ezz_el, *exz_el, *exx_diss, *ezz_diss, *exz_diss;
+    
+    // To remove
+    double *exx_pwl_n, *exz_pwl_n, *exx_pwl_s, *exz_pwl_s, *exx_pl, *exz_pl;
+    
     double *cell_min_z, *cell_max_z, *vert_min_z, *vert_max_z;
     double *phi_n, *phi_s, *C_n, *C_s;
     double *rhoUe0;
@@ -444,6 +448,7 @@ void SolveStokesDefectDecoupled( SparseMat*, SparseMat*, SparseMat*, SparseMat*,
 void AddCoeff2( int*, double*, int, int, int*, double, int, double, double* );
 void MergeParallelMatrix( SparseMat*, double**, int**, int**, grid*, int*, int*, int*, int*, int*, int, char*, int* );
 void DirectStokesDecoupled( SparseMat*, SparseMat*, SparseMat*,  SparseMat*, DirectSolver*, double*, double*, double*, params, grid*, scale, SparseMat* );
+void DirectStokesDecoupledComp( SparseMat*, SparseMat*, SparseMat*,  SparseMat*, DirectSolver*, double*, double*, double*, params, grid*, scale, SparseMat* );
 //void ConvertTo1Based( int*, int );
 void DecompressCSRtoTriplets( int, int*, int* );
 //void  ArrayEqualScalarArray( DoodzFP*, DoodzFP, DoodzFP*, int );
@@ -474,6 +479,7 @@ void copy_cholmod_to_cs_matrix( cholmod_sparse*, cs* );
 void copy_cs_to_cholmod_matrix( cholmod_sparse*, cs* );
 void copy_vec_to_cholmod_dense( cholmod_dense*, DoodzFP* );
 void copy_cholmod_dense_to_cholmod_dense( cholmod_dense*, cholmod_dense* );
+void cholmod_dense_plus_cholmod_dense( cholmod_dense*, cholmod_dense* );
 
 void ApplyBC( grid*, params );
 void AssignMarkerProperties (markers*, int, int, params* );

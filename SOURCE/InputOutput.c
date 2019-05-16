@@ -811,6 +811,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     
     // Input
     model->input_file      = ReadChar( fin, "input_file", "blah.bin");
+    printf("%s\n",     model->input_file );
     
     // Read scales for non-dimensionalisation
     scaling->eta           = ReadDou2( fin, "eta", 1.0  );
@@ -1094,17 +1095,17 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     //------------------------------------------------------------------------------------------------------------------------------//
     
     // Particles
-    particles->Nx_part       = ReadInt2( fin, "Nx_part", 0 );
-    particles->Nz_part       = ReadInt2( fin, "Nz_part", 0 );
-    particles->min_part_cell = ReadInt2( fin, "min_part_cell", 0 );
+    particles->Nx_part       = ReadInt2( fin, "Nx_part", 4 );
+    particles->Nz_part       = ReadInt2( fin, "Nz_part", 4 );
+    particles->min_part_cell = ReadInt2( fin, "min_part_cell", 16 );
     particles->Nb_part       = (model->Nx-1)*(model->Nz-1) * particles->Nx_part * particles->Nz_part;
     particles->Nb_part_max   = 4.1*particles->Nb_part;
     
     // Nonlinear iteration parameters
     model->Newton           = ReadInt2( fin, "Newton", 0 );
     Nmodel->nit_max         = ReadInt2( fin, "nit_max", 1 );
-    Nmodel->tol_u           = ReadDou2( fin, "tol_u", 1.0e-5 );// / (scaling->F/pow(scaling->L,3.0));
-    Nmodel->tol_p           = ReadDou2( fin, "tol_p", 1.0e-5 );// / scaling->E;
+    Nmodel->tol_u           = ReadDou2( fin, "tol_u", 5.0e-6 );// / (scaling->F/pow(scaling->L,3.0));
+    Nmodel->tol_p           = ReadDou2( fin, "tol_p", 5.0e-6 );// / scaling->E;
     model->mineta           = ReadDou2( fin, "mineta", 1.0e18 ) / scaling->eta;
     model->maxeta           = ReadDou2( fin, "maxeta", 1.0e24 ) / scaling->eta;
     Nmodel->stagnated       = 0;
@@ -1188,7 +1189,13 @@ char* ReadChar( FILE *fin, char FieldName[], char Default[] ) {
         if (feof(fin)) {
             printf("Warning : Parameter '%s' not found in the setup file, running with default value %s\n", FieldName, Default);
             rewind (fin);
-            return Default;
+            int str_size = strlen(Default);
+            int h1;
+            string2 = malloc((str_size+1)*sizeof(char));
+            for (h1=0; h1<str_size; h1++) {
+                string2[h1] = Default[h1];
+            }
+            return string2;
         }
         
         // Get the first 'length' characters of the line
