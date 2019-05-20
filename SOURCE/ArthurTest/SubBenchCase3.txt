@@ -1,0 +1,103 @@
+**** RESTART ****/
+istep = 00010
+irestart = 0
+
+/**** OUTPUT FILES ****/
+writer = 1
+writer_step = 5
+
+/**** INPUT FILE ****/
+input_file = setup_r501x501_fsp40.bin
+
+/**** SCALES ****/
+eta = 1e4
+L   = 1e-1
+V   = 1e2
+T   = 20
+ 
+/**** SPACE-TIME ****/
+Nx      = 300
+Nz      = 250
+Nt      = 500
+xmin    =  0.000000e0
+zmin    = -11.50000000e-2
+xmax    =  54.000000e-2
+zmax    =  0.8000000e-2 
+dt          = 2.5e+1
+Courant     = 0.5
+
+/**** SWITCHES ****/
+penalty         = 1e14
+eta_avg         = 1
+cpc             =-1
+surf_remesh     = 0
+abs_tol_div     = 1e-11
+rel_tol_div     = 1e-11
+decoupled_solve = 1
+ismechanical    = 1
+RK              = 4
+free_surf       = 1
+free_surf_stab  = 0.15
+
+/**** SETUP DEPENDANT ****/
+EpsBG           = 0 /Background strain rate
+user0           = 0 /Activate open BC EAST side
+user1           = 0 
+user2           = 1 /Activate slab dip 
+user3           = 0
+
+/**** GRAVITY ****/
+gx = 0.0000
+gz = -9.81
+
+/**** MIN/MAX VISCOSITY ****/
+mineta   = 1.0e0
+maxeta   = 1.0e6
+
+/**** PHASE PROPERTIES ****/
+Nb_phases = 2
+
+ID   = 0
+rho  = 1495.00
+mu   = 1e10
+Cv   = 1050
+k    = 2.3
+Qr   = 1.5e-6
+C    = 1e70
+phi  = 30
+Slim = 500e9
+alp  = 10.0e-6
+bet  = 1e-11
+drho = 0
+cstv = 1
+pwlv = 0
+linv = 0
+gbsv = 0
+expv = 0
+gsel = 0
+eta0 = 3.5e5
+npwl = 3.3
+Qpwl = 186.5e3
+
+ID   = 1
+rho  = 1415.00
+mu   = 1e10
+Cv   = 1050
+k    = 2.3
+Qr   = 1.5e-6
+C    = 1e70
+phi  = 30
+Slim = 500e9
+alp  = 10.0e-6
+bet  = 1e-11
+drho = 0
+cstv = 1
+pwlv = 0
+linv = 0
+gbsv = 0
+expv = 0
+gsel = 0
+eta0 = 32
+npwl = 3.3
+Qpwl = 186.5e3
+

@@ -58,6 +58,74 @@ void DeletePreviousBreakpoint( int step, int writer_step ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
+void LoadIniParticles( markers* particles, grid* mesh, markers *topo_chain, params *model, scale scaling ) {
+    
+    char *name;
+    int s1=0, s2=0, s3=0, s4=0;
+    int k, l, Nx=model->Nx, Nz=model->Nz, c;
+    int Ncx = Nx-1, Ncz = Nz-1;
+    
+    //---------------------------------------------------------------------------------------------------------//
+    FILE *file;
+    
+    // Filename
+//    asprintf(&name, "Breakpoint%05d.dat", model->step);
+    asprintf(&name, "IniParticles.dat");
+   
+    if (fopen(name, "rb")==NULL) {
+        printf("Error opening %s, this file is probably corrupted or non-existant\nExiting...\n", name);
+        exit(1);
+    }
+    else {
+        printf("Load setup from %s...\n", name);
+        file = fopen(name, "rb");
+    }
+    fread( &s1, 1, 1, file);
+    fread( &s2, 1, 1, file);
+    fread( &s3, 1, 1, file);
+    fread( &s4, 1, 1, file);
+
+    
+    if (model->free_surf == 1) {
+        fread(&topo_chain->Nb_part,   s1,                   1, file );
+        fread( topo_chain->x,         s3, topo_chain->Nb_part, file );
+        fread( topo_chain->z,         s3, topo_chain->Nb_part, file );
+        fread( topo_chain->Vx,        s3, topo_chain->Nb_part, file );
+        fread( topo_chain->Vz,        s3, topo_chain->Nb_part, file );
+    }
+    
+    fread( &particles->Nb_part,  s1, 1, file);
+    fread( particles->x,    s3, particles->Nb_part, file);
+    fread( particles->z,    s3, particles->Nb_part, file);
+    fread( particles->P,    s3, particles->Nb_part, file);
+    fread( particles->Vx,   s3, particles->Nb_part, file);
+    fread( particles->Vz,   s3, particles->Nb_part, file);
+    fread( particles->phi,  s3, particles->Nb_part, file);
+    fread( particles->X  ,  s3, particles->Nb_part, file);
+    fread( particles->phase, s1, particles->Nb_part, file);
+    
+    fclose(file);
+    free(name);
+    
+    //---------------------------------------------------------------------------------------------------------//
+    
+#pragma omp parallel for shared( particles, model, scaling )
+    for ( k=0; k<particles->Nb_part; k++ ) {
+        particles->x[k]     /=scaling.L;
+        particles->z[k]     /=scaling.L;
+        particles->P[k]     /=scaling.S;
+        particles->Vx[k]    /=scaling.V;
+        particles->Vz[k]    /=scaling.V;
+        particles->phi[k]   /=1.0;
+        particles->X[k]     /=1.0;
+    }
+
+
+
+}
+
+
+
 
 void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chain, markers *topo_chain_ini, params *model, surface* topo, surface* topo_ini, scale scaling ) {
     
