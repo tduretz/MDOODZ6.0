@@ -2693,7 +2693,6 @@ void GenerateDeformationMaps( grid* mesh, mat_prop *materials, params *model, Np
         t_omp = (double)omp_get_wtime();
         
         // Boucles spatiales 2D pour créations des carte de déformation
-        
         for ( iz=0; iz<nd; iz++) {
             
             // Force grain size

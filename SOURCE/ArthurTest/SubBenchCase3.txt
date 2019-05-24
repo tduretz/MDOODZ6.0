@@ -1,10 +1,10 @@
 **** RESTART ****/
-istep = 00010
+istep = 00002
 irestart = 0
 
 /**** OUTPUT FILES ****/
 writer = 1
-writer_step = 5
+writer_step = 2
 
 /**** INPUT FILE ****/
 input_file = setup_r501x501_fsp40.bin
@@ -18,7 +18,7 @@ T   = 20
 /**** SPACE-TIME ****/
 Nx      = 300
 Nz      = 250
-Nt      = 500
+Nt      = 2
 xmin    =  0.000000e0
 zmin    = -11.50000000e-2
 xmax    =  54.000000e-2

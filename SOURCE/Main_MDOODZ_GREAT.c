@@ -46,7 +46,7 @@
 int main( int nargs, char *args[] ) {
     
 	int          istep, irestart, writer = 0, writer_step;
-	char         *fin_name;
+	char         *fin_name, *partFileName;
 	params       model;
 	grid         mesh;
     Nparams      Nmodel;
@@ -73,6 +73,16 @@ int main( int nargs, char *args[] ) {
     mesh.Ue   = 0.0; // elastic energy
     
 	// Input file name
+	if (nargs<3) {
+		printf( "You should (at least) enter the setup file and the particle file as a command line argument .\nExiting...\n" );
+		exit(1);
+	}
+	else {
+		asprintf(&fin_name,"%s", args[1]);
+        asprintf(&partFileName,"%s", args[2]);
+	}
+    
+    // Input file name
 	if (nargs<2) {
 		printf( "You should (at least) enter the setup file as a command line argument.\nExiting...\n" );
 		exit(1);
@@ -80,7 +90,7 @@ int main( int nargs, char *args[] ) {
 	else {
 		asprintf(&fin_name,"%s", args[1]);
 	}
-    
+
     printf("\n********************************************************\n");
     printf("************ Starting MDOODZ 6.0 simulation ************\n");
     printf("********************************************************\n");
@@ -128,36 +138,53 @@ int main( int nargs, char *args[] ) {
         
         // Initial grid tags
         SetBCs( &mesh, &model, scaling , &particles, &materials );
+        int useNewInput = 0;
+        if (useNewInput == 1) {
+            LoadIniParticles( partFileName, &particles, &mesh, &topo_chain, &topo_chain_ini, &model, scaling );
         
-        if ( model.free_surf == 1 ) {
-            
-            // Define the horizontal position of the surface marker chain
-            SetTopoChainHorizontalCoords( &topo,     &topo_chain,     model, mesh, scaling );
-            SetTopoChainHorizontalCoords( &topo_ini, &topo_chain_ini, model, mesh, scaling );
-            
-            // Define the vertical position of the surface marker chain
-            BuildInitialTopography( &topo,     &topo_chain,     model, mesh, scaling );
-            BuildInitialTopography( &topo_ini, &topo_chain_ini, model, mesh, scaling );
-            
-            // Project topography on vertices
-            ProjectTopography( &topo, &topo_chain, model, mesh, scaling, mesh.xg_coord, 0 );
-            
-            // Marker chain polynomial fit
-            MarkerChainPolyFit( &topo, &topo_chain, model, mesh );
-            
-            // Call cell flagging routine for free surface calculations
-            CellFlagging( &mesh, model, topo, scaling );
+            if ( model.free_surf == 1 ) {
+                // Project topography on vertices
+                ProjectTopography( &topo, &topo_chain, model, mesh, scaling, mesh.xg_coord, 0 );
+                
+                // Marker chain polynomial fit
+                MarkerChainPolyFit( &topo, &topo_chain, model, mesh );
+                
+                // Call cell flagging routine for free surface calculations
+                CellFlagging( &mesh, model, topo, scaling );
+            }
+
+        } else { // old input
+                if ( model.free_surf == 1 ) {
+                
+                // Define the horizontal position of the surface marker chain
+                SetTopoChainHorizontalCoords( &topo,     &topo_chain,     model, mesh, scaling );
+                SetTopoChainHorizontalCoords( &topo_ini, &topo_chain_ini, model, mesh, scaling );
+                
+                // Define the vertical position of the surface marker chain
+                BuildInitialTopography( &topo,     &topo_chain,     model, mesh, scaling );
+                BuildInitialTopography( &topo_ini, &topo_chain_ini, model, mesh, scaling );
+                
+                // Project topography on vertices
+                ProjectTopography( &topo, &topo_chain, model, mesh, scaling, mesh.xg_coord, 0 );
+                
+                // Marker chain polynomial fit
+                MarkerChainPolyFit( &topo, &topo_chain, model, mesh );
+                
+                // Call cell flagging routine for free surface calculations
+                CellFlagging( &mesh, model, topo, scaling );
+            }
+            // Set particles coordinates
+            PutPartInBox( &particles, &mesh, model, topo, scaling );
+
+            // Set phases on particles
+            SetParticles( &particles, scaling, model, &materials );
+            printf("A\n");
+            if ( model.free_surf == 1 ) CleanUpSurfaceParticles( &particles, &mesh, topo, scaling ); /////////!!!!!!!!!
+            printf("B\n");
         }
         
-        // Set particles coordinates
-        PutPartInBox( &particles, &mesh, model, topo, scaling );
-        
-        // Set phases on particles
-        SetParticles( &particles, scaling, model, &materials );
-        
-        if ( model.free_surf == 1 ) CleanUpSurfaceParticles( &particles, &mesh, topo, scaling ); /////////!!!!!!!!!
-        
         Interp_P2N ( particles, materials.eta0,  &mesh, mesh.eta_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
+        printf("C\n");
         Interp_P2C ( particles, materials.eta0,  &mesh, mesh.eta_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
         
         Interp_P2C ( particles, particles.T,    &mesh, mesh.T,     mesh.xg_coord,  mesh.zg_coord, 1, 0 );

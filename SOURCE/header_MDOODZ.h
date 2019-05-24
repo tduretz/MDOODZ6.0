@@ -347,7 +347,7 @@ void WriteResiduals( grid, params, Nparams, scale );
 // Output
 void MakeBreakpointParticles( markers*, grid*, markers*, markers*, params , surface*, surface*, scale );
 void LoadBreakpointParticles( markers*, grid*, markers*, markers*, params*, surface*, surface*, scale );
-void LoadIniParticles       ( markers*, grid* ,markers, params*, scale );
+void LoadIniParticles       ( char*, markers*, grid* , markers*, markers*, params*, scale );
 void DeletePreviousBreakpoint( int, int );
 //
 // Direct solver
