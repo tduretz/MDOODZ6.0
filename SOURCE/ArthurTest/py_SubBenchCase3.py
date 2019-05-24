@@ -9,17 +9,16 @@ import numpy as np
 import InputClassDef as Input
 import matplotlib.pyplot as plt
 import Geometry
-import json
 import time
-import pandas as pd
-import datashader as ds
 
-#model = Input.Model(Nx=300,Nz=500)
-#topo_chain = Input.Topo_chain(model)
-#particles = Input.Particles(model)  
+FastPlotting = True
+if FastPlotting:
+    try:
+        import pandas as pd
+        import datashader as ds    
+    except:
+        FastPlotting = False
 
-
-        
 # Scaling 
 # ==========================================
 scaling     = Input.Scaling(eta = 1e4,
@@ -30,16 +29,6 @@ scaling     = Input.Scaling(eta = 1e4,
 
 # Model
 # ==========================================
-#model       = Input.Model(Nx      = 10,#round(300 *1.0),
-#                    Nz      = 5,#round(250 *1.0),
-#                    Nt      = 1,
-#                    xmin    =  0.000000e0,
-#                    zmin    = -11.50000000e-2,
-#                    xmax    =  54.000000e-2,
-#                    zmax    =  0.8000000e-2 ,
-#                    dt      = 2.5e+1,
-#                    Courant = 0.5
-#                    )
 
 model       = Input.Model(Nx      = round(300 *1.0),
                     Nz      = round(250 *1.0),
@@ -76,7 +65,7 @@ print("Initializing particles: ", end = ''); tic = time.time()
 Tbg  = 773.15/scaling.T;                         # reference temperature
 gsbg = 2e-3/scaling.L;                           # reference grain size
 H    = 1.2e-2/scaling.L;                         # plate thickness
-#model.free_surf=0
+
 particles   = Input.Particles(model, 
                               topo_chain=topo_chain,
                               d = gsbg,
@@ -98,9 +87,7 @@ print("%.1f s" % (time.time()-tic))
 ## ==========================================
 print("Plotting: ", end = ''); tic = time.time();
 plt.clf()    
-Fast = True
-    
-if Fast:
+if FastPlotting:
     df = pd.DataFrame(np.array([particles.x,particles.z,particles.phase]).T,columns=('x','y','phase'))
     refineFac = 2
     cvs = ds.Canvas(plot_width=model.Nx*refineFac, plot_height=model.Nz*refineFac,
@@ -112,11 +99,7 @@ if Fast:
 else:    
     plt.scatter(particles.x,particles.z,c=particles.phase)
 
-
-
 cb=plt.colorbar()
-plt.axis("equal")
-
 
 plt.fill(OcPlate.x,OcPlate.z,faceColor='none',edgeColor='r')
 plt.fill(Slab   .x,Slab   .z,faceColor='none',edgeColor='r')
