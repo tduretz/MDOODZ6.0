@@ -886,23 +886,18 @@ firstprivate ( dx, dz, Nb_part, Nx, Nz, X_vect, Z_vect  ) //schedule( static )
             NodeField[c1] = av; NodeField[l*Nx] = av;
         }
     }
-    printf("0A\n");
     // Clean up
     DoodzFree(Xc_virtual);
     DoodzFree(Zc_virtual);
-    printf("B\n");
     DoodzFree(WM);
     //printf("C0\n");
     DoodzFree(BMWM);
-    printf("C\n");
     for ( k=0; k<nthreads; k++ ) {
         DoodzFree(Wm[k]);
         DoodzFree(BmWm[k]);
     }
-    printf("D\n");
     DoodzFree(Wm);
     DoodzFree(BmWm);
-    printf("E\n");
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/

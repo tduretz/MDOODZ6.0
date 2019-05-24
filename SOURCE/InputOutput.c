@@ -82,15 +82,10 @@ void LoadIniParticles( char* name, markers* particles, grid* mesh, markers *topo
         file = fopen(name, "rb");
     }
 
-    printf("A\n");
     fread( &s1, 1, 1, file);
     fread( &s2, 1, 1, file);
     fread( &s3, 1, 1, file);
     fread( &s4, 1, 1, file);
-    printf("B\n");
-
-    printf("s1=%i, s2=%i, s3=%i, s4=%i\n",ss1,ss2,ss3,ss4);
-    printf("s1=%i, s2=%i, s3=%i, s4=%i\n",s1,s2,s3,s4);
     
     if (model->free_surf == 1) {
         fread(&topo_chain->Nb_part,   s1,                   1, file );
@@ -143,7 +138,6 @@ void LoadIniParticles( char* name, markers* particles, grid* mesh, markers *topo
         //particles->phi[k]   /=1.0;
         //particles->X[k]     /=1.0;
     }
-printf("E\n");
 
 
 }

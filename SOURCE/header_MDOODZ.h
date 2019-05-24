@@ -148,6 +148,7 @@ struct _grid {
 	double *roger_x, *roger_z, *div_u, *u_in, *v_in, *p_in, *sxxd, *szzd, *sxz, *exxd, *ezzd, *exz, *VE_s, *VE_n, *sxxd0, *szzd0, *sxz0, *mu_s, *mu_n, *u_adv, *v_adv, *eta_phys_n, *kx, *kz, *Cv, *Qr, *eta_phys_s, *u_start, *v_start, *p_start;
 	int    *iter_smooth;
 	int    *nb_part_cell, *nb_part_vert;
+    int    BC_setup_type;
 	BC     BCu, BCv, BCp;
 	BCT    BCt, BCg;
 	double *xg_coord, *zg_coord, *xc_coord, *zc_coord, *xvz_coord, *zvx_coord, *xg_coord0, *zg_coord0, *xg_coord_ext, *zg_coord_ext;
@@ -280,6 +281,8 @@ void InterpCentroidsToVerticesDouble( double*, double*, grid*, params*, scale* )
 //void MInitialiseSolutionFields( grid*, params* );
 //void MinitMG( grid*, paramsOutputSparseMatrix  );
 void SetBCs( grid*, params*, scale, markers*, mat_prop* );
+void SetBCs_new( grid*, params*, scale, markers*, mat_prop* );
+void SetBCs_user( grid*, params*, scale, markers*, mat_prop* );
 //void MSetRes( grid*, paramsOutputSparseMatrix  );
 //void gridFillLevels( grid*, paramsOutputSparseMatrix  );
 //void gridSetCoords( grid*, params*OutputSparseMatrix );

@@ -136,10 +136,12 @@ int main( int nargs, char *args[] ) {
         // Initialise particle fields
         PartInit( &particles, &model );
         
-        // Initial grid tags
-        SetBCs( &mesh, &model, scaling , &particles, &materials );
-        int useNewInput = 0;
+        int useNewInput = 1;
         if (useNewInput == 1) {
+            // Initial grid tags
+            mesh.BC_setup_type = 1; // eventually it should be set from the input file
+            SetBCs_new( &mesh, &model, scaling , &particles, &materials );
+
             LoadIniParticles( partFileName, &particles, &mesh, &topo_chain, &topo_chain_ini, &model, scaling );
         
             if ( model.free_surf == 1 ) {
@@ -154,6 +156,8 @@ int main( int nargs, char *args[] ) {
             }
 
         } else { // old input
+                // Initial grid tags
+                SetBCs( &mesh, &model, scaling , &particles, &materials );
                 if ( model.free_surf == 1 ) {
                 
                 // Define the horizontal position of the surface marker chain
@@ -178,13 +182,11 @@ int main( int nargs, char *args[] ) {
 
             // Set phases on particles
             SetParticles( &particles, scaling, model, &materials );
-            printf("A\n");
             if ( model.free_surf == 1 ) CleanUpSurfaceParticles( &particles, &mesh, topo, scaling ); /////////!!!!!!!!!
-            printf("B\n");
+
         }
         
         Interp_P2N ( particles, materials.eta0,  &mesh, mesh.eta_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
-        printf("C\n");
         Interp_P2C ( particles, materials.eta0,  &mesh, mesh.eta_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
         
         Interp_P2C ( particles, particles.T,    &mesh, mesh.T,     mesh.xg_coord,  mesh.zg_coord, 1, 0 );
