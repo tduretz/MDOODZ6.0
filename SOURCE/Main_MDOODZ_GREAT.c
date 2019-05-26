@@ -423,6 +423,9 @@ int main( int nargs, char *args[] ) {
 
         // Compute cohesion and friction angle on the grid
         CohesionFrictionGrid( &mesh, materials, model, scaling );
+        
+        // Detect compressible cells
+        if (model.compressible == 1) DetectCompressibleCells ( &mesh, &model );
 
         // Min/Max interpolated fields
         MinMaxArrayTag( mesh.rho_s,    scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s   ", mesh.BCg.type );
@@ -603,7 +606,7 @@ int main( int nargs, char *args[] ) {
                     printf("EXTRACT SOLS\n");
                     Initialise2DArray( mesh.u_in, mesh.Nx, (mesh.Nz+1), 0.0 );
                     Initialise2DArray( mesh.v_in, (mesh.Nx+1), mesh.Nz, 0.0 );
-                    ExtractSolutions( &Stokes, &mesh, model );
+                    ExtractSolutions( &Stokes, &mesh, &model );
                     //                    }
                     if ( Nmodel.nit == 0  ) {
                         printf("---- Direct solve residual ----\n");
@@ -709,8 +712,9 @@ int main( int nargs, char *args[] ) {
         MinMaxArrayTag( mesh.d     , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d ", mesh.BCp.type );
         MinMaxArrayPart( particles.d, scaling.L, particles.Nb_part, "d on markers", particles.phase ) ;
         
-        // Compute stress changes on the grid and update stress on the particles
-        UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
+        // Update pressure on the particles
+        Interp_Grid2P( particles, particles.P, &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+        //UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
         
         //------------------------------------------------------------------------------------------------------------------------------//
         

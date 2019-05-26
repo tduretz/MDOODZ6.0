@@ -109,7 +109,7 @@ struct _params {
     double Courant, mineta, maxeta;
     // Linear solver
     int decoupled_solve, lsolver;
-    double penalty, abs_tol_div, rel_tol_div, auto_penalty;
+    double penalty, abs_tol_div, rel_tol_div, auto_penalty, compressible;
     // Deformation maps
     int nT, nE, nd, def_maps;
     double Pn, Tmin, Tmax, Emin, Emax, dmin, dmax, PrBG;
@@ -169,6 +169,7 @@ struct _grid {
     double *eII_el, *eII_pl, *eII_pl_s, *eII_pwl, *eII_exp, *eII_lin, *eII_gbs, *eII_cst, *A2_pwl_n, *eii_n, *eii_s, *tii0_n, *tii0_s;
     double *eII_pwl_s, *A2_pwl_s;
     double *exx_el, *ezz_el, *exz_el, *exx_diss, *ezz_diss, *exz_diss;
+    int   *comp_cells;
     
     // To remove
     double *exx_pwl_n, *exz_pwl_n, *exx_pwl_s, *exz_pwl_s, *exx_pl, *exz_pl;
@@ -361,7 +362,7 @@ void EvaluateStokesResidual( SparseMat*, Nparams*, grid*, params, scale, int );
 void SolveStokes( SparseMat*, DirectSolver* );
 void SolveStokesDefect( SparseMat*, DirectSolver*, Nparams*, grid*, params*, markers*, markers*, surface*, mat_prop, scale );
 void DirectStokes( SparseMat*, DirectSolver*, double* , double* );
-void ExtractSolutions( SparseMat*, grid*, params );
+void ExtractSolutions( SparseMat*, grid*, params* );
 void InitialiseSolutionVector( grid*, SparseMat*, params* );
 //
 //// Viscoelastoplasticity
@@ -481,7 +482,7 @@ void copy_vec_to_cholmod_dense( cholmod_dense*, DoodzFP* );
 void copy_cholmod_dense_to_cholmod_dense( cholmod_dense*, cholmod_dense* );
 void cholmod_dense_plus_cholmod_dense( cholmod_dense*, cholmod_dense* );
 
-void ApplyBC( grid*, params );
+void ApplyBC( grid*, params* );
 void AssignMarkerProperties (markers*, int, int, params* );
 
 // GLOBAL
@@ -538,3 +539,4 @@ void AdvectFreeSurf( markers*, params, scale );
 
 void RotateDirectorVector( grid, markers*, params, scale* );
 void UpdateParticlePressure( grid*, scale, params, markers*, mat_prop* );
+void DetectCompressibleCells ( grid* , params*  );

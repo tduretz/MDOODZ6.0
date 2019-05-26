@@ -39,9 +39,9 @@
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void ApplyBC( grid* mesh, params model ) {
+void ApplyBC( grid* mesh, params* model ) {
     
-    int nx=model.Nx, nz=model.Nz, nzvx=nz+1, nxvz=nx+1;
+    int nx=model->Nx, nz=model->Nz, nzvx=nz+1, nxvz=nx+1;
     int i, j;
     
     // Vx Neumann

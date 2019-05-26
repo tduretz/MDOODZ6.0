@@ -4,8 +4,10 @@
 \contentsline {section}{\numberline {0.3}Source files}{5}
 \contentsline {section}{\numberline {0.4}Compilation}{5}
 \contentsline {chapter}{\nonumberline Benchmarks}{6}
-\contentsline {section}{\numberline {0.5}Subduction benchmark case 1, \citet {Schmeling08}}{6}
-\contentsline {section}{\numberline {0.6}Subduction benchmark case 3, \citet {Schmeling08}}{6}
-\contentsline {chapter}{\nonumberline Matlab Examples}{8}
-\contentsline {section}{\numberline {0.7}Finite Strain ellipsoid and tensor and vector rotation}{8}
-\contentsline {chapter}{\nonumberline Python Code Generation}{9}
+\contentsline {section}{\numberline {0.1}Subduction benchmark case 1, \citet {Schmeling08}}{6}
+\contentsline {section}{\numberline {0.2}Subduction benchmark case 3, \citet {Schmeling08}}{6}
+\contentsline {section}{\numberline {0.3}Compressible layer test, \citet {Moulas18}}{6}
+\contentsline {section}{\numberline {0.4}Locally compressible models}{8}
+\contentsline {chapter}{\nonumberline Matlab Examples}{9}
+\contentsline {section}{\numberline {0.1}Finite Strain ellipsoid and tensor and vector rotation}{9}
+\contentsline {chapter}{\nonumberline Python Code Generation}{10}

@@ -169,6 +169,49 @@ make clean all MODEL_PATH=BENCHMARKS MODEL=SubBenchCase1 OPT=yes OMP=yes
 \label{SubBench3}
 \end{figure}
 
+\section{Compressible layer test, \citet{Moulas18}}
+
+Need to use the following options:
+\begin{verbatim} 
+compressible = 1
+lsolver      = -1
+\end{verbatim}
+
+The results of the simulation can be visualised with the file:
+\begin{verbatim} 
+ReadHDF5_VangelisTest.m
+\end{verbatim}
+
+The results can also be reproduced using the M2Di example:
+\begin{verbatim} 
+M2Di_CompressibleViscoElasticVangelis2_Beta.m
+\end{verbatim}
+
+\begin{figure}[ht!]
+\centerline{\includegraphics[height=3.0in]{./Figures/VangelisTest_MDOODZ}}
+\caption{Top panel: Layer/matrix $\tau_{xx}$ difference. Bottom panel: Layer/matrix $P$ difference.}
+\label{Vangelis}
+\end{figure}
+
+\section{Locally compressible models}
+
+Need to use the following options:
+\begin{verbatim} 
+compressible = 1
+lsolver      = -1
+\end{verbatim}
+
+The results can also be reproduced using the M2Di example:
+\begin{verbatim} 
+M2Di_LocallyCompressibleViscoElastic_InclusionBeta.m
+\end{verbatim}
+
+\begin{figure}[ht!]
+\centerline{\includegraphics[height=3.0in]{./Figures/LocallyCompressible_MDOODZ}}
+\caption{a) $\beta_{\text{matrix}} = \beta_{\text{inclusion}} = 10^{5} $. b) $\beta_{\text{matrix}} = 10^{5} $, $\beta_{\text{inclusion}} = 0.0$. c) $\beta_{\text{matrix}} = \beta_{\text{inclusion}} = 0.0 $.}
+\label{LocComp}
+\end{figure}
+
 %---------------------------------------------------------------------------------------------------------------%
 \addchap{Matlab Examples}
 \section{Finite Strain ellipsoid and tensor and vector rotation}

@@ -873,6 +873,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     materials->eta_VP      = ReadDou2( fin, "eta_VP",        0.0 ) / scaling->S / scaling->t;
     model->topografix      = ReadInt2( fin, "topografix",      0 );
     model->aniso           = ReadInt2( fin, "aniso",           0 );
+    model->compressible    = ReadInt2( fin, "compressible",    0 );
     
     // Setup dependant
     model->EpsBG           = ReadDou2( fin, "EpsBG",           0.0 ) / scaling->E;

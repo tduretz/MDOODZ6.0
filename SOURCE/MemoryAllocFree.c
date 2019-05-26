@@ -479,6 +479,8 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->exz_n_el   = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->exz_n_diss = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     
+    mesh->comp_cells = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    
     // To remove
     mesh->exx_pl     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->exz_pl     = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
@@ -703,6 +705,8 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->eII_lin);
     DoodzFree(mesh->eII_gbs);
     DoodzFree(mesh->eII_cst);
+    
+    DoodzFree( mesh->comp_cells );
 
     // To remove
     DoodzFree(mesh->A2_pwl_n);

@@ -63,35 +63,20 @@ void AddCoeff3( int* J, double*A, int eqn, int jeq, int *nnzc, double coeff, int
 void Continuity_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesC, SparseMat *StokesD, int Assemble, int lev, int stab, int comp, double om, int sign, params model, double one_dx, double one_dz, double one_dx_dx, double one_dz_dz, double one_dx_dz, double celvol, grid* mesh, int ith, int c1, int c2, int c3, int nx, int ncx, int nxvz, int eqn, double* u, double* v, double* p, int **JtempC, double **AtempC, int *nnzc2C, int **JtempD, double **AtempD, int *nnzc2D, int i, int j ) {
     
     double pc=0.0, uW=0.0, uE=0.0, vN=0.0, vS=0.0;
-    //    double gamma = 1e12;//1e6*model.Nx;
-    double gamma = 1.0e12;//1e6*model.Nx;
-    //    double gamma = 1e10*model.Nx*model.Nz;
-    
-    
-    //    printf("celvol=%2.2e eta_n=%2.2e\n",celvol, mesh->eta_n[c2]);
     
     // Compressibility
     if ( comp == 0 ) {
-        pc = -gamma;//mesh->eta_n[c2];
+        pc = 0.0;
     }
     else {
-        pc = -mesh->bet[c2]/model.dt;
+        pc = mesh->bet[c2]/model.dt;
     }
     
-    // -div u
-    if (comp == 0) {
-        if ( mesh->BCu.type[c1     ] != 13 ) uW =  one_dx;
-        if ( mesh->BCu.type[c1+1   ] != 13 ) uE = -one_dx;
-        if ( mesh->BCv.type[c3     ] != 13 ) vS =  one_dz;
-        if ( mesh->BCv.type[c3+nxvz] != 13 ) vN = -one_dz;
-    }
-    // dt/Beta * div u
-    else {
-        if ( mesh->BCu.type[c1     ] != 13 ) uW = -model.dt/mesh->bet[c2]*one_dx;
-        if ( mesh->BCu.type[c1+1   ] != 13 ) uE =  model.dt/mesh->bet[c2]*one_dx;
-        if ( mesh->BCv.type[c3     ] != 13 ) vS = -model.dt/mesh->bet[c2]*one_dz;
-        if ( mesh->BCv.type[c3+nxvz] != 13 ) vN =  model.dt/mesh->bet[c2]*one_dz;
-    }
+    // div u
+    if ( mesh->BCu.type[c1     ] != 13 ) uW = -one_dx;
+    if ( mesh->BCu.type[c1+1   ] != 13 ) uE =  one_dx;
+    if ( mesh->BCv.type[c3     ] != 13 ) vS = -one_dz;
+    if ( mesh->BCv.type[c3+nxvz] != 13 ) vN =  one_dz;
     
     // Stencil assembly / residual
     if ( Assemble == 1 ) {
@@ -111,7 +96,6 @@ void Continuity_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesC, Spar
         //        AddCoeff2( JtempD[ith], AtempD[ith], eqn, eqn                   , &(nnzc2D[ith]), pc*celvol, mesh->BCp.type[c2],      mesh->BCp.val[c2],      StokesC->bbc );
     }
     else {
-        pc = 0;
         StokesC->F[eqn] = pc*p[c2] + uW*u[c1] + uE*u[c1+1] + vS*v[c3] + vN*v[c3+nxvz];
         StokesC->F[eqn] -= StokesC->b[eqn];
         StokesC->F[eqn] *= celvol;
@@ -1488,7 +1472,7 @@ void BuildStokesOperatorDecoupled( grid *mesh, params model, int lev, double *p,
     double one_dx_dz = 1.0/mesh->dx/mesh->dz;
     
     // Switches
-    int eqn,  sign = 1, comp = 0, stab = 0;
+    int eqn,  sign = 1, comp = model.compressible, stab = 0;
     if (model.free_surf_stab>0) stab = 1;
     double theta = model.free_surf_stab;
     
@@ -1584,7 +1568,7 @@ void BuildStokesOperatorDecoupled( grid *mesh, params model, int lev, double *p,
         AllocateTempMatArraysDecoupled( &AtempB, &ItempB, &JtempB, n_th, nnzB, Stokes->neq_mom, DD, &nnzc2B  );
     }
     
-#pragma omp parallel shared( eend, estart, mesh, Stokes, StokesA, StokesB, u, v, p, nx, ncx, nzvx, nnzc2A, AtempA, JtempA, ItempA, nnzc2B, AtempB, JtempB, ItempB, last_eqn )  private( ith, l, k, c1, c2, c3, eqn ) firstprivate( model, Assemble, lev, one_dx_dx, one_dz_dz, one_dx_dz, one_dx, one_dz, sign, theta, stab, comp, celvol )
+#pragma omp parallel shared( eend, estart, mesh, Stokes, StokesA, StokesB, u, v, p, nx, ncx, nzvx, nnzc2A, AtempA, JtempA, ItempA, nnzc2B, AtempB, JtempB, ItempB, last_eqn )  private( ith, l, k, c1, c2, c3, eqn, comp ) firstprivate( model, Assemble, lev, one_dx_dx, one_dz_dz, one_dx_dz, one_dx, one_dz, sign, theta, stab, celvol, comp )
     {
         ith = omp_get_thread_num();
         
@@ -1757,7 +1741,7 @@ void BuildStokesOperatorDecoupled( grid *mesh, params model, int lev, double *p,
     //        }
     //    }
     
-#pragma omp parallel shared( eend, estart, mesh, Stokes, StokesC, StokesD, u, v, p, nnzc2C, AtempC, JtempC, ItempC, nnzc2D, AtempD, JtempD, ItempD, last_eqn )  private( ith, l, k, c1, c2, c3, eqn ) firstprivate( model, Assemble, lev, one_dx_dx, one_dz_dz, one_dx_dz, one_dx, one_dz, sign, theta, stab, comp, celvol, nx, ncx, nxvz, nzvx )
+#pragma omp parallel shared( eend, estart, mesh, Stokes, StokesC, StokesD, u, v, p, nnzc2C, AtempC, JtempC, ItempC, nnzc2D, AtempD, JtempD, ItempD, last_eqn )  private( ith, l, k, c1, c2, c3, eqn, comp ) firstprivate( model, Assemble, lev, one_dx_dx, one_dz_dz, one_dx_dz, one_dx, one_dz, sign, theta, stab, celvol, nx, ncx, nxvz, nzvx )
     {
         
         ith = omp_get_thread_num();
@@ -1772,7 +1756,8 @@ void BuildStokesOperatorDecoupled( grid *mesh, params model, int lev, double *p,
             //--------------------- INNER NODES ---------------------//
             if ( mesh->BCp.type[c2] == -1) {
                 
-                
+                comp = mesh->comp_cells[c2];
+
                 eqn = Stokes->eqn_p[c2]  - Stokes->neq_mom;
                 last_eqn[ith]   = eqn ;
                 
@@ -2787,7 +2772,7 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
     double one_dx_dz = 1.0/mesh->dx/mesh->dz;
     
     // Switches
-    int eqn,  sign = 1, comp = 0, stab = 0;
+    int eqn,  sign = 1, comp = model.compressible, stab = 0;
     if (model.free_surf_stab>0) stab = 1;
     double theta = model.free_surf_stab*0.5;
     
@@ -3051,7 +3036,7 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
     //        }
     //    }
     
-#pragma omp parallel shared( eend, estart, mesh, Stokes, StokesC, StokesD, u, v, p, nnzc2C, AtempC, JtempC, ItempC, nnzc2D, AtempD, JtempD, ItempD, last_eqn )  private( ith, l, k, c1, c2, c3, eqn ) firstprivate( model, Assemble, lev, one_dx_dx, one_dz_dz, one_dx_dz, one_dx, one_dz, sign, theta, stab, comp, celvol, nx, ncx, nxvz, nzvx )
+#pragma omp parallel shared( eend, estart, mesh, Stokes, StokesC, StokesD, u, v, p, nnzc2C, AtempC, JtempC, ItempC, nnzc2D, AtempD, JtempD, ItempD, last_eqn )  private( ith, l, k, c1, c2, c3, eqn, comp ) firstprivate( model, Assemble, lev, one_dx_dx, one_dz_dz, one_dx_dz, one_dx, one_dz, sign, theta, stab, celvol, nx, ncx, nxvz, nzvx )
     {
         
         ith = omp_get_thread_num();
@@ -3066,6 +3051,7 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
             //--------------------- INNER NODES ---------------------//
             if ( mesh->BCp.type[c2] == -1) {
                 
+                comp = mesh->comp_cells[c1];
                 
                 eqn = Stokes->eqn_p[c2]  - Stokes->neq_mom;
                 last_eqn[ith]   = eqn ;
