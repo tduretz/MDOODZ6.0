@@ -5,3 +5,8 @@
 *.log
 *.gz
 *.o
+*.blg
+*.fdb_latexmk
+*.fls
+*.toc
+.DS_Store
