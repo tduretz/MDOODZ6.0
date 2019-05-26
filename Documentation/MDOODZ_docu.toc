@@ -8,6 +8,6 @@
 \contentsline {section}{\numberline {0.2}Subduction benchmark case 3, \citet {Schmeling08}}{6}
 \contentsline {section}{\numberline {0.3}Compressible layer test, \citet {Moulas18}}{6}
 \contentsline {section}{\numberline {0.4}Locally compressible models}{8}
-\contentsline {chapter}{\nonumberline Matlab Examples}{9}
-\contentsline {section}{\numberline {0.1}Finite Strain ellipsoid and tensor and vector rotation}{9}
-\contentsline {chapter}{\nonumberline Python Code Generation}{10}
+\contentsline {chapter}{\nonumberline Matlab Examples}{10}
+\contentsline {section}{\numberline {0.1}Finite Strain ellipsoid and tensor and vector rotation}{10}
+\contentsline {chapter}{\nonumberline Python Code Generation}{11}
