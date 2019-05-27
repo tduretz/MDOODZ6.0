@@ -40,6 +40,7 @@ void SetBCs_user( grid *mesh, params *model, scale scaling, markers* particles, 
     int   k, l, c, c1;
     double *X, *Z, *XC, *ZC;
     int   NX, NZ, NCX, NCZ;
+    int dum;
     
     
     NX  = mesh->Nx;
