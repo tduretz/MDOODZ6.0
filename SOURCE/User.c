@@ -44,14 +44,7 @@ void SetBCs_user( grid *mesh, params *model, scale scaling, markers* particles, 
     NX  = mesh->Nx;
     NZ  = mesh->Nz;
     NCX = NX-1;
-    NCZ = NZ-1;
-
-
-
-
-
-
-    
+    NCZ = NZ-1;    
     
     X  = malloc (NX*sizeof(double));
     Z  = malloc (NZ*sizeof(double));
