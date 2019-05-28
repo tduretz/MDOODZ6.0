@@ -8,8 +8,6 @@
 void SetBCs_freeSlipBox( grid *mesh, params *model, scale scaling, markers* particles, mat_prop *materials );
 
 
-
-
 // Set physical properties on the grid and boundary conditions
 void SetBCs_new( grid *mesh, params *model, scale scaling, markers* particles, mat_prop *materials ) {
     switch (mesh->BC_setup_type) {
