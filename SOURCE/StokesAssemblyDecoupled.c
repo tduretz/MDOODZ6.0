@@ -1850,9 +1850,74 @@ void BuildStokesOperatorDecoupled( grid *mesh, params model, int lev, double *p,
         
         
         printf("System size: ndof = %d, nzA = %d nzB = %d nzC = %d nzD = %d\n", Stokes->neq, nnzcA, nnzcB, nnzcC, nnzcD);
+        
+        printf("Number of momentum equations: %d\n", StokesA->neq);
+        
+//        // Extract Diagonal of A - Viscous block
+//        int i, j, locNNZ;
+//        int I1, J1;
+//        
+//# pragma omp for parallel(StokesA) private(I1,J1, i, j locNNZ )
+//        for (i=0;i<StokesA->neq; i++) {
+//            I1     = StokesA->Ic[i];
+//            locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
+//            for (J1=0;J1<locNNZ; J1++) {
+//                 j = StokesA->J[I1 + J1];
+//                if (i==j) StokesA->d[i] = StokesA->A[I1 + J1];
+//             }
+//        }
+//        // Extract Diagonal of D - Pressure block
+//# pragma omp for parallel(StokesD) private(i)
+//        for (i=0;i<StokesD->neq; i++) {
+//            StokesC->d[i] = 1.0;
+//        }
+//        
+//        // Scale A
+//# pragma omp for parallel(StokesA) private(I1,J1, i, j locNNZ )
+//        for (i=0;i<StokesA->neq; i++) {
+//            
+//            StokesA->b[i] *= StokesA->d[i];  // scale RHS
+//            
+//            I1     = StokesA->Ic[i];
+//            locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
+//            for (J1=0;J1<locNNZ; J1++) {
+//                j = StokesA->J[I1 + J1];
+//                StokesA->A[I1 + J1] *= StokesA->d[i]*StokesA->d[j];
+//            }
+//        }
+//        
+//        // Scale B
+//# pragma omp for parallel(StokesB,StokesA) private(I1,J1, i, j locNNZ )
+//        for (i=0;i<StokesB->neq; i++) {
+//            I1     = StokesB->Ic[i];
+//            locNNZ = StokesB->Ic[i+1] - StokesB->Ic[i];
+//            for (J1=0;J1<locNNZ; J1++) {
+//                j = StokesB->J[I1 + J1];
+//                StokesB->A[I1 + J1] *= StokesA->d[i]*StokesC->d[j];
+//            }
+//        }
+//        
+//        // Scale C
+//# pragma omp for parallel(StokesC,StokesA) private(I1,J1, i, j locNNZ )
+//        for (i=0;i<StokesC->neq; i++) {
+//            
+//            StokesC->b[i] *= StokesC->d[i]; // scale RHS
+//            
+//            I1     = StokesC->Ic[i];
+//            locNNZ = StokesC->Ic[i+1] - StokesC->Ic[i];
+//            for (J1=0;J1<locNNZ; J1++) {
+//                j = StokesC->J[I1 + J1];
+//                StokesC->A[I1 + J1] *= StokesC->d[i]*StokesA->d[j];
+//            }
+//        }
+        
+        MinMaxArray(StokesA->d, 1, StokesA->neq, "diag. A" );
+        
+        
+        
 //                MinMaxArrayI(Stokes->I, 1, Stokes->neq+1, "I" );
 //                MinMaxArrayI(Stokes->J, 1, nnzc, "J" );
-                MinMaxArray(StokesC->b, 1, StokesC->neq, "rhs_cont" );
+//                MinMaxArray(StokesC->b, 1, StokesC->neq, "rhs_cont" );
         
 //                MinMaxArray(StokesA->A, 1, nnzcA, "VA" );
 //                MinMaxArray(StokesB->A, 1, nnzcB, "VB" );

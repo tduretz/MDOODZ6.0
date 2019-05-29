@@ -157,9 +157,10 @@ void FreePhaseDiagrams( params* model  ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void SAlloc( SparseMat *Mat, int neq ) {
-    Mat->b   = DoodzCalloc(neq, sizeof(double));
-    Mat->x   = DoodzCalloc(neq, sizeof(double));
-    Mat->F   = DoodzCalloc(neq, sizeof(double));
+    Mat->d   = DoodzCalloc(neq, sizeof(double)); // diagonal
+    Mat->b   = DoodzCalloc(neq, sizeof(double)); // rhs
+    Mat->x   = DoodzCalloc(neq, sizeof(double)); // solution
+    Mat->F   = DoodzCalloc(neq, sizeof(double)); // residual
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -167,6 +168,7 @@ void SAlloc( SparseMat *Mat, int neq ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void SFree( SparseMat *Mat ) {
+    DoodzFree(Mat->d);
     DoodzFree(Mat->x);
     DoodzFree(Mat->F);
     DoodzFree(Mat->b);

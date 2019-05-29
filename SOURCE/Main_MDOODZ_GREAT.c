@@ -914,9 +914,9 @@ int main( int nargs, char *args[] ) {
             
             // Breakpoint file
             t_omp = (double)omp_get_wtime();
+            if ( model.rm_break == 1 ) DeletePreviousBreakpoint( model.step, writer_step  );
             MakeBreakpointParticles( &particles, &mesh, &topo_chain, &topo_chain_ini, model, &topo, &topo_ini, scaling );
             UpdateInputFile( fin_name, model.step);
-            if ( model.rm_break == 1 ) DeletePreviousBreakpoint( model.step, writer_step  );
             printf("** Time for Breakpoint file write = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
             
             // Visualisation file
