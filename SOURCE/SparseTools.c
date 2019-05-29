@@ -174,46 +174,43 @@ void BuildInitialSolutions( double* u0, double* p0, grid* mesh ) {
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void BackToSolutionVector( cholmod_dense* u, cholmod_dense* p, double* x, grid* mesh ) {
+
+void ScaleVelocitiesRHSBack(SparseMat * StokesA, double* x) {
     
-    int inc = 0, k, l, kk, inc_tot=0;
+    int k;
+#pragma omp parallel for shared(StokesA, x)
+    for (k=0; k<StokesA->neq;k++) {
+        x[k] *= StokesA->d[k];
+    }
+    
+}
+
+void BackToSolutionVector( cholmod_dense* u, cholmod_dense* p, double* x, grid* mesh, SparseMat* Stokes ) {
+    
+    int  kk;
     
     // Get Vx
-    for( l=0; l<mesh->Nz+1; l++) {
-        for( k=0; k<mesh->Nx; k++) {
-            kk = k + l*mesh->Nx;
+#pragma omp parallel for shared(mesh, u)
+        for( kk=0; kk<(mesh->Nz+1)*mesh->Nx; kk++) {
             if ( mesh->BCu.type[kk] != 0 && mesh->BCu.type[kk] != 30 && mesh->BCu.type[kk] != 13 && mesh->BCu.type[kk] != 11 && mesh->BCu.type[kk] != -12) {
-                x[inc_tot] = ((double*)u->x)[inc];
-                inc++;
-                inc_tot++;
+                x[Stokes->eqn_u[kk]] = ((double*)u->x)[Stokes->eqn_u[kk]];
             }
-        }
     }
     
     // Get Vz
-    for( l=0; l<mesh->Nz; l++) {
-        for( k=0; k<mesh->Nx+1; k++) {
-            kk = k + l*(mesh->Nx+1);
+#pragma omp parallel for shared(mesh, u)
+        for( kk=0; kk<mesh->Nz*(mesh->Nx+1); kk++) {
             if ( mesh->BCv.type[kk] != 0  && mesh->BCv.type[kk] != 30 && mesh->BCv.type[kk] != 13  && mesh->BCv.type[kk] != 11 && mesh->BCv.type[kk] != -12  ) {
-                x[inc_tot] = ((double*)u->x)[inc];
-                inc++;
-                inc_tot++;
+                x[Stokes->eqn_v[kk]] = ((double*)u->x)[Stokes->eqn_v[kk]];
             }
-        }
     }
     
-    inc = 0;
     // Get P
-    for( l=0; l<mesh->Nz-1; l++) {
-        for( k=0; k<mesh->Nx-1; k++) {
-            kk = k + l*(mesh->Nx-1);
+#pragma omp parallel for shared(mesh, p)
+        for( kk=0; kk<(mesh->Nz-1)*(mesh->Nx-1); kk++) {
             if ( mesh->BCp.type[kk] == -1 ) {
-                x[inc_tot] = ((double*)p->x)[inc];
-                
-                inc++;
-                inc_tot++;
+                x[Stokes->eqn_p[kk]] = ((double*)p->x)[kk];
             }
-        }
     }
 }
 

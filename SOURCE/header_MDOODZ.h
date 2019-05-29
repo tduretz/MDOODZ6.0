@@ -474,7 +474,7 @@ void AllocatePhaseDiagrams( params* );
 void FreePhaseDiagrams( params* );
 
 double DotProduct( DoodzFP*, DoodzFP*, int  );
-void BackToSolutionVector( cholmod_dense*, cholmod_dense*, double*, grid* );
+void BackToSolutionVector( cholmod_dense*, cholmod_dense*, double*, grid*, SparseMat* );
 void NormResidualCholmod( double*, double*, cholmod_dense*, cholmod_dense*, int, int, params, scale, int );
 void BuildInitialSolutions( double*, double*, grid* );
 void copy_cholmod_to_cs_matrix( cholmod_sparse*, cs* );
@@ -541,3 +541,4 @@ void AdvectFreeSurf( markers*, params, scale );
 void RotateDirectorVector( grid, markers*, params, scale* );
 void UpdateParticlePressure( grid*, scale, params, markers*, mat_prop* );
 void DetectCompressibleCells ( grid* , params*  );
+void ScaleVelocitiesRHSBack(SparseMat*, double*);

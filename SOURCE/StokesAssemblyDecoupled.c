@@ -1845,71 +1845,68 @@ void BuildStokesOperatorDecoupled( grid *mesh, params model, int lev, double *p,
         StokesD->J = bufi;
         StokesD->A = bufd;
         
-        //        int k, a, n=StokesA->neq+1;
-        //        for (k=0;k<n+1;k++) { StokesA->Ic[k] += 1;}
-        
         
         printf("System size: ndof = %d, nzA = %d nzB = %d nzC = %d nzD = %d\n", Stokes->neq, nnzcA, nnzcB, nnzcC, nnzcD);
         
         printf("Number of momentum equations: %d\n", StokesA->neq);
         
-//        // Extract Diagonal of A - Viscous block
-//        int i, j, locNNZ;
-//        int I1, J1;
-//
-//#pragma omp parallel for shared(StokesA) private(I1,J1, i, j, locNNZ )
-//        for (i=0;i<StokesA->neq; i++) {
-//            I1     = StokesA->Ic[i];
-//            locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
-//            for (J1=0;J1<locNNZ; J1++) {
-//                 j = StokesA->J[I1 + J1];
-//                if (i==j) StokesA->d[i] = StokesA->A[I1 + J1];
-//             }
-//        }
-//        // Extract Diagonal of D - Pressure block
-//#pragma omp parallel for shared(StokesD) private(i)
-//        for (i=0;i<StokesD->neq; i++) {
-//            StokesC->d[i] = 1.0;
-//        }
-//
-//        // Scale A
-//#pragma omp parallel for shared(StokesA) private(I1,J1, i, j, locNNZ )
-//        for (i=0;i<StokesA->neq; i++) {
-//
-//            StokesA->b[i] *= StokesA->d[i];  // scale RHS
-//
-//            I1     = StokesA->Ic[i];
-//            locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
-//            for (J1=0;J1<locNNZ; J1++) {
-//                j = StokesA->J[I1 + J1];
-//                StokesA->A[I1 + J1] *= StokesA->d[i]*StokesA->d[j];
-//            }
-//        }
-//
-//        // Scale B
-//#pragma omp parallel for shared(StokesB,StokesA) private(I1,J1, i, j, locNNZ )
-//        for (i=0;i<StokesB->neq; i++) {
-//            I1     = StokesB->Ic[i];
-//            locNNZ = StokesB->Ic[i+1] - StokesB->Ic[i];
-//            for (J1=0;J1<locNNZ; J1++) {
-//                j = StokesB->J[I1 + J1];
-//                StokesB->A[I1 + J1] *= StokesA->d[i]*StokesC->d[j];
-//            }
-//        }
-//        
-//        // Scale C
-//#pragma omp parallel for shared(StokesC,StokesA) private(I1,J1, i, j, locNNZ )
-//        for (i=0;i<StokesC->neq; i++) {
-//
-//            StokesC->b[i] *= StokesC->d[i]; // scale RHS
-//            
-//            I1     = StokesC->Ic[i];
-//            locNNZ = StokesC->Ic[i+1] - StokesC->Ic[i];
-//            for (J1=0;J1<locNNZ; J1++) {
-//                j = StokesC->J[I1 + J1];
-//                StokesC->A[I1 + J1] *= StokesC->d[i]*StokesA->d[j];
-//            }
-//        }
+        // Extract Diagonal of A - Viscous block
+        int i, j, locNNZ;
+        int I1, J1;
+
+#pragma omp parallel for shared(StokesA) private(I1,J1, i, j, locNNZ )
+        for (i=0;i<StokesA->neq; i++) {
+            I1     = StokesA->Ic[i];
+            locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
+            for (J1=0;J1<locNNZ; J1++) {
+                 j = StokesA->J[I1 + J1];
+                if (i==j) StokesA->d[i] = StokesA->A[I1 + J1];
+             }
+        }
+        // Extract Diagonal of D - Pressure block
+#pragma omp parallel for shared(StokesD) private(i)
+        for (i=0;i<StokesD->neq; i++) {
+            StokesC->d[i] = 1.0;
+        }
+
+        // Scale A
+#pragma omp parallel for shared(StokesA) private(I1,J1, i, j, locNNZ )
+        for (i=0;i<StokesA->neq; i++) {
+
+            StokesA->b[i] *= StokesA->d[i];  // scale RHS
+
+            I1     = StokesA->Ic[i];
+            locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
+            for (J1=0;J1<locNNZ; J1++) {
+                j = StokesA->J[I1 + J1];
+                StokesA->A[I1 + J1] *= StokesA->d[i]*StokesA->d[j];
+            }
+        }
+
+        // Scale B
+#pragma omp parallel for shared(StokesB,StokesA) private(I1,J1, i, j, locNNZ )
+        for (i=0;i<StokesB->neq; i++) {
+            I1     = StokesB->Ic[i];
+            locNNZ = StokesB->Ic[i+1] - StokesB->Ic[i];
+            for (J1=0;J1<locNNZ; J1++) {
+                j = StokesB->J[I1 + J1];
+                StokesB->A[I1 + J1] *= StokesA->d[i]*StokesC->d[j];
+            }
+        }
+        
+        // Scale C
+#pragma omp parallel for shared(StokesC,StokesA) private(I1,J1, i, j, locNNZ )
+        for (i=0;i<StokesC->neq; i++) {
+
+            StokesC->b[i] *= StokesC->d[i]; // scale RHS
+            
+            I1     = StokesC->Ic[i];
+            locNNZ = StokesC->Ic[i+1] - StokesC->Ic[i];
+            for (J1=0;J1<locNNZ; J1++) {
+                j = StokesC->J[I1 + J1];
+                StokesC->A[I1 + J1] *= StokesC->d[i]*StokesA->d[j];
+            }
+        }
 
         MinMaxArray(StokesA->d, 1, StokesA->neq, "diag. A" );
         
