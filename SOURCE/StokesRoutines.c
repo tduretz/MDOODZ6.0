@@ -89,7 +89,7 @@ void ExtractSolutions( SparseMat *Stokes, grid* mesh, params* model ) {
             }
             
             if ( mesh->BCu.type[cc] < 30 && mesh->BCu.type[cc] != 0 && mesh->BCu.type[cc] != 11 && mesh->BCu.type[cc] != 13  && mesh->BCu.type[cc] != -12 ) {
-                mesh->u_in[cc] = Stokes->x[Stokes->eqn_u[cc]];
+                mesh->u_in[cc] = Stokes->x[Stokes->eqn_u[cc]] * Stokes->d[Stokes->eqn_u[cc]];
             }
         }
     }
@@ -114,7 +114,7 @@ void ExtractSolutions( SparseMat *Stokes, grid* mesh, params* model ) {
             }
             
             if ( mesh->BCv.type[cc] < 30 && mesh->BCv.type[cc] != 0 && mesh->BCv.type[cc] != 11 && mesh->BCv.type[cc] != 13 && mesh->BCv.type[cc] != -12 ) {
-                mesh->v_in[cc] = Stokes->x[Stokes->eqn_v[cc]];
+                mesh->v_in[cc] = Stokes->x[Stokes->eqn_v[cc]] * Stokes->d[Stokes->eqn_v[cc]];
                 
             }
         }
@@ -132,8 +132,8 @@ void ExtractSolutions( SparseMat *Stokes, grid* mesh, params* model ) {
                 mesh->p_in[cc] = mesh->BCp.val[cc];
             }
             else {
-                mesh->dp[cc]   = Stokes->x[Stokes->eqn_p[cc]] - mesh->p_start[cc];
-                mesh->p_in[cc] = Stokes->x[Stokes->eqn_p[cc]];
+                mesh->dp[cc]   = Stokes->x[Stokes->eqn_p[cc]] * Stokes->d[Stokes->eqn_p[cc]] - mesh->p_start[cc];
+                mesh->p_in[cc] = Stokes->x[Stokes->eqn_p[cc]] * Stokes->d[Stokes->eqn_p[cc]];
             }
         }
     }

@@ -84,7 +84,7 @@ struct _BCT {
 // Contains discrete systems of equation
 typedef struct _SparseMat SparseMat;
 struct _SparseMat {
-	double   *A, *x, *b, *F, *bbc;
+	double   *A, *x, *b, *F, *d, *bbc;
 	int      *Ic, *J, neq;
     int   *eqn_u, *eqn_v, *eqn_p;
     int   nnz, neq_mom, neq_cont;
