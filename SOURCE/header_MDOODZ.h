@@ -254,6 +254,7 @@ void ArrayEqualArrayI( int*, int*, int );
 //void ArrayPlusScalar( double*, double, int );
 void ArrayTimesScalar( double*, double, int );
 void ArrayTimesScalarArray( double*, double, double*, int );
+void ArrayDividedScalarArray( double*, double, double*, int );
 void ArrayPlusScalarArray( double*, double, double*, int );
 void Initialise2DArray( double*, int, int, double );
 void Initialise2DArrayInt( int*, int, int, int );

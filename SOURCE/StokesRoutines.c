@@ -1533,6 +1533,10 @@ void DirectStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,
         printf("Fp = %2.6e\n", resp ); // Units of velocity gradient
     }
     
+//    // unscale RHS
+//    ArrayDividedScalarArray( matA->b, 1.0, matA->d, matA->neq );
+//    ArrayDividedScalarArray( matC->b, 1.0, matC->d, matC->neq );
+    
     // --------------- Free --------------- //
     
     cholmod_free_dense( &bu, &c );

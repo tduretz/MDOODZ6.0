@@ -364,6 +364,18 @@ void ArrayTimesScalarArray( double* arr1, double scalar, double* arr2, int size 
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+void ArrayDividedScalarArray( double* arr1, double scalar, double* arr2, int size ) {
+    int k;
+#pragma omp parallel for shared( arr1, arr2, scalar) private(k) schedule( static )
+    for(k=0;k<size;k++) {
+        arr1[k] /= scalar*arr2[k];
+    }
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 void ArrayPlusScalarArray( double* arr1, double scalar, double* arr2, int size ) {
     int k;
 #pragma omp parallel for shared( arr1, arr2, scalar) private(k) schedule( static )
