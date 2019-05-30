@@ -30,6 +30,19 @@ https:#bitbucket.org/bkaus/lamem/
 
 import numpy as np
 import InputClassDef as Input
+
+try:
+    from numba import jit #, prange
+    useNumba = True
+except:
+    print("Warning: the package numba was not found. just-in-time compilation is off")
+    useNumba = False
+    
+def maybe_numba(useNumba):
+    return jit(nopython=True) if useNumba else lambda x:x
+
+
+
 #import math
 class Rotation():
     def __init__(self,xc=0.0,zc=0.0,angle=0.0):
@@ -142,83 +155,86 @@ class Polygon():
         nPoints = xPoints.size        
         nVertices = xVertices.size
         
-        
-    	# test whether each point is in polygon
-        for ip in range(nPoints):
+        @maybe_numba(useNumba)
+        def mainLoop(particles_phase, polygon_phase):
 
-            # get point coordinates            
-            zp = zPoints[ip]    
-    		# check bounding box
-            if(zp < zmin): continue
-            if(zp > zmax): continue
-            xp = xPoints[ip]
-            if(xp < xmin): continue
-            if(xp > xmax): continue
-            
+        	# test whether each point is in polygon
+            for ip in range(nPoints):
     
-    		# count the number of intersections
-            nIntersect = 0.0;
-    
-            for iv in range(nVertices):
-    			# does the line PQ intersect the line AB?
-                if iv == nVertices-1:
-                    ax = xVertices[(nVertices-1) ];
-                    ay = zVertices[(nVertices-1)];
-                    bx = xVertices[0         ];
-                    by = zVertices[0         ];
-                else:
-                    ax = xVertices[iv];
-                    ay = zVertices[iv];
-                    bx = xVertices[iv+1];
-                    by = zVertices[iv+1];
-                # end if iV == nVertices-1:
-    
-                if ax == bx:			
-                    # vertical points
-                    if xp == ax:
-                        # ensure order correct
-                        if ay > by:
-                            tmp = ay; ay = by; by = tmp;
-                            
-                        if zp >= ay and zp <= by:
+                # get point coordinates            
+                zp = zPoints[ip]    
+        		# check bounding box
+                if(zp < zmin): continue
+                if(zp > zmax): continue
+                xp = xPoints[ip]
+                if(xp < xmin): continue
+                if(xp > xmax): continue
+                
+        
+        		# count the number of intersections
+                nIntersect = 0.0;
+        
+                for iv in range(nVertices):
+        			# does the line PQ intersect the line AB?
+                    if iv == nVertices-1:
+                        ax = xVertices[(nVertices-1) ];
+                        ay = zVertices[(nVertices-1)];
+                        bx = xVertices[0         ];
+                        by = zVertices[0         ];
+                    else:
+                        ax = xVertices[iv];
+                        ay = zVertices[iv];
+                        bx = xVertices[iv+1];
+                        by = zVertices[iv+1];
+                    # end if iV == nVertices-1:
+        
+                    if ax == bx:			
+                        # vertical points
+                        if xp == ax:
+                            # ensure order correct
+                            if ay > by:
+                                tmp = ay; ay = by; by = tmp;
+                                
+                            if zp >= ay and zp <= by:
+                                # point_on   = 1;
+                                nIntersect = 0.0;
+                                break;
+                        # end if xp == ax:
+                    else:
+        				# non-vertical points
+                        if xp < min(ax, bx) or max(ax, bx) < xp: continue;
+                        
+                        intersecty = ay + (xp - ax)/(bx - ax)*(by - ay);
+        
+                        if np.abs(intersecty - zp) < atol:
                             # point_on   = 1;
                             nIntersect = 0.0;
                             break;
-                    # end if xp == ax:
-                else:
-    				# non-vertical points
-                    if xp < min(ax, bx) or max(ax, bx) < xp: continue;
-                    
-                    intersecty = ay + (xp - ax)/(bx - ax)*(by - ay);
-    
-                    if np.abs(intersecty - zp) < atol:
-                        # point_on   = 1;
-                        nIntersect = 0.0;
-                        break;
-                    elif intersecty < zp and (ax == xp or bx == xp):				
-                        if ax == xp:
-                            if iv == 0:
-                                ind = nVertices-1;
-                            else:
-                                ind = iv-1;
-    
-                            xvind = xVertices[ind];
-    
-                            if min(bx, xvind) < xp and xp < max(bx, xvind):
-                                nIntersect += 1.0;
-                        # end if    				
-                    elif (intersecty < zp):
-                        nIntersect += 1.0;
-                    # end if
-                # end if ax == bx:
-            # end for iV
+                        elif intersecty < zp and (ax == xp or bx == xp):				
+                            if ax == xp:
+                                if iv == 0:
+                                    ind = nVertices-1;
+                                else:
+                                    ind = iv-1;
+        
+                                xvind = xVertices[ind];
+        
+                                if min(bx, xvind) < xp and xp < max(bx, xvind):
+                                    nIntersect += 1.0;
+                            # end if    				
+                        elif (intersecty < zp):
+                            nIntersect += 1.0;
+                        # end if
+                    # end if ax == bx:
+                # end for iV
                    
-            # check if the contour polygon is closed
-            point_in = np.int((nIntersect - 2.0*np.floor(nIntersect/2.0)));
-            if point_in:
-                particles.phase[ip] = self.phase
-    	# end for iP
-
+                # check if the contour polygon is closed
+                point_in = np.int((nIntersect - 2.0*np.floor(nIntersect/2.0)));
+                if point_in:
+                    particles_phase[ip] = polygon_phase
+        	# end for iP
+        # end function mainLoop
+        mainLoop(particles.phase, self.phase)
 #     end assignPhaseToParticles
 
         
@@ -258,16 +274,20 @@ class Box(Polygon):
             self.rotate(xc=rotation.xc,zc=rotation.zc,angle=rotation.angle)
             rotation.applyToArrays(xPoints,zPoints,reverse=True)
         # end if rotation==0.0
-
-        for ip in range(nPoints):
-            # get point coordinates            
-            zp = zPoints[ip]
-    		# check bounding box
-            if(zp < zmin): continue
-            if(zp > zmax): continue
-            xp = xPoints[ip]
-            if(xp < xmin): continue
-            if(xp > xmax): continue
+        
+        @maybe_numba(useNumba)
+        def mainLoop(particles_phase, polygon_phase):
+            for ip in range(nPoints):
+                # get point coordinates            
+                zp = zPoints[ip]
+        		# check bounding box
+                if(zp < zmin): continue
+                if(zp > zmax): continue
+                xp = xPoints[ip]
+                if(xp < xmin): continue
+                if(xp > xmax): continue
             
-            particles.phase[ip] = self.phase    
+                particles_phase[ip] = polygon_phase    
+#            return 
             
+        mainLoop(particles.phase, self.phase)
