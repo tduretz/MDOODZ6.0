@@ -29,18 +29,8 @@ https:#bitbucket.org/bkaus/lamem/
 """
 
 import numpy as np
-import InputClassDef as Input
-
-try:
-    from numba import jit #, prange
-    useNumba = True
-except:
-    print("Warning: the package numba was not found. just-in-time compilation is off")
-    useNumba = False
-    
-def maybe_numba(useNumba):
-    return jit(nopython=True) if useNumba else lambda x:x
-
+from scaling import Scaling
+from utils import use_numba, maybe_numba
 
 
 #import math
@@ -50,7 +40,7 @@ class Rotation():
         self.zc = zc
         self.angle = angle
         
-    def applyToArrays(self,x,z,reverse=False):
+    def apply_to_arrays(self,x,z,reverse=False):
         xtemp = x-self.xc
         ztemp = z-self.zc
         
@@ -62,11 +52,11 @@ class Rotation():
         x[:] = np.cos(angle)*xtemp - np.sin(angle)*ztemp + self.xc
         z[:] = np.sin(angle)*xtemp + np.cos(angle)*ztemp + self.zc
         
-    def applyToPolygon(self,polygon,reverse=False):
+    def apply_to_polygon(self,polygon,reverse=False):
         if not isinstance(polygon,Polygon):
             raise ValueError("'Polygon' must be an instance of 'Geometry.Polygon'")
             
-        self.applyToArrays(polygon.x,polygon.z,reverse)
+        self.apply_to_arrays(polygon.x,polygon.z,reverse)
 
     def copy(self):
         return Rotation(xc=self.xc,zc=self.zc,angle=self.angle)
@@ -76,19 +66,19 @@ class Rotation():
 
 class Polygon():
     def __init__(self,x,z,phase=0,scaled=False):
-        if type(x)==list or type(x)==tuple:
+        if isinstance(x,list) or isinstance(x,tuple):
             self.x = np.array(x)
-        elif type(x)==np.ndarray:
+        elif isinstance(x,np.ndarray):
             self.x = x
         else:
-            raise TypeError("x must be a list, tuple or ndarray")
+            raise TypeError("x must be a list, tuple or numpy.ndarray")
             
-        if type(z)==list or type(z)==tuple:
+        if isinstance(z,list) or isinstance(z,tuple):
             self.z = np.array(z)
-        elif type(z)==np.ndarray:
+        elif isinstance(x,np.ndarray):
             self.z = z
         else:
-            raise TypeError("x must be a list, tuple or ndarray")
+            raise TypeError("z must be a list, tuple or numpy.ndarray")
 
 
         self.phase = phase
@@ -103,7 +93,7 @@ class Polygon():
             
         """
         self.rotation = Rotation(xc=xc,zc=zc,angle=angle)
-        self.rotation.applyToPolygon(self,reverse)
+        self.rotation.apply_to_polygon(self,reverse)
         
     def derotate(self):
         """
@@ -111,13 +101,13 @@ class Polygon():
             the point of coordinates (xc,zc)
             
         """
-        self.rotation.applyToPolygon(self,reverse=True)
+        self.rotation.apply_to_polygon(self,reverse=True)
         self.rotation = Rotation()
         
 
     def scale(self,scaling):
-        if type(scaling)!=Input.Scaling:
-            raise TypeError("'scale' must be an instance of Input.Scaling")
+        if not isinstance(scaling,Scaling):
+            raise TypeError("'scale' must be an instance of Scaling")
             
         if self.scaled == True:
             raise ValueError("Trying to scale an already scaled Polygon")
@@ -128,8 +118,8 @@ class Polygon():
         self.scaled = True
         
     def unscale(self,scaling):
-        if type(scaling)!=Input.Scaling:
-            raise TypeError("'scale' must be an instance of Input.Scaling")
+        if not isinstance(scaling,Scaling):
+            raise TypeError("'scale' must be an instance of Scaling")
             
         if self.scaled == False:
             raise ValueError("Trying to unscale a non-scaled Polygon")
@@ -139,7 +129,7 @@ class Polygon():
         self.rotation.zc *= scaling.L
         self.scaled = False
         
-    def assignPhaseToParticles(self,particles,atol=1e-6):
+    def assign_phase_to_particles(self,particles,atol=1e-6):
         
         xPoints = particles.x
         zPoints = particles.z
@@ -155,8 +145,8 @@ class Polygon():
         nPoints = xPoints.size        
         nVertices = xVertices.size
         
-        @maybe_numba(useNumba)
-        def mainLoop(particles_phase, polygon_phase):
+        @maybe_numba(use_numba)
+        def main_loop(particles_phase, polygon_phase):
 
         	# test whether each point is in polygon
             for ip in range(nPoints):
@@ -233,9 +223,9 @@ class Polygon():
                 if point_in:
                     particles_phase[ip] = polygon_phase
         	# end for iP
-        # end function mainLoop
-        mainLoop(particles.phase, self.phase)
-#     end assignPhaseToParticles
+        # end function main_loop
+        main_loop(particles.phase, self.phase)
+#     end assign_phase_to_particles
 
         
 class Box(Polygon):
@@ -243,7 +233,7 @@ class Box(Polygon):
     Box(box=[x0,x1,z0,z1],phase=0)
     """
     def __init__(self,box,phase=0,scaled=False):
-        if type(box) not in (list, tuple, np.ndarray):
+        if not isinstance(box,(list, tuple, np.ndarray)):
             raise TypeError("x must be a list, tuple or ndarray")
         
         
@@ -253,7 +243,7 @@ class Box(Polygon):
         self.scaled = False
 
         self.rotation = Rotation()
-    def assignPhaseToParticles(self,particles,atol=1e-6):
+    def assign_phase_to_particles(self,particles,atol=1e-6):
         xPoints = particles.x.copy()
         zPoints = particles.z.copy()
         nPoints = xPoints.size 
@@ -272,11 +262,11 @@ class Box(Polygon):
             zmin = np.min(self.z)
             zmax = np.max(self.z)
             self.rotate(xc=rotation.xc,zc=rotation.zc,angle=rotation.angle)
-            rotation.applyToArrays(xPoints,zPoints,reverse=True)
+            rotation.apply_to_arrays(xPoints,zPoints,reverse=True)
         # end if rotation==0.0
         
-        @maybe_numba(useNumba)
-        def mainLoop(particles_phase, polygon_phase):
+        @maybe_numba(use_numba)
+        def main_loop(particles_phase, polygon_phase):
             for ip in range(nPoints):
                 # get point coordinates            
                 zp = zPoints[ip]
@@ -290,4 +280,4 @@ class Box(Polygon):
                 particles_phase[ip] = polygon_phase    
 #            return 
             
-        mainLoop(particles.phase, self.phase)
+        main_loop(particles.phase, self.phase)

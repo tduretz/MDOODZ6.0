@@ -5,9 +5,8 @@ Created on Tue May 28 11:30:07 2019
 
 @author: abauville
 """
+from scaling import Scaling
 
-# =============================================================================
-# Define classes
 class Model():
     def __init__(self,
          # Simulation start/restart from Breakpoint        
@@ -284,12 +283,15 @@ class Model():
     
         self.isScaled=False
     
-    def getDx(self):
+    def get_dx(self):
         return (self.xmax-self.xmin)/(self.Nx-1)
-    def getDz(self):
+        
+    def get_dz(self):
         return (self.zmax-self.zmin)/(self.Nz-1)
         
     def scale(self,scaling):
+        if not isinstance(scaling,Scaling):
+            raise TypeError("'scaling' must be an instance of Scaling")
         self.xmin /= scaling.L
         self.xmax /= scaling.L
         self.zmin /= scaling.L

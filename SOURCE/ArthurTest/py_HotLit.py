@@ -11,9 +11,14 @@ Created on Wed May 29 17:20:14 2019
 #int np;
 
 import numpy as np
-import InputClassDef as Input
 import matplotlib.pyplot as plt
 import time
+
+# import mdoodz classes
+from mdoodz import Material, Model, Particles, Scaling, TopoChain
+
+# import mdoodz modules (modules contain classes and functions)
+from mdoodz import write, geometry
 
 try:
     from numba import jit #, prange
@@ -28,49 +33,49 @@ def maybe_numba(useNumba):
 
 print("Start!!")
 wallTimeTic = time.time()
-FastPlotting = True
-if FastPlotting:
+fastPlotting = True
+if fastPlotting:
     try:
         import pandas as pd
         import datashader as ds    
-        print("FastPlotting is on baby!")
+        print("fastPlotting is on baby!")
     except:
-        FastPlotting = False
-        print("FastPlotting is off... too bad")
+        fastPlotting = False
+        print("fastPlotting is off... too bad")
 
 
 
 
 # Scaling 
 # ==========================================
-scaling     = Input.Scaling()
+scaling     = Scaling()
 
 
 # Model
 # ==========================================
 print("Initializing model: ", end = ''); tic = time.time()
-model       = Input.Model(Nx      = int(2000/1),#int(400),
-                        Nz      = int(2000/1),#int(220),
-                        Nt      = 1000,
-                        xmin    = -100.000000e3,
-                        zmin    = -95.000000e3,
-                        xmax    =  100.000000e3,
-                        zmax    = 5.000000e3 ,
-                        dt      = 1.2623e+11,
-                        Courant = 0.3,
-                        penalty = 1e19,
-                        eta_avg = 1,
-                        cpc     = 1,
-                        surf_remesh = 1,
-                        abs_tol_div = 1e-14,
-                        rel_tol_div = 1e-14,
-                        DefectCorrectionForm = 1,
-                        
-                        EpsBG           = 5.e-16, #Background strain rate
-                        user0           = 2.0e3,
-                        user1           = 0,
-                        user2           = 0,
-                        user3           = 0
+model       = Model(Nx      = int(2000/1),#int(400),
+                    Nz      = int(2000/1),#int(220),
+                    Nt      = 1000,
+                    xmin    = -100.000000e3,
+                    zmin    = -95.000000e3,
+                    xmax    =  100.000000e3,
+                    zmax    = 5.000000e3 ,
+                    dt      = 1.2623e+11,
+                    Courant = 0.3,
+                    penalty = 1e19,
+                    eta_avg = 1,
+                    cpc     = 1,
+                    surf_remesh = 1,
+                    abs_tol_div = 1e-14,
+                    rel_tol_div = 1e-14,
+                    DefectCorrectionForm = 1,
+                    
+                    EpsBG           = 5.e-16, #Background strain rate
+                    user0           = 2.0e3,
+                    user1           = 0,
+                    user2           = 0,
+                    user3           = 0
                     )
 
 
@@ -83,13 +88,13 @@ Tbg  = 773.15/scaling.T;                         # reference temperature
 gsbg = 2e-3/scaling.L;                           # reference grain size
 H    = 1.2e-2/scaling.L;                         # plate thickness
 model.free_surf=0
-particles   = Input.Particles(model, 
-#                              topo_chain=topo_chain,
-                              d = gsbg,
-                              phi = 0.0,
-                              X = 0.0,
-                              T = Tbg,
-                              phase = 1)
+particles   = Particles(model, 
+#                        topo_chain=topo_chain,
+                        d = gsbg,
+                        phi = 0.0,
+                        X = 0.0,
+                        T = Tbg,
+                        phase = 1)
 print("%.1f s" % (time.time()-tic))
 
 
@@ -273,9 +278,9 @@ print("%.1f s" % (time.time()-tic))
 ## ==========================================
 print("Plotting: ", end = ''); tic = time.time();
 plt.clf()    
-if FastPlotting:
+if fastPlotting:
     df = pd.DataFrame(np.array([particles.x,particles.z,particles.phase]).T,columns=('x','y','phase'))
-    refineFac = 2
+    refineFac = 1
     cvs = ds.Canvas(plot_width=model.Nx*refineFac, plot_height=model.Nz*refineFac,
                        x_range=(model.xmin,model.xmax), y_range=(model.zmin,model.zmax),
                        x_axis_type='linear', y_axis_type='linear')

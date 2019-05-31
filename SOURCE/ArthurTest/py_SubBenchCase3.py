@@ -6,22 +6,26 @@ Created on Fri May 17 11:24:22 2019
 @author: abauville
 """
 import numpy as np
-import InputClassDef as Input
 import matplotlib.pyplot as plt
-import Geometry
 import time
 
-FastPlotting = True
-if FastPlotting:
+# import mdoodz classes
+from mdoodz import Material, Model, Particles, Scaling, TopoChain
+
+# import mdoodz modules (modules contain classes and functions)
+from mdoodz import write, geometry
+
+fastPlotting = True
+if fastPlotting:
     try:
         import pandas as pd
         import datashader as ds    
     except:
-        FastPlotting = False
+        fastPlotting = False
 
 # Scaling 
 # ==========================================
-scaling     = Input.Scaling(eta = 1e4,
+scaling     = Scaling(eta = 1e4,
                       L   = 1e-1,
                       V   = 1e2,
                       T   = 20)
@@ -30,7 +34,7 @@ scaling     = Input.Scaling(eta = 1e4,
 # Model
 # ==========================================
 
-model       = Input.Model(Nx      = round(300 *1.0),
+model       = Model(Nx      = round(300 *1.0),
                     Nz      = round(250 *1.0),
                     Nt      = 1,
                     xmin    =  0.000000e0,
@@ -38,13 +42,14 @@ model       = Input.Model(Nx      = round(300 *1.0),
                     xmax    =  54.000000e-2,
                     zmax    =  0.8000000e-2,
                     dt      = 2.5e+1,
-                    Courant = 0.5
+                    Courant = 0.5,
+                    free_surf=1
                     )
 
 # Polygons
 # ==========================================
-OcPlate = Geometry.Box([.20 , .54 , -.012 , .0], phase = 0)
-Slab    = Geometry.Box([.20 , .14 , -.012 , .0], phase = 0)
+OcPlate = geometry.Box([.20 , .54 , -.012 , .0], phase = 0)
+Slab    = geometry.Box([.20 , .14 , -.012 , .0], phase = 0)
 Slab.rotate(xc=0.2,angle=34.0*np.pi/180.0)
 
 
@@ -57,7 +62,7 @@ Slab.rotate(xc=0.2,angle=34.0*np.pi/180.0)
 
 # Topo chain
 # ==========================================
-topo_chain  = Input.Topo_chain(model,Topo_level=0.000,fact=24)
+topo_chain  = TopoChain(model,Topo_level=0.000,fact=24)
 
 # Particles
 # ==========================================
@@ -66,7 +71,7 @@ Tbg  = 773.15/scaling.T;                         # reference temperature
 gsbg = 2e-3/scaling.L;                           # reference grain size
 H    = 1.2e-2/scaling.L;                         # plate thickness
 
-particles   = Input.Particles(model, 
+particles   = Particles(model, 
                               topo_chain=topo_chain,
                               d = gsbg,
                               phi = 0.0,
@@ -78,8 +83,8 @@ print("%.1f s" % (time.time()-tic))
 
 # ==== Assign phase from polygons
 print("Assigning phase to particles: ", end = ''); tic = time.time()
-particles.assignPhaseFromPolygon(Slab)
-particles.assignPhaseFromPolygon(OcPlate)
+particles.assign_phase_from_polygon(Slab)
+particles.assign_phase_from_polygon(OcPlate)
 print("%.1f s" % (time.time()-tic))
 
 
@@ -87,7 +92,7 @@ print("%.1f s" % (time.time()-tic))
 ## ==========================================
 print("Plotting: ", end = ''); tic = time.time();
 plt.clf()    
-if FastPlotting:
+if fastPlotting:
     df = pd.DataFrame(np.array([particles.x,particles.z,particles.phase]).T,columns=('x','y','phase'))
     refineFac = 2
     cvs = ds.Canvas(plot_width=model.Nx*refineFac, plot_height=model.Nz*refineFac,
@@ -112,6 +117,6 @@ print("%.1f s" % (time.time()-tic))
 
 # Write files
 # ==========================================
-print("Writing particle file: ", end = ''); tic = time.time()
-Input.writeIniParticles(model,topo_chain, particles)
-print("%.1f s" % (time.time()-tic))
+#print("Writing particle file: ", end = ''); tic = time.time()
+#Write.writeIniParticles(model,topo_chain, particles)
+#print("%.1f s" % (time.time()-tic))
