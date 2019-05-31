@@ -181,6 +181,7 @@ void ScaleVelocitiesRHSBack(SparseMat * StokesA, double* x) {
 #pragma omp parallel for shared(StokesA, x)
     for (k=0; k<StokesA->neq;k++) {
         x[k] *= StokesA->d[k];
+//        Stokes->b[k] /= StokesA->d[k];
     }
     
 }

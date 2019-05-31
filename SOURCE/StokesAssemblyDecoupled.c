@@ -1850,108 +1850,72 @@ void BuildStokesOperatorDecoupled( grid *mesh, params model, int lev, double *p,
         
         printf("Number of momentum equations: %d\n", StokesA->neq);
         
-        // Extract Diagonal of A - Viscous block
-        int i, j, locNNZ;
-        int I1, J1;
-
-#pragma omp parallel for shared(StokesA) private(I1,J1, i, j, locNNZ )
-        for (i=0;i<StokesA->neq; i++) {
-            I1     = StokesA->Ic[i];
-            locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
-            for (J1=0;J1<locNNZ; J1++) {
-                 j = StokesA->J[I1 + J1];
-                if (i==j) StokesA->d[i] = StokesA->A[I1 + J1];
-             }
-        }
-        // Extract Diagonal of D - Pressure block
-#pragma omp parallel for shared(StokesD) private(i)
-        for (i=0;i<StokesD->neq; i++) {
-            StokesC->d[i] = 1.0;
-        }
-
-        // Scale A
-#pragma omp parallel for shared(StokesA) private(I1,J1, i, j, locNNZ )
-        for (i=0;i<StokesA->neq; i++) {
-
-            StokesA->b[i] *= StokesA->d[i];  // scale RHS
-
-            I1     = StokesA->Ic[i];
-            locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
-            for (J1=0;J1<locNNZ; J1++) {
-                j = StokesA->J[I1 + J1];
-                StokesA->A[I1 + J1] *= StokesA->d[i]*StokesA->d[j];
-            }
-        }
-
-        // Scale B
-#pragma omp parallel for shared(StokesB,StokesA) private(I1,J1, i, j, locNNZ )
-        for (i=0;i<StokesB->neq; i++) {
-            I1     = StokesB->Ic[i];
-            locNNZ = StokesB->Ic[i+1] - StokesB->Ic[i];
-            for (J1=0;J1<locNNZ; J1++) {
-                j = StokesB->J[I1 + J1];
-                StokesB->A[I1 + J1] *= StokesA->d[i]*StokesC->d[j];
-            }
-        }
+//        // Extract Diagonal of A - Viscous block
+//        int i, j, locNNZ;
+//        int I1, J1;
+//
+//        if (model.diag_scaling == 1) {
+//
+//#pragma omp parallel for shared(StokesA) private(I1,J1, i, j, locNNZ )
+//        for (i=0;i<StokesA->neq; i++) {
+//            I1     = StokesA->Ic[i];
+//            locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
+//            for (J1=0;J1<locNNZ; J1++) {
+//                 j = StokesA->J[I1 + J1];
+//                if (i==j) StokesA->d[i] = StokesA->A[I1 + J1];
+//             }
+//        }
+//        // Extract Diagonal of D - Pressure block
+//#pragma omp parallel for shared(StokesD) private(i)
+//        for (i=0;i<StokesD->neq; i++) {
+//            StokesC->d[i] = 1.0;
+//        }
+//
+//        // Scale A
+//#pragma omp parallel for shared(StokesA) private(I1,J1, i, j, locNNZ )
+//        for (i=0;i<StokesA->neq; i++) {
+//
+//            StokesA->b[i] *= StokesA->d[i];  // scale RHS
+//
+//            I1     = StokesA->Ic[i];
+//            locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
+//            for (J1=0;J1<locNNZ; J1++) {
+//                j = StokesA->J[I1 + J1];
+//                StokesA->A[I1 + J1] *= StokesA->d[i]*StokesA->d[j];
+//            }
+//        }
+//
+//        // Scale B
+//#pragma omp parallel for shared(StokesB,StokesA) private(I1,J1, i, j, locNNZ )
+//        for (i=0;i<StokesB->neq; i++) {
+//            I1     = StokesB->Ic[i];
+//            locNNZ = StokesB->Ic[i+1] - StokesB->Ic[i];
+//            for (J1=0;J1<locNNZ; J1++) {
+//                j = StokesB->J[I1 + J1];
+//                StokesB->A[I1 + J1] *= StokesA->d[i]*StokesC->d[j];
+//            }
+//        }
+//
+//        // Scale C
+//#pragma omp parallel for shared(StokesC,StokesA) private(I1,J1, i, j, locNNZ )
+//        for (i=0;i<StokesC->neq; i++) {
+//
+//            StokesC->b[i] *= StokesC->d[i]; // scale RHS
+//
+//            I1     = StokesC->Ic[i];
+//            locNNZ = StokesC->Ic[i+1] - StokesC->Ic[i];
+//            for (J1=0;J1<locNNZ; J1++) {
+//                j = StokesC->J[I1 + J1];
+//                StokesC->A[I1 + J1] *= StokesC->d[i]*StokesA->d[j];
+//            }
+//        }
+//
+//    }
+//
+//        MinMaxArray(StokesA->d, 1, StokesA->neq, "diag. A" );
         
-        // Scale C
-#pragma omp parallel for shared(StokesC,StokesA) private(I1,J1, i, j, locNNZ )
-        for (i=0;i<StokesC->neq; i++) {
+        //--------------------------------------//
 
-            StokesC->b[i] *= StokesC->d[i]; // scale RHS
-            
-            I1     = StokesC->Ic[i];
-            locNNZ = StokesC->Ic[i+1] - StokesC->Ic[i];
-            for (J1=0;J1<locNNZ; J1++) {
-                j = StokesC->J[I1 + J1];
-                StokesC->A[I1 + J1] *= StokesC->d[i]*StokesA->d[j];
-            }
-        }
-
-        MinMaxArray(StokesA->d, 1, StokesA->neq, "diag. A" );
-        
-        
-        
-//                MinMaxArrayI(Stokes->I, 1, Stokes->neq+1, "I" );
-//                MinMaxArrayI(Stokes->J, 1, nnzc, "J" );
-//                MinMaxArray(StokesC->b, 1, StokesC->neq, "rhs_cont" );
-        
-//                MinMaxArray(StokesA->A, 1, nnzcA, "VA" );
-//                MinMaxArray(StokesB->A, 1, nnzcB, "VB" );
-//                MinMaxArray(StokesC->A, 1, nnzcC, "VC" );
-        
-                MinMaxArray(Stokes->b, 1, Stokes->neq, "b" );
-                MinMaxArray(Stokes->F, 1, Stokes->neq, "F" );
-//                SumArray(Stokes->A, 1, nnzc, "V" );
-//                SumArray(Stokes->b, 1, Stokes->neq, "b" );
-//                SumArray(mesh->roger_z, 1, nxvz*nz, "roger z" );
-        //
-        //
-        //        //        printf("checking for nans\n");
-        //        //        IsNanArray( Stokes->eqn_u,  nx, nz+1 );
-        //        //        IsNanArray( Stokes->eqn_v,  nx+1, nz );
-        //        //        IsNanArray( Stokes->eqn_p,  ncx, ncz );
-        //
-        //        //        IsNanArray2DFP( Stokes->b, Stokes->neq );
-        //
-        //                for (k=0; k<StokesC->neq; k++) {
-        //                    printf("%lf\n", StokesC->b[k]);
-        //                }
-        //        //        IsNanArray2DFP( Stokes->A, nnzc );
-        //        //        IsNanArray2DFP( mesh->rho_app_n, ncx*ncz );
-        //        //        IsNanArray2DFP( mesh->rho_app_s, nx*nz );
-        //        //
-        //        //
-        //        //        IsNanArray2DFP( mesh->eta_n, ncx*ncz );
-        //        //        IsNanArray2DFP( mesh->eta_s, nx*nz );
-        //        //
-        //        //        IsNanArray2int( Stokes->I, Stokes->neq+1 );
-        //        //        IsNanArray2int( Stokes->J, nnzc );
-        //
-        //
-        //
-        //        //--------------------------------------//
-        //
 #ifndef _VG_
         if ( model.write_debug == 1 ) {
             
@@ -3067,36 +3031,6 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
         AllocateTempMatArraysDecoupled( &AtempD, &ItempD, &JtempD, n_th, nnzD, Stokes->neq_cont, DD, &nnzc2D  );
     }
     
-    //    printf("NC = %d %d %d %d %d\n", Stokes->neq_cont, estart[0], eend[0], DD[0], last_eqn[0]);
-    
-    //#pragma omp parallel shared( eend, estart, mesh, Stokes, u, v, p, nx, ncx, nzvx, nnzc2C, AtempC, JtempC, ItempC, nnzc2D, AtempD, JtempD, ItempD, last_eqn )  private( ith, l, k, c1, c2, c3, eqn ) firstprivate( model, Assemble, lev, one_dx_dx, one_dz_dz, one_dx_dz, one_dx, one_dz, sign, theta, stab, comp, celvol )
-    //    {
-    //
-    //        ith = omp_get_thread_num();
-    //
-    //        for( c2=estart[ith]; c2<eend[ith]+1; c2++) {
-    //
-    //            k   = mesh->kp[c2];
-    //            l   = mesh->lp[c2];
-    //            c1  = k   + (l+1)*nx;
-    //            c3  = k   + l*nxvz + 1;
-    //
-    //            //--------------------- INNER NODES ---------------------//
-    //            if ( mesh->BCp.type[c2] == -1) {
-    //
-    //
-    //                eqn = Stokes->eqn_p[c2]  - Stokes->neq_mom;
-    //                last_eqn[ith]   = eqn ;
-    //
-    //                if ( Assemble == 1 ) {
-    //                    ItempC[ith][eqn] = nnzc2C[ith];
-    //                    ItempD[ith][eqn] = nnzc2D[ith]; //printf("%d ",  nnzc2D[ith]);
-    //                }
-    //                //
-    //                Continuity_InnerNodesDecoupled( Stokes, StokesC, StokesD, Assemble, lev, stab, comp, theta, sign, model, one_dx, one_dz, one_dx_dx, one_dz_dz, one_dx_dz, celvol, mesh, ith, c1, c2, c3, nx, ncx, nxvz, eqn, u, v, p, JtempC, AtempC, nnzc2C, JtempD, AtempD, nnzc2D, k, l );
-    //            }
-    //        }
-    //    }
     
 #pragma omp parallel shared( eend, estart, mesh, Stokes, StokesC, StokesD, u, v, p, nnzc2C, AtempC, JtempC, ItempC, nnzc2D, AtempD, JtempD, ItempD, last_eqn )  private( ith, l, k, c1, c2, c3, eqn, comp ) firstprivate( model, Assemble, lev, one_dx_dx, one_dz_dz, one_dx_dz, one_dx, one_dz, sign, theta, stab, celvol, nx, ncx, nxvz, nzvx )
     {
@@ -3144,8 +3078,6 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
     //----------------------------- End --------------------------------//
     //------------------------------------------------------------------//
     
-    
-    
     if ( Assemble == 1 ) {
         
         // Add contribution from the BC's
@@ -3153,26 +3085,18 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
             StokesA->b[k] += StokesA->bbc[k];
             StokesB->b[k] = StokesA->b[k];
         }
-        
-        //            MinMaxArray(StokesA->b, 1, StokesA->neq, "rhs_mom_here" );
-        //            MinMaxArray(StokesC->b, 1, StokesC->neq, "rhs_cont_here" );
-        
-        
+
         // Add contribution from the BC's
         for (k=0; k<StokesC->neq; k++) {
             StokesC->b[k] += StokesC->bbc[k];
             StokesD->b[k] = StokesC->b[k];
         }
         
-        
-        
         // Final index
         StokesA->Ic[StokesA->neq] = nnzcA;
         StokesB->Ic[StokesB->neq] = nnzcB;
         StokesC->Ic[StokesC->neq] = nnzcC;
         StokesD->Ic[StokesD->neq] = nnzcD;
-        
-        //        for (ieq=0; ieq<Stokes->neq_cont+1; ieq++) printf( "%d ", StokesC->I[ieq] );
         
         StokesA->nnz = nnzcA;
         StokesB->nnz = nnzcB;
@@ -3201,51 +3125,74 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
         bufd      = DoodzRealloc(StokesD->A, nnzcD*sizeof(double));
         StokesD->J = bufi;
         StokesD->A = bufd;
-        
-        //        int k, a, n=StokesA->neq+1;
-        //        for (k=0;k<n+1;k++) { StokesA->Ic[k] += 1;}
-        
-        
+    
         printf("System size: ndof = %d, nzA = %d nzB = %d nzC = %d nzD = %d\n", Stokes->neq, nnzcA, nnzcB, nnzcC, nnzcD);
-        //        MinMaxArrayI(Stokes->I, 1, Stokes->neq+1, "I" );
-        //        MinMaxArrayI(Stokes->J, 1, nnzc, "J" );
-        //        MinMaxArray(StokesC->b, 1, StokesC->neq, "rhs_cont" );
         
-        //        MinMaxArray(StokesB->A, 1, nnzcB, "V" );
-        //        MinMaxArray(StokesC->A, 1, nnzcC, "V" );
+//        // Extract Diagonal of A - Viscous block
+//        int i, j, locNNZ;
+//        int I1, J1;
+//
+//        if (model.diag_scaling == 1) {
+//
+//#pragma omp parallel for shared(StokesA) private(I1,J1, i, j, locNNZ )
+//            for (i=0;i<StokesA->neq; i++) {
+//                I1     = StokesA->Ic[i];
+//                locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
+//                for (J1=0;J1<locNNZ; J1++) {
+//                    j = StokesA->J[I1 + J1];
+//                    if (i==j) StokesA->d[i] = StokesA->A[I1 + J1];
+//                }
+//            }
+//            // Extract Diagonal of D - Pressure block
+//#pragma omp parallel for shared(StokesD) private(i)
+//            for (i=0;i<StokesD->neq; i++) {
+//                StokesC->d[i] = 1.0;
+//            }
+//
+//            // Scale A
+//#pragma omp parallel for shared(StokesA) private(I1,J1, i, j, locNNZ )
+//            for (i=0;i<StokesA->neq; i++) {
+//
+//                StokesA->b[i] *= StokesA->d[i];  // scale RHS
+//
+//                I1     = StokesA->Ic[i];
+//                locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
+//                for (J1=0;J1<locNNZ; J1++) {
+//                    j = StokesA->J[I1 + J1];
+//                    StokesA->A[I1 + J1] *= StokesA->d[i]*StokesA->d[j];
+//                }
+//            }
+//
+//            // Scale B
+//#pragma omp parallel for shared(StokesB,StokesA) private(I1,J1, i, j, locNNZ )
+//            for (i=0;i<StokesB->neq; i++) {
+//                I1     = StokesB->Ic[i];
+//                locNNZ = StokesB->Ic[i+1] - StokesB->Ic[i];
+//                for (J1=0;J1<locNNZ; J1++) {
+//                    j = StokesB->J[I1 + J1];
+//                    StokesB->A[I1 + J1] *= StokesA->d[i]*StokesC->d[j];
+//                }
+//            }
+//
+//            // Scale C
+//#pragma omp parallel for shared(StokesC,StokesA) private(I1,J1, i, j, locNNZ )
+//            for (i=0;i<StokesC->neq; i++) {
+//
+//                StokesC->b[i] *= StokesC->d[i]; // scale RHS
+//
+//                I1     = StokesC->Ic[i];
+//                locNNZ = StokesC->Ic[i+1] - StokesC->Ic[i];
+//                for (J1=0;J1<locNNZ; J1++) {
+//                    j = StokesC->J[I1 + J1];
+//                    StokesC->A[I1 + J1] *= StokesC->d[i]*StokesA->d[j];
+//                }
+//            }
+//
+//        }
+//
+//        MinMaxArray(StokesA->d, 1, StokesA->neq, "diag. A" );
         
-        //        MinMaxArray(Stokes->b, 1, Stokes->neq, "b" );
-        //        MinMaxArray(Stokes->F, 1, Stokes->neq, "F" );
-        //        SumArray(Stokes->A, 1, nnzc, "V" );
-        //        SumArray(Stokes->b, 1, Stokes->neq, "b" );
-        //        SumArray(mesh->roger_z, 1, nxvz*nz, "roger z" );
-        //
-        //
-        //        //        printf("checking for nans\n");
-        //        //        IsNanArray( Stokes->eqn_u,  nx, nz+1 );
-        //        //        IsNanArray( Stokes->eqn_v,  nx+1, nz );
-        //        //        IsNanArray( Stokes->eqn_p,  ncx, ncz );
-        //
-        //        //        IsNanArray2DFP( Stokes->b, Stokes->neq );
-        //
-        //                for (k=0; k<StokesC->neq; k++) {
-        //                    printf("%lf\n", StokesC->b[k]);
-        //                }
-        //        //        IsNanArray2DFP( Stokes->A, nnzc );
-        //        //        IsNanArray2DFP( mesh->rho_app_n, ncx*ncz );
-        //        //        IsNanArray2DFP( mesh->rho_app_s, nx*nz );
-        //        //
-        //        //
-        //        //        IsNanArray2DFP( mesh->eta_n, ncx*ncz );
-        //        //        IsNanArray2DFP( mesh->eta_s, nx*nz );
-        //        //
-        //        //        IsNanArray2int( Stokes->I, Stokes->neq+1 );
-        //        //        IsNanArray2int( Stokes->J, nnzc );
-        //
-        //
-        //
-        //        //--------------------------------------//
-        //
+                //--------------------------------------//
 #ifdef _HDF5_
         if ( model.write_debug == 1 ) {
             

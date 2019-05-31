@@ -574,6 +574,9 @@ void SolveStokesDefectDecoupled( SparseMat *StokesA, SparseMat *StokesB, SparseM
     if ( model->lsolver ==-1 ) DirectStokesDecoupledComp( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes );
     printf("** Time for direct Stokes solver = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
     
+    ScaleVelocitiesRHSBack(StokesA, dx);
+//    ScaleVelocitiesRHSBack(StokesA, Stokes->x);
+    
     // Line search
     if ( model->line_search == 1 ) {
         alpha = LineSearchDecoupled( Stokes, StokesA, StokesB, StokesC, StokesD, dx, mesh, model, Nmodel, particles, topo_chain, topo, materials, scaling  );
@@ -581,7 +584,7 @@ void SolveStokesDefectDecoupled( SparseMat *StokesA, SparseMat *StokesB, SparseM
     
     // Return updated solution vector
     if ( Nmodel->stagnated == 0) ArrayPlusScalarArray( Stokes->x, alpha, dx, Stokes->neq );
-    
+
     //    Nparams residuals;
     //    ExtractSolutions( Stokes, mesh, *model );
     //
@@ -677,13 +680,7 @@ void EvaluateStokesResidual( SparseMat *Stokes, Nparams *Nmodel, grid *mesh, par
 void EvaluateStokesResidualDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *StokesB, SparseMat *StokesC, SparseMat *StokesD, Nparams *Nmodel, grid *mesh, params model, scale scaling, int quiet ) {
     
     int cc, nx=model.Nx, nz=model.Nz, nzvx=nz+1, nxvz=nx+1, ncx=nx-1, ncz=nz-1;
-    double celvol, Area=0.0;
     int ndofx=0, ndofz=0, ndofp=0;
-    
-    celvol = 1.0;//model.dx*model.dz;
-    
-//       printf("include stab %f\n", model.free_surf_stab);
-    
     
     // Residuals
     double resx = 0.0;
@@ -694,81 +691,45 @@ void EvaluateStokesResidualDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
     BuildStokesOperatorDecoupled( mesh, model, 0, mesh->p_in,  mesh->u_in,  mesh->v_in, Stokes, StokesA, StokesB, StokesC, StokesD, 0 );
     
     // Integrate residuals
-#pragma omp parallel for shared( mesh, Stokes, StokesA ) private( cc ) firstprivate( celvol, nx, nzvx ) reduction(+:resx,ndofx)
+#pragma omp parallel for shared( mesh, Stokes, StokesA ) private( cc ) firstprivate( nx, nzvx ) reduction(+:resx,ndofx)
     for( cc=0; cc<nzvx*nx; cc++) {
         if ( mesh->BCu.type[cc] != 0 && mesh->BCu.type[cc] != 30 && mesh->BCu.type[cc] != 11 && mesh->BCu.type[cc] != 13 && mesh->BCu.type[cc] != -12) {
             ndofx++;
-            resx += StokesA->F[Stokes->eqn_u[cc]]*StokesA->F[Stokes->eqn_u[cc]];//*celvol;
+            resx += StokesA->F[Stokes->eqn_u[cc]]*StokesA->F[Stokes->eqn_u[cc]];
             mesh->ru[cc] = StokesA->F[Stokes->eqn_u[cc]];
+            StokesA->F[Stokes->eqn_u[cc]] *= StokesA->d[Stokes->eqn_u[cc]]; // Need to scale the residual here for Defect Correction formulation (F is the RHS)
         }
     }
     Nmodel->resx = resx;
     
-#pragma omp parallel for shared( mesh, Stokes, StokesA ) private( cc ) firstprivate( celvol, nz, nxvz ) reduction(+:resz,ndofz)
+#pragma omp parallel for shared( mesh, Stokes, StokesA ) private( cc ) firstprivate( nz, nxvz ) reduction(+:resz,ndofz)
     for( cc=0; cc<nz*nxvz; cc++) {
         if ( mesh->BCv.type[cc] != 0 && mesh->BCv.type[cc] != 30 && mesh->BCv.type[cc] != 11 && mesh->BCv.type[cc] != 13 && mesh->BCv.type[cc] != -12) {
             ndofz++;
-            resz += StokesA->F[Stokes->eqn_v[cc]]*StokesA->F[Stokes->eqn_v[cc]];//*celvol;
+            resz += StokesA->F[Stokes->eqn_v[cc]]*StokesA->F[Stokes->eqn_v[cc]];
             mesh->rv[cc] = StokesA->F[Stokes->eqn_v[cc]];
+            StokesA->F[Stokes->eqn_v[cc]] *= StokesA->d[Stokes->eqn_v[cc]]; // Need to scale the residual here for Defect Correction formulation (F is the RHS)
         }
     }
     Nmodel->resz = resz;
     
-#pragma omp parallel for shared( mesh, Stokes, StokesD ) private( cc ) firstprivate( celvol, ncz, ncx ) reduction(+:resp,ndofp,Area)
+#pragma omp parallel for shared( mesh, Stokes, StokesD ) private( cc ) firstprivate( ncz, ncx ) reduction(+:resp,ndofp)
     for( cc=0; cc<ncz*ncx; cc++) {
         if ( mesh->BCp.type[cc] != 0 && mesh->BCp.type[cc] != 30  && mesh->BCp.type[cc] != 31) {
             ndofp++;
-            Area += celvol;
-            resp += StokesC->F[Stokes->eqn_p[cc]- Stokes->neq_mom]*StokesC->F[Stokes->eqn_p[cc]- Stokes->neq_mom];//*celvol;
+            resp += StokesC->F[Stokes->eqn_p[cc]- Stokes->neq_mom]*StokesC->F[Stokes->eqn_p[cc]- Stokes->neq_mom];
             mesh->rp[cc] = StokesC->F[Stokes->eqn_p[cc]- Stokes->neq_mom];
+            StokesC->F[Stokes->eqn_p[cc]- Stokes->neq_mom] *= StokesC->d[Stokes->eqn_p[cc]- Stokes->neq_mom]; // Need to scale the residual here for Defect Correction formulation (F is the RHS)
         }
     }
     Nmodel->resp = resp;
     
     // Sqrt
-    //    Nmodel->resx =  sqrt(Nmodel->resx)/Area/(ndofx);
-    //    Nmodel->resz =  sqrt(Nmodel->resz)/Area/(ndofz);
-    //    Nmodel->resp =  sqrt(Nmodel->resp)/Area/(ndofp);
     Nmodel->resx =  sqrt(Nmodel->resx/ndofx);
     Nmodel->resz =  sqrt(Nmodel->resz/ndofz);
     Nmodel->resp =  sqrt(Nmodel->resp/ndofp);
     
-    int k,l;
-    
-    double *fu, *fv;
-    fu  = DoodzCalloc( sizeof(double),mesh->Nx*(mesh->Nz+1));
-    fv  = DoodzCalloc( sizeof(double),mesh->Nz*(mesh->Nx+1));
-    
-    for( l=0; l<nzvx; l++) {
-        for( k=0; k<nx; k++) {
-            cc = k + l*nx;
-            fu[cc] = 0.0;
-            if (  mesh->BCu.type[cc] == -1  || mesh->BCu.type[cc] == 2) {
-                fu[cc] = StokesA->F[Stokes->eqn_u[cc]];
-            }
-        }
-    }
-    
-    for( l=0; l<nz; l++) {
-        for( k=0; k<nxvz; k++) {
-            cc = k + l*nxvz;
-            fv[cc] = 0.0;
-            if (  mesh->BCv.type[cc] == -1  || mesh->BCv.type[cc] == 2) {
-                fv[cc] = StokesA->F[Stokes->eqn_v[cc]];
-            }
-        }
-    }
-    
-    //        Print2DArrayDouble( fu, mesh->Nx, mesh->Nz+1, 1 ); //(scaling.F/pow(scaling.L,3))
-    //        Print2DArrayDouble( fv, mesh->Nx+1, mesh->Nz, (scaling.F/pow(scaling.L,3)) );
-    //        Print2DArrayDouble( StokesC->F, mesh->Nx-1, mesh->Nz-1, (scaling.E) );
-    
-    
     if ( quiet == 0 ) {
-        //        printf("Fu = %2.6e\n", Nmodel->resx * (scaling.F/pow(scaling.L,3))); // Units of momentum
-        //        printf("Fv = %2.6e\n", Nmodel->resz * (scaling.F/pow(scaling.L,3))); // Units of momentum
-        //        printf("Fp = %2.6e\n", Nmodel->resp * (scaling.E)); // Units of velocity gradient
-        //        printf("Unscaled residuals! \n");
         printf("Fu = %2.6e\n", Nmodel->resx ); // Units of momentum
         printf("Fv = %2.6e\n", Nmodel->resz ); // Units of momentum
         printf("Fp = %2.6e\n", Nmodel->resp ); // Units of velocity gradient
@@ -778,9 +739,6 @@ void EvaluateStokesResidualDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
         printf("Solve went wrong - Nan residuals...\nExiting...\n");
         exit(122);
     }
-    
-    DoodzFree(fu);
-    DoodzFree(fv);
     
 }
 
@@ -2034,7 +1992,7 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     double gamma  = model.penalty;//1e12;//1e10*model.Nx*model.Nz;
     rsize = Stokes->neq_cont;
     Dcm0  = cholmod_speye (rsize, rsize, CHOLMOD_REAL, &c );
-    for (k=0;k<Dcm0->nzmax;k++) ((double*)Dcm0->x)[k] *= -gamma*celvol;
+    for (k=0;k<Dcm0->nzmax;k++) ((double*)Dcm0->x)[k] *= gamma*celvol;
     //    printf("-gamma*celvol = %2.2e %2.2e %2.2e %d %d\n", -gamma*celvol, model.dx*scaling.L, model.dz*scaling.L, model.Nx, model.Nz);
     
     clock_t t_omp;
@@ -2555,3 +2513,83 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
+
+void ExtractDiagonalScale(SparseMat *StokesA, SparseMat *StokesB, SparseMat *StokesC, SparseMat *StokesD ) {
+
+// Extract Diagonal of A - Viscous block
+int i, j, locNNZ;
+int I1, J1;
+    
+#pragma omp parallel for shared(StokesA) private(I1,J1, i, j, locNNZ )
+    for (i=0;i<StokesA->neq; i++) {
+        I1     = StokesA->Ic[i];
+        locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
+        for (J1=0;J1<locNNZ; J1++) {
+            j = StokesA->J[I1 + J1];
+            if (i==j) StokesA->d[i] = StokesA->A[I1 + J1];
+        }
+    }
+    // Extract Diagonal of D - Pressure block
+#pragma omp parallel for shared(StokesD) private(i)
+    for (i=0;i<StokesD->neq; i++) {
+        StokesC->d[i] = 1.0;
+    }
+    
+MinMaxArray(StokesA->d, 1, StokesA->neq, "diag. A" );
+
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+void ScaleMatrix(SparseMat *StokesA, SparseMat *StokesB, SparseMat *StokesC, SparseMat *StokesD ) {
+
+    int i, j, locNNZ;
+    int I1, J1;
+    
+// Scale A
+#pragma omp parallel for shared(StokesA) private(I1,J1, i, j, locNNZ )
+for (i=0;i<StokesA->neq; i++) {
+    
+    StokesA->b[i] *= StokesA->d[i];  // scale RHS
+    
+    I1     = StokesA->Ic[i];
+    locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
+    for (J1=0;J1<locNNZ; J1++) {
+        j = StokesA->J[I1 + J1];
+        StokesA->A[I1 + J1] *= StokesA->d[i]*StokesA->d[j];
+    }
+}
+
+// Scale B
+#pragma omp parallel for shared(StokesB,StokesA) private(I1,J1, i, j, locNNZ )
+for (i=0;i<StokesB->neq; i++) {
+    I1     = StokesB->Ic[i];
+    locNNZ = StokesB->Ic[i+1] - StokesB->Ic[i];
+    for (J1=0;J1<locNNZ; J1++) {
+        j = StokesB->J[I1 + J1];
+        StokesB->A[I1 + J1] *= StokesA->d[i]*StokesC->d[j];
+    }
+}
+
+// Scale C
+#pragma omp parallel for shared(StokesC,StokesA) private(I1,J1, i, j, locNNZ )
+for (i=0;i<StokesC->neq; i++) {
+    
+    StokesC->b[i] *= StokesC->d[i]; // scale RHS
+    
+    I1     = StokesC->Ic[i];
+    locNNZ = StokesC->Ic[i+1] - StokesC->Ic[i];
+    for (J1=0;J1<locNNZ; J1++) {
+        j = StokesC->J[I1 + J1];
+        StokesC->A[I1 + J1] *= StokesC->d[i]*StokesA->d[j];
+    }
+}
+
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+

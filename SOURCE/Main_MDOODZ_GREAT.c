@@ -510,6 +510,8 @@ int main( int nargs, char *args[] ) {
             MinMaxArrayTag( mesh.sxxd, scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "sxxd", mesh.BCp.type );
             MinMaxArrayTag( mesh.szzd, scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "szzd", mesh.BCp.type );
             
+//            printf("model.DefectCorrectionForm = %02d\n", model.DefectCorrectionForm);
+            
             // Stokes solver
             if ( model.ismechanical == 1 ) {
 
@@ -517,9 +519,21 @@ int main( int nargs, char *args[] ) {
                 if ( model.decoupled_solve == 0 ) BuildStokesOperator           ( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, 1 );
                 if ( model.decoupled_solve == 1 ) BuildStokesOperatorDecoupled  ( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, 1 );
                 if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
-
+                
+                // Diagonal scaling
+                if ( model.diag_scaling ) {
+                    if ( model.Newton          == 0 )  ExtractDiagonalScale( &StokesA, &StokesB, &StokesC, &StokesD );
+                    if ( model.Newton          == 1 )  ExtractDiagonalScale( &JacobA,  &JacobB,  &JacobC,   &JacobD );
+                    if ( model.Newton          == 1 )  ArrayEqualArray(StokesA.d, JacobA.d, StokesA.neq);
+                    if ( model.Newton          == 1 )  ArrayEqualArray(StokesC.d, JacobC.d, StokesC.neq);
+                    ScaleMatrix( &JacobA,  &JacobB,  &JacobC,  &JacobD  );
+                    ScaleMatrix( &StokesA, &StokesB, &StokesC, &StokesD );
+                }
+                
                 // If iteration > 0 ---> Evaluate non linear residual and test
                 if ( model.DefectCorrectionForm == 1 || (Nmodel.nit>0 && model.DefectCorrectionForm == 0 ) ) {
+                    
+
 
                     printf("---- Non-linear residual ----\n");
                     //                    model.free_surf_stab = 0;

@@ -841,6 +841,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->rel_tol_div     = ReadDou2( fin, "rel_tol_div", 1.0e-5 );
     model->auto_penalty    = ReadDou2( fin, "auto_penalty",    0.0  );
     model->decoupled_solve = ReadInt2( fin, "decoupled_solve",    1 );
+    model->diag_scaling    = ReadInt2( fin, "diag_scaling",       1 );
     
     // Switches
     model->ismechanical    = ReadInt2( fin, "ismechanical",    1 );
