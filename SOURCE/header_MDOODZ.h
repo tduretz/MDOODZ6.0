@@ -541,7 +541,7 @@ void AdvectFreeSurf( markers*, params, scale );
 void RotateDirectorVector( grid, markers*, params, scale* );
 void UpdateParticlePressure( grid*, scale, params, markers*, mat_prop* );
 void DetectCompressibleCells ( grid* , params*  );
-void ScaleVelocitiesRHSBack(SparseMat*, double*);
+void ScaleVelocitiesRHSBack(SparseMat*, SparseMat*, double*);
 
 
 void ExtractDiagonalScale(SparseMat *, SparseMat *, SparseMat *, SparseMat * );

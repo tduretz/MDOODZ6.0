@@ -174,18 +174,6 @@ void BuildInitialSolutions( double* u0, double* p0, grid* mesh ) {
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-
-void ScaleVelocitiesRHSBack(SparseMat * StokesA, double* x) {
-    
-    int k;
-#pragma omp parallel for shared(StokesA, x)
-    for (k=0; k<StokesA->neq;k++) {
-        x[k] *= StokesA->d[k];
-//        Stokes->b[k] /= StokesA->d[k];
-    }
-    
-}
-
 void BackToSolutionVector( cholmod_dense* u, cholmod_dense* p, double* x, grid* mesh, SparseMat* Stokes ) {
     
     int  kk;

@@ -548,7 +548,7 @@ void SolveStokesDecoupled( SparseMat *StokesA, SparseMat *StokesB, SparseMat *St
     if (model.lsolver==1) KSPStokesDecoupled   ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->b, StokesC->b, Stokes->x, model, mesh, scaling, Stokes, Stokes, StokesA, StokesB, StokesC );
     if (model.lsolver==-1) DirectStokesDecoupledComp( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->b, StokesC->b, Stokes->x, model, mesh, scaling, Stokes );
     
-    ScaleVelocitiesRHSBack(StokesA, Stokes->x);
+    ScaleVelocitiesRHSBack(StokesA, StokesD, Stokes->x);
     
     printf("** Time for direct decoupled Stokes solver = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
 }
@@ -574,8 +574,7 @@ void SolveStokesDefectDecoupled( SparseMat *StokesA, SparseMat *StokesB, SparseM
     if ( model->lsolver ==-1 ) DirectStokesDecoupledComp( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes );
     printf("** Time for direct Stokes solver = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
     
-    ScaleVelocitiesRHSBack(StokesA, dx);
-//    ScaleVelocitiesRHSBack(StokesA, Stokes->x);
+    ScaleVelocitiesRHSBack(StokesA, StokesD, dx);
     
     // Line search
     if ( model->line_search == 1 ) {
@@ -585,12 +584,6 @@ void SolveStokesDefectDecoupled( SparseMat *StokesA, SparseMat *StokesB, SparseM
     // Return updated solution vector
     if ( Nmodel->stagnated == 0) ArrayPlusScalarArray( Stokes->x, alpha, dx, Stokes->neq );
 
-    //    Nparams residuals;
-    //    ExtractSolutions( Stokes, mesh, *model );
-    //
-    //        UpdateNonLinearity( mesh, particles, topo_chain, topo, materials, model, Mmodel, Emodel, Nmodel, scaling, 0, 1.0 );
-    //    EvaluateStokesResidual( Stokes, &residuals, mesh, *model, scaling, 0 );
-    
     DoodzFree(dx);
     DoodzFree(fu);
     DoodzFree(fp);
@@ -617,21 +610,21 @@ void EvaluateStokesResidual( SparseMat *Stokes, Nparams *Nmodel, grid *mesh, par
     BuildStokesOperator( mesh, model, 0, mesh->p_in,  mesh->u_in,  mesh->v_in, Stokes, 0 );
     
     // Integrate residuals
-#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, nx, nzvx ) reduction(+:resx,ndofx)
+#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate(nx, nzvx ) reduction(+:resx,ndofx)
     for( cc=0; cc<nzvx*nx; cc++) {
         if ( mesh->BCu.type[cc] != 0 && mesh->BCu.type[cc] != 30 && mesh->BCu.type[cc] != 11 && mesh->BCu.type[cc] != 13 && mesh->BCu.type[cc] != -12) {
             ndofx++;
-            resx += Stokes->F[Stokes->eqn_u[cc]]*Stokes->F[Stokes->eqn_u[cc]];//*celvol;
+            resx += Stokes->F[Stokes->eqn_u[cc]]*Stokes->F[Stokes->eqn_u[cc]];
             mesh->ru[cc] = Stokes->F[Stokes->eqn_u[cc]];
         }
     }
     Nmodel->resx = resx;
     
-#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, nz, nxvz ) reduction(+:resz,ndofz)
+#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( nz, nxvz ) reduction(+:resz,ndofz)
     for( cc=0; cc<nz*nxvz; cc++) {
         if ( mesh->BCv.type[cc] != 0 && mesh->BCv.type[cc] != 30 && mesh->BCv.type[cc] != 11 && mesh->BCv.type[cc] != 13 && mesh->BCv.type[cc] != -12) {
             ndofz++;
-            resz += Stokes->F[Stokes->eqn_v[cc]]*Stokes->F[Stokes->eqn_v[cc]];//*celvol;
+            resz += Stokes->F[Stokes->eqn_v[cc]]*Stokes->F[Stokes->eqn_v[cc]];
             mesh->rv[cc] = Stokes->F[Stokes->eqn_v[cc]];
         }
     }
@@ -642,7 +635,7 @@ void EvaluateStokesResidual( SparseMat *Stokes, Nparams *Nmodel, grid *mesh, par
         if ( mesh->BCp.type[cc] != 0 && mesh->BCp.type[cc] != 30  && mesh->BCp.type[cc] != 31) {
             ndofp++;
             Area += celvol;
-            resp += Stokes->F[Stokes->eqn_p[cc]]*Stokes->F[Stokes->eqn_p[cc]];//*celvol;
+            resp += Stokes->F[Stokes->eqn_p[cc]]*Stokes->F[Stokes->eqn_p[cc]];
             mesh->rp[cc] = Stokes->F[Stokes->eqn_p[cc]];
         }
     }
@@ -717,9 +710,9 @@ void EvaluateStokesResidualDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
     for( cc=0; cc<ncz*ncx; cc++) {
         if ( mesh->BCp.type[cc] != 0 && mesh->BCp.type[cc] != 30  && mesh->BCp.type[cc] != 31) {
             ndofp++;
-            resp += StokesC->F[Stokes->eqn_p[cc]- Stokes->neq_mom]*StokesC->F[Stokes->eqn_p[cc]- Stokes->neq_mom];
-            mesh->rp[cc] = StokesC->F[Stokes->eqn_p[cc]- Stokes->neq_mom];
-            StokesC->F[Stokes->eqn_p[cc]- Stokes->neq_mom] *= StokesC->d[Stokes->eqn_p[cc]- Stokes->neq_mom]; // Need to scale the residual here for Defect Correction formulation (F is the RHS)
+            resp += StokesD->F[Stokes->eqn_p[cc]- Stokes->neq_mom]*StokesD->F[Stokes->eqn_p[cc]- Stokes->neq_mom];
+            mesh->rp[cc] = StokesD->F[Stokes->eqn_p[cc]- Stokes->neq_mom];
+            StokesD->F[Stokes->eqn_p[cc]- Stokes->neq_mom] *= StokesD->d[Stokes->eqn_p[cc]- Stokes->neq_mom]; // Need to scale the residual here for Defect Correction formulation (F is the RHS)
         }
     }
     Nmodel->resp = resp;
@@ -1152,7 +1145,7 @@ void DirectStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,
     cs_di  A, B, D, C, *B1, *L, *Ac, *Bc,  *Cc,  *Dc, *L1;
     DoodzFP  *u0, *p0;
     int  noisy=1;
-    int nitmax=20, k;
+    int nitmax=20, k, i;
     double mone[2] = {-1.0,0.0}, one[2] = {1.0,0.0}, zero[2] = {0.0,0.0};
     DoodzFP ru, rp;
     double maxdiv0, mindiv, maxdiv, maxdivit=0, rel_tol_div=model.rel_tol_div;
@@ -1267,7 +1260,7 @@ void DirectStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,
     //----- test - in case C' != B (assume B is deficient)
     B1 = cs_di_transpose( Cc, 1);
     
-    // minus sign
+    // minus sign: B = -C'
     for (k=0;k<B1->nzmax;k++) {
         B1->x[k] *= -1.0;
     }
@@ -1461,7 +1454,7 @@ void DirectStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,
     for( cc=0; cc<nzvx*nx; cc++) {
         if ( mesh->BCu.type[cc] != 0 && mesh->BCu.type[cc] != 30 && mesh->BCu.type[cc] != 11 && mesh->BCu.type[cc] != 13 && mesh->BCu.type[cc] != -12 ) {
             ndofx++;
-            resx += F[Stokes->eqn_u[cc]]*F[Stokes->eqn_u[cc]];//*celvol;
+            resx += F[Stokes->eqn_u[cc]]*F[Stokes->eqn_u[cc]];
         }
     }
     
@@ -1469,8 +1462,7 @@ void DirectStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,
     for( cc=0; cc<nz*nxvz; cc++) {
         if ( mesh->BCv.type[cc] != 0 && mesh->BCv.type[cc] != 30 && mesh->BCv.type[cc] != 11 && mesh->BCv.type[cc] != 13 && mesh->BCv.type[cc] != -12 ) {
             ndofz++;
-            resz += F[Stokes->eqn_v[cc]]*F[Stokes->eqn_v[cc]];//*celvol;
-            //            if ( mesh->BCv.type[cc] == 2) printf("F=%2.2e\n", F[Stokes->eqn_v[cc]]);
+            resz += F[Stokes->eqn_v[cc]]*F[Stokes->eqn_v[cc]];
         }
     }
     
@@ -1479,7 +1471,7 @@ void DirectStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,
         if ( mesh->BCp.type[cc] != 0 && mesh->BCp.type[cc] != 30  && mesh->BCp.type[cc] != 31) {
             ndofp++;
             Area += celvol;
-            resp += F[Stokes->eqn_p[cc]]*F[Stokes->eqn_p[cc]];//*celvol;
+            resp += F[Stokes->eqn_p[cc]]*F[Stokes->eqn_p[cc]];
         }
     }
     
@@ -1560,7 +1552,7 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
     cs_di  A, B, D, C, *B1, *L, *Ac, *Bc,  *Cc,  *Dc, *L1;
     DoodzFP  *u0, *p0;
     int  noisy=1;
-    int nitmax=20, k;
+    int nitmax=20, k, i;
     double mone[2] = {-1.0,0.0}, one[2] = {1.0,0.0}, zero[2] = {0.0,0.0};
     DoodzFP ru, rp;
     double maxdiv0, mindiv, maxdiv, maxdivit=0, rel_tol_div=model.rel_tol_div;
@@ -1583,40 +1575,34 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
     double gamma  = model.penalty, penalty, min_eta, max_eta, min_G, max_G;
     rsize = Stokes->neq_cont;
     Dcm0  = cholmod_speye (rsize, rsize, CHOLMOD_REAL, &c );
-    D1cm0  = cholmod_speye (rsize, rsize, CHOLMOD_REAL, &c );
+    D1cm0 = cholmod_speye (rsize, rsize, CHOLMOD_REAL, &c );
     
     MinMaxArrayVal( mesh->eta_s, mesh->Nx*mesh->Nz, &min_eta, &max_eta );
     MinMaxArrayVal( mesh->eta_s, mesh->Nx*mesh->Nz, &min_G  , &max_G   );
     penalty = min_G*model.dt *model.dt * celvol;
-    //    printf("min eta = %2.2e, max eta = %2.2e, penalty try=%2.2e, penalty =%2.2e, celvol=%2.2e...\n", min_eta, max_eta, penalty, -gamma * celvol, celvol);
     
     if (model.auto_penalty == 1) {
         printf("Trying AUTO_PENALTY...\n");
         MinMaxArrayVal( mesh->eta_s, mesh->Nx*mesh->Nz, &min_eta, &max_eta );
         MinMaxArrayVal( mesh->eta_s, mesh->Nx*mesh->Nz, &min_eta, &max_eta );
-        
-        //        penalty = -min_eta*model.dt * celvol;
-        //        penalty = -1/(min_G*model.dt *model.dt);
-        //        penalty = -min_eta/model.dt / celvol;
-        //         printf("min eta = %2.2e, max eta = %2.2e, penalty try=%2.2e, penalty try=%2.2e...\n", min_eta, max_eta, penalty, -gamma * celvol);
     }
     else {
         penalty = gamma * celvol;
         printf("Penalty factor = %2.2e\n", penalty);
     }
     
-    
-    for (k=0;k<D1cm0->nzmax;k++) {
-        if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[k] *= 0.0;
-        if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[k]  = mesh->bet[k] / model.dt * celvol;
-        //        printf("%2.2e %2.2e %2.2e %2.2e\n", mesh->bet[k]/model.dt, penalty, mesh->bet[k]*(1/scaling.S), model.dt*scaling.t);
-    }
-
-    // Here Dcm0 is the inverse of the pressure block
-    for (k=0;k<Dcm0->nzmax;k++) {
-        if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[k] *= penalty; // Should be /celvol
-        if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[k]  = model.dt/mesh->bet[k] * (1.0/celvol); // Should be /celvol
-//        printf("%2.2e %2.2e %2.2e %2.2e\n", mesh->bet[k]/model.dt, penalty, mesh->bet[k]*(1/scaling.S), model.dt*scaling.t);
+#pragma omp parallel for shared(D1cm0, D1cm, mesh, Stokes, matA, matD ) private( i ) firstprivate( model, celvol )
+    for( k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
+        if ( mesh->BCp.type[k] != 30 ) {
+            i = Stokes->eqn_p[k] - matA->neq;
+            // Here Dcm0 is the pressure block
+            if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[i] *= 0.0;
+            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i]  = mesh->bet[k] / model.dt * celvol * matD->d[k]*matD->d[k];
+            // Here Dcm0 is the inverse of the pressure block
+            if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i] *= penalty; // Should be /celvol
+            if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k]; // Should be /celvol
+//          printf("%2.2e %2.2e %2.2e %2.2e\n", mesh->bet[k]/model.dt, penalty, mesh->bet[k]*(1/scaling.S), model.dt*scaling.t);
+        }
     }
     
     clock_t t_omp;
@@ -1687,7 +1673,7 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
     //----- test - in case C' != B (assume B is deficient)
     B1 = cs_di_transpose( Cc, 1);
     
-    // minus sign
+    // minus sign: B = -C'
     for (k=0;k<B1->nzmax;k++) {
         B1->x[k] *= -1.0;
     }
@@ -1769,20 +1755,20 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
     cholmod_sdmult ( Ccm, 0, mone, one, u, fp, &c) ;   // fp -= C*u
     cholmod_sdmult ( D1cm0, 0, mone, one, p, fp, &c) ; // fp -= D*p
     
-    MinMaxArrayVal( fu->x, matA->neq, &minru0, &maxru0 );
+//    MinMaxArrayVal( fu->x, matA->neq, &minru0, &maxru0 );
     NormResidualCholmod( &ru, &rp, fu, fp, matA->neq, matC->neq, model, scaling, 0 );
     
-    MinMaxArray( u->x, 1, matA->neq, "u ini");
-    MinMaxArray( p->x, 1, matC->neq, "p ini");
-
-    MinMaxArray( bu->x, 1, matA->neq, "bu ini");
-    MinMaxArray( bp->x, 1, matC->neq, "bp ini");
-
-    MinMaxArray( Dcm->x, 1, matC->neq, "PPi");
-    MinMaxArray( D1cm0->x, 1, matC->neq, "PP");
-
-    MinMaxArray( fu->x, 1, matA->neq, "fu ini");
-    MinMaxArray( fp->x, 1, matC->neq, "fp ini");
+//    MinMaxArray( u->x, 1, matA->neq, "u ini");
+//    MinMaxArray( p->x, 1, matC->neq, "p ini");
+//
+//    MinMaxArray( bu->x, 1, matA->neq, "bu ini");
+//    MinMaxArray( bp->x, 1, matC->neq, "bp ini");
+//
+//    MinMaxArray( Dcm->x, 1, matC->neq, "PPi");
+//    MinMaxArray( D1cm0->x, 1, matC->neq, "PP");
+//
+//    MinMaxArray( fu->x, 1, matA->neq, "fu ini");
+//    MinMaxArray( fp->x, 1, matC->neq, "fp ini");
     
     for ( k=0; k<nitmax; k++) {
 
@@ -2106,7 +2092,7 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     //----- test - in case C' != B (assume B is deficient)
     B1 = cs_di_transpose( Cc, 1);
     
-    // minus sign
+    // minus sign: B = -C'
     for (k=0;k<B1->nzmax;k++) {
         B1->x[k] *= -1.0;
     }
@@ -2520,7 +2506,7 @@ void ExtractDiagonalScale(SparseMat *StokesA, SparseMat *StokesB, SparseMat *Sto
 int i, j, locNNZ;
 int I1, J1;
     
-#pragma omp parallel for shared(StokesA) private(I1,J1, i, j, locNNZ )
+#pragma omp parallel for shared(StokesA,StokesB) private(I1,J1, i, j, locNNZ )
     for (i=0;i<StokesA->neq; i++) {
         I1     = StokesA->Ic[i];
         locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
@@ -2528,14 +2514,28 @@ int I1, J1;
             j = StokesA->J[I1 + J1];
             if (i==j) StokesA->d[i] = StokesA->A[I1 + J1];
         }
+        StokesB->d[i] = StokesA->d[i] ;
     }
-    // Extract Diagonal of D - Pressure block
-#pragma omp parallel for shared(StokesD) private(i)
+//    // Extract Diagonal of D - Pressure block
+//#pragma omp parallel for shared(StokesD) private(i)
+//    for (i=0;i<StokesD->neq; i++) {
+//        StokesC->d[i] = 1.0;
+//    }
+    
+    MinMaxArray(StokesA->d, 1, StokesA->neq, "diag. A" );
+    
+#pragma omp parallel for shared(StokesC,StokesD) private(I1,J1, i, j, locNNZ )
     for (i=0;i<StokesD->neq; i++) {
-        StokesC->d[i] = 1.0;
+        I1     = StokesD->Ic[i];
+        locNNZ = StokesD->Ic[i+1] - StokesD->Ic[i];
+        for (J1=0;J1<locNNZ; J1++) {
+            j = StokesD->J[I1 + J1];
+            if (i==j) StokesD->d[i] = StokesD->A[I1 + J1];
+        }
+        StokesC->d[i] = StokesD->d[i];
     }
     
-MinMaxArray(StokesA->d, 1, StokesA->neq, "diag. A" );
+    MinMaxArray(StokesD->d, 1, StokesD->neq, "diag. D" );
 
 }
 
@@ -2565,11 +2565,14 @@ for (i=0;i<StokesA->neq; i++) {
 // Scale B
 #pragma omp parallel for shared(StokesB,StokesA) private(I1,J1, i, j, locNNZ )
 for (i=0;i<StokesB->neq; i++) {
+    
+    StokesB->b[i] *= StokesB->d[i]; // scale RHS
+    
     I1     = StokesB->Ic[i];
     locNNZ = StokesB->Ic[i+1] - StokesB->Ic[i];
     for (J1=0;J1<locNNZ; J1++) {
         j = StokesB->J[I1 + J1];
-        StokesB->A[I1 + J1] *= StokesA->d[i]*StokesC->d[j];
+        StokesB->A[I1 + J1] *= StokesA->d[i]*StokesD->d[j];
     }
 }
 
@@ -2583,9 +2586,24 @@ for (i=0;i<StokesC->neq; i++) {
     locNNZ = StokesC->Ic[i+1] - StokesC->Ic[i];
     for (J1=0;J1<locNNZ; J1++) {
         j = StokesC->J[I1 + J1];
-        StokesC->A[I1 + J1] *= StokesC->d[i]*StokesA->d[j];
+        StokesC->A[I1 + J1] *= StokesD->d[i]*StokesA->d[j];
     }
 }
+ 
+    // Scale D
+#pragma omp parallel for shared(StokesD) private(I1,J1, i, j, locNNZ )
+    for (i=0;i<StokesC->neq; i++) {
+        
+        StokesD->b[i] *= StokesD->d[i]; // scale RHS
+        
+        I1     = StokesD->Ic[i];
+        locNNZ = StokesD->Ic[i+1] - StokesD->Ic[i];
+        for (J1=0;J1<locNNZ; J1++) {
+            j = StokesD->J[I1 + J1];
+            StokesD->A[I1 + J1] *= StokesD->d[i]*StokesD->d[j];
+        }
+    }
+
 
 }
 
@@ -2593,3 +2611,23 @@ for (i=0;i<StokesC->neq; i++) {
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+void ScaleVelocitiesRHSBack(SparseMat * StokesA, SparseMat * StokesD, double* x) {
+    
+    int k;
+#pragma omp parallel for shared(StokesA, x)
+    for (k=0; k<StokesA->neq;k++) {
+        x[k] *= StokesA->d[k];
+        //        Stokes->b[k] /= StokesA->d[k];
+    }
+    
+#pragma omp parallel for shared(StokesD, x)
+    for (k=0; k<StokesD->neq;k++) {
+        x[StokesA->neq + k] *= StokesD->d[k];
+        //        Stokes->b[k] /= StokesA->d[k];
+    }
+    
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
