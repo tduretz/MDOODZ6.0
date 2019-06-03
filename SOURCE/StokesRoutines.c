@@ -1145,7 +1145,7 @@ void DirectStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,
     cs_di  A, B, D, C, *B1, *L, *Ac, *Bc,  *Cc,  *Dc, *L1;
     DoodzFP  *u0, *p0;
     int  noisy=1;
-    int nitmax=20, k, i;
+    int nitmax=20, k;
     double mone[2] = {-1.0,0.0}, one[2] = {1.0,0.0}, zero[2] = {0.0,0.0};
     DoodzFP ru, rp;
     double maxdiv0, mindiv, maxdiv, maxdivit=0, rel_tol_div=model.rel_tol_div;
@@ -1591,7 +1591,7 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
         printf("Penalty factor = %2.2e\n", penalty);
     }
     
-#pragma omp parallel for shared(D1cm0, D1cm, mesh, Stokes, matA, matD ) private( i ) firstprivate( model, celvol )
+#pragma omp parallel for shared(D1cm0, Dcm0, mesh, Stokes, matA, matD ) private( i ) firstprivate( model, celvol )
     for( k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
         if ( mesh->BCp.type[k] != 30 ) {
             i = Stokes->eqn_p[k] - matA->neq;
@@ -1955,13 +1955,13 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     //int    *P, msglvl = 0;
     DoodzFP  *u0, *p0, *F;
     int  noisy=1;
-    int k, cc; //nitmax=5
+    int k, cc, i; //nitmax=5
     double celvol = model.dx*model.dz;
     
     cholmod_common c ;
     cholmod_sparse *Lcm, *Lcml, *Acm, *Bcm, *Ccm, *Dcm; //, *A1
     cholmod_sparse *AcmJ, *BcmJ, *CcmJ;
-    cholmod_sparse *Dcm0; //, *BDC, *DC, *Lcm0, *Lcml0, *Acm0, *Bcm0, *Ccm0
+    cholmod_sparse *Dcm0, *D1cm0; //, *BDC, *DC, *Lcm0, *Lcml0, *Acm0, *Bcm0, *Ccm0
     cholmod_factor *Lfact ;
     cholmod_sparse *M, *AB, *CD, *Iu, *Ip, *D_zero; // *bs, *bus, *bps, *M0
     cholmod_dense *b, *x, *f, *val, *s, *v;
@@ -1975,11 +1975,30 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     
     // ************** D ************** //
     SuiteSparse_long rsize;
-    double gamma  = model.penalty;//1e12;//1e10*model.Nx*model.Nz;
+    double gamma  = model.penalty, penalty;//1e12;//1e10*model.Nx*model.Nz;
     rsize = Stokes->neq_cont;
     Dcm0  = cholmod_speye (rsize, rsize, CHOLMOD_REAL, &c );
-    for (k=0;k<Dcm0->nzmax;k++) ((double*)Dcm0->x)[k] *= gamma*celvol;
+    D1cm0  = cholmod_speye (rsize, rsize, CHOLMOD_REAL, &c );
+    
+    penalty = gamma*celvol;
+//    for (k=0;k<Dcm0->nzmax;k++) ((double*)Dcm0->x)[k] *= gamma*celvol;
     //    printf("-gamma*celvol = %2.2e %2.2e %2.2e %d %d\n", -gamma*celvol, model.dx*scaling.L, model.dz*scaling.L, model.Nx, model.Nz);
+    
+    
+#pragma omp parallel for shared(D1cm0, Dcm0, mesh, Stokes, matA, matD ) private( i ) firstprivate( model, celvol )
+    for( k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
+        if ( mesh->BCp.type[k] != 30 ) {
+            i = Stokes->eqn_p[k] - matA->neq;
+            // Here Dcm0 is the pressure block
+            if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[i] *= 0.0;
+            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i]  = mesh->bet[k] / model.dt * celvol * matD->d[k]*matD->d[k];
+            // Here Dcm0 is the inverse of the pressure block
+            if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i] *= penalty; // Should be /celvol
+            if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k]; // Should be /celvol
+            //          printf("%2.2e %2.2e %2.2e %2.2e\n", mesh->bet[k]/model.dt, penalty, mesh->bet[k]*(1/scaling.S), model.dt*scaling.t);
+        }
+    }
+    
     
     clock_t t_omp;
     t_omp = (double)omp_get_wtime();
@@ -2214,7 +2233,7 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     
     // 1. Concatenate M = [A,B;C,D]
     AB  = cholmod_horzcat ( AcmJ, BcmJ,   1, &c );    // AB = [A B]
-    CD  = cholmod_horzcat ( CcmJ, D_zero, 1, &c );    // CD = [C D]
+    CD  = cholmod_horzcat ( CcmJ, D1cm0, 1, &c );     // CD = [C D]
     
     // 2. Concatenate M = [A,B;C,D]
     M   = cholmod_vertcat ( AB,  CD,     1, &c );     // M  = [AB; CD]
@@ -2444,6 +2463,7 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     cholmod_free_sparse( &Ccm, &c );
     cholmod_free_sparse( &Dcm, &c );
     cholmod_free_sparse( &Dcm0, &c );
+    cholmod_free_sparse( &D1cm0, &c );
     
     cholmod_free_sparse( &AcmJ, &c );
     cholmod_free_sparse( &BcmJ, &c );
