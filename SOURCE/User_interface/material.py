@@ -6,11 +6,13 @@ Created on Wed May 29 11:53:41 2019
 @author: abauville
 """
 
-
+from model import Model
 
 class Material():
     def __init__(self,
+                 model,
          # Read general parameters
+                 ID=0,
                  rho=2700.0,
                  mu=1.0e10,
                  Cv=1.0e3,
@@ -47,39 +49,46 @@ class Material():
                  density_model=1,
                  phase_diagram=-1
                  ):
+        
+        
+        if not isinstance(model, Model):
+            raise TypeError("'model' must be an instance of Model")
+        
+        model.Nb_phases += 1 
 # Read general parameters
-         self.rho=rho
-         self.mu=mu
-         self.Cv=Cv
-         self.k=k
-         self.Qr=Qr
-         self.C=C
-         self.phi=phi
-         self.Slim=Slim
-         self.alp=alp
-         self.bet=bet
-         self.drho=drho
+        self.ID=ID
+        self.rho=rho
+        self.mu=mu
+        self.Cv=Cv
+        self.k=k
+        self.Qr=Qr
+        self.C=C
+        self.phi=phi
+        self.Slim=Slim
+        self.alp=alp
+        self.bet=bet
+        self.drho=drho
          
  # Read flow law settings
-         self.cstv=cstv
-         self.pwlv=pwlv
-         self.linv=linv
-         self.gbsv=gbsv
-         self.expv=expv
-         self.gsel=gsel
-         self.eta0=eta0
-         self.npwl=npwl
-         self.Qpwl=Qpwl
-         self.pref_pwl=pref_pwl
-         self.gs=gs
-         self.gsref=gsref
+        self.cstv=cstv
+        self.pwlv=pwlv
+        self.linv=linv
+        self.gbsv=gbsv
+        self.expv=expv
+        self.gsel=gsel
+        self.eta0=eta0
+        self.npwl=npwl
+        self.Qpwl=Qpwl
+        self.pref_pwl=pref_pwl
+        self.gs=gs
+        self.gsref=gsref
          
  # Strain softening
-         self.Ce=Ce
-         self.phie=phie
-         self.plss=plss
-         self.plse=plse
-         
+        self.Ce=Ce
+        self.phie=phie
+        self.plss=plss
+        self.plse=plse
+        
  # Density models
-         self.density_model=density_model
-         self.phase_diagram=phase_diagram
+        self.density_model=density_model
+        self.phase_diagram=phase_diagram

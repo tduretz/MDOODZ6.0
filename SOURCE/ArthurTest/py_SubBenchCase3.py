@@ -44,12 +44,7 @@ model       = Model(#**** RESTART ****#
                     #**** INPUT FILE ****#
                     input_file = "setup_r501x501_fsp40.bin",
                     
-                    #**** SCALES ****#
-                    eta = 1e4,
-                    L   = 1e-1,
-                    V   = 1e2,
-                    T   = 20,
-                     
+                   
                     #**** SPACE-TIME ****#
                     Nx      = 300,
                     Nz      = 250,
@@ -87,14 +82,17 @@ model       = Model(#**** RESTART ****#
                     
                     #**** MIN/MAX VISCOSITY ****#
                     mineta   = 1.0e0,
-                    maxeta   = 1.0e6
+                    maxeta   = 1.0e6,
+                    
+                    #**** BOUNDARY CONDITIONS ****#
+                    BC_setup_type = 1
                     )
 
 # Polygons
 # ==========================================
-OcPlate = geometry.Box([.20 , .54 , -.012 , .0], phase = 0)
-Slab    = geometry.Box([.20 , .14 , -.012 , .0], phase = 0)
-Slab.rotate(xc=0.2,angle=34.0*np.pi/180.0)
+ocPlate = geometry.Box([.20 , .54 , -.012 , .0], phase = 0)
+slab    = geometry.Box([.20 , .14 , -.012 , .0], phase = 0)
+slab.rotate(xc=0.2,angle=34.0*np.pi/180.0)
 
 
 # Topo chain
@@ -120,15 +118,16 @@ print("%.1f s" % (time.time()-tic))
 
 # ==== Assign phase from polygons
 print("Assigning phase to particles: ", end = ''); tic = time.time()
-particles.assign_phase_from_polygon(Slab)
-particles.assign_phase_from_polygon(OcPlate)
+particles.assign_phase_from_polygon(slab)
+particles.assign_phase_from_polygon(ocPlate)
 print("%.1f s" % (time.time()-tic))
 
 
 
 # Material
 # ==========================================
-Slab_mat = Material(ID   = 0,
+slab_mat = Material(model,
+                    ID   = 0,
                     rho  = 1495.00,
                     mu   = 1e10,
                     Cv   = 1050,
@@ -150,27 +149,28 @@ Slab_mat = Material(ID   = 0,
                     npwl = 3.3,
                     Qpwl = 186.5e3)
 
-Slab_mat = Material(ID   = 1,
-                    rho  = 1415.00,
-                    mu   = 1e10,
-                    Cv   = 1050,
-                    k    = 2.3,
-                    Qr   = 1.5e-6,
-                    C    = 1e70,
-                    phi  = 30,
-                    Slim = 500e9,
-                    alp  = 10.0e-6,
-                    bet  = 1e-11,
-                    drho = 0,
-                    cstv = 1,
-                    pwlv = 0,
-                    linv = 0,
-                    gbsv = 0,
-                    expv = 0,
-                    gsel = 0,
-                    eta0 = 32,
-                    npwl = 3.3,
-                    Qpwl = 186.5e3)
+mantle_mat = Material(model,
+                      ID   = 1,
+                      rho  = 1415.00,
+                      mu   = 1e10,
+                      Cv   = 1050,
+                      k    = 2.3,
+                      Qr   = 1.5e-6,
+                      C    = 1e70,
+                      phi  = 30,
+                      Slim = 500e9,
+                      alp  = 10.0e-6,
+                      bet  = 1e-11,
+                      drho = 0,
+                      cstv = 1,
+                      pwlv = 0,
+                      linv = 0,
+                      gbsv = 0,
+                      expv = 0,
+                      gsel = 0,
+                      eta0 = 32,
+                      npwl = 3.3,
+                      Qpwl = 186.5e3)
 
 
 ## Plot
@@ -191,8 +191,8 @@ else:
 
 cb=plt.colorbar()
 
-plt.fill(OcPlate.x,OcPlate.z,faceColor='none',edgeColor='r')
-plt.fill(Slab   .x,Slab   .z,faceColor='none',edgeColor='r')
+plt.fill(ocPlate.x,ocPlate.z,faceColor='none',edgeColor='r')
+plt.fill(slab   .x,slab   .z,faceColor='none',edgeColor='r')
 
 plt.axis("equal")
 plt.xlim([model.xmin,model.xmax])
@@ -202,5 +202,5 @@ print("%.1f s" % (time.time()-tic))
 
 # Write files
 # ==========================================
-write.text_file(model, scaling, particles)
+write.text_file(model, scaling, particles, (slab_mat,mantle_mat))
 write.ini_particles_file(model, particles, topo_chain)

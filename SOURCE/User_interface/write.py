@@ -31,7 +31,7 @@ def JsonFile(topo_chain,
 
 # Write files
 # ==========================================
-def text_file(model, scaling, particles, filename="input.txt"):
+def text_file(model, scaling, particles, materials_list, filename="input.txt"):
     
     particle_dict = {"Nx_part":particles.Nx_part,
                      "Nz_part":particles.Nz_part,
@@ -46,17 +46,37 @@ def text_file(model, scaling, particles, filename="input.txt"):
         mergeDict[key] = model_dict[key]
     for key in scaling_dict:
         mergeDict[key] = scaling_dict[key]
+        
+        
+    
     
 #    with open(filename, "w") as write_file:
 #        json.dump(myJsonFile, write_file , indent=4, sort_keys=True, separators=(',', ': '), ensure_ascii=False, cls=NumpyEncoder)
         
-    myFile = json.dumps(mergeDict, indent=4, sort_keys=True, separators=('', ' = '), ensure_ascii=False, cls=NumpyEncoder)
+    myFile = json.dumps(mergeDict, indent=4, separators=('', ' = '), ensure_ascii=False, cls=NumpyEncoder)
+    
+    myFile += "\n\n/**** MATERIALS ****/"
+    
+    if len(materials_list) != model.Nb_phases:
+        raise ValueError("model.Nb_phases=%i but len(materials_list)=%i. Be sure to pass all defined materials to write the file." % (model.Nb_phases, len(materials_list)))
+#    else:
+#        myFile += "\nNb_phases = %i\n" % model.Nb_phases
+        
+    for iMat in range(len(materials_list)):
+        myFile += "\n\n"
+        myFile += json.dumps(vars(materials_list[iMat]), indent=4, separators=('', ' = '), ensure_ascii=False, cls=NumpyEncoder)
+        
+    
     myFile = myFile.replace("{\n","")
     myFile = myFile.replace("\n}","")
     myFile = myFile.replace("    ","")
     myFile = myFile.replace('"','')
-    with open(filename, "w") as write_file:
-        write_file.write(myFile)
+#    
+    
+    print(myFile)
+    
+#    with open(filename, "w") as write_file:
+#        write_file.write(myFile)
 
     
       

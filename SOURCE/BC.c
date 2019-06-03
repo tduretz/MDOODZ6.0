@@ -10,7 +10,7 @@ void SetBCs_freeSlipBox( grid *mesh, params *model, scale scaling, markers* part
 
 // Set physical properties on the grid and boundary conditions
 void SetBCs_new( grid *mesh, params *model, scale scaling, markers* particles, mat_prop *materials ) {
-    switch (mesh->BC_setup_type) {
+    switch (model->BC_setup_type) {
         case 0: 
             // now points to the function SetBCs in old fashion input files
             // eventually it would point towards the function SetBCs_user in User.c

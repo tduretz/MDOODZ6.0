@@ -141,7 +141,13 @@ class Model():
                  mineta=1.0e18,
                  maxeta=1.0e24,
          # Direct solver parameters
-                 lsolver=0
+                 lsolver=0,
+                 
+         # Boundary conditions
+                 BC_setup_type=1,
+                 
+         # Materials
+                 Nb_phases = 0
                  ):
         
         
@@ -280,6 +286,13 @@ class Model():
         self.maxeta = maxeta
 # Direct solver parameters
         self.lsolver = lsolver
+    
+# Boundary conditions
+        self.BC_setup_type=BC_setup_type
+      
+# Materials
+        self.Nb_phases = Nb_phases
+        
     
         self.isScaled=False
     

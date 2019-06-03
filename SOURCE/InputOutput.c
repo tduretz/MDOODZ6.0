@@ -1002,6 +1002,9 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->gx              = ReadDou2( fin, "gx",  0.0 ) / scaling->a;
     model->gz              = ReadDou2( fin, "gz",  0.0 ) / scaling->a;
     
+
+    // Gravity
+    model->BC_setup_type    = ReadInt2( fin, "BC_setup_type",  1 );
     // Material properties
     model->Nb_phases = materials->Nb_phases =  ReadInt2( fin, "Nb_phases", 0 );
     for ( k=0; k<materials->Nb_phases; k++) {

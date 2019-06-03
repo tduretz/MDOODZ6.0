@@ -5,3 +5,4 @@ SOURCE/*.dat
 SOURCE/*.dat
 SOURCE/*.o
 SOURCE/User.c
+*.dat
