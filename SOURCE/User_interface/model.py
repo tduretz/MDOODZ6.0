@@ -248,11 +248,11 @@ class Model():
          
 # Derived quantities
         # dx, dz, dt0, p_avg: defined in C
-        self.eta_avg = eta_avg, # 0 : arithmetic mean
+        self.eta_avg = eta_avg # 0 : arithmetic mean
          
 # Gravity
-        self.gx = gx,
-        self.gz = gz,
+        self.gx = gx
+        self.gz = gz
          
 # DEFORMATION MAP PARAMETERS
 # Create deformation maps or not (default no)
