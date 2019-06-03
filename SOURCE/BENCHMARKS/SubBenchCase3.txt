@@ -27,7 +27,7 @@ dt          = 2.5e+1
 Courant     = 0.5
 
 /**** SWITCHES ****/
-penalty         = 1e14
+penalty         = 1e4
 eta_avg         = 1
 cpc             =-1
 surf_remesh     = 0

@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00008
+istep = 00025
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -24,7 +24,7 @@ T   = 1
 /**** SPACE-TIME ****/
 Nx      = 101
 Nz      = 101
-Nt      = 50
+Nt      = 25
 xmin    = -0.500000e0
 zmin    = -0.500000e0
 xmax    =  0.500000e0
@@ -32,9 +32,10 @@ zmax    =  0.500000e0
 dt      = 1e4
 Courant = 0.3
 penalty = 1e2
-lsolver =  -1
+lsolver =  1
 rel_tol_div = 1e-10
 abs_tol_div = 1e-13
+diag_scaling = 1
 
 /**** SWITCHES ****/
 ismechanical    = 1

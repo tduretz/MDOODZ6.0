@@ -1185,12 +1185,12 @@ void DirectStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,
         //         printf("min eta = %2.2e, max eta = %2.2e, penalty try=%2.2e, penalty try=%2.2e...\n", min_eta, max_eta, penalty, -gamma * celvol);
     }
     else {
-        penalty = gamma * celvol;
+        penalty = gamma / celvol;
         printf("Penalty factor = %2.2e\n", penalty);
     }
     
     // Here Dcm0 is the inverse of the pressure block
-    for (k=0;k<Dcm0->nzmax;k++) ((double*)Dcm0->x)[k] *= penalty /celvol; // Should be /celvol
+    for (k=0;k<Dcm0->nzmax;k++) ((double*)Dcm0->x)[k] *= penalty; // Should be /celvol
     
     clock_t t_omp;
     t_omp = (double)omp_get_wtime();
@@ -1212,7 +1212,7 @@ void DirectStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,
     ArrayEqualArrayI( A.p, matA->J,  A.nzmax );
     ArrayEqualArray(  A.x, matA->A,  A.nzmax );
     Ac  = cs_di_compress( &A );
-    cs_droptol( Ac, 1.0e-18 );
+//    cs_droptol( Ac, 1.0e-18 );
     
     // Prepare B
     B.nzmax = matB->nnz;
@@ -1249,7 +1249,7 @@ void DirectStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,
     D.i     = DoodzCalloc( Stokes->neq_cont, sizeof(int) );
     D.x     = DoodzCalloc( Stokes->neq_cont, sizeof(double) );
     copy_cholmod_to_cs_matrix( Dcm0, &D );
-    cholmod_free_sparse( &Dcm0, &c );
+//    cholmod_free_sparse( &Dcm0, &c );
     Dc  = cs_di_compress( &D );
     
     // --------------- Schur complement --------------- //
@@ -1450,7 +1450,7 @@ void DirectStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,
     BackToSolutionVector( fu, fp, F, mesh, Stokes );
     
     // Integrate residuals
-#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, nx, nzvx ) reduction(+:resx)
+#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, nx, nzvx ) reduction(+:resx,ndofx)
     for( cc=0; cc<nzvx*nx; cc++) {
         if ( mesh->BCu.type[cc] != 0 && mesh->BCu.type[cc] != 30 && mesh->BCu.type[cc] != 11 && mesh->BCu.type[cc] != 13 && mesh->BCu.type[cc] != -12 ) {
             ndofx++;
@@ -1458,7 +1458,7 @@ void DirectStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,
         }
     }
     
-#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, nz, nxvz ) reduction(+:resz)
+#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, nz, nxvz ) reduction(+:resz,ndofz)
     for( cc=0; cc<nz*nxvz; cc++) {
         if ( mesh->BCv.type[cc] != 0 && mesh->BCv.type[cc] != 30 && mesh->BCv.type[cc] != 11 && mesh->BCv.type[cc] != 13 && mesh->BCv.type[cc] != -12 ) {
             ndofz++;
@@ -1466,7 +1466,7 @@ void DirectStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,
         }
     }
     
-#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, ncz, ncx ) reduction(+:resp)
+#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, ncz, ncx ) reduction(+:resp,ndofp,Area)
     for( cc=0; cc<ncz*ncx; cc++) {
         if ( mesh->BCp.type[cc] != 0 && mesh->BCp.type[cc] != 30  && mesh->BCp.type[cc] != 31) {
             ndofp++;
@@ -1587,7 +1587,7 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
         MinMaxArrayVal( mesh->eta_s, mesh->Nx*mesh->Nz, &min_eta, &max_eta );
     }
     else {
-        penalty = gamma * celvol;
+        penalty = gamma / celvol;
         printf("Penalty factor = %2.2e\n", penalty);
     }
     
@@ -1611,7 +1611,7 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
     // Build initial solution vector
     u0 = DoodzCalloc( matA->neq, sizeof(double) );
     p0 = DoodzCalloc( matC->neq, sizeof(double) );
-//    BuildInitialSolutions( u0, p0, mesh );
+    BuildInitialSolutions( u0, p0, mesh );
     
     // Prepare A
     A.nzmax = matA->nnz;
@@ -1625,7 +1625,7 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
     ArrayEqualArrayI( A.p, matA->J,  A.nzmax );
     ArrayEqualArray(  A.x, matA->A,  A.nzmax );
     Ac  = cs_di_compress( &A );
-    cs_droptol( Ac, 1.0e-18 );
+//    cs_droptol( Ac, 1.0e-18 );
     
     // Prepare B
     B.nzmax = matB->nnz;
@@ -1662,7 +1662,7 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
     D.i     = DoodzCalloc( Stokes->neq_cont, sizeof(int) );
     D.x     = DoodzCalloc( Stokes->neq_cont, sizeof(double) );
     copy_cholmod_to_cs_matrix( Dcm0, &D );
-    cholmod_free_sparse( &Dcm0, &c );
+//    cholmod_free_sparse( &Dcm0, &c );
     Dc  = cs_di_compress( &D );
     
     // --------------- Schur complement --------------- //
@@ -1725,6 +1725,7 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
         
     }
     
+//            MinMaxArray( Lcml->x, 1,, "Lcml");
     t_omp = (double)omp_get_wtime();
     cholmod_factorize( Lcml, Lfact, &c);
     printf("** Time for Cholesky factorization = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
@@ -1850,7 +1851,7 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
     BackToSolutionVector( fu, fp, F, mesh, Stokes );
     
     // Integrate residuals
-#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, nx, nzvx ) reduction(+:resx)
+#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, nx, nzvx ) reduction(+:resx,ndofx)
     for( cc=0; cc<nzvx*nx; cc++) {
         if ( mesh->BCu.type[cc] != 0 && mesh->BCu.type[cc] != 30 && mesh->BCu.type[cc] != 11 && mesh->BCu.type[cc] != 13 && mesh->BCu.type[cc] != -12 ) {
             ndofx++;
@@ -1858,7 +1859,7 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
         }
     }
     
-#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, nz, nxvz ) reduction(+:resz)
+#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, nz, nxvz ) reduction(+:resz,ndofz)
     for( cc=0; cc<nz*nxvz; cc++) {
         if ( mesh->BCv.type[cc] != 0 && mesh->BCv.type[cc] != 30 && mesh->BCv.type[cc] != 11 && mesh->BCv.type[cc] != 13 && mesh->BCv.type[cc] != -12 ) {
             ndofz++;
@@ -1867,7 +1868,7 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
         }
     }
     
-#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, ncz, ncx ) reduction(+:resp)
+#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, ncz, ncx ) reduction(+:resp,ndofp,Area)
     for( cc=0; cc<ncz*ncx; cc++) {
         if ( mesh->BCp.type[cc] != 0 && mesh->BCp.type[cc] != 30  && mesh->BCp.type[cc] != 31) {
             ndofp++;
@@ -1980,7 +1981,8 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     Dcm0  = cholmod_speye (rsize, rsize, CHOLMOD_REAL, &c );
     D1cm0  = cholmod_speye (rsize, rsize, CHOLMOD_REAL, &c );
     
-    penalty = gamma*celvol;
+    penalty = gamma / celvol;
+    printf("Penalty factor = %2.2e\n", penalty);
 //    for (k=0;k<Dcm0->nzmax;k++) ((double*)Dcm0->x)[k] *= gamma*celvol;
     //    printf("-gamma*celvol = %2.2e %2.2e %2.2e %d %d\n", -gamma*celvol, model.dx*scaling.L, model.dz*scaling.L, model.Nx, model.Nz);
     
@@ -2009,6 +2011,8 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     p0 = DoodzCalloc( matC->neq, sizeof(double) );
     BuildInitialSolutions( u0, p0, mesh );
     
+    //------------------------------------------------------------------------------------------------//
+    
     // Prepare A
     A.nzmax = matA->nnz;
     A.nz    = matA->nnz;
@@ -2022,7 +2026,48 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     ArrayEqualArrayI( A.p, matA->J,  A.nzmax );
     ArrayEqualArray(  A.x, matA->A,  A.nzmax );
     Ac  = cs_di_compress( &A );
-    cs_droptol( Ac, 1.0e-15 );
+//    cs_droptol( Ac, 1.0e-15 );
+
+    // Prepare B
+    B.nzmax = matB->nnz;
+    B.nz    = matB->nnz;
+    B.m     = matB->neq;
+    B.n     = matC->neq;
+    B.p     = DoodzCalloc( B.nzmax, sizeof(int) );
+    B.i     = DoodzCalloc( B.nzmax, sizeof(int) );
+    B.x     = DoodzCalloc( B.nzmax, sizeof(double) );
+    DecompressCSRtoTriplets( B.m, matB->Ic, B.i );
+    ArrayEqualArrayI( B.p, matB->J,  B.nzmax );
+    ArrayEqualArray(  B.x, matB->A,  B.nzmax );
+    Bc  = cs_di_compress( &B );
+
+    // Prepare C
+    C.nzmax = matC->nnz;
+    C.nz    = matC->nnz;
+    C.m     = matC->neq;
+    C.n     = matB->neq;
+    C.p     = DoodzCalloc( C.nzmax, sizeof(int) );
+    C.i     = DoodzCalloc( C.nzmax, sizeof(int) );
+    C.x     = DoodzCalloc( C.nzmax, sizeof(double) );
+    DecompressCSRtoTriplets( C.m, matC->Ic, C.i );
+    ArrayEqualArrayI( C.p, matC->J,  C.nzmax );
+    ArrayEqualArray(  C.x, matC->A,  C.nzmax );
+    Cc  = cs_di_compress( &C );
+
+    // Prepare D
+    D.nzmax = Stokes->neq_cont;
+    D.nz    = Stokes->neq_cont;
+    D.m     = matD->neq;
+    D.n     = matD->neq;
+    D.p     = DoodzCalloc( D.nzmax+1, sizeof(int) );
+    D.i     = DoodzCalloc( D.nzmax, sizeof(int) );
+    D.x     = DoodzCalloc( D.nzmax, sizeof(double) );
+    copy_cholmod_to_cs_matrix( Dcm0, &D );
+    //    cholmod_free_sparse( &Dcm0, &c );
+    Dc  = cs_di_compress( &D );
+
+    
+    //------------------------------------------------------------------------------------------------//
     
     // Prepare AJ
     AJ.nzmax = JmatA->nnz;
@@ -2037,20 +2082,7 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     ArrayEqualArrayI( AJ.p, JmatA->J,  AJ.nzmax );
     ArrayEqualArray(  AJ.x, JmatA->A,  AJ.nzmax );
     AJc  = cs_di_compress( &AJ );
-    cs_droptol( AJc, 1.0e-15 );
-    
-    // Prepare B
-    B.nzmax = matB->nnz;
-    B.nz    = matB->nnz;
-    B.m     = matB->neq;
-    B.n     = matC->neq;
-    B.p     = DoodzCalloc( B.nzmax, sizeof(int) );
-    B.i     = DoodzCalloc( B.nzmax, sizeof(int) );
-    B.x     = DoodzCalloc( B.nzmax, sizeof(double) );
-    DecompressCSRtoTriplets( B.m, matB->Ic, B.i );
-    ArrayEqualArrayI( B.p, matB->J,  B.nzmax );
-    ArrayEqualArray(  B.x, matB->A,  B.nzmax );
-    Bc  = cs_di_compress( &B );
+//    cs_droptol( AJc, 1.0e-15 );
     
     // Prepare BJ
     BJ.nzmax = JmatB->nnz;
@@ -2065,19 +2097,6 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     ArrayEqualArray(  BJ.x, JmatB->A,  BJ.nzmax );
     BJc  = cs_di_compress( &BJ );
     
-    // Prepare C
-    C.nzmax = matC->nnz;
-    C.nz    = matC->nnz;
-    C.m     = matC->neq;
-    C.n     = matB->neq;
-    C.p     = DoodzCalloc( C.nzmax, sizeof(int) );
-    C.i     = DoodzCalloc( C.nzmax, sizeof(int) );
-    C.x     = DoodzCalloc( C.nzmax, sizeof(double) );
-    DecompressCSRtoTriplets( C.m, matC->Ic, C.i );
-    ArrayEqualArrayI( C.p, matC->J,  C.nzmax );
-    ArrayEqualArray(  C.x, matC->A,  C.nzmax );
-    Cc  = cs_di_compress( &C );
-    
     // Prepare CJ
     CJ.nzmax = JmatC->nnz;
     CJ.nz    = JmatC->nnz;
@@ -2091,17 +2110,7 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     ArrayEqualArray(  CJ.x, JmatC->A,  CJ.nzmax );
     CJc  = cs_di_compress( &CJ );
     
-    // Prepare D
-    D.nzmax = Stokes->neq_cont;
-    D.nz    = Stokes->neq_cont;
-    D.m     = matD->neq;
-    D.n     = matD->neq;
-    D.p     = DoodzCalloc( D.nzmax+1, sizeof(int) );
-    D.i     = DoodzCalloc( D.nzmax, sizeof(int) );
-    D.x     = DoodzCalloc( D.nzmax, sizeof(double) );
-    copy_cholmod_to_cs_matrix( Dcm0, &D );
-    cholmod_free_sparse( &Dcm0, &c );
-    Dc  = cs_di_compress( &D );
+    //------------------------------------------------------------------------------------------------//
     
     // --------------- Schur complement --------------- //
     
@@ -2194,7 +2203,7 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     int max_it  = 1000;
     int ncycles = 0;
     int its     = 0, i1, i2, success=0;
-    double eps  = 1.0e-9, norm_r, rnorm0, fact, r_dot_v, nrm;//, epsa  = 1e-8;
+    double eps  = 1.0e-10, norm_r, rnorm0, fact, r_dot_v, nrm;
     double **VV, **SS;
     b      = cholmod_zeros (N, 1, CHOLMOD_REAL, &c );
     x      = cholmod_zeros (N, 1, CHOLMOD_REAL, &c );
@@ -2379,32 +2388,29 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     BackToSolutionVector( fu, fp, F, mesh, Stokes );
     
     // Integrate residuals
-    resx = 0.0;
-#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, nx, nzvx ) reduction(+:resx)
+#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, nx, nzvx ) reduction(+:resx,ndofx)
     for( cc=0; cc<nzvx*nx; cc++) {
-        if ( mesh->BCu.type[cc] != 0 && mesh->BCu.type[cc] != 30 && mesh->BCu.type[cc] != 11 && mesh->BCu.type[cc] != 13) {
+        if ( mesh->BCu.type[cc] != 0 && mesh->BCu.type[cc] != 30 && mesh->BCu.type[cc] != 11 && mesh->BCu.type[cc] != 13 && mesh->BCu.type[cc] != -12 ) {
             ndofx++;
-            resx += F[Stokes->eqn_u[cc]]*F[Stokes->eqn_u[cc]]*celvol;
+            resx += F[Stokes->eqn_u[cc]]*F[Stokes->eqn_u[cc]];//*celvol;
         }
     }
     
-    resz = 0.0;
-#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, nz, nxvz ) reduction(+:resz)
+#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, nz, nxvz ) reduction(+:resz,ndofz)
     for( cc=0; cc<nz*nxvz; cc++) {
-        if ( mesh->BCv.type[cc] != 0 && mesh->BCv.type[cc] != 30 && mesh->BCv.type[cc] != 11 && mesh->BCv.type[cc] != 13) {
+        if ( mesh->BCv.type[cc] != 0 && mesh->BCv.type[cc] != 30 && mesh->BCv.type[cc] != 11 && mesh->BCv.type[cc] != 13 && mesh->BCv.type[cc] != -12 ) {
             ndofz++;
-            resz += F[Stokes->eqn_v[cc]]*F[Stokes->eqn_v[cc]]*celvol;
+            resz += F[Stokes->eqn_v[cc]]*F[Stokes->eqn_v[cc]];//*celvol;
             //            if ( mesh->BCv.type[cc] == 2) printf("F=%2.2e\n", F[Stokes->eqn_v[cc]]);
         }
     }
     
-    resp = 0.0;
-#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, ncz, ncx ) reduction(+:resp)
+#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, ncz, ncx ) reduction(+:resp,ndofp,Area)
     for( cc=0; cc<ncz*ncx; cc++) {
         if ( mesh->BCp.type[cc] != 0 && mesh->BCp.type[cc] != 30  && mesh->BCp.type[cc] != 31) {
             ndofp++;
             Area += celvol;
-            resp += F[Stokes->eqn_p[cc]]*F[Stokes->eqn_p[cc]]*celvol;
+            resp += F[Stokes->eqn_p[cc]]*F[Stokes->eqn_p[cc]];//*celvol;
         }
     }
     
