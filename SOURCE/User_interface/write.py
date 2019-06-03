@@ -18,7 +18,7 @@ class NumpyEncoder(json.JSONEncoder):
 
 # File writing functions 
 # =============================================================================
-def writeJsonFile(topo_chain,
+def JsonFile(topo_chain,
                   filename="input.json"):
     
     myJsonFile = dict(TopoChain = vars(topo_chain))   
@@ -29,9 +29,38 @@ def writeJsonFile(topo_chain,
 
 
 
+# Write files
+# ==========================================
+def text_file(model, scaling, particles, filename="input.txt"):
+    
+    particle_dict = {"Nx_part":particles.Nx_part,
+                     "Nz_part":particles.Nz_part,
+                     "min_part_cell":particles.min_part_cell}
+    model_dict = vars(model)
+    scaling_dict = vars(scaling)
+    
+    mergeDict = {}
+    for key in particle_dict:
+        mergeDict[key] = particle_dict[key]
+    for key in model_dict:
+        mergeDict[key] = model_dict[key]
+    for key in scaling_dict:
+        mergeDict[key] = scaling_dict[key]
+    
+#    with open(filename, "w") as write_file:
+#        json.dump(myJsonFile, write_file , indent=4, sort_keys=True, separators=(',', ': '), ensure_ascii=False, cls=NumpyEncoder)
+        
+    myFile = json.dumps(mergeDict, indent=4, sort_keys=True, separators=('', ' = '), ensure_ascii=False, cls=NumpyEncoder)
+    myFile = myFile.replace("{\n","")
+    myFile = myFile.replace("\n}","")
+    myFile = myFile.replace("    ","")
+    myFile = myFile.replace('"','')
+    with open(filename, "w") as write_file:
+        write_file.write(myFile)
+
     
       
-def writeIniParticles(model,topo_chain, particles, filename = "IniParticles.dat"):
+def ini_particles_file(model, particles, topo_chain=None, filename = "IniParticles.dat"):
 
     if model.isScaled:
         raise ValueError("the model should not be scaled to write the input file. (This error raising should disappear when development is mature)")

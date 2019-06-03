@@ -33,17 +33,61 @@ scaling     = Scaling(eta = 1e4,
 
 # Model
 # ==========================================
-
-model       = Model(Nx      = round(300 *1.0),
-                    Nz      = round(250 *1.0),
-                    Nt      = 1,
+model       = Model(#**** RESTART ****#
+                    istep = 2,
+                    irestart = 0,
+                    
+                    #**** OUTPUT FILES ****#
+                    writer = 1,
+                    writer_step = 2,
+                    
+                    #**** INPUT FILE ****#
+                    input_file = "setup_r501x501_fsp40.bin",
+                    
+                    #**** SCALES ****#
+                    eta = 1e4,
+                    L   = 1e-1,
+                    V   = 1e2,
+                    T   = 20,
+                     
+                    #**** SPACE-TIME ****#
+                    Nx      = 300,
+                    Nz      = 250,
+                    Nt      = 2,
                     xmin    =  0.000000e0,
                     zmin    = -11.50000000e-2,
                     xmax    =  54.000000e-2,
                     zmax    =  0.8000000e-2,
-                    dt      = 2.5e+1,
-                    Courant = 0.5,
-                    free_surf=1
+                    dt          = 2.5e+1,
+                    Courant     = 0.5,
+                    
+                    #**** SWITCHES ****#
+                    penalty         = 1e14,
+                    eta_avg         = 1,
+                    cpc             =-1,
+                    surf_remesh     = 0,
+                    abs_tol_div     = 1e-11,
+                    rel_tol_div     = 1e-11,
+                    decoupled_solve = 1,
+                    ismechanical    = 1,
+                    RK              = 4,
+                    free_surf       = 1,
+                    free_surf_stab  = 0.15,
+                    
+                    #**** SETUP DEPENDANT ****#
+                    EpsBG           = 0, #Background strain rate
+                    user0           = 0, #Activate open BC EAST side
+                    user1           = 0, 
+                    user2           = 1, #Activate slab dip 
+                    user3           = 0,
+                    
+                    #**** GRAVITY ****#
+                    gx = 0.0000,
+                    gz = -9.81,
+                    
+                    #**** MIN/MAX VISCOSITY ****#
+                    mineta   = 1.0e0,
+                    maxeta   = 1.0e6
                     )
 
 # Polygons
@@ -51,13 +95,6 @@ model       = Model(Nx      = round(300 *1.0),
 OcPlate = geometry.Box([.20 , .54 , -.012 , .0], phase = 0)
 Slab    = geometry.Box([.20 , .14 , -.012 , .0], phase = 0)
 Slab.rotate(xc=0.2,angle=34.0*np.pi/180.0)
-
-
-# Scale everything
-# ==========================================
-#model.scale(scaling)
-#Slab.scale(scaling)
-#OcPlate.scale(scaling)
 
 
 # Topo chain
@@ -86,6 +123,54 @@ print("Assigning phase to particles: ", end = ''); tic = time.time()
 particles.assign_phase_from_polygon(Slab)
 particles.assign_phase_from_polygon(OcPlate)
 print("%.1f s" % (time.time()-tic))
+
+
+
+# Material
+# ==========================================
+Slab_mat = Material(ID   = 0,
+                    rho  = 1495.00,
+                    mu   = 1e10,
+                    Cv   = 1050,
+                    k    = 2.3,
+                    Qr   = 1.5e-6,
+                    C    = 1e70,
+                    phi  = 30,
+                    Slim = 500e9,
+                    alp  = 10.0e-6,
+                    bet  = 1e-11,
+                    drho = 0,
+                    cstv = 1,
+                    pwlv = 0,
+                    linv = 0,
+                    gbsv = 0,
+                    expv = 0,
+                    gsel = 0,
+                    eta0 = 3.5e5,
+                    npwl = 3.3,
+                    Qpwl = 186.5e3)
+
+Slab_mat = Material(ID   = 1,
+                    rho  = 1415.00,
+                    mu   = 1e10,
+                    Cv   = 1050,
+                    k    = 2.3,
+                    Qr   = 1.5e-6,
+                    C    = 1e70,
+                    phi  = 30,
+                    Slim = 500e9,
+                    alp  = 10.0e-6,
+                    bet  = 1e-11,
+                    drho = 0,
+                    cstv = 1,
+                    pwlv = 0,
+                    linv = 0,
+                    gbsv = 0,
+                    expv = 0,
+                    gsel = 0,
+                    eta0 = 32,
+                    npwl = 3.3,
+                    Qpwl = 186.5e3)
 
 
 ## Plot
@@ -117,6 +202,5 @@ print("%.1f s" % (time.time()-tic))
 
 # Write files
 # ==========================================
-#print("Writing particle file: ", end = ''); tic = time.time()
-#Write.writeIniParticles(model,topo_chain, particles)
-#print("%.1f s" % (time.time()-tic))
+write.text_file(model, scaling, particles)
+write.ini_particles_file(model, particles, topo_chain)
