@@ -1,6 +1,6 @@
 **** RESTART ****/
-istep =00300
-irestart = 1
+istep =00050
+irestart = 0
 
 /**** OUTPUT FILES ****/
 writer = 1
@@ -12,7 +12,7 @@ writer_debug   = 0
 input_file = setup_r201x201_F40_P20_B20.bin
 
 /**** SCALES ****/
-eta = 1e-2
+eta = 1e0
 L   = 1e0
 V   = 1e1
 T   = 1

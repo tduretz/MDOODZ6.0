@@ -170,6 +170,12 @@ struct _grid {
     double *eII_pwl_s, *A2_pwl_s;
     double *exx_el, *ezz_el, *exz_el, *exx_diss, *ezz_diss, *exz_diss;
     int   *comp_cells;
+    // For Newton iterations
+    double *D11_n, *D12_n, *D13_n, *D14_n;
+    double *D21_n, *D22_n, *D23_n, *D24_n;
+    double *D31_s, *D32_s, *D33_s, *D34_s;
+    double *detadexx_n, *detadezz_n, *detadgxz_n, *detadp_n;
+    double *detadexx_s, *detadezz_s, *detadgxz_s, *detadp_s;
     
     // To remove
     double *exx_pwl_n, *exz_pwl_n, *exx_pwl_s, *exz_pwl_s, *exx_pl, *exz_pl;
@@ -542,8 +548,8 @@ void RotateDirectorVector( grid, markers*, params, scale* );
 void UpdateParticlePressure( grid*, scale, params, markers*, mat_prop* );
 void DetectCompressibleCells ( grid* , params*  );
 void ScaleVelocitiesRHSBack(SparseMat*, SparseMat*, double*);
-
-
 void ExtractDiagonalScale(SparseMat *, SparseMat *, SparseMat *, SparseMat * );
-
 void ScaleMatrix(SparseMat *, SparseMat *, SparseMat *, SparseMat * ) ;
+
+void RheologicalOperators( grid*, params*, scale*, int );
+void ComputeViscosityDerivatives( grid*, markers*, markers*, surface*, mat_prop, params*, Nparams*, scale, int, double );

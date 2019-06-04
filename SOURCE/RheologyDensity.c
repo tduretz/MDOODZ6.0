@@ -38,6 +38,44 @@
 #define printf(...) printf("")
 #endif
 
+void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Newton ) {
+    
+    int Nx, Nz, Ncx, Ncz, k;
+    Nx = mesh->Nx; Ncx = Nx-1;
+    Nz = mesh->Nz; Ncz = Nz-1;
+    
+    if (Newton == 0) {
+ 
+    // Loop on cell centers
+#pragma omp parallel for shared( mesh )
+    for (k=0; k<Ncx*Ncz; k++) {
+        
+        if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
+            mesh->D11_n[k] = 2*mesh->eta_n[k];
+            mesh->D22_n[k] = 2*mesh->eta_n[k];
+        }
+        else {
+            mesh->D11_n[k] = 0.0;
+            mesh->D22_n[k] = 0.0;
+        }
+    }
+    
+    // Loop on cell vertices
+#pragma omp parallel for shared( mesh )
+    for (k=0; k<Nx*Nz; k++) {
+        
+        if ( mesh->BCg.type[k] != 30 ) {
+            mesh->D33_s[k] = mesh->eta_s[k];
+        }
+        else {
+            mesh->D33_s[k] = 0.0;
+        }
+    }
+        
+    }
+    
+}
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/

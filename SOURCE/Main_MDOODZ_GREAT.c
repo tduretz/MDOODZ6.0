@@ -500,17 +500,18 @@ int main( int nargs, char *args[] ) {
             printf("******************************************\n");
             
             // Non-Linearity
-            UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 ); //!!!!!!!!!!!!
-
+            UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
+            
+            // Compute viscosity derivatives
+//            if ( model.Newton          == 1 ) ComputeViscosityDerivatives( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
+            
+            // Fill up the rheological matrices arrays
+            RheologicalOperators( &mesh, &model, &scaling, 0 );
+            
             MinMaxArrayTag( mesh.eta_phys_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_phys_n", mesh.BCp.type );
             MinMaxArrayTag( mesh.eta_phys_s, scaling.eta, (mesh.Nx-0)*(mesh.Nz-0), "eta_phys_s", mesh.BCg.type );
             MinMaxArrayTag( mesh.eta_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),   "eta_eff_n", mesh.BCp.type );
             MinMaxArrayTag( mesh.eta_s, scaling.eta, (mesh.Nx)*(mesh.Nz),       "eta_eff_s", mesh.BCg.type );
-            
-            MinMaxArrayTag( mesh.sxxd, scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "sxxd", mesh.BCp.type );
-            MinMaxArrayTag( mesh.szzd, scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "szzd", mesh.BCp.type );
-            
-//            printf("model.DefectCorrectionForm = %02d\n", model.DefectCorrectionForm);
             
             // Stokes solver
             if ( model.ismechanical == 1 ) {

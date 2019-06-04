@@ -524,7 +524,34 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->C_n        = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->phi_n      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     
-    mesh->rhoUe0    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->rhoUe0     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    
+    // For Newton iterations
+    mesh->D11_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->D12_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->D13_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->D14_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    
+    mesh->D21_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->D22_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->D23_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->D24_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    
+    mesh->D31_s     = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+    mesh->D32_s     = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+    mesh->D33_s     = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+    mesh->D34_s     = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+                                                        
+    mesh->detadexx_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->detadezz_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->detadgxz_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->detadp_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    
+    mesh->detadexx_s  = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+    mesh->detadezz_s  = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+    mesh->detadgxz_s  = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+    mesh->detadp_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+    
     
     printf("Memory succesfully allocated : \nDiantre, que c'est bon!\n");
 
@@ -747,6 +774,29 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->phi_n);
     
     DoodzFree(mesh->rhoUe0);
+    
+    // For Newton iterations
+    DoodzFree(mesh->D11_n);
+    DoodzFree(mesh->D12_n);
+    DoodzFree(mesh->D13_n);
+    DoodzFree(mesh->D14_n);
+    
+    DoodzFree(mesh->D21_n);
+    DoodzFree(mesh->D22_n);
+    DoodzFree(mesh->D23_n);
+    DoodzFree(mesh->D24_n);
+    
+    DoodzFree(mesh->detadexx_n);
+    DoodzFree(mesh->detadezz_n);
+    DoodzFree(mesh->detadgxz_n);
+    DoodzFree(mesh->detadp_n);
+    
+    DoodzFree(mesh->detadexx_s);
+    DoodzFree(mesh->detadezz_s);
+    DoodzFree(mesh->detadgxz_s);
+    DoodzFree(mesh->detadp_s);
+    
+     DoodzFree(mesh->D34_s);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
