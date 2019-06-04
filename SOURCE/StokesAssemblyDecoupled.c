@@ -333,48 +333,50 @@ void Xmomentum_WestPeriodicDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
     //    double rhoVx = 0.5*(mesh->rho_app_s[c1] + mesh->rho_app_s[c1-nx]);
     double uS=0.0, uN=0.0, uW=0.0, uE=0.0, uC=0.0, vSW=0.0, vSE=0.0, vNW=0.0, vNE=0.0, pE=0.0, pW=0.0;
     
+    double inE=0.0, inW=0.0, inSu=0.0, inSv=0.0, inNu=0.0, inNv=0.0;
+    
     // dsxx/dx
-    if ( mesh->BCu.type[iVxW] != 30 && mesh->BCu.type[c1+1] != 30 ) {
-        uW  =  2.0*one_dx_dx * etaW;//         - comp*2.0/3.0*one_dx_dx * etaW;
-        uC  = -2.0*one_dx_dx * (etaE + etaW);//  + comp*2.0/3.0*one_dx_dx * etaE + comp*2.0/3.0*one_dx_dx * etaW;
-        uE  =  2.0*one_dx_dx * etaE;//         - comp*2.0/3.0*one_dx_dx * etaE;
-    }
-    if ( mesh->BCu.type[iVxW] == 30 && mesh->BCu.type[c1+1] != 30 ) {
-        uC  = -2.0*one_dx_dx * (etaE) + comp*2.0/3.0*one_dx_dx * etaE;
-        uE  =  2.0*one_dx_dx * etaE - comp*2.0/3.0*one_dx_dx * etaE;
-    }
-    if ( mesh->BCu.type[iVxW] != 30 && mesh->BCu.type[c1+1] == 30 ) {
-        uW  =  2.0*one_dx_dx * etaW - comp*2.0/3.0*one_dx_dx * etaW;
-        uC  = -2.0*one_dx_dx * (etaW) + comp*2.0/3.0*one_dx_dx * etaW;
-    }
+    if ( mesh->BCu.type[iVxW] != 30 && mesh->BCu.type[c1+1] != 30 ) { inW = 1.0; inE = 1.0; }
+    if ( mesh->BCu.type[iVxW] == 30 && mesh->BCu.type[c1+1] != 30 ) inE = 1.0;
+    if ( mesh->BCu.type[iVxW] != 30 && mesh->BCu.type[c1+1] == 30 ) inW = 1.0;
     
     // eta*dvx/dz
     if ( mesh->BCu.type[c1-nx] != 30 && mesh->BCu.type[c1+nx] != 30 ) {
-        if ( mesh->BCu.type[c1-nx] != 13 ) {uS   =  one_dz_dz * etaS; uC  +=  -one_dz_dz * etaS;}
-        if ( mesh->BCu.type[c1+nx] != 13 ) {uN   =  one_dz_dz * etaN; uC  +=  -one_dz_dz * etaN;}
+        if ( mesh->BCu.type[c1-nx] != 13 ) inSu = 1.0;
+        if ( mesh->BCu.type[c1+nx] != 13 ) inNu = 1.0;
     }
     if ( mesh->BCu.type[c1-nx] == 30 && mesh->BCu.type[c1+nx] != 30 ) {
-        if ( mesh->BCu.type[c1+nx] != 13 ) uC  +=  -one_dz_dz * etaN;
-        if ( mesh->BCu.type[c1+nx] != 13 ) uN   =   one_dz_dz * etaN;
+        if ( mesh->BCu.type[c1+nx] != 13 ) inNu = 1.0;
     }
     if ( mesh->BCu.type[c1-nx] != 30 && mesh->BCu.type[c1+nx] == 30 ) {
-        if ( mesh->BCu.type[c1-nx] != 13 ) uC  +=  -one_dz_dz * etaS;
-        if ( mesh->BCu.type[c1-nx] != 13 ) uS   =   one_dz_dz * etaS;
+        if ( mesh->BCu.type[c1-nx] != 13 ) inSu = 1.0;
     }
-    
-    if ( mesh->BCu.type[c1-nx] == 11 ) uC  +=  -one_dz_dz * etaS;
-    if ( mesh->BCu.type[c1+nx] == 11 ) uC  +=  -one_dz_dz * etaN;
     
     // eta*dvz/dx
-    if ( mesh->BCv.type[iVzSW] != 30 && mesh->BCv.type[c3-nxvz+1] != 30 )  {
-        vSE = -one_dx_dz * etaS + comp*2.0/3.0*one_dx_dz * etaE;
-        vSW =  one_dx_dz * etaS - comp*2.0/3.0*one_dx_dz * etaW;
+    if ( mesh->BCv.type[c3-nxvz] != 30 && mesh->BCv.type[c3-nxvz+1] != 30 )  {
+        inSv = 1.0;
     }
     
-    if ( mesh->BCv.type[c3+1] != 30 && mesh->BCv.type[iVzNW] != 30  ) {
-        vNE =  one_dx_dz * etaN - comp*2.0/3.0*one_dx_dz * etaE;
-        vNW = -one_dx_dz * etaN + comp*2.0/3.0*one_dx_dz * etaW;
+    if ( mesh->BCv.type[c3+1] != 30 && mesh->BCv.type[c3] != 30  ) {
+        inNv = 1.0;
     }
+    
+    double dx = mesh->dx;
+    double dz = mesh->dz;
+    
+    uW = -2*etaW*inW*((1.0L/3.0L)*comp/dx - 1/dx)/dx;
+    uC = (-etaN*inNu/dz - etaS*inSu/dz)/dz + (2*etaE*inE*((1.0L/3.0L)*comp/dx - 1/dx) - 2*etaW*inW*(-1.0L/3.0L*comp/dx + 1.0/dx))/dx;
+    uE = 2*etaE*inE*(-1.0L/3.0L*comp/dx + 1.0/dx)/dx;
+    uS = etaS*inSu/pow(dz, 2);
+    uN = etaN*inNu/pow(dz, 2);
+    vSW = -2.0L/3.0L*comp*etaW*inW/(dx*dz) + etaS*inSv/(dx*dz);
+    vSE = (2.0L/3.0L)*comp*etaE*inE/(dx*dz) - etaS*inSv/(dx*dz);
+    vNW = (2.0L/3.0L)*comp*etaW*inW/(dx*dz) - etaN*inNv/(dx*dz);
+    vNE = -2.0L/3.0L*comp*etaE*inE/(dx*dz) + etaN*inNv/(dx*dz);
+    
+    // Add contribulition from non-conforming Dirichlets
+    if ( mesh->BCu.type[c1-nx] == 11 ) uC  +=  -one_dz_dz * etaS;
+    if ( mesh->BCu.type[c1+nx] == 11 ) uC  +=  -one_dz_dz * etaN;
     
     // Pressure gradient
     if ( mesh->BCp.type[c2+1] != 30 && mesh->BCp.type[iPrW] != 30 ) {
@@ -382,31 +384,54 @@ void Xmomentum_WestPeriodicDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
         pE  =  -pW;
     }
     
-    // Pressure gradient
-    //    if ( mesh->BCp.type[c2+1] != 30 ) pW  =   one_dx;
-    //    if ( mesh->BCp.type[c2]   != 30 ) pE  =  -one_dx;
-    
-    //    // Inertia
-    //    if ( model.isinertial == 1 || model.isinertial == 2 ) {
-    //        uC -= sign * rhoVx/model.dt;
-    //    }
-    //    if ( model.isinertial == 2 ) {
-    //        uN -= rhoVx/2*one_dz*mesh->VzVx[c1];
-    //        uS += rhoVx/2*one_dz*mesh->VzVx[c1];
-    //        uW += rhoVx/2*one_dx*mesh->u_in[c1];
-    //        uE -= rhoVx/2*one_dx*mesh->u_in[c1];
-    //    }
-    
-    //    // Stabilisation with density gradients
-    //    if ( stab == 1 ) {
-    ////        double correction = - om*0.5*model.dt * model.gx * (mesh->rho_app_n[c2+1] - mesh->rho_app_n[c2]) * one_dx;
-    ////        uC += correction;
-    ////        correction = - om*0.5*model.dt * model.gx * (mesh->rho_app_s[c1] - mesh->rho_app_s[c1-nx]) * one_dz;
-    ////        vSW += 0.25*correction;
-    ////        vNE += 0.25*correction;
-    ////        vNW += 0.25*correction;
-    ////        vSE += 0.25*correction;
-    //    }
+//    // dsxx/dx
+//    if ( mesh->BCu.type[iVxW] != 30 && mesh->BCu.type[c1+1] != 30 ) {
+//        uW  =  2.0*one_dx_dx * etaW;//         - comp*2.0/3.0*one_dx_dx * etaW;
+//        uC  = -2.0*one_dx_dx * (etaE + etaW);//  + comp*2.0/3.0*one_dx_dx * etaE + comp*2.0/3.0*one_dx_dx * etaW;
+//        uE  =  2.0*one_dx_dx * etaE;//         - comp*2.0/3.0*one_dx_dx * etaE;
+//    }
+//    if ( mesh->BCu.type[iVxW] == 30 && mesh->BCu.type[c1+1] != 30 ) {
+//        uC  = -2.0*one_dx_dx * (etaE) + comp*2.0/3.0*one_dx_dx * etaE;
+//        uE  =  2.0*one_dx_dx * etaE - comp*2.0/3.0*one_dx_dx * etaE;
+//    }
+//    if ( mesh->BCu.type[iVxW] != 30 && mesh->BCu.type[c1+1] == 30 ) {
+//        uW  =  2.0*one_dx_dx * etaW - comp*2.0/3.0*one_dx_dx * etaW;
+//        uC  = -2.0*one_dx_dx * (etaW) + comp*2.0/3.0*one_dx_dx * etaW;
+//    }
+//
+//    // eta*dvx/dz
+//    if ( mesh->BCu.type[c1-nx] != 30 && mesh->BCu.type[c1+nx] != 30 ) {
+//        if ( mesh->BCu.type[c1-nx] != 13 ) {uS   =  one_dz_dz * etaS; uC  +=  -one_dz_dz * etaS;}
+//        if ( mesh->BCu.type[c1+nx] != 13 ) {uN   =  one_dz_dz * etaN; uC  +=  -one_dz_dz * etaN;}
+//    }
+//    if ( mesh->BCu.type[c1-nx] == 30 && mesh->BCu.type[c1+nx] != 30 ) {
+//        if ( mesh->BCu.type[c1+nx] != 13 ) uC  +=  -one_dz_dz * etaN;
+//        if ( mesh->BCu.type[c1+nx] != 13 ) uN   =   one_dz_dz * etaN;
+//    }
+//    if ( mesh->BCu.type[c1-nx] != 30 && mesh->BCu.type[c1+nx] == 30 ) {
+//        if ( mesh->BCu.type[c1-nx] != 13 ) uC  +=  -one_dz_dz * etaS;
+//        if ( mesh->BCu.type[c1-nx] != 13 ) uS   =   one_dz_dz * etaS;
+//    }
+//
+//    if ( mesh->BCu.type[c1-nx] == 11 ) uC  +=  -one_dz_dz * etaS;
+//    if ( mesh->BCu.type[c1+nx] == 11 ) uC  +=  -one_dz_dz * etaN;
+//
+//    // eta*dvz/dx
+//    if ( mesh->BCv.type[iVzSW] != 30 && mesh->BCv.type[c3-nxvz+1] != 30 )  {
+//        vSE = -one_dx_dz * etaS + comp*2.0/3.0*one_dx_dz * etaE;
+//        vSW =  one_dx_dz * etaS - comp*2.0/3.0*one_dx_dz * etaW;
+//    }
+//
+//    if ( mesh->BCv.type[c3+1] != 30 && mesh->BCv.type[iVzNW] != 30  ) {
+//        vNE =  one_dx_dz * etaN - comp*2.0/3.0*one_dx_dz * etaE;
+//        vNW = -one_dx_dz * etaN + comp*2.0/3.0*one_dx_dz * etaW;
+//    }
+//
+//    // Pressure gradient
+//    if ( mesh->BCp.type[c2+1] != 30 && mesh->BCp.type[iPrW] != 30 ) {
+//        pW  =   one_dx;
+//        pE  =  -pW;
+//    }
     
     uS=-uS, uN=-uN, uW=-uW, uE=-uE, uC=-uC, vSW=-vSW, vSE=-vSE, vNW=-vNW, vNE=-vNE, pE=-pE, pW=-pW;
     
