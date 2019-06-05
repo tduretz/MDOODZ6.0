@@ -401,6 +401,9 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
             // Update non-linearity
             UpdateNonLinearity( mesh, particles, topo_chain, topo, materials, model, Nmodel, scaling, 0, 1.0 );
             
+            // Fill up the rheological matrices arrays
+            RheologicalOperators( mesh, model, &scaling, 0 );
+            
             //------------------------------------------------------------------------------------------------------
             
             // Calculate residual
