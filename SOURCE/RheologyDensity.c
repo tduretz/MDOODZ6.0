@@ -46,8 +46,6 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Newton
     
     if (Newton == 0) {
         
-        printf("Filling operator\n");
- 
     // Loop on cell centers
 #pragma omp parallel for shared( mesh )
     for (k=0; k<Ncx*Ncz; k++) {

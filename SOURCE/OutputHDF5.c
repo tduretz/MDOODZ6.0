@@ -623,6 +623,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     AddGroup_to_hdf5( name, "Particles" );
     AddGroup_to_hdf5( name, "VizGrid" );
     AddGroup_to_hdf5( name, "Topo" );
+    AddGroup_to_hdf5( name, "Flags" );
     
     // Model Parameters
     A[0] = (double)(model.time) * scaling.t;
@@ -726,6 +727,12 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     }
     
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "BCp" , 'c', (model.Nx-1)*(model.Nz-1), mesh->BCp.type, 1 );
+    
+    AddFieldToGroup_generic( _TRUE_, name, "Flags", "tag_s" , 'c', (model.Nx-0)*(model.Nz-0), mesh->BCg.type,  1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Flags", "tag_n" , 'c', (model.Nx-1)*(model.Nz-1), mesh->BCp.type,  1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Flags", "tag_u" , 'c', (model.Nx-0)*(model.Nz+1), mesh->BCu.type,  1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Flags", "tag_v" , 'c', (model.Nx+1)*(model.Nz-0), mesh->BCv.type,  1 );
+
 
     
     // Freedom

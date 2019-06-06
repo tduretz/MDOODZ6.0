@@ -508,6 +508,12 @@ int main( int nargs, char *args[] ) {
             // Fill up the rheological matrices arrays
             RheologicalOperators( &mesh, &model, &scaling, 0 );
             
+            MinMaxArrayTag( mesh.exxd, scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "exx", mesh.BCp.type );
+            MinMaxArrayTag( mesh.exz_n, scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "exz_n", mesh.BCp.type );
+            MinMaxArrayTag( mesh.exz, scaling.E, (mesh.Nx-0)*(mesh.Nz-0), "exz", mesh.BCg.type );
+            
+            MinMaxArrayTag( mesh.exxd_s, scaling.E, (mesh.Nx-0)*(mesh.Nz-0), "exx_s", mesh.BCg.type );
+            
             MinMaxArrayTag( mesh.eta_phys_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_phys_n", mesh.BCp.type );
             MinMaxArrayTag( mesh.eta_phys_s, scaling.eta, (mesh.Nx-0)*(mesh.Nz-0), "eta_phys_s", mesh.BCg.type );
             MinMaxArrayTag( mesh.eta_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),   "eta_eff_n", mesh.BCp.type );

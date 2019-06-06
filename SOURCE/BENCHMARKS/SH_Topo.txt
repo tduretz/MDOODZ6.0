@@ -6,7 +6,7 @@ irestart = 0
 writer          = 1
 writer_step     = 1
 writer_markers  = 0
-writer_debug    = 0
+writer_debug    = 1
 writer_energies = 1
 
 /**** SCALES ****/
@@ -16,8 +16,8 @@ V   = 1.5e-8
 T   = 3.3197e+04
 
 /**** SPACE-TIME ****/
-Nx      = 101
-Nz      = 101
+Nx      = 25
+Nz      = 25
 Nt      = 1
 xmin    = -25.000000e3
 zmin    = -25.000000e3
@@ -25,8 +25,9 @@ xmax    =  25.000000e3
 zmax    =  25.000000e3
 dt      = 1.2623e+11
 Courant = 0.3
-penalty = 1e5
-lsolver = -1
+penalty = 1e3
+lsolver = 0
+diag_scaling  =0
 
 /**** SWITCHES ****/
 ismechanical    = 1
@@ -37,8 +38,8 @@ ispureshear_ALE = 1
 isinertial      = 0
 iselastic       = 0
 isthermal       = 1
-line_search     = 1
-free_surf       = 0
+line_search     = 0
+free_surf       = 1
 free_surf_stab  = 0
 eqn_state       = 0
 thermal_eq      = 0
@@ -74,8 +75,8 @@ Slim = 500e9
 alp  = 10.0e-6
 bet  = 1e-11
 drho = 0
-cstv = 0             / constant visc law
-pwlv = -12            / disloc. creep
+cstv = 1             / constant visc law
+pwlv = 0            / disloc. creep-12
 linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
@@ -98,8 +99,8 @@ Slim = 500e9
 alp  = 10.0e-6
 bet  = 1e-11
 drho = 0
-cstv = 0             / constant visc law
-pwlv = -10            / disloc. creep
+cstv = 1             / constant visc law
+pwlv = 0            / disloc. creep-10
 linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
@@ -126,8 +127,8 @@ Nz_part  = 4
 min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
-Newton  = 1 
-nit_max = 10
+Newton  = 0 
+nit_max = 0
 tol_u   = 5e-10
 tol_p   = 5e-10
 mineta  = 1e19
