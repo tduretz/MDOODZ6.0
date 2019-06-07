@@ -11,7 +11,7 @@ istart = 1;
 ijump  = 10;
 iend   = 1;
 
-iter   = 1;
+iter   = 0;
 
 % Visualisation options
 MarkSize      = 5e0;
@@ -26,8 +26,9 @@ file_suffix   = '';
 particles = 0;
 topo      = 0;
 vel_plot  = 0;
-tags      = 0;
-residuals = 1;
+tags      = 1;
+residuals = 0;
+numbering = 0;
 
 % Colorbar limits
 minP   = -2e5;
@@ -409,7 +410,29 @@ for istep=istart:ijump:iend
             norm(Vx)
             norm(Vz)
         end
-
+        
+        if numbering == 1
+            filename = [path,'MatrixDecoupled.gzip_1cpu.h5'];
+            eqnu = hdf5read(filename,'/numbering/eqn_u');
+            eqnv = hdf5read(filename,'/numbering/eqn_v');
+            eqnp = hdf5read(filename,'/numbering/eqn_p');
+            eqnu = reshape(eqnu,nx,nz+1)';
+            eqnv = reshape(eqnv,nx+1,nz)';
+            eqnp = reshape(eqnp,nx-1,nz-1)';
+            
+            if print2screen == 1
+                figCount = figCount +1;
+                figure(figCount), clf
+            else
+                figure('Visible', 'Off')
+            end
+            
+            subplot(211)
+            imagesc(xg_plot/1e3, zvx_plot(2:end-1)/1e3, eqnu)
+            shading flat,axis xy image, colorbar;
+            xlabel('x'), ylabel('z');
+            
+        end
             
         
         clear Part.x Part.z Part.ph Part

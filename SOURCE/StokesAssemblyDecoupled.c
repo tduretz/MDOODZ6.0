@@ -155,6 +155,10 @@ void Xmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
     vNW = (1.0/3.0)*D11W*comp*inW/(dx*dz) - D33N*inNv/(dx*dz);
     vNE = -1.0/3.0*D11E*comp*inE/(dx*dz) + D33N*inNv/(dx*dz);
     
+    if (eqn==276) {
+        printf("VSW = %2.2e VSE = %2.2e %2.2e %2.2e\n", vSW, vSE, D33S, D33N);
+    }
+    
     // Add contribulition from non-conforming Dirichlets
     if ( mesh->BCu.type[c1-nx] == 11 ) uC  +=  -one_dz_dz * D33S;
     if ( mesh->BCu.type[c1+nx] == 11 ) uC  +=  -one_dz_dz * D33N;
@@ -215,6 +219,8 @@ void Xmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
             AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_v[c3-nxvz],   &(nnzc2A[ith]), vSW*celvol, mesh->BCv.type[c3-nxvz],   mesh->BCv.val[c3-nxvz],   StokesA->bbc);
             AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_v[c3-nxvz+1], &(nnzc2A[ith]), vSE*celvol, mesh->BCv.type[c3-nxvz+1], mesh->BCv.val[c3-nxvz+1], StokesA->bbc);
         }
+        
+      
         
         if ( mesh->BCv.type[c3] != 30 && mesh->BCv.type[c3+1] != 30 )  {
             AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_v[c3],        &(nnzc2A[ith]), vNW*celvol, mesh->BCv.type[c3],        mesh->BCv.val[c3],        StokesA->bbc);
@@ -294,14 +300,12 @@ void Xmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
         StokesA->F[eqn] -= (StokesA->b[eqn]);// + Stokes->bbc[eqn];
         StokesA->F[eqn] *= celvol;
         
-        /*
-         if (eqn==7656) {
-         printf("\nFx = %2.2e %d\n",StokesA->F[eqn]*4e-5, mesh->BCu.type[c1] );
-         
+        if (eqn==276 ) {
+            printf("eqn = %d Fx = %2.2e %d\n",eqn, StokesA->F[eqn], mesh->BCu.type[c1] );
          ////        double F1 = pW*p[c2] + pE*p[c2+1] + vSW*v[c3-nxvz] + vSE*v[c3-nxvz+1] + vNW*v[c3] + vNE*v[c3+1] + uS*u[c1-nx] + uN*u[c1+nx] + uW*u[c1-1] + uE*u[c1+1] + uC*u[c1] + (StokesA->b[eqn] - StokesA->bbc[eqn]);
          ////        if (fabs(F1)>1e-6) {
          ////        printf("F0 = %2.2e %2.2e\n", StokesA->F[eqn], F1*celvol);
-         printf("x momentum --  etaW = %2.2e etaE = %2.2e etaS = %2.2e etaN = %2.2e\n", etaW, etaE, etaS, etaN);
+//         printf("x momentum --  etaW = %2.2e etaE = %2.2e etaS = %2.2e etaN = %2.2e\n", etaW, etaE, etaS, etaN);
          printf("uC = %02d %2.2e %2.12e\n",      mesh->BCu.type[c1+0],  uC, u[c1] );
          printf("uW = %02d %2.2e %2.12e\n",      mesh->BCu.type[c1-1],  uW, u[c1-1] );
          printf("uE = %02d %2.2e %2.2e\n",      mesh->BCu.type[c1+1],  uE, u[c1+1] );
@@ -312,10 +316,11 @@ void Xmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
          printf("vSW= %02d %2.2e %2.2e \n",     mesh->BCv.type[c3-nxvz], vSW, v[c3-nxvz] );
          printf("vNW= %02d %2.2e %2.2e \n",     mesh->BCv.type[c3], vNW, v[c3] );
          printf("pW = %02d %2.2e %2.2e \n",     mesh->BCp.type[c2], pW, p[c2] );
-         printf("pE = %02d %2.2e %2.2e %2.2e %2.2e bbc = %2.2e b = %2.2e\n",mesh->BCp.type[c2+1], pE, p[c2+1], StokesA->b[eqn] + StokesA->bbc[eqn], mesh->BCu.val[c1], StokesA->bbc[eqn] , StokesA->b[eqn]);
+         printf("pE = %02d %2.2e %2.2e \n",mesh->BCp.type[c2+1], pE, p[c2+1]);
+            printf("%2.2e %2.2e bbc = %2.2e b = %2.2e\n", StokesA->b[eqn] + StokesA->bbc[eqn], mesh->BCu.val[c1], StokesA->bbc[eqn] , StokesA->b[eqn]);
          printf("%2.2e EQN=%d\n", (uC*u[c1] + uW*u[c1-1])*4e-5* celvol, eqn);
          }
-         */
+        
     }
 }
 

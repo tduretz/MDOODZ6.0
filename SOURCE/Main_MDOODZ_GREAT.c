@@ -634,6 +634,13 @@ int main( int nargs, char *args[] ) {
                         if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
                         if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
                         printf("---- Direct solve residual ----\n");
+                        
+                        
+                        
+#ifndef _VG_
+                        if ( model.write_debug == 1 ) WriteResiduals( mesh, model, Nmodel, scaling );
+#endif
+                        
                         //                        if ( Nmodel.resx>1e-8/(scaling.F/pow(scaling.L,3)) || Nmodel.resz>1e-8/(scaling.F/pow(scaling.L,3)) || Nmodel.resp>1e-10/scaling.E ) {
                         //                            printf("Direct solve residuals are too large !\n Stopping now !");
                         //                            exit(22);

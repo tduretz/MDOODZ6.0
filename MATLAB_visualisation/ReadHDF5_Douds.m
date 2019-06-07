@@ -27,19 +27,19 @@ iend   = 1;
 % what do you want to plot:
 %--------------------------------------------------
 eta_sym         = 0;
-eta_plot        = 1;
+eta_plot        = 0;
 rho_plot        = 0;
 phase_on_grid   = 0;
 phase_temp2     = 0;
-vel_plot        = 0;
+vel_plot        = 1;
 vel_vectors     = 0;
 vel_divergence  = 0;
 pre_plot        = 0;
 dyna_pre        = 0;
-stress_inv      = 1;
+stress_inv      = 0;
 stress_evol     = 0;
 stress_plot     = 0;
-srate_plot      = 1;
+srate_plot      = 0;
 acc_strain      = 0;
 temperature     = 0;
 temp_evol       = 0;
