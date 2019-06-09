@@ -134,6 +134,7 @@ void ExtractSolutions( SparseMat *Stokes, grid* mesh, params* model ) {
             else {
                 mesh->dp[cc]   = Stokes->x[Stokes->eqn_p[cc]] * Stokes->d[Stokes->eqn_p[cc]] - mesh->p_start[cc];
                 mesh->p_in[cc] = Stokes->x[Stokes->eqn_p[cc]];
+                if (Stokes->eqn_p[cc]==870) printf("Surface pressure %d  %2.2e\n", 870, Stokes->x[Stokes->eqn_p[cc]]);
             }
         }
     }
@@ -400,10 +401,7 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
             //------------------------------------------------------------------------------------------------------
             // Update non-linearity
             UpdateNonLinearity( mesh, particles, topo_chain, topo, materials, model, Nmodel, scaling, 0, 1.0 );
-            
-            // Fill up the rheological matrices arrays
-            RheologicalOperators( mesh, model, &scaling, 0 );
-            
+        
             //------------------------------------------------------------------------------------------------------
             
             // Calculate residual
@@ -1477,6 +1475,18 @@ void DirectStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,
             resp += F[Stokes->eqn_p[cc]]*F[Stokes->eqn_p[cc]];
         }
     }
+    
+//    for( cc=0; cc<matC->neq; cc++) {
+//
+//        printf("%2.4f\n",  ((double*)p->x)[cc] );
+//
+//    }
+//
+//    for( cc=0; cc<matA->neq+matC->neq; cc++) {
+//
+//        printf("%2.4f\n",  sol[cc] );
+//
+//    }
     
     // Sqrt
     resx =  sqrt(resx/ndofx);

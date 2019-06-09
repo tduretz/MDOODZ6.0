@@ -176,6 +176,7 @@ struct _grid {
     double *D31_s, *D32_s, *D33_s, *D34_s;
     double *detadexx_n, *detadezz_n, *detadgxz_n, *detadp_n;
     double *detadexx_s, *detadezz_s, *detadgxz_s, *detadp_s;
+    double *phi1_s, *d0_s, *T_s, *P_s;
     
     // To remove
     double *exx_pwl_n, *exz_pwl_n, *exx_pwl_s, *exz_pwl_s, *exx_pl, *exz_pl;
@@ -553,3 +554,4 @@ void ScaleMatrix(SparseMat *, SparseMat *, SparseMat *, SparseMat * ) ;
 
 void RheologicalOperators( grid*, params*, scale*, int );
 void ComputeViscosityDerivatives( grid*, markers*, markers*, surface*, mat_prop, params*, Nparams*, scale, int, double );
+void Interp_TPdphi_centroid2vertices ( grid*, params* );

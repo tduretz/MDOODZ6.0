@@ -740,11 +740,11 @@ void Xmomentum_InnerNodes( SparseMat *Stokes, int Assemble, int lev, int stab, i
         }
 //        if ( mesh->BCu.type[c1-nx] == 11 )   Stokes->F[eqn] += -2*AS*one_dz_dz*mesh->BCu.val[c1-nx];
 //        if ( mesh->BCu.type[c1+nx] == 11 )   Stokes->F[eqn] += -2*AN*one_dz_dz*mesh->BCu.val[c1+nx];
-        Stokes->F[eqn] -= (Stokes->b[eqn])+ Stokes->bbc[eqn];
+        Stokes->F[eqn] -= (Stokes->b[eqn])+ 0.0*Stokes->bbc[eqn];
         Stokes->F[eqn] *= celvol;
         
-        /*
-        if (Stokes->F[eqn]*4e-5>1e-5) {printf("\nFx = %2.2e %d\n",Stokes->F[eqn]*4e-5, mesh->BCu.type[c1] );
+        
+        if (eqn==277) {printf("\nFx = %2.2e %d\n",Stokes->F[eqn], mesh->BCu.type[c1] );
             
             ////        double F1 = pW*p[c2] + pE*p[c2+1] + vSW*v[c3-nxvz] + vSE*v[c3-nxvz+1] + vNW*v[c3] + vNE*v[c3+1] + uS*u[c1-nx] + uN*u[c1+nx] + uW*u[c1-1] + uE*u[c1+1] + uC*u[c1] + (StokesA->b[eqn] - StokesA->bbc[eqn]);
             ////        if (fabs(F1)>1e-6) {
@@ -763,7 +763,7 @@ void Xmomentum_InnerNodes( SparseMat *Stokes, int Assemble, int lev, int stab, i
             printf("pE = %02d %2.2e %2.2e %2.2e %2.2e bbc = %2.2e b = %2.2e\n",mesh->BCp.type[c2+1], pE, p[c2+1], Stokes->b[eqn] + Stokes->bbc[eqn], mesh->BCu.val[c1], Stokes->bbc[eqn] , Stokes->b[eqn]);
             printf("%2.2e EQN=%d\n", (uC*u[c1] + uW*u[c1-1])*4e-5* celvol, eqn);
         }
-         */
+        
 
         
     }

@@ -20,13 +20,13 @@ solve = 1;
 
 istep = 1;
 
-tags = 1;
+tags = 0;
 visc = 0;
 topo = 0;
 
 penalty = -2.1e7;
 
-jac = 1;
+jac = 0;
 
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/';
 
@@ -231,13 +231,13 @@ figure(2)
 subplot 221
 spy(MA-MA'), title('MA-MA''')
 subplot 222
-spy(MB+MC'), title('MB''+MC')
+spy(MB-MC'), title('MB''-MC')
 subplot 223
 Asc    = MA - MB*(MD*MC);
 spy(Asc-Asc'), title('Asc-Asc''')
-subplot 224
-Bsc = (MD*MC);
-spy(Bsc-Bsc'), title('Bsc-Bsc''')
+% subplot 224
+% Bsc = (MD*MC);
+% spy(Bsc-Bsc'), title('Bsc-Bsc''')
 drawnow
 
 fprintf('Min/max diag MA')
@@ -246,7 +246,8 @@ max(diag(MA))
 
 MaMat = Asc-Asc';
 
-MaMat(605,:)
+save( 'DeCoupledMatrix' , 'MA', 'MB', 'MC', 'MD', 'rSt', 'rPt')
+
 
 
 % fprintf('Momentum equations indices')
@@ -298,7 +299,18 @@ if solve == 1
     disp(['Time elapsed: ', num2str(time2), ' s'])
     x = [u; p];
     
+    % Plot pressure field
+    p2d            = zeros(nz-1, nx-1);
+    p2d(tag_n==-1) = p;
+    
+    figure(100), clf
+    imagesc(xc_coord, zc_coord, p2d')
+    colorbar, set( gca, 'ydir', 'normal')    
 end
+
+p
+
+
 
 %
 %

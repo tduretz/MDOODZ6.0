@@ -46,6 +46,8 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Newton
     
     if (Newton == 0) {
         
+        printf("Filling operator\n");
+ 
     // Loop on cell centers
 #pragma omp parallel for shared( mesh )
     for (k=0; k<Ncx*Ncz; k++) {
@@ -71,50 +73,6 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Newton
             mesh->D33_s[k] = 0.0;
         }
     }
-        
-    }
-    
-    if (Newton == 1) {
-        
-        // Loop on cell centers
-#pragma omp parallel for shared( mesh )
-        for (k=0; k<Ncx*Ncz; k++) {
-            
-            if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
-                mesh->D11_n[k] = 2.0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k]*mesh->exxd[k];
-                mesh->D12_n[k] =                      2.0*mesh->detadezz_n[k]*mesh->exxd[k];
-                mesh->D13_n[k] =                      2.0*mesh->detadgxz_n[k]*mesh->exxd[k];
-                
-                mesh->D21_n[k] =                      2.0*mesh->detadexx_n[k]*mesh->ezzd[k];
-                mesh->D22_n[k] = 2.0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k]*mesh->ezzd[k];
-                mesh->D23_n[k] =                      2.0*mesh->detadgxz_n[k]*mesh->ezzd[k];
-            }
-            else {
-                mesh->D11_n[k] = 0.0;
-                mesh->D12_n[k] = 0.0;
-                mesh->D13_n[k] = 0.0;
-                
-                mesh->D21_n[k] = 0.0;
-                mesh->D22_n[k] = 0.0;
-                mesh->D23_n[k] = 0.0;
-            }
-        }
-        
-        // Loop on cell vertices
-#pragma omp parallel for shared( mesh )
-        for (k=0; k<Nx*Nz; k++) {
-            
-            if ( mesh->BCg.type[k] != 30 ) {
-                mesh->D31_s[k] =                  mesh->detadexx_s[k]*mesh->exz[k];
-                mesh->D32_s[k] =                  mesh->detadezz_s[k]*mesh->exz[k];
-                mesh->D33_s[k] = mesh->eta_s[k] + mesh->detadgxz_s[k]*mesh->exz[k];
-            }
-            else {
-                mesh->D31_s[k] = 0.0;
-                mesh->D32_s[k] = 0.0;
-                mesh->D33_s[k] = 0.0;
-            }
-        }
         
     }
     
@@ -1871,13 +1829,14 @@ void NonNewtonianViscosityGrid( grid* mesh, mat_prop *materials, params *model, 
  ;
 
     // Calculate vertices viscosity
-    double d1s; // dummy variable that stores updated grain size on current vertice
+    double T_s, P_s, d0s, d1s, phis;
     
-#pragma omp parallel for shared( mesh, model ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, d1s, exx_pwl, exz_pwl, A2_pwl, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, exx_pl, exz_pl ) firstprivate( materials, scaling, flag, average, Nx, Nz  )
+#pragma omp parallel for shared( mesh, model ) private( cond, k, l, k1, p, eta, c1, c0, P_s, T_s, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, d0s, d1s, phis, exx_pwl, exz_pwl, A2_pwl, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, exx_pl, exz_pl ) firstprivate( materials, scaling, flag, average, Ncx, Ncz )
     for ( k1=0; k1<Nx*Nz; k1++ ) {
         
         k  = mesh->kn[k1];
         l  = mesh->ln[k1];
+        c0 = k + l*(Ncx);
         c1 = k + l*Nx;
         
         mesh->VE_s[c1]       = 0.0;
@@ -1896,13 +1855,133 @@ void NonNewtonianViscosityGrid( grid* mesh, mat_prop *materials, params *model, 
         
         if ( mesh->BCg.type[c1] != 30 ) {
             
+            // INNER average T and P
+            if (k>0 && k<Ncx && l>0 && l<Ncz) {
+                T_s  = 0.25*( mesh->T[c0] +  mesh->T[c0-Ncx] +  mesh->T[c0-Ncx-1] +  mesh->T[c0-1] );
+                P_s  = 0.25*( mesh->p_in[c0] +  mesh->p_in[c0-Ncx] +  mesh->p_in[c0-Ncx-1] +  mesh->p_in[c0-1]);
+                d0s  = 0.25*( mesh->d0[c0] +  mesh->d0[c0-Ncx] +  mesh->d0[c0-Ncx-1] +  mesh->d0[c0-1]);
+                phis = 0.25*( mesh->phi[c0] +  mesh->phi[c0-Ncx] +  mesh->phi[c0-Ncx-1] +  mesh->phi[c0-1]);
+            }
+            
+            // WEST
+            if (k==0 && (l>0 && l<Ncz) && model->isperiodic_x==0) {
+                T_s  = 0.5*( mesh->T[c0] + mesh->T[c0-Ncx] );
+                P_s  = 0.5*( mesh->p_in[c0] + mesh->p_in[c0-Ncx] );
+                d0s  = 0.5*( mesh->d0[c0] + mesh->d0[c0-Ncx] );
+                phis = 0.5*( mesh->phi[c0] + mesh->phi[c0-Ncx] );
+            }
+            
+            // WEST - periodic
+            if (k==0 && (l>0 && l<Ncz) && model->isperiodic_x==1) {
+                T_s  = 0.25*( mesh->T[c0] + mesh->T[c0-Ncx] + mesh->T[c0+Ncx-1] + mesh->T[c0-1] );
+                P_s  = 0.25*( mesh->p_in[c0] + mesh->p_in[c0-Ncx] + mesh->p_in[c0+Ncx-1] + mesh->p_in[c0-1] );
+                d0s  = 0.25*( mesh->d0[c0] + mesh->d0[c0-Ncx] + mesh->d0[c0+Ncx-1] + mesh->d0[c0-1] );
+                phis = 0.25*( mesh->phi[c0] + mesh->phi[c0-Ncx] + mesh->phi[c0+Ncx-1] + mesh->phi[c0-1] );
+            }
+            
+            // EAST
+            if (k==Ncx && (l>0 && l<Ncz) && model->isperiodic_x==0) {
+                T_s  = 0.5*( mesh->T[c0-1] + mesh->T[c0-Ncx-1]);
+                P_s  = 0.5*( mesh->p_in[c0-1] + mesh->p_in[c0-Ncx-1] );
+                d0s  = 0.5*( mesh->d0[c0-1] + mesh->d0[c0-Ncx-1]);
+                phis = 0.5*( mesh->phi[c0-1] + mesh->phi[c0-Ncx-1] );
+            }
+            
+            // EAST - periodic
+            if (k==Ncx && (l>0 && l<Ncz) && model->isperiodic_x==1) {
+                T_s  = 0.25*( mesh->T[c0-1] + mesh->T[c0-Ncx-1] + mesh->T[c0-Ncx-Ncx] + mesh->T[c0-Ncx]);
+                P_s  = 0.25*( mesh->p_in[c0-1] + mesh->p_in[c0-Ncx-1] + mesh->p_in[c0-Ncx-Ncx] + mesh->p_in[c0-Ncx] );
+                d0s  = 0.25*( mesh->d0[c0-1] + mesh->d0[c0-Ncx-1] + mesh->d0[c0-Ncx-Ncx] + mesh->d0[c0-Ncx]);
+                phis = 0.25*( mesh->phi[c0-1] + mesh->phi[c0-Ncx-1] + mesh->phi[c0-Ncx-Ncx] + mesh->phi[c0-Ncx] );
+            }
+            
+            
+            // SOUTH
+            if (l==0 && (k>0 && k<Ncx)) {
+                T_s  = 0.5*( mesh->T[c0]+ mesh->T[c0-1] );
+                P_s  = 0.5*( mesh->p_in[c0] + mesh->p_in[c0-1] );
+                d0s  = 0.5*( mesh->d0[c0]+ mesh->d0[c0-1] );
+                phis = 0.5*( mesh->phi[c0] + mesh->phi[c0-1] );
+            }
+            
+            // NORTH
+            if (l==Ncz && (k>0 && k<Ncx)) {
+                T_s  = 0.5*( mesh->T[c0-Ncx] + mesh->T[c0-Ncx-1] );
+                P_s  = 0.5*( mesh->p_in[c0-Ncx] + mesh->p_in[c0-Ncx-1] );
+                d0s  = 0.5*( mesh->d0[c0-Ncx] + mesh->d0[c0-Ncx-1] );
+                phis = 0.5*( mesh->phi[c0-Ncx] + mesh->phi[c0-Ncx-1] );
+            }
+            
+            // SOUTH-WEST
+            if (l==0 && k==0 && model->isperiodic_x==0) {
+                T_s  = mesh->T[c0];
+                P_s  = mesh->p_in[c0];
+                d0s  = mesh->d0[c0];
+                phis = mesh->phi[c0];
+            }
+            
+            // SOUTH-WEST - periodic
+            if (l==0 && k==0 && model->isperiodic_x==1) {
+                T_s  = 0.5*(mesh->T[c0] + mesh->T[c0+Ncx-1]);
+                P_s  = 0.5*(mesh->p_in[c0] + mesh->p_in[c0+Ncx-1]);
+                d0s  = 0.5*(mesh->d0[c0] + mesh->d0[c0+Ncx-1]);
+                phis = 0.5*(mesh->phi[c0] + mesh->phi[c0+Ncx-1]);
+            }
+            
+            // NORTH-WEST
+            if (l==Ncz && k==0 && model->isperiodic_x==0) {
+                T_s  = mesh->T[c0-Ncx];
+                P_s  = mesh->p_in[c0-Ncx];
+                d0s  = mesh->d0[c0-Ncx];
+                phis = mesh->phi[c0-Ncx];
+            }
+            
+            // NORTH-WEST - periodic
+            if (l==Ncz && k==0 && model->isperiodic_x==1) {
+                T_s  = 0.5*(mesh->T[c0-Ncx] + mesh->T[c0-1]);
+                P_s  = 0.5*(mesh->p_in[c0-Ncx] + mesh->p_in[c0-1]);
+                d0s  = 0.5*(mesh->d0[c0-Ncx] + mesh->d0[c0-1]);
+                phis = 0.5*(mesh->phi[c0-Ncx] + mesh->phi[c0-1]);
+            }
+            
+            // SOUTH-EAST
+            if (l==0 && k==Ncx && model->isperiodic_x==0) {
+                T_s  = mesh->T[c0-1];
+                P_s  = mesh->p_in[c0-1];
+                d0s  = mesh->d0[c0-1];
+                phis = mesh->phi[c0-1];
+            }
+            
+            // SOUTH-EAST - periodic
+            if (l==0 && k==Ncx && model->isperiodic_x==1) {
+                T_s  = 0.5*(mesh->T[c0-1] + mesh->T[c0-Ncx]);
+                P_s  = 0.5*(mesh->p_in[c0-1]+ mesh->p_in[c0-Ncx]);
+                d0s  = 0.5*(mesh->d0[c0-1] + mesh->d0[c0-Ncx]);
+                phis = 0.5*(mesh->phi[c0-1]+ mesh->phi[c0-Ncx]);
+            }
+            
+            // NORTH-EAST
+            if (l==Ncz && k==Ncx && model->isperiodic_x==0) {
+                T_s  = mesh->T[c0-Ncx-1];
+                P_s  = mesh->p_in[c0-Ncx-1];
+                d0s  = mesh->d0[c0-Ncx-1];
+                phis = mesh->phi[c0-Ncx-1];
+            }
+            
+            // NORTH-EAST - periodic
+            if (l==Ncz && k==Ncx && model->isperiodic_x==1) {
+                T_s  = 0.5*(mesh->T[c0-Ncx-1] + mesh->T[c0-Ncx-Ncx]);
+                P_s  = 0.5*(mesh->p_in[c0-Ncx-1] + mesh->p_in[c0-Ncx-Ncx]);
+                d0s  = 0.5*(mesh->d0[c0-Ncx-1] + mesh->d0[c0-Ncx-Ncx]);
+                phis = 0.5*(mesh->phi[c0-Ncx-1] + mesh->phi[c0-Ncx-Ncx]);
+            }
             
             for ( p=0; p<model->Nb_phases; p++) {
                 
                 cond = fabs(mesh->phase_perc_s[p][c1])>1.0e-13;
                 
                 if ( cond == 1 ) {
-                    eta =  Viscosity( p, mesh->mu_s[c1], mesh->T_s[c1], mesh->P_s[c1], mesh->d0_s[c1], mesh->phi1_s[c1], mesh->exxd_s[c1], mesh->ezzd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->szzd0_s[c1], mesh->sxz0[c1], materials, model, scaling, flag, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_pwl, &exz_pwl, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &exx_pl, &exz_pl, &d1s, &A2_pwl, mesh->strain_s[c1], mesh->phi_s[c1], mesh->C_s[c1]);
+                    eta =  Viscosity( p, mesh->mu_s[c1], T_s, P_s, d0s, phis, mesh->exxd_s[c1], mesh->ezzd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->szzd0_s[c1], mesh->sxz0[c1], materials, model, scaling, flag, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_pwl, &exz_pwl, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &exx_pl, &exz_pl, &d1s, &A2_pwl, mesh->strain_s[c1], mesh->phi_s[c1], mesh->C_s[c1]);
                 }
                 
                 if (average ==0) {
@@ -1941,12 +2020,12 @@ void NonNewtonianViscosityGrid( grid* mesh, mat_prop *materials, params *model, 
                 mesh->eta_phys_s[c1] = 1.0/mesh->eta_phys_s[c1];
                 if (isinf (mesh->eta_phys_s[c1]) ) {
                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_s[p][c1]);
-                    printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e \n", mesh->mu_s[c1],  mesh->eii_s[c1],  mesh->tii0_s[c1], mesh->exxd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->sxz0[c1]);
+                    printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e\n", mesh->mu_s[c1], T_s, P_s, d0s, phis,  mesh->eii_s[c1],  mesh->tii0_s[c1], mesh->exxd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->sxz0[c1]);
                     exit(1);
                 }
                 if (isnan (mesh->eta_phys_s[c1]) ) {
                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_s[p][c1]);
-                    printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e \n", mesh->mu_s[c1],  mesh->eii_s[c1],  mesh->tii0_s[c1], mesh->exxd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->sxz0[c1]);
+                    printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e\n", mesh->mu_s[c1], T_s, P_s, d0s, phis,  mesh->eii_s[c1],  mesh->tii0_s[c1], mesh->exxd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->sxz0[c1]);
                     exit(1);
                 }
             }
@@ -2433,7 +2512,7 @@ void StrainRateComponents( grid* mesh, scale scaling, params* model ) {
         mesh->exz_n[c0] = 0.0;
         sum = 0.0;
         
-        if ( mesh->BCp.type[c0]      != 30 && mesh->BCp.type[c0] != 31) {
+        if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
             if (mesh->BCg.type[c1]      != 30 ) { mesh->exz_n[c0] += mesh->exz[c1];      sum++;}
             if (mesh->BCg.type[c1+1]    != 30 ) { mesh->exz_n[c0] += mesh->exz[c1+1];    sum++;}
             if (mesh->BCg.type[c1+Nx]   != 30 ) { mesh->exz_n[c0] += mesh->exz[c1+Nx];   sum++;}

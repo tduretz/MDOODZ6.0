@@ -78,6 +78,11 @@ void Continuity_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesC, Spar
     if ( mesh->BCv.type[c3     ] != 13 ) vS = -one_dz;
     if ( mesh->BCv.type[c3+nxvz] != 13 ) vN =  one_dz;
     
+//    if ( mesh->BCu.type[c1     ] != 13 ) uW =  one_dx;
+//    if ( mesh->BCu.type[c1+1   ] != 13 ) uE = -one_dx;
+//    if ( mesh->BCv.type[c3     ] != 13 ) vS =  one_dz;
+//    if ( mesh->BCv.type[c3+nxvz] != 13 ) vN = -one_dz;
+//
     // Stencil assembly / residual
     if ( Assemble == 1 ) {
         StokesC->b[eqn] *= celvol;
@@ -155,9 +160,9 @@ void Xmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
     vNW = (1.0/3.0)*D11W*comp*inW/(dx*dz) - D33N*inNv/(dx*dz);
     vNE = -1.0/3.0*D11E*comp*inE/(dx*dz) + D33N*inNv/(dx*dz);
     
-    if (eqn==276) {
-        printf("VSW = %2.2e VSE = %2.2e %2.2e %2.2e\n", vSW, vSE, D33S, D33N);
-    }
+//    if (eqn==276) {
+//        printf("VSW = %2.2e VSE = %2.2e %2.2e %2.2e\n", vSW, vSE, D33S, D33N);
+//    }
     
     // Add contribulition from non-conforming Dirichlets
     if ( mesh->BCu.type[c1-nx] == 11 ) uC  +=  -one_dz_dz * D33S;
@@ -280,6 +285,10 @@ void Xmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
         
     }
     else {
+        
+        
+        
+        
         // Residual function
         StokesA->F[eqn] = uC*u[c1];
         if ( mesh->BCp.type[c2+1] != 30 && mesh->BCp.type[c2] != 30 ) {
@@ -300,26 +309,77 @@ void Xmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
         StokesA->F[eqn] -= (StokesA->b[eqn]);// + Stokes->bbc[eqn];
         StokesA->F[eqn] *= celvol;
         
-        if (eqn==276 ) {
-            printf("eqn = %d Fx = %2.2e %d\n",eqn, StokesA->F[eqn], mesh->BCu.type[c1] );
-         ////        double F1 = pW*p[c2] + pE*p[c2+1] + vSW*v[c3-nxvz] + vSE*v[c3-nxvz+1] + vNW*v[c3] + vNE*v[c3+1] + uS*u[c1-nx] + uN*u[c1+nx] + uW*u[c1-1] + uE*u[c1+1] + uC*u[c1] + (StokesA->b[eqn] - StokesA->bbc[eqn]);
-         ////        if (fabs(F1)>1e-6) {
-         ////        printf("F0 = %2.2e %2.2e\n", StokesA->F[eqn], F1*celvol);
-//         printf("x momentum --  etaW = %2.2e etaE = %2.2e etaS = %2.2e etaN = %2.2e\n", etaW, etaE, etaS, etaN);
-         printf("uC = %02d %2.2e %2.12e\n",      mesh->BCu.type[c1+0],  uC, u[c1] );
-         printf("uW = %02d %2.2e %2.12e\n",      mesh->BCu.type[c1-1],  uW, u[c1-1] );
-         printf("uE = %02d %2.2e %2.2e\n",      mesh->BCu.type[c1+1],  uE, u[c1+1] );
-         printf("uS = %02d %2.2e %2.2e \n",     mesh->BCu.type[c1-nx], uS, u[c1-nx] );
-         printf("uN = %02d %2.2e %2.2e \n",     mesh->BCu.type[c1+nx], uN, u[c1+nx] );
-         printf("vSE= %02d %2.2e %2.2e \n",     mesh->BCv.type[c3-nxvz+1], vSE, v[c3-nxvz+1] );
-         printf("vNE= %02d %2.2e %2.2e \n",     mesh->BCv.type[c3+1], vNE, v[c3+1] );
-         printf("vSW= %02d %2.2e %2.2e \n",     mesh->BCv.type[c3-nxvz], vSW, v[c3-nxvz] );
-         printf("vNW= %02d %2.2e %2.2e \n",     mesh->BCv.type[c3], vNW, v[c3] );
-         printf("pW = %02d %2.2e %2.2e \n",     mesh->BCp.type[c2], pW, p[c2] );
-         printf("pE = %02d %2.2e %2.2e \n",mesh->BCp.type[c2+1], pE, p[c2+1]);
-            printf("%2.2e %2.2e bbc = %2.2e b = %2.2e\n", StokesA->b[eqn] + StokesA->bbc[eqn], mesh->BCu.val[c1], StokesA->bbc[eqn] , StokesA->b[eqn]);
-         printf("%2.2e EQN=%d\n", (uC*u[c1] + uW*u[c1-1])*4e-5* celvol, eqn);
-         }
+//       if (eqn==277) {
+//            printf("eqn = %d Fx = %2.2e %d\n",eqn, StokesA->F[eqn], mesh->BCu.type[c1] );
+//         ////        double F1 = pW*p[c2] + pE*p[c2+1] + vSW*v[c3-nxvz] + vSE*v[c3-nxvz+1] + vNW*v[c3] + vNE*v[c3+1] + uS*u[c1-nx] + uN*u[c1+nx] + uW*u[c1-1] + uE*u[c1+1] + uC*u[c1] + (StokesA->b[eqn] - StokesA->bbc[eqn]);
+//         ////        if (fabs(F1)>1e-6) {
+//         ////        printf("F0 = %2.2e %2.2e\n", StokesA->F[eqn], F1*celvol);
+////         printf("x momentum --  etaW = %2.2e etaE = %2.2e etaS = %2.2e etaN = %2.2e\n", etaW, etaE, etaS, etaN);
+//         printf("uC = %02d %2.2e %2.12e\n",      mesh->BCu.type[c1+0],  uC, u[c1] );
+//         printf("uW = %02d %2.2e %2.12e\n",      mesh->BCu.type[c1-1],  uW, u[c1-1] );
+//         printf("uE = %02d %2.2e %2.2e\n",      mesh->BCu.type[c1+1],  uE, u[c1+1] );
+//         printf("uS = %02d %2.2e %2.2e \n",     mesh->BCu.type[c1-nx], uS, u[c1-nx] );
+//         printf("uN = %02d %2.2e %2.2e \n",     mesh->BCu.type[c1+nx], uN, u[c1+nx] );
+//         printf("vSE= %02d %2.2e %2.2e \n",     mesh->BCv.type[c3-nxvz+1], vSE, v[c3-nxvz+1] );
+//         printf("vNE= %02d %2.2e %2.2e \n",     mesh->BCv.type[c3+1], vNE, v[c3+1] );
+//         printf("vSW= %02d %2.2e %2.2e \n",     mesh->BCv.type[c3-nxvz], vSW, v[c3-nxvz] );
+//         printf("vNW= %02d %2.2e %2.2e \n",     mesh->BCv.type[c3], vNW, v[c3] );
+//         printf("pW = %02d %2.2e %2.2e \n",     mesh->BCp.type[c2], pW, p[c2] );
+//         printf("pE = %02d %2.2e %2.2e \n",mesh->BCp.type[c2+1], pE, p[c2+1]);
+//            printf("%2.2e %2.2e bbc = %2.2e b = %2.2e\n", StokesA->b[eqn] + StokesA->bbc[eqn], mesh->BCu.val[c1], StokesA->bbc[eqn] , StokesA->b[eqn]);
+//         printf("%2.2e EQN=%d\n", (uC*u[c1] + uW*u[c1-1])*4e-5* celvol, eqn);
+//
+//            StokesA->F[eqn] = uC*u[c1] + pW*p[c2] + pE*p[c2+1] + vSW*v[c3-nxvz] + vSE*v[c3-nxvz+1] + vNW*v[c3] + vNE*v[c3+1] +  uN*u[c1+nx] + uS*u[c1-nx] + uW*u[c1-1] + uE*u[c1+1];
+//            StokesA->F[eqn] -= (StokesA->b[eqn]);// + Stokes->bbc[eqn];
+//            StokesA->F[eqn] *= celvol;
+//            printf("eqn = %d Fx = %2.2e %d\n",eqn, StokesA->F[eqn], mesh->BCu.type[c1] );
+//
+//
+//
+//                double F2 = 0;
+//
+//                // dsxx/dx - normal stencil
+//                if (mesh->BCu.type[c1-nx] != 30) {
+//                    if (mesh->BCu.type[c1-nx] != 11) F2 += uS * u[c1-nx];
+//                }
+//                if (mesh->BCu.type[c1-1]  != 30)    F2 += uW * u[c1-1];
+//                    F2 += uC * u[c1];
+//                if (mesh->BCu.type[c1+1]  != 30)     F2 += uE * u[c1+1];
+//                if (mesh->BCu.type[c1+nx] != 30) {
+//                    if (mesh->BCu.type[c1+nx] != 11) F2 += uN * u[c1+nx];
+//                        }
+//                //--------------------
+//
+//                if ( mesh->BCv.type[c3-nxvz] != 30 && mesh->BCv.type[c3-nxvz+1] != 30 )  {
+//                    F2 += vSW * v[c3-nxvz];
+//                    F2 += vSE * v[c3-nxvz+1];
+//                }
+//
+//
+//
+//                if ( mesh->BCv.type[c3] != 30 && mesh->BCv.type[c3+1] != 30 )  {
+//                    F2 += vNW * v[c3];
+//                    F2 += vNE * v[c3+1];
+//                }
+//
+//                //--------------------
+//                if ( mesh->BCp.type[c2+1] != 30 && mesh->BCp.type[c2] != 30 ) {
+//                    F2 += pW * p[c2];
+//                     F2 += pE * p[c2+1];
+//                }
+//
+//                F2 -= (StokesA->b[eqn]);// + Stokes->bbc[eqn];
+//                F2 *= celvol;
+//
+//                printf("F2 = %2.2e\n", F2);
+//
+//
+//
+////            exit(1);
+//
+//
+//
+//         }
         
     }
 }

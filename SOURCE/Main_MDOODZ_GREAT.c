@@ -426,6 +426,9 @@ int main( int nargs, char *args[] ) {
         
         // Detect compressible cells
         if (model.compressible == 1) DetectCompressibleCells ( &mesh, &model );
+        
+        // Some stuff to be put on vertices
+        Interp_TPdphi_centroid2vertices (&mesh, &model );
 
         // Min/Max interpolated fields
         MinMaxArrayTag( mesh.rho_s,    scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s   ", mesh.BCg.type );
@@ -505,8 +508,6 @@ int main( int nargs, char *args[] ) {
             // Compute viscosity derivatives
 //            if ( model.Newton          == 1 ) ComputeViscosityDerivatives( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
             
-            // Fill up the rheological matrices arrays
-            RheologicalOperators( &mesh, &model, &scaling, 0 );
             
             MinMaxArrayTag( mesh.exxd, scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "exx", mesh.BCp.type );
             MinMaxArrayTag( mesh.exz_n, scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "exz_n", mesh.BCp.type );

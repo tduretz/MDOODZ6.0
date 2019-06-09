@@ -552,6 +552,11 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->detadgxz_s  = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->detadp_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     
+    mesh->d0_s   = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+    mesh->phi1_s = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+    mesh->T_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+    mesh->P_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+    
     
     printf("Memory succesfully allocated : \nDiantre, que c'est bon!\n");
 
@@ -786,6 +791,11 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->D23_n);
     DoodzFree(mesh->D24_n);
     
+    DoodzFree(mesh->D31_s);
+    DoodzFree(mesh->D32_s);
+    DoodzFree(mesh->D33_s);
+    DoodzFree(mesh->D34_s);
+    
     DoodzFree(mesh->detadexx_n);
     DoodzFree(mesh->detadezz_n);
     DoodzFree(mesh->detadgxz_n);
@@ -795,8 +805,13 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->detadezz_s);
     DoodzFree(mesh->detadgxz_s);
     DoodzFree(mesh->detadp_s);
+
+    DoodzFree(mesh->d0_s);
+    DoodzFree(mesh->phi1_s);
+    DoodzFree(mesh->T_s);
+    DoodzFree(mesh->P_s);
     
-     DoodzFree(mesh->D34_s);
+    
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/

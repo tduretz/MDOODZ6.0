@@ -27,8 +27,8 @@ particles = 0;
 topo      = 0;
 vel_plot  = 0;
 tags      = 1;
-residuals = 0;
-numbering = 0;
+residuals = 1;
+numbering = 1;
 
 % Colorbar limits
 minP   = -2e5;
@@ -428,7 +428,12 @@ for istep=istart:ijump:iend
             end
             
             subplot(211)
-            imagesc(xg_plot/1e3, zvx_plot(2:end-1)/1e3, eqnu)
+            imagesc(xg_plot/1e3, zvx_plot(2:end-1)/1e3, eqnu(2:end-1,:))
+            shading flat,axis xy image, colorbar;
+            xlabel('x'), ylabel('z');
+            
+            subplot(212)
+            imagesc(xc_plot/1e3, zc_plot/1e3, eqnp)
             shading flat,axis xy image, colorbar;
             xlabel('x'), ylabel('z');
             
