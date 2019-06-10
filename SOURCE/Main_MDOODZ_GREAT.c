@@ -505,20 +505,30 @@ int main( int nargs, char *args[] ) {
             // Non-Linearity
             UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
             
-            // Compute viscosity derivatives
-//            if ( model.Newton          == 1 ) ComputeViscosityDerivatives( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
             
             
-            MinMaxArrayTag( mesh.exxd, scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "exx", mesh.BCp.type );
-            MinMaxArrayTag( mesh.exz_n, scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "exz_n", mesh.BCp.type );
-            MinMaxArrayTag( mesh.exz, scaling.E, (mesh.Nx-0)*(mesh.Nz-0), "exz", mesh.BCg.type );
+            MinMaxArrayTag( mesh.detadexx_n, scaling.eta/scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "detadexx_n", mesh.BCp.type );
+            MinMaxArrayTag( mesh.detadezz_n, scaling.eta/scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "detadezz_n", mesh.BCp.type );
+            MinMaxArrayTag( mesh.detadgxz_n, scaling.eta/scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "detadexz_n", mesh.BCp.type );
+            MinMaxArrayTag( mesh.detadp_n,   scaling.eta/scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "detadp_n",   mesh.BCp.type );
             
-            MinMaxArrayTag( mesh.exxd_s, scaling.E, (mesh.Nx-0)*(mesh.Nz-0), "exx_s", mesh.BCg.type );
+            MinMaxArrayTag( mesh.detadexx_s, scaling.eta/scaling.E, (mesh.Nx-0)*(mesh.Nz-0), "detadexx_s", mesh.BCg.type );
+            MinMaxArrayTag( mesh.detadezz_s, scaling.eta/scaling.E, (mesh.Nx-0)*(mesh.Nz-0), "detadezz_s", mesh.BCg.type );
+            MinMaxArrayTag( mesh.detadgxz_s, scaling.eta/scaling.E, (mesh.Nx-0)*(mesh.Nz-0), "detadexz_s", mesh.BCg.type );
+            MinMaxArrayTag( mesh.detadp_s,   scaling.eta/scaling.E, (mesh.Nx-0)*(mesh.Nz-0), "detadp_s",   mesh.BCg.type );
+
             
-            MinMaxArrayTag( mesh.eta_phys_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_phys_n", mesh.BCp.type );
-            MinMaxArrayTag( mesh.eta_phys_s, scaling.eta, (mesh.Nx-0)*(mesh.Nz-0), "eta_phys_s", mesh.BCg.type );
-            MinMaxArrayTag( mesh.eta_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),   "eta_eff_n", mesh.BCp.type );
-            MinMaxArrayTag( mesh.eta_s, scaling.eta, (mesh.Nx)*(mesh.Nz),       "eta_eff_s", mesh.BCg.type );
+            
+//            MinMaxArrayTag( mesh.exxd, scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "exx", mesh.BCp.type );
+//            MinMaxArrayTag( mesh.exz_n, scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "exz_n", mesh.BCp.type );
+//            MinMaxArrayTag( mesh.exz, scaling.E, (mesh.Nx-0)*(mesh.Nz-0), "exz", mesh.BCg.type );
+//
+//            MinMaxArrayTag( mesh.exxd_s, scaling.E, (mesh.Nx-0)*(mesh.Nz-0), "exx_s", mesh.BCg.type );
+//
+//            MinMaxArrayTag( mesh.eta_phys_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_phys_n", mesh.BCp.type );
+//            MinMaxArrayTag( mesh.eta_phys_s, scaling.eta, (mesh.Nx-0)*(mesh.Nz-0), "eta_phys_s", mesh.BCg.type );
+//            MinMaxArrayTag( mesh.eta_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),   "eta_eff_n", mesh.BCp.type );
+//            MinMaxArrayTag( mesh.eta_s, scaling.eta, (mesh.Nx)*(mesh.Nz),       "eta_eff_s", mesh.BCg.type );
             
             // Stokes solver
             if ( model.ismechanical == 1 ) {
@@ -526,6 +536,19 @@ int main( int nargs, char *args[] ) {
                 // Build discrete system of equations - MATRIX
                 if ( model.decoupled_solve == 0 ) BuildStokesOperator           ( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, 1 );
                 if ( model.decoupled_solve == 1 ) BuildStokesOperatorDecoupled  ( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, 1 );
+                if ( model.Newton          == 1 ) ComputeViscosityDerivatives( &mesh, &materials, &model, Nmodel, &scaling, 1 );
+                
+                
+                
+                
+                
+                
+                if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
+                
+                
+                
+                
+                
                 if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
                 
                 // Diagonal scaling
@@ -592,6 +615,7 @@ int main( int nargs, char *args[] ) {
                     if ( model.decoupled_solve == 1 ) {
                         if ( model.Newton==0 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling, &StokesA, &StokesB, &StokesC );
                         if ( model.Newton==1 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling, &JacobA, &JacobB, &JacobC );
+                        
                     }
 
                     if ( Nmodel.stagnated == 1 && safe == 0 ) {
