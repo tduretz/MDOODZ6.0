@@ -567,7 +567,7 @@ int main( int nargs, char *args[] ) {
 
 
                     printf("---- Non-linear residual ----\n");
-                    //                    model.free_surf_stab = 0;
+                    RheologicalOperators( &mesh, &model, &scaling, 0 );
                     if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
                     if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
                     if ( model.Newton          == 1 ) {
@@ -656,6 +656,7 @@ int main( int nargs, char *args[] ) {
                     //                    }
                     if ( Nmodel.nit == 0  ) {
                         printf("---- Direct solve residual ----\n");
+                        RheologicalOperators( &mesh, &model, &scaling, 0 );
                         if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
                         if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
                         printf("---- Direct solve residual ----\n");
