@@ -105,8 +105,8 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Newton
         for (k=0; k<Nx*Nz; k++) {
             
             if ( mesh->BCg.type[k] != 30 ) {
-                mesh->D31_s[k] =                  mesh->detadexx_s[k]*mesh->exz[k];
-                mesh->D32_s[k] =                  mesh->detadezz_s[k]*mesh->exz[k];
+                mesh->D31_s[k] =                  mesh->detadexx_s[k]*mesh->exz[k];   //
+                mesh->D32_s[k] =                  mesh->detadezz_s[k]*mesh->exz[k];   //
                 mesh->D33_s[k] = mesh->eta_s[k] + mesh->detadgxz_s[k]*mesh->exz[k];
             }
             else {
