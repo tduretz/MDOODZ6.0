@@ -41,11 +41,14 @@ def text_file(model, scaling, particles, materials_list, filename="input.txt"):
     
     mergeDict = {}
     for key in particle_dict:
-        mergeDict[key] = particle_dict[key]
+        if key[0] != '_':
+            mergeDict[key] = particle_dict[key]
     for key in model_dict:
-        mergeDict[key] = model_dict[key]
+        if key[0] != '_':
+            mergeDict[key] = model_dict[key]
     for key in scaling_dict:
-        mergeDict[key] = scaling_dict[key]
+        if key[0] != '_':
+            mergeDict[key] = scaling_dict[key]
         
         
     
@@ -73,10 +76,10 @@ def text_file(model, scaling, particles, materials_list, filename="input.txt"):
     myFile = myFile.replace('"','')
 #    
     
-    print(myFile)
+#    print(myFile)
     
-#    with open(filename, "w") as write_file:
-#        write_file.write(myFile)
+    with open(filename, "w") as write_file:
+        write_file.write(myFile)
 
     
       

@@ -376,12 +376,11 @@ class BinaryNoise():
         return f
         
     def assign_phase_to_particles(self,particles,atol=1e-6):
-        
+        @maybe_numba(use_numba)        
         def main_loop(particles_phase, noise_phase, particles_x, particles_z, xmin, xmax, zmin, zmax, N):
-
             for ip in range(particles_phase.size):
-                x = (particles.x[ip] - xmin)/(xmax-xmin)
-                z = (particles.z[ip] - zmin)/(zmax-zmin)
+                x = (particles_x[ip] - xmin)/(xmax-xmin)
+                z = (particles_z[ip] - zmin)/(zmax-zmin)
                 
                 # find the index of the closest node
                 # /!\ maybe that's good or maybe cell center are better (important for periodicity)

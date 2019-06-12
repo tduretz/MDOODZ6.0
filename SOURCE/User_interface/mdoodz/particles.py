@@ -189,7 +189,6 @@ class Particles():
         geometryObject,
         atol = 1e-6,
         ):
-        print(type(geometryObject) )
         if not isinstance(geometryObject,(geometry.Polygon,geometry.BinaryNoise)):
             raise ValueError("'geometryObject' must be an instance of 'mdoodz.geometry.Polygon' or 'mdoodz.geometry.BinaryNoise'")
         geometryObject.assign_phase_to_particles(self,atol=atol)

@@ -7,6 +7,7 @@ Created on Wed May 29 11:53:41 2019
 """
 
 from mdoodz.model import Model
+from copy import deepcopy
 
 class Material():
     def __init__(self,
@@ -92,3 +93,6 @@ class Material():
  # Density models
         self.density_model=density_model
         self.phase_diagram=phase_diagram
+        
+    def copy(self):
+        return deepcopy(self)
