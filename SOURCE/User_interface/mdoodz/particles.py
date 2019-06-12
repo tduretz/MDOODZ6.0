@@ -6,9 +6,9 @@ Created on Fri May 17 14:34:37 2019
 @author: abauville
 """
 import numpy as np
-import geometry
-from model import Model
-from utils import use_numba, maybe_numba
+import mdoodz.geometry as geometry
+from mdoodz.model import Model
+from mdoodz.utils import use_numba, maybe_numba
 
 class Particles():
     def __init__(self,
@@ -46,9 +46,9 @@ class Particles():
         self.z = None
         self.Nb_part = 0
         if model.free_surf==1:
-            self.init_xz_free_surf(model,topo_chain) 
+            self._init_xz_free_surf(model,topo_chain) 
         else:            
-            self.init_xz(model,topo_chain)             
+            self._init_xz(model,topo_chain)             
         
         self.Nb_part_max = self.Nb_part * over_alloc_fac
         
@@ -72,7 +72,7 @@ class Particles():
         self.isScaled = model.isScaled
 
     #void init_xz( markers *particles, grid *mesh, params model, surface topo, scale scaling )
-    def init_xz(self,model,topo_chain):        
+    def _init_xz(self,model,topo_chain):        
     # Set the original particle layout throughout the mesh.
     # The particlers are set with regular spacing.   
     # The difference with the original C function is that topo_chain is used instead of topo
@@ -113,7 +113,7 @@ class Particles():
     # end def init_xz
     
     
-    def init_xz_free_surf(self,model,topo_chain): 
+    def _init_xz_free_surf(self,model,topo_chain): 
     
     # Set the original particle layout throughout the mesh.
     # The particlers are set with regular spacing.   

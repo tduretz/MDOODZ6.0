@@ -6,10 +6,10 @@ Created on Fri May 17 14:34:37 2019
 @author: abauville
 """
 import numpy as np
-from model import Model
-from scaling import Scaling
+from mdoodz.model import Model
+from mdoodz.scaling import Scaling
 
-from utils import use_numba, maybe_numba
+from mdoodz.utils import use_numba, maybe_numba
 
 
 

@@ -5,7 +5,7 @@ Created on Tue May 28 11:30:07 2019
 
 @author: abauville
 """
-from scaling import Scaling
+from mdoodz.scaling import Scaling
 
 class Model():
     def __init__(self,

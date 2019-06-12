@@ -46,3 +46,4 @@ Myr     = 1e6       * yr
 Pa      = kg/m/s/s
 MPa     = 1e6       * Pa
 
+percent = 1.0/100.0

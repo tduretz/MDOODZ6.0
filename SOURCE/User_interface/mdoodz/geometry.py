@@ -6,34 +6,18 @@ Created on Wed May 22 11:40:39 2019
 @author: abauville
 """
 
-""" ---------------------------------------------------------------------------
-Fast detection points inside a polygonal region.
 
-Originally written as a MATLAB mexFunction by:
-A. David Redish      email: adr@nsma.arizona.edu
-Guillaume Jacquenot  email: guillaume.jacquenot@gmail.com
-
-Modified to be callable directly from C by:
-Anton A. Popov       email: popov@uni-mainz.de
-
-Output is simplified to skip distinguishing points IN and ON the polygon.
-Coordinates storage format is changed from strided to interleaved.
-Bounding box computation is separated from the main test function.
-
-This function has been copied from the open source code of LaMEM - Lithosphere 
-and Mantle Evolution Model, commit number: 1dfe60b, Dec. 12, 2018
-ref: Kaus, Boris JP, et al. "Forward and inverse modelling of lithospheric 
-deformation on geological timescales." NIC Symposium 2016-Proceedings, NIC Series, Jülich, DE. 2016.
-https:#bitbucket.org/bkaus/lamem/
-#---------------------------------------------------------------------------
-"""
 
 import numpy as np
-from scaling import Scaling
-from utils import use_numba, maybe_numba
+from mdoodz.scaling import Scaling
+from mdoodz.utils import use_numba, maybe_numba
 
-
-#import math
+   
+# =============================================================================
+#
+#                           Class Rotation
+#
+# =============================================================================
 class Rotation():
     def __init__(self,xc=0.0,zc=0.0,angle=0.0):
         self.xc = xc
@@ -63,7 +47,11 @@ class Rotation():
 
 
 
-
+# =============================================================================
+#
+#                           Class Polygon
+#
+# =============================================================================
 class Polygon():
     def __init__(self,x,z,phase=0,scaled=False):
         if isinstance(x,list) or isinstance(x,tuple):
@@ -130,6 +118,18 @@ class Polygon():
         self.scaled = False
         
     def assign_phase_to_particles(self,particles,atol=1e-6):
+        """ ---------------------------------------------------------------------------
+        Fast detection points inside a polygonal region.
+        
+        Originally written as a MATLAB mexFunction by:
+        A. David Redish      email: adr@nsma.arizona.edu
+        Guillaume Jacquenot  email: guillaume.jacquenot@gmail.com
+        
+        Output is simplified to skip distinguishing points IN and ON the polygon.
+        Coordinates storage format is changed from strided to interleaved.
+        Bounding box computation is separated from the main test function.
+        #---------------------------------------------------------------------------
+        """
         
         xPoints = particles.x
         zPoints = particles.z
@@ -227,7 +227,14 @@ class Polygon():
         main_loop(particles.phase, self.phase)
 #     end assign_phase_to_particles
 
-        
+   
+    
+
+# =============================================================================
+#
+#                               Class Box
+#
+# =============================================================================     
 class Box(Polygon):
     """
     Box(box=[x0,x1,z0,z1],phase=0)
@@ -244,6 +251,18 @@ class Box(Polygon):
 
         self.rotation = Rotation()
     def assign_phase_to_particles(self,particles,atol=1e-6):
+        """ ---------------------------------------------------------------------------
+        Fast detection points inside a polygonal region.
+        
+        Originally written as a MATLAB mexFunction by:
+        A. David Redish      email: adr@nsma.arizona.edu
+        Guillaume Jacquenot  email: guillaume.jacquenot@gmail.com
+        
+        Output is simplified to skip distinguishing points IN and ON the polygon.
+        Coordinates storage format is changed from strided to interleaved.
+        Bounding box computation is separated from the main test function.
+        #---------------------------------------------------------------------------
+        """
         xPoints = particles.x.copy()
         zPoints = particles.z.copy()
         nPoints = xPoints.size 
@@ -281,3 +300,117 @@ class Box(Polygon):
 #            return 
             
         main_loop(particles.phase, self.phase)
+        
+        
+        
+
+# =============================================================================
+#
+#                           Class BinaryNoise
+#
+# ============================================================================= 
+class BinaryNoise():
+    def __init__(self,proportion,N=500, phase_ids=(0,1),rL=1.0,h=1.0,clx=0.1,cly=0.1,angle=0.0):
+        from scipy.optimize import minimize     
+        self.proportion = proportion
+        self.N = N
+        self.rL = rL
+        self.h = h
+        self.clx = clx
+        self.cly = cly
+        self.angle = angle
+        self.phase_ids = phase_ids
+        
+        def error_function(threshold,f,N,targetPhaseProportion):
+            phaseProportion = np.sum(f<threshold)/N**2
+            return (phaseProportion - targetPhaseProportion)**2
+    
+
+        f = self._create_random_surface(N=N,rL=rL,h=h,clx=clx,cly=cly,angle=angle)
+           
+        iniThreshold = 0.0
+        idealThreshold = minimize(error_function, x0=iniThreshold, args=(f,self.N,self.proportion),method='Nelder-Mead').x[0]
+        
+        #print(errorFunction(idealThreshold.x[0],f,N,targetPhaseProportion))
+        
+        self.phase = phase_ids[0]*np.ones(f.shape,dtype=int)
+        self.phase[f<idealThreshold] = phase_ids[1]
+        phaseProportion = np.sum(f<idealThreshold)/N**2
+        print("phaseProportion = %.2f %%" % (phaseProportion*100.0))
+        
+        
+        
+        
+
+
+    def _create_random_surface(self,N,rL=1.0,h=1.0,clx=0.1,cly=0.1,angle=0.0):
+        from numpy import exp, sqrt, pi
+        from numpy.fft import fft2, ifft2
+        # 2D Gaussian random rough surface with Gaussian autocovariance function
+        x = np.linspace(-1.0,1.0,N)
+        y = np.linspace(-1.0,1.0,N)
+        
+        X, Y =np.meshgrid(x,y)
+        X = X.T
+        Y = Y.T
+    
+        Z = np.random.randn(N,N)
+        
+        # if angle == 0.0:
+        F = exp(-(X**2/(0.5*clx**2)+Y**2/(0.5*cly**2))); # Gaussian filter
+        f = 2.0/sqrt(pi)*rL/N/sqrt(clx)/sqrt(cly)*ifft2(fft2(Z)*fft2(F)); # correlated surface generation including convolution (faltning) and inverse Fourier transform
+        #   else:
+        #       #tilted Gaussian
+        #       a = ((cosd(angle)^2) / (2*clx^2)) + ((sind(angle)^2) / (2*cly^2));
+        #       b = -((sind(2*angle)) / (4*clx^2)) + ((sind(2*angle)) / (4*cly^2));
+        #       c = ((sind(angle)^2) / (2*clx^2)) + ((cosd(angle)^2) / (2*cly^2));
+        #        
+        #       F = exp(-(a*(X).^2 + 2*b*(X).*(Y) + c*(Y).^2)); % tilted Gaussian filter
+        #       f = 2/sqrt(pi)*rL/N/sqrt(clx)/sqrt(cly)*ifft2(fft2(Z).*fft2(F)); % correlated surface generation including convolution (faltning) and inverse Fourier transform    
+        import warnings
+#            warnings.filterwarnings('ignore')
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="Casting complex values to real discards the imaginary part")
+            f = f.astype("float64")
+            
+        return f
+        
+    def assign_phase_to_particles(self,particles,Grid,atol=1e-6):
+        
+        def main_loop(particles_phase, noise_phase, particles_x, particles_z, xmin, xmax, zmin, zmax, N):
+
+            for ip in range(particles_phase.size):
+                x = (particles.x[ip] - xmin)/(xmax-xmin)
+                z = (particles.z[ip] - zmin)/(zmax-zmin)
+                
+                # find the index of the closest node
+                # /!\ maybe that's good or maybe cell center are better (important for periodicity)
+                ix = round(x*N)
+                iz = round(z*N)
+                
+                particles_phase[ip] = noise_phase[ix,iz]
+                
+
+        main_loop(particles.phase, self.phase, particles.x, particles.z, Grid.xmin, Grid.xmax, Grid.zmin, Grid.zmax, self.N)
+                
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        

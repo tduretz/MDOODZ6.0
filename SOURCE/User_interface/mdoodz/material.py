@@ -6,7 +6,7 @@ Created on Wed May 29 11:53:41 2019
 @author: abauville
 """
 
-from model import Model
+from mdoodz.model import Model
 
 class Material():
     def __init__(self,

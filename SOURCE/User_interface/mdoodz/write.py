@@ -7,7 +7,7 @@ Created on Fri May 17 14:34:37 2019
 """
 import numpy as np
 import json
-from model import Model
+from mdoodz.model import Model
 
 class NumpyEncoder(json.JSONEncoder):
         def default(self, obj):
