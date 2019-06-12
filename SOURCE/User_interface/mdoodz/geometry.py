@@ -375,7 +375,7 @@ class BinaryNoise():
             
         return f
         
-    def assign_phase_to_particles(self,particles,Grid,atol=1e-6):
+    def assign_phase_to_particles(self,particles,atol=1e-6):
         
         def main_loop(particles_phase, noise_phase, particles_x, particles_z, xmin, xmax, zmin, zmax, N):
 
@@ -385,13 +385,13 @@ class BinaryNoise():
                 
                 # find the index of the closest node
                 # /!\ maybe that's good or maybe cell center are better (important for periodicity)
-                ix = round(x*N)
-                iz = round(z*N)
+                ix = int(np.floor(x*N))
+                iz = int(np.floor(z*N))
                 
                 particles_phase[ip] = noise_phase[ix,iz]
                 
 
-        main_loop(particles.phase, self.phase, particles.x, particles.z, Grid.xmin, Grid.xmax, Grid.zmin, Grid.zmax, self.N)
+        main_loop(particles.phase, self.phase, particles.x, particles.z, particles._xmin, particles._xmax, particles._zmin, particles._zmax, self.N)
                 
         
         

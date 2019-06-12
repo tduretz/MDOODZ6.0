@@ -118,8 +118,8 @@ print("%.1f s" % (time.time()-tic))
 
 # ==== Assign phase from polygons
 print("Assigning phase to particles: ", end = ''); tic = time.time()
-particles.assign_phase_from_polygon(slab)
-particles.assign_phase_from_polygon(ocPlate)
+particles.assign_phase_from_geometry(slab)
+particles.assign_phase_from_geometry(ocPlate)
 print("%.1f s" % (time.time()-tic))
 
 

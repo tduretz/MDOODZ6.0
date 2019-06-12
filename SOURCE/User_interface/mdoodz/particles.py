@@ -24,6 +24,8 @@ class Particles():
                  T = 1.0,
                  phase = 0):
         
+        if not isinstance(model,Model):
+            raise ValueError("model must be an instance of mdoodz.model.Model")
         
         # Checks
         if model.free_surf == 1:
@@ -40,6 +42,12 @@ class Particles():
         self.Nx_part = Nx_part
         self.Nz_part = Nz_part
         self.min_part_cell = min_part_cell
+        
+        self._xmin = model.xmin
+        self._xmax = model.xmax
+        self._zmin = model.zmin
+        self._zmax = model.zmax
+        
         
         # Assign Nb_part, x, z
         self.x = None
@@ -176,14 +184,16 @@ class Particles():
     # end def init_xz
     
     
-    def assign_phase_from_polygon(
+    def assign_phase_from_geometry(
         self,
-        polygon,
+        geometryObject,
         atol = 1e-6,
         ):
-        if not isinstance(polygon,geometry.Polygon):
-            raise ValueError("'Polygon' must be an instance of 'Geometry.Polygon'")
-        polygon.assign_phase_to_particles(self,atol=atol)
+        print(type(geometryObject) )
+        if not isinstance(geometryObject,(geometry.Polygon,geometry.BinaryNoise)):
+            raise ValueError("'geometryObject' must be an instance of 'mdoodz.geometry.Polygon' or 'mdoodz.geometry.BinaryNoise'")
+        geometryObject.assign_phase_to_particles(self,atol=atol)
+        
     
     
 # end class Particles
