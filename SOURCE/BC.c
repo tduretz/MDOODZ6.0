@@ -4,6 +4,8 @@
 #include "header_MDOODZ.h"
 #include "time.h"
 
+#define USE_BC_USER 0
+
 // Function declarations
 void SetBCs_freeSlipBox( grid *mesh, params *model, scale scaling, markers* particles, mat_prop *materials );
 
@@ -19,6 +21,13 @@ void SetBCs_new( grid *mesh, params *model, scale scaling, markers* particles, m
         case 1:
             SetBCs_freeSlipBox( mesh, model, scaling, particles, materials );
             break;
+        case 2:
+#if USE_BC_USER
+            SetBCs_user( mesh, model, scaling, particles, materials );
+            break;
+#else
+            printf("error: you requested the user defined boundary conditions but you did not compile with this option. Recompile with the option USE_BC_USER=1 and try again.\n");
+#endif
     }
     
 }
