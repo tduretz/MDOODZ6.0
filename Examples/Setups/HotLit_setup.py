@@ -71,7 +71,7 @@ model       = Model(Nx      = int(1000/1),#int(400),
                     rel_tol_div = 1e-14,
                     DefectCorrectionForm = 1,
                     
-                    EpsBG           = 5.e-16, #Background strain rate
+                    EpsBG           = 5.0e-16, #Background strain rate
                     user0           = 2.0e3,
                     user1           = 0,
                     user2           = 0,

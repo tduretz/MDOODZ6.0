@@ -96,8 +96,45 @@ class Material():
         self.phase_diagram=phase_diagram
         
     def copy_from(self,original_material):
+        # Copy of everything except ID
         if not isinstance(original_material, self.__class__):
             raise ValueError("original_material should be an instance of mdoodz.material.Material")
-        ID = self.ID    
-        self = deepcopy(original_material)
-        self.ID = ID
+
+        
+        self.rho=original_material.rho
+        self.mu=original_material.mu
+        self.Cv=original_material.Cv
+        self.k=original_material.k
+        self.Qr=original_material.Qr
+        self.C=original_material.C
+        self.phi=original_material.phi
+        self.Slim=original_material.Slim
+        self.alp=original_material.alp
+        self.bet=original_material.bet
+        self.drho=original_material.drho
+         
+ # Read flow law settings
+        self.cstv=original_material.cstv
+        self.pwlv=original_material.pwlv
+        self.linv=original_material.linv
+        self.gbsv=original_material.gbsv
+        self.expv=original_material.expv
+        self.gsel=original_material.gsel
+        self.eta0=original_material.eta0
+        self.npwl=original_material.npwl
+        self.Qpwl=original_material.Qpwl
+        self.pref_pwl=original_material.pref_pwl
+        self.gs=original_material.gs
+        self.gsref=original_material.gsref
+         
+ # Strain softening
+        self.Ce=original_material.Ce
+        self.phie=original_material.phie
+        self.plss=original_material.plss
+        self.plse=original_material.plse
+        
+ # Density models
+        self.density_model=original_material.density_model
+        self.phase_diagram=original_material.phase_diagram
+        
+        

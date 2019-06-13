@@ -7,6 +7,7 @@ Created on Fri May 17 14:34:37 2019
 """
 import numpy as np
 import json
+import mdoodz
 from mdoodz.model import Model
 
 class NumpyEncoder(json.JSONEncoder):
@@ -32,6 +33,15 @@ def JsonFile(topo_chain,
 # Write files
 # ==========================================
 def text_file(model, scaling, particles, filename="input.txt"):
+    # Type checking
+    # ==========================
+    if not isinstance(model,mdoodz.model.Model):
+        raise ValueError("model should be an instance of mdoodz.model.Model")
+    if not isinstance(scaling,mdoodz.scaling.Scaling):
+        raise ValueError("scaling should be an instance of mdoodz.scaling.Scaling")
+    if not isinstance(particles,mdoodz.particles.Particles):
+        raise ValueError("particles should be an instance of mdoodz.particles.Particles")
+            
     
     particle_dict = {"Nx_part":particles.Nx_part,
                      "Nz_part":particles.Nz_part,
@@ -85,6 +95,16 @@ def text_file(model, scaling, particles, filename="input.txt"):
       
 def ini_particles_file(model, particles, topo_chain=None, filename = "input.dat"):
 
+    # Type checking
+    # ==========================
+    if not isinstance(model,mdoodz.model.Model):
+        raise ValueError("model should be an instance of mdoodz.model.Model")
+    if not isinstance(particles,mdoodz.particles.Particles):
+        raise ValueError("particles should be an instance of mdoodz.particles.Particles")
+    if topo_chain is not None:
+        if not isinstance(topo_chain,mdoodz.topo_chain.TopoChain):
+            raise ValueError("topo_chain should be an instance of mdoodz.particles.TopoChain")
+        
     # if model._isScaled:
     #     raise ValueError("the model should not be scaled to write the input file. (This error raising should disappear when development is mature)")
         

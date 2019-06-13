@@ -28,7 +28,7 @@ class Model():
                  xmax= 1.0,
                  zmin=-1.0,
                  zmax= 1.0,
-                 dt=0.0,
+                 dt=1e-5,
                  Courant=0.5,
          # Numerics
                  penalty=1.0e10,
