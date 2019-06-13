@@ -31,7 +31,7 @@ def JsonFile(topo_chain,
 
 # Write files
 # ==========================================
-def text_file(model, scaling, particles, materials_list, filename="input.txt"):
+def text_file(model, scaling, particles, filename="input.txt"):
     
     particle_dict = {"Nx_part":particles.Nx_part,
                      "Nz_part":particles.Nz_part,
@@ -60,14 +60,14 @@ def text_file(model, scaling, particles, materials_list, filename="input.txt"):
     
     myFile += "\n\n/**** MATERIALS ****/"
     
-    if len(materials_list) != model.Nb_phases:
-        raise ValueError("model.Nb_phases=%i but len(materials_list)=%i. Be sure to pass all defined materials to write the file." % (model.Nb_phases, len(materials_list)))
+    if len(model._materials_list) != model.Nb_phases:
+        raise ValueError("model.Nb_phases=%i but len(model._materials_list)=%i. Be sure to pass all defined materials to write the file." % (model.Nb_phases, len(model._materials_list)))
 #    else:
 #        myFile += "\nNb_phases = %i\n" % model.Nb_phases
         
-    for iMat in range(len(materials_list)):
+    for iMat in range(len(model._materials_list)):
         myFile += "\n\n"
-        myFile += json.dumps(vars(materials_list[iMat]), indent=4, separators=('', ' = '), ensure_ascii=False, cls=NumpyEncoder)
+        myFile += json.dumps(vars(model._materials_list[iMat]), indent=4, separators=('', ' = '), ensure_ascii=False, cls=NumpyEncoder)
         
     
     myFile = myFile.replace("{\n","")
@@ -85,8 +85,8 @@ def text_file(model, scaling, particles, materials_list, filename="input.txt"):
       
 def ini_particles_file(model, particles, topo_chain=None, filename = "input.dat"):
 
-    if model.isScaled:
-        raise ValueError("the model should not be scaled to write the input file. (This error raising should disappear when development is mature)")
+    # if model._isScaled:
+    #     raise ValueError("the model should not be scaled to write the input file. (This error raising should disappear when development is mature)")
         
     s1 = 4 # sizeof(int)
     s2 = 8 # sizeof(double)

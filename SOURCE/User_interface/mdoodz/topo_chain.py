@@ -54,29 +54,29 @@ class TopoChain():
         self.Vz = np.ones(Nb_part)
         self.phase = np.zeros(Nb_part,dtype=int)
         
-        self.isScaled = model.isScaled
+        # self._isScaled = model._isScaled
         
         # Assign topo_chain_x using algorithm from SetTopoChainHorizontalCoords
         for k in range(self.Nb_part):
             self.x[k]     = model.xmin + k*dx + dx;
         
         
-    def scale(self,scaling):
-        if not isinstance(scaling,Scaling):
-            raise TypeError("'scale' must be an instance of Scaling")
-        if self.isScaled == True:
-            raise ValueError("Trying to scale an already isScaled Polygon")
-        self.x /= scaling.L
-        self.z /= scaling.L
-        self.isScaled = True
+    # def scale(self,scaling):
+    #     if not isinstance(scaling,Scaling):
+    #         raise TypeError("'scale' must be an instance of Scaling")
+    #     if self._isScaled == True:
+    #         raise ValueError("Trying to scale an already isScaled Polygon")
+    #     self.x /= scaling.L
+    #     self.z /= scaling.L
+    #     self._isScaled = True
         
-    def unscale(self,scaling):
-        if not isinstance(scaling,Scaling):
-            raise TypeError("'scale' must be an instance of Scaling")
+    # def unscale(self,scaling):
+    #     if not isinstance(scaling,Scaling):
+    #         raise TypeError("'scale' must be an instance of Scaling")
             
-        if self.isScaled == False:
-            raise ValueError("Trying to unscale a non-isScaled Polygon")
-        self.x *= scaling.L
-        self.z *= scaling.L 
-        self.isScaled = False
+    #     if self._isScaled == False:
+    #         raise ValueError("Trying to unscale a non-isScaled Polygon")
+    #     self.x *= scaling.L
+    #     self.z *= scaling.L 
+    #     self._isScaled = False
 

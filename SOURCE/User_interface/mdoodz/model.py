@@ -294,7 +294,9 @@ class Model():
         self.Nb_phases = Nb_phases
         
     
-        self.isScaled=False
+#        self._isScaled=False
+        
+        self._materials_list = []
     
     def get_dx(self):
         return (self.xmax-self.xmin)/(self.Nx-1)
@@ -302,10 +304,10 @@ class Model():
     def get_dz(self):
         return (self.zmax-self.zmin)/(self.Nz-1)
         
-    def scale(self,scaling):
-        if not isinstance(scaling,Scaling):
-            raise TypeError("'scaling' must be an instance of Scaling")
-        self.xmin /= scaling.L
-        self.xmax /= scaling.L
-        self.zmin /= scaling.L
-        self.zmax /= scaling.L
+#    def scale(self,scaling):
+#        if not isinstance(scaling,Scaling):
+#            raise TypeError("'scaling' must be an instance of Scaling")
+#        self.xmin /= scaling.L
+#        self.xmax /= scaling.L
+#        self.zmin /= scaling.L
+#        self.zmax /= scaling.L

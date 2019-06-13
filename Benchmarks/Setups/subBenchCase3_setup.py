@@ -202,5 +202,5 @@ print("%.1f s" % (time.time()-tic))
 
 # Write files
 # ==========================================
-write.text_file(model, scaling, particles, (slab_mat,mantle_mat),filename='../Input/input.txt')
+write.text_file(model, scaling, particles, filename='../Input/input.txt')
 write.ini_particles_file(model, particles, topo_chain,filename='../Input/input.dat')

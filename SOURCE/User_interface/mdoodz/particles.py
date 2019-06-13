@@ -77,7 +77,7 @@ class Particles():
     
         self.phase  = phase*np.ones(self.Nb_part,dtype=int)
   
-        self.isScaled = model.isScaled
+#        self._isScaled = model._isScaled
 
     #void init_xz( markers *particles, grid *mesh, params model, surface topo, scale scaling )
     def _init_xz(self,model,topo_chain):        

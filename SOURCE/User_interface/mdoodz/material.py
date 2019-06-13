@@ -56,6 +56,7 @@ class Material():
             raise TypeError("'model' must be an instance of Model")
         
         model.Nb_phases += 1 
+        model._materials_list.append(self)
 # Read general parameters
         self.ID=ID
         self.rho=rho
@@ -94,5 +95,9 @@ class Material():
         self.density_model=density_model
         self.phase_diagram=phase_diagram
         
-    def copy(self):
-        return deepcopy(self)
+    def copy_from(self,original_material):
+        if not isinstance(original_material, self.__class__):
+            raise ValueError("original_material should be an instance of mdoodz.material.Material")
+        ID = self.ID    
+        self = deepcopy(original_material)
+        self.ID = ID
