@@ -83,7 +83,7 @@ def text_file(model, scaling, particles, materials_list, filename="input.txt"):
 
     
       
-def ini_particles_file(model, particles, topo_chain=None, filename = "IniParticles.dat"):
+def ini_particles_file(model, particles, topo_chain=None, filename = "input.dat"):
 
     if model.isScaled:
         raise ValueError("the model should not be scaled to write the input file. (This error raising should disappear when development is mature)")

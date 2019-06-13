@@ -13,5 +13,6 @@ from mdoodz.particles import Particles
 from mdoodz.topo_chain import TopoChain
 from mdoodz.scaling import Scaling
 import mdoodz.utils
+import mdoodz.read
 import mdoodz.write
 import mdoodz.units
