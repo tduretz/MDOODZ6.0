@@ -139,7 +139,7 @@ int main( int nargs, char *args[] ) {
         int useNewInput = 1;
         if (useNewInput == 1) {
             // Initial grid tags
-            mesh.BC_setup_type = 1; // eventually it should be set from the input file
+            model.BC_setup_type = 1; // eventually it should be set from the input file
             SetBCs_new( &mesh, &model, scaling , &particles, &materials );
 
             LoadIniParticles( partFileName, &particles, &mesh, &topo_chain, &topo_chain_ini, &model, scaling );
