@@ -35,7 +35,7 @@ class Particles():
             if topo_chain is not None:
                 raise ValueError("model.free_surf==0 but a non-empty Topo_chain object has been passed. Check your inputs for consistency")
         
-        if min_part_cell<Nx_part*Nz_part:
+        if min_part_cell>Nx_part*Nz_part:
             raise ValueError("min_part_cell should be lower than Nx_part*Nz_part")
         
         
