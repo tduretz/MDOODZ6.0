@@ -128,6 +128,7 @@ int main( int nargs, char *args[] ) {
     if ( model.free_surf == 1 ) AllocateMarkerChain( &topo_ini, &topo_chain_ini, model );
     
     // Set new particle distribution
+    int useNewInput = 1;
     if ( irestart == 0 ) {
         
         model.step = 0;
@@ -136,7 +137,7 @@ int main( int nargs, char *args[] ) {
         // Initialise particle fields
         PartInit( &particles, &model );
         
-        int useNewInput = 1;
+        
         if (useNewInput == 1) {
             // Initial grid tags
             model.BC_setup_type = 1; // eventually it should be set from the input file
@@ -207,7 +208,11 @@ int main( int nargs, char *args[] ) {
         printf("****** Initialize temperature *******\n");
         printf("*************************************\n");
         
-        SetBCs( &mesh, &model, scaling , &particles, &materials );
+        if (useNewInput == 1) {
+            SetBCs_new( &mesh, &model, scaling , &particles, &materials );
+        } else {
+            SetBCs( &mesh, &model, scaling , &particles, &materials );
+        }
         
         // Get energy and related material parameters from particles
         Interp_P2C ( particles, materials.Cv,   &mesh, mesh.Cv,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
@@ -216,7 +221,11 @@ int main( int nargs, char *args[] ) {
         Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kx,   mesh.xg_coord, mesh.zvx_coord,  mesh.Nx, mesh.Nz+1,   0, mesh.BCu.type , &model);
         Interp_P2C ( particles, particles.T, &mesh, mesh.T, mesh.xg_coord, mesh.zg_coord,  1, 0 );
         
-        SetBCs( &mesh, &model, scaling , &particles, &materials );
+        if (useNewInput == 1) {
+            SetBCs_new( &mesh, &model, scaling , &particles, &materials );
+        } else {
+            SetBCs( &mesh, &model, scaling , &particles, &materials );
+        }
         if ( model.thermal_eq == 1 ) ThermalSteps( &mesh, model,  mesh.T,  mesh.dT,  mesh.rhs_t, mesh.T, &particles, model.cooling_time, scaling );
         if ( model.therm_pert == 1 ) SetThermalPert( &mesh, model, scaling );
         Interp_Grid2P( particles, particles.T,    &mesh, mesh.T, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type );
@@ -472,7 +481,11 @@ int main( int nargs, char *args[] ) {
         printf("** Time for particles interpolations I = %lf sec\n",  (double)((double)omp_get_wtime() - t_omp) );
 
         // Allocate and initialise solution and RHS vectors
-        SetBCs( &mesh, &model, scaling , &particles, &materials );
+        if (useNewInput == 1) {
+            SetBCs_new( &mesh, &model, scaling , &particles, &materials );
+        } else {
+            SetBCs( &mesh, &model, scaling , &particles, &materials );
+        }
         EvalNumberOfEquations( &mesh, &Stokes );
         if ( model.Newton == 1 ) EvalNumberOfEquations( &mesh, &Jacob  );
         SAlloc( &Stokes,  Stokes.neq );
@@ -514,6 +527,8 @@ int main( int nargs, char *args[] ) {
         if ( model.decoupled_solve == 1 ) {
             cholmod_start( &CholmodSolver.c );
             if ( Nmodel.nit==0 ) CholmodSolver.Analyze = 1;
+            //if ( model.step<=1 ) CholmodSolver.Analyze = 1;
+            
             printf("Run CHOLMOD analysis yes/no: %d \n", CholmodSolver.Analyze);
         }
         
