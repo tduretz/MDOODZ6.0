@@ -16,8 +16,8 @@ V   = 1.5e-8
 T   = 3.3197e+04
 
 /**** SPACE-TIME ****/
-Nx      = 25
-Nz      = 25
+Nx      = 51
+Nz      = 51
 Nt      = 1
 xmin    = -25.000000e3
 zmin    = -25.000000e3
@@ -26,8 +26,9 @@ zmax    =  25.000000e3
 dt      = 1.2623e+11
 Courant = 0.3
 penalty = 1e3
-lsolver = 0
-diag_scaling  =0
+lsolver = 1
+diag_scaling  = 0
+decoupled_solve = 1 
 
 /**** SWITCHES ****/
 ismechanical    = 1
@@ -38,8 +39,8 @@ ispureshear_ALE = 1
 isinertial      = 0
 iselastic       = 0
 isthermal       = 1
-line_search     = 0
-free_surf       = 1
+line_search     = 1
+free_surf       = 0
 free_surf_stab  = 0
 eqn_state       = 0
 thermal_eq      = 0
@@ -51,9 +52,16 @@ fstrain         = 1
 /**** SETUP DEPENDANT ****/
 EpsBG           =-5e-14
 user0           = 400   / temperature [°C]
-user1           = 3e3   / inclusion radius [m]
+user1           = 0e3   / inclusion radius [m]
 user2           = 0
 user3           = 0
+
+therm_pert      = 1
+therm_pert_x0   = 0
+therm_pert_z0   = 0
+therm_pert_rad  = 3e3
+therm_pert_dT   = 50
+
 
 /**** GRAVITY ****/
 gx = 0.0000
@@ -75,8 +83,8 @@ Slim = 500e9
 alp  = 10.0e-6
 bet  = 1e-11
 drho = 0
-cstv = 1             / constant visc law
-pwlv = 0            / disloc. creep-12
+cstv = 0             / constant visc law
+pwlv = -12           / disloc. creep
 linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
@@ -99,8 +107,8 @@ Slim = 500e9
 alp  = 10.0e-6
 bet  = 1e-11
 drho = 0
-cstv = 1             / constant visc law
-pwlv = 0            / disloc. creep-10
+cstv = 0             / constant visc law
+pwlv = -10           / disloc. creep
 linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
@@ -127,8 +135,8 @@ Nz_part  = 4
 min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
-Newton  = 0 
-nit_max = 0
+Newton  = 1
+nit_max = 10
 tol_u   = 5e-10
 tol_p   = 5e-10
 mineta  = 1e19

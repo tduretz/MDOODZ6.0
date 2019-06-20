@@ -400,8 +400,9 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
             // Initial velocity field (zero or pure shear)
             if (model->EpsBG == 0) mesh->u_in[c]  = 0.0;
             else mesh->u_in[c]  = -mesh->xg_coord[k]*model->EpsBG;
-            
+
             if (model->isperiodic_x == 1) mesh->u_in[c] = 2.0*mesh->zvx_coord[l]*model->EpsBG;
+//            mesh->u_in[c] = mesh->zvx_coord[l]*model->EpsBG;
   
         }
     }
@@ -413,8 +414,10 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
             // Initial velocity field (zero or pure shear)
             if (model->EpsBG == 0) mesh->v_in[c]  = 0.0;
             else mesh->v_in[c]  = mesh->zg_coord[l]*model->EpsBG;
-            
+
             if (model->isperiodic_x == 1) mesh->v_in[c]  = 0.0;
+            
+//            mesh->v_in[c]  = 0.0;
 	
         }
     }

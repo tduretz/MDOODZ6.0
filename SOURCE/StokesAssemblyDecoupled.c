@@ -2171,7 +2171,7 @@ void Xjacobian_InnerNodesDecoupled2( SparseMat *Stokes, SparseMat *StokesA, Spar
         StokesB->b[eqn] *= celvol;
         //--------------------
         // dsxx/dx - normal stencil
-        
+    
         // uSW (Newton)
         if (mesh->BCu.type[c1-nx-1] != 30) {
             if (mesh->BCu.type[c1-nx-1] != 11) AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[c1-nx-1], &(nnzc2A[ith]), uSW*celvol, mesh->BCu.type[c1-nx-1], mesh->BCu.val[c1-nx-1], StokesA->bbc);
@@ -2699,12 +2699,12 @@ void Zjacobian_InnerNodesDecoupled2( SparseMat *Stokes, SparseMat *StokesA, Spar
     double dz = mesh->dz;
     
     vW = -D33W/pow(dx, 2) - (-0.25*D23N/dx + 0.25*D23S/dx)/dz;
-    vC = -(0.33333333333333331*D21N/dz + (1.0/3.0)*D21S*comp/dz - 0.66666666666666674*D22N/dz - D22S*(-1.0/3.0*comp/dz + 1.0/dz))/dz - (-D33E/dx - D33W/dx)/dx;
+    vC = -(0.33333333333333331*D21N/dz + 0.33333333333333331*D21S/dz - 0.66666666666666674*D22N/dz - 0.66666666666666674*D22S/dz)/dz - (-D33E/dx - D33W/dx)/dx;
     vE = -D33E/pow(dx, 2) - (0.25*D23N/dx - 0.25*D23S/dx)/dz;
-    vS = -(-1.0/3.0*D21S*comp/dz - D22S*((1.0/3.0)*comp/dz - 1/dz))/dz - (0.083333333333333329*D31E/dz - 0.083333333333333329*D31W/dz - 0.16666666666666669*D32E/dz + 0.16666666666666669*D32W/dz)/dx;
+    vS = -(-0.33333333333333331*D21S/dz + 0.66666666666666674*D22S/dz)/dz - (0.083333333333333329*D31E/dz - 0.083333333333333329*D31W/dz - 0.16666666666666669*D32E/dz + 0.16666666666666669*D32W/dz)/dx;
     vN = -(-0.33333333333333331*D21N/dz + 0.66666666666666674*D22N/dz)/dz - (-0.083333333333333329*D31E/dz + 0.083333333333333329*D31W/dz + 0.16666666666666669*D32E/dz - 0.16666666666666669*D32W/dz)/dx;
-    uSW = -(-D21S*((1.0/3.0)*comp/dx - 1/dx) - 1.0/3.0*D22S*comp/dx - 0.25*D23N/dz)/dz - (-0.16666666666666669*D31E/dx + 0.083333333333333329*D32E/dx + D33W/dz)/dx;
-    uSE = -(-D21S*(-1.0/3.0*comp/dx + 1.0/dx) + (1.0/3.0)*D22S*comp/dx - 0.25*D23N/dz)/dz - (-0.16666666666666669*D31W/dx + 0.083333333333333329*D32W/dx - D33E/dz)/dx;
+    uSW = -(0.66666666666666674*D21S/dx - 0.33333333333333331*D22S/dx - 0.25*D23N/dz)/dz - (-0.16666666666666669*D31E/dx + 0.083333333333333329*D32E/dx + D33W/dz)/dx;
+    uSE = -(-0.66666666666666674*D21S/dx + 0.33333333333333331*D22S/dx - 0.25*D23N/dz)/dz - (-0.16666666666666669*D31W/dx + 0.083333333333333329*D32W/dx - D33E/dz)/dx;
     uNW = -(-0.66666666666666674*D21N/dx + 0.33333333333333331*D22N/dx - 0.25*D23S/dz)/dz - (-0.16666666666666669*D31E/dx + 0.083333333333333329*D32E/dx - D33W/dz)/dx;
     uNE = -(0.66666666666666674*D21N/dx - 0.33333333333333331*D22N/dx - 0.25*D23S/dz)/dz - (-0.16666666666666669*D31W/dx + 0.083333333333333329*D32W/dx + D33E/dz)/dx;
     vSW = -0.25*D23S/(dx*dz) - (-0.083333333333333329*D31W/dz + 0.16666666666666669*D32W/dz)/dx;
@@ -2725,7 +2725,6 @@ void Zjacobian_InnerNodesDecoupled2( SparseMat *Stokes, SparseMat *StokesA, Spar
         pS  =  -one_dz;
         pN  =   one_dz;
     }
-    
     
     if ( Assemble == 1 ) {
         StokesA->b[eqn] *= celvol;
@@ -3673,14 +3672,15 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
 //        MinMaxArray(StokesA->d, 1, StokesA->neq, "diag. A" );
         
                 //--------------------------------------//
-#ifdef _HDF5_
+#ifndef _VG_
         if ( model.write_debug == 1 ) {
             
             char *filename;
             asprintf( &filename, "Jacobian.gzip_%dcpu.h5", n_th );
+            printf("Writing Jacobian file to disk...\n");
             
             // Fill in DD data structure
-            data4DD OutputDDA, OutputDDB, OutputDDC, OutputDDD;
+            OutputSparseMatrix OutputDDA, OutputDDB, OutputDDC, OutputDDD;
             
             OutputDDA.V = StokesA->A;
             OutputDDA.Ic = StokesA->Ic;

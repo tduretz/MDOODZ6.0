@@ -2216,7 +2216,7 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     int max_it  = 1000;
     int ncycles = 0;
     int its     = 0, i1, i2, success=0;
-    double eps  = 1.0e-10, norm_r, rnorm0, fact, r_dot_v, nrm;
+    double eps  = 1.0e-11, norm_r, rnorm0, fact, r_dot_v, nrm;
     double **VV, **SS;
     b      = cholmod_zeros (N, 1, CHOLMOD_REAL, &c );
     x      = cholmod_zeros (N, 1, CHOLMOD_REAL, &c );

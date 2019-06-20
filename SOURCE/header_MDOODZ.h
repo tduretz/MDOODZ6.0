@@ -553,5 +553,6 @@ void ExtractDiagonalScale(SparseMat *, SparseMat *, SparseMat *, SparseMat * );
 void ScaleMatrix(SparseMat *, SparseMat *, SparseMat *, SparseMat * ) ;
 
 void RheologicalOperators( grid*, params*, scale*, int );
-void ComputeViscosityDerivatives( grid*, mat_prop*, params*, Nparams, scale*, int );
+void ComputeViscosityDerivatives_FD( grid*, mat_prop*, params*, Nparams, scale*, int );
+void ComputeViscosityDerivatives_anal( grid*, mat_prop*, params*, Nparams, scale*, int );
 void Interp_TPdphi_centroid2vertices ( grid*, params* );
