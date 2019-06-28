@@ -3128,7 +3128,6 @@ void ComputeViscosityDerivatives_anal( grid* mesh, mat_prop *materials, params *
         mesh->detadexx_n[c0]      = detadexx1;
         mesh->detadezz_n[c0]      = detadezz1;
         mesh->detadgxz_n[c0]      = detadexz1 / 2.0;
-        mesh->detadp_n[c0]        = (eta_p   - mesh->eta_n[c0]) / pert_p;
     }
     
     
@@ -3196,7 +3195,6 @@ void ComputeViscosityDerivatives_anal( grid* mesh, mat_prop *materials, params *
         mesh->detadexx_s[c1]      = detadexx1;
         mesh->detadezz_s[c1]      = detadezz1;
         mesh->detadgxz_s[c1]      = detadexz1 / 2.0;
-        mesh->detadp_s[c1]        = (eta_p   - mesh->eta_s[c1]) / pert_p;
         
     }
 }
