@@ -147,7 +147,7 @@ void UpdateNonLinearity( grid* mesh, markers* particles, markers* topo_chain, su
 //                if (mesh->BCp.type[ii] == 31 && mesh->BCp.type[ii+(Nx-1)] == 30  ) {
 //                    //                if (mesh->BCp.type[ii] == 0 && mesh->BCp.type[ii+(Nx-1)] == 30  ) {
 ////                    printf("Upper cells\n");
-//                    mesh->eta_n[ii] = 32/scaling.eta;
+//                    mesh->eta_n[ii] = model->mineta;
 ////                    mesh->eta_phys_n[ii] = 32/scaling.eta;
 //                    //                                            printf("Upper cells\n");
 //                }
@@ -155,8 +155,8 @@ void UpdateNonLinearity( grid* mesh, markers* particles, markers* topo_chain, su
 //
 //                        if (j<Nz-3) {
 //                            if (mesh->BCp.type[ii] == -1 && mesh->BCp.type[ii+2*(Nx-1)] == 30  ) {
-//                                mesh->eta_n[ii] = 32/scaling.eta;
-//                                mesh->eta_phys_n[ii] = 32/scaling.eta;
+//                                mesh->eta_n[ii] = model->mineta;
+//                                mesh->eta_phys_n[ii] = model->mineta;
 ////                                                   printf("Upper cells\n");
 //                            }
 //                        }
@@ -171,8 +171,8 @@ void UpdateNonLinearity( grid* mesh, markers* particles, markers* topo_chain, su
 //
 //            if (j<Nz-1) {
 //                if (mesh->BCg.type[ii] == -1 && mesh->BCg.type[ii+Nx] == 30 ) {
-//                    mesh->eta_s[ii] = 32/scaling.eta;
-//                    mesh->eta_phys_s[ii] = 32/scaling.eta;
+//                    mesh->eta_s[ii] = model->mineta;
+//                    mesh->eta_phys_s[ii] = model->mineta;
 //                    //                                            printf("Upper vertices\n");
 //                }
 //            }
@@ -180,8 +180,8 @@ void UpdateNonLinearity( grid* mesh, markers* particles, markers* topo_chain, su
 //
 //                        if (j<Nz-2) {
 //                            if (mesh->BCg.type[ii] == -1 && mesh->BCg.type[ii+2*Nx] == 30 ) {
-//                                mesh->eta_s[ii] = 32/scaling.eta;
-//                                mesh->eta_phys_s[ii] = 32/scaling.eta;
+//                                mesh->eta_s[ii] = model->mineta;
+//                                mesh->eta_phys_s[ii] = model->mineta;
 ////                                                     printf("Upper vertices\n");
 //                            }
 //                        }
@@ -402,6 +402,7 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
             else mesh->u_in[c]  = -mesh->xg_coord[k]*model->EpsBG;
 
             if (model->isperiodic_x == 1) mesh->u_in[c] = 2.0*mesh->zvx_coord[l]*model->EpsBG;
+            
 //            mesh->u_in[c] = mesh->zvx_coord[l]*model->EpsBG;
   
         }

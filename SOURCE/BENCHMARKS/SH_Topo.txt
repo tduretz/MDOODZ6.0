@@ -16,8 +16,8 @@ V   = 1.5e-8
 T   = 3.3197e+04
 
 /**** SPACE-TIME ****/
-Nx      = 51
-Nz      = 51
+Nx      = 101
+Nz      = 101
 Nt      = 1
 xmin    = -25.000000e3
 zmin    = -25.000000e3
@@ -40,7 +40,7 @@ isinertial      = 0
 iselastic       = 0
 isthermal       = 1
 line_search     = 1
-free_surf       = 0
+free_surf       = 1
 free_surf_stab  = 0
 eqn_state       = 0
 thermal_eq      = 0
@@ -137,7 +137,7 @@ min_part_cell = 16
 /**** NON-LINEAR ITERATIONS ****/
 Newton  = 1
 nit_max = 10
-tol_u   = 5e-10
-tol_p   = 5e-10
-mineta  = 1e19
+tol_u   = 1e-11
+tol_p   = 1e-11
+mineta  = 1e22
 maxeta  = 1e25

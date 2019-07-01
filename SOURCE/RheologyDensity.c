@@ -1181,8 +1181,14 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         Ezz  = ezz + tzz0/(2.0*G*dt);
         Exz  = exz + txz0/(2.0*G*dt);
     }
+//    Eii             = sqrt(1.0/2.0*Exx*Exx + 1.0/2.0*Ezz*Ezz + Exz*Exz);
+//    double eII      = sqrt(1.0/2.0*exx*exx + 1.0/2.0*ezz*ezz + exz*exz);
+    
     Eii             = sqrt(1.0/2.0*Exx*Exx + 1.0/2.0*Ezz*Ezz + Exz*Exz);
     double eII      = sqrt(1.0/2.0*exx*exx + 1.0/2.0*ezz*ezz + exz*exz);
+
+    
+    
     
 //    Eii             = sqrt(Exx*Exx + Exz*Exz);
 //    double eII      = sqrt(exx*exx + exz*exz);
