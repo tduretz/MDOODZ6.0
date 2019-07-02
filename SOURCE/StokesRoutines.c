@@ -1769,7 +1769,7 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
     cholmod_sdmult ( Ccm, 0, mone, one, u, fp, &c) ;   // fp -= C*u
     cholmod_sdmult ( D1cm0, 0, mone, one, p, fp, &c) ; // fp -= D*p
     
-//    MinMaxArrayVal( fu->x, matA->neq, &minru0, &maxru0 );
+    MinMaxArrayVal( fu->x, matA->neq, &minru0, &maxru0 );
     NormResidualCholmod( &ru, &rp, fu, fp, matA->neq, matC->neq, model, scaling, 0 );
     
 //    MinMaxArray( u->x, 1, matA->neq, "u ini");

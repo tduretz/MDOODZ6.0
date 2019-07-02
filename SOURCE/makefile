@@ -23,6 +23,10 @@ ifeq ($(VG),yes)
 	CFLAGS += -D _VG_ -Wno-format-zero-length
 endif
 
+ifeq ($(NEW_INPUT),yes)
+	CFLAGS += -D _NEW_INPUT_
+endif
+
 CFLAGS += -Wno-unused-variable -Wno-unused-but-set-variable -Wno-comment
 #---------------------------------------------------#
 # Libraries
@@ -40,14 +44,20 @@ endif
 # Rules
 all: Doodzi_$(MODEL)
 
-#FILES = Main_MDOODZ.o ./$(MODEL_PATH)/set_$(MODEL).o StokesRoutines.o StokesAssemblyCoupled.o StokesAssemblyDecoupled.o AdvectionRoutines.o RheologyDensity.o OutputHDF5.o SparseTools.o ThermalRoutines.o ThermalSolver.o ParticleRoutines.o free_surf.o FlowLaws.o MemoryAllocFree.o InputOutput.o MiscFunctions.o GridRoutines.o
+FILES = Main_MDOODZ_GREAT.o Routines_BEN.o StokesRoutines.o StokesAssemblyCoupled.o StokesAssemblyDecoupled.o AdvectionRoutines.o RheologyDensity.o OutputHDF5.o SparseTools.o ThermalRoutines.o ThermalSolver.o ParticleRoutines.o free_surf.o FlowLaws.o MemoryAllocFree.o InputOutput.o MiscFunctions.o GridRoutines.o
 
-#FILES = StokesAssemblyCoupled_BEN.o Routines_BEN.o free_surf_BEN.o Main_MDOODZ_BEN_dec.o ./$(MODEL_PATH)/set_$(MODEL).o StokesRoutines.o StokesAssemblyCoupled.o StokesAssemblyDecoupled.o AdvectionRoutines.o RheologyDensity.o OutputHDF5.o SparseTools.o ThermalRoutines.o ThermalSolver.o ParticleRoutines.o free_surf.o FlowLaws.o MemoryAllocFree.o InputOutput.o MiscFunctions.o GridRoutines.o
-
-FILES = Main_MDOODZ_GREAT.o Routines_BEN.o ./$(MODEL_PATH)/set_$(MODEL).o StokesRoutines.o StokesAssemblyCoupled.o StokesAssemblyDecoupled.o AdvectionRoutines.o RheologyDensity.o OutputHDF5.o SparseTools.o ThermalRoutines.o ThermalSolver.o ParticleRoutines.o free_surf.o FlowLaws.o MemoryAllocFree.o InputOutput.o MiscFunctions.o GridRoutines.o
+ifeq ($(NEW_INPUT),yes)
+        FILES += BC.o
+else
+	FILES += ./$(MODEL_PATH)/set_$(MODEL).o
+endif
 
 Doodzi_$(MODEL): ${FILES}
+ifeq ($(NEW_INPUT),no)
 	$(CC) ${FILES} -o Doodzi_$(MODEL) ${LIBS}
+else
+	$(CC) ${FILES} -o MDoodz6.0 ${LIBS}
+endif
 
 clean:
-	rm -rf *o ./$(MODEL_PATH)/*.o Doodzi_$(MODEL)
+	rm -rf *o ./$(MODEL_PATH)/*.o Doodzi_$(MODEL) MDoodz6.0

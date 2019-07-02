@@ -41,6 +41,94 @@
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+void LoadIniParticles( char* name, markers* particles, grid* mesh, markers *topo_chain, markers *topo_chain_ini, params *model, scale scaling ) {
+    
+    //char *name;
+    int s1=0, s2=0, s3=0, s4=0;
+    int ss1=sizeof(int), ss2=sizeof(double), ss3=sizeof(DoodzFP), ss4=sizeof(char);
+    int k, l, Nx=model->Nx, Nz=model->Nz, c;
+    int Ncx = Nx-1, Ncz = Nz-1;
+    
+    //---------------------------------------------------------------------------------------------------------//
+    FILE *file;
+    
+    // Filename
+    //    asprintf(&name, "Breakpoint%05d.dat", model->step);
+    //asprintf(&name, "IniParticles.dat");
+    
+    if (fopen(name, "rb")==NULL) {
+        printf("Error opening %s, this file is probably corrupted or non-existant\nExiting...\n", name);
+        exit(1);
+    }
+    else {
+        printf("Load setup from %s...\n", name);
+        file = fopen(name, "rb");
+    }
+    
+    fread( &s1, 1, 1, file);
+    fread( &s2, 1, 1, file);
+    fread( &s3, 1, 1, file);
+    fread( &s4, 1, 1, file);
+    
+    if (model->free_surf == 1) {
+        fread(&topo_chain->Nb_part,   s1,                   1, file );
+        fread( topo_chain->x,         s3, topo_chain->Nb_part, file );
+        fread( topo_chain->z,         s3, topo_chain->Nb_part, file );
+        //fread( topo_chain->Vx,        s3, topo_chain->Nb_part, file );
+        //fread( topo_chain->Vz,        s3, topo_chain->Nb_part, file );
+    }
+    
+    int Nb_part0 = particles->Nb_part;
+    fread( &particles->Nb_part,  s1, 1, file);
+    fread( particles->x,    s3, particles->Nb_part, file);
+    fread( particles->z,    s3, particles->Nb_part, file);
+    //particles->Nb_part = Nb_part0;
+    //fread( particles->P,    s3, particles->Nb_part, file);
+    //fread( particles->Vx,   s3, particles->Nb_part, file);
+    //fread( particles->Vz,   s3, particles->Nb_part, file);
+    //fread( particles->phi,  s3, particles->Nb_part, file);
+    //fread( particles->X  ,  s3, particles->Nb_part, file);
+    fread( particles->phase, s1, particles->Nb_part, file);
+    fclose(file);
+    free(name);
+    //---------------------------------------------------------------------------------------------------------//
+    
+    if (model->free_surf == 1) {
+        topo_chain_ini->Nb_part = topo_chain->Nb_part;
+        // note: the topo_chain should be scaled as well
+#pragma omp parallel for shared( topo_chain, model, scaling )
+        for ( k=0; k<topo_chain->Nb_part; k++ ) {
+            topo_chain->x[k]     /=scaling.L;
+            topo_chain->z[k]     /=scaling.L;
+            
+            
+            topo_chain_ini->x[k] = topo_chain->x[k];
+            topo_chain_ini->z[k] = topo_chain->z[k];
+            //particles->P[k]     /=scaling.S;
+            //particles->Vx[k]    /=scaling.V;
+            //particles->Vz[k]    /=scaling.V;
+            //particles->phi[k]   /=1.0;
+            //particles->X[k]     /=1.0;
+        }
+    }
+#pragma omp parallel for shared( particles, model, scaling )
+    for ( k=0; k<particles->Nb_part; k++ ) {
+        particles->x[k]     /=scaling.L;
+        particles->z[k]     /=scaling.L;
+        //particles->P[k]     /=scaling.S;
+        //particles->Vx[k]    /=scaling.V;
+        //particles->Vz[k]    /=scaling.V;
+        //particles->phi[k]   /=1.0;
+        //particles->X[k]     /=1.0;
+    }
+    
+    
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 void DeletePreviousBreakpoint( int step, int writer_step ) {
     char *name, *command, *new_name;
     int success;

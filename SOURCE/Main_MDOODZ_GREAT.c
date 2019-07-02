@@ -39,6 +39,7 @@
 #define printf(...) printf("")
 #endif
 
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -46,7 +47,7 @@
 int main( int nargs, char *args[] ) {
     
 	int          istep, irestart, writer = 0, writer_step;
-	char         *fin_name;
+	char         *fin_name, *PartFileName;
 	params       model;
 	grid         mesh;
     Nparams      Nmodel;
@@ -73,12 +74,13 @@ int main( int nargs, char *args[] ) {
     mesh.Ue   = 0.0; // elastic energy
     
 	// Input file name
-	if (nargs<2) {
+	if ( nargs < 3 ) {
 		printf( "You should (at least) enter the setup file as a command line argument.\nExiting...\n" );
 		exit(1);
 	}
 	else {
 		asprintf(&fin_name,"%s", args[1]);
+        asprintf(&PartFileName,"%s", args[2]);
 	}
     
     printf("\n********************************************************\n");
@@ -126,34 +128,54 @@ int main( int nargs, char *args[] ) {
         // Initialise particle fields
         PartInit( &particles, &model );
         
-        // Initial grid tags
-        SetBCs( &mesh, &model, scaling , &particles, &materials );
-        
-        if ( model.free_surf == 1 ) {
+#ifdef _NEW_INPUT_
+            // Initial grid tags
+            model.BC_setup_type = 1; // eventually it should be set from the input file
+            SetBCs_new( &mesh, &model, scaling , &particles, &materials );
             
-            // Define the horizontal position of the surface marker chain
-            SetTopoChainHorizontalCoords( &topo,     &topo_chain,     model, mesh, scaling );
-            SetTopoChainHorizontalCoords( &topo_ini, &topo_chain_ini, model, mesh, scaling );
+            LoadIniParticles( PartFileName, &particles, &mesh, &topo_chain, &topo_chain_ini, &model, scaling );
             
-            // Define the vertical position of the surface marker chain
-            BuildInitialTopography( &topo,     &topo_chain,     model, mesh, scaling );
-            BuildInitialTopography( &topo_ini, &topo_chain_ini, model, mesh, scaling );
+            if ( model.free_surf == 1 ) {
+                // Project topography on vertices
+                ProjectTopography( &topo, &topo_chain, model, mesh, scaling, mesh.xg_coord, 0 );
+                
+                // Marker chain polynomial fit
+                MarkerChainPolyFit( &topo, &topo_chain, model, mesh );
+                
+                // Call cell flagging routine for free surface calculations
+                CellFlagging( &mesh, model, topo, scaling );
+            }
             
-            // Project topography on vertices
-            ProjectTopography( &topo, &topo_chain, model, mesh, scaling, mesh.xg_coord, 0 );
+#else
+            // Initial grid tags
+            SetBCs( &mesh, &model, scaling , &particles, &materials );
+            if ( model.free_surf == 1 ) {
+                
+                // Define the horizontal position of the surface marker chain
+                SetTopoChainHorizontalCoords( &topo,     &topo_chain,     model, mesh, scaling );
+                SetTopoChainHorizontalCoords( &topo_ini, &topo_chain_ini, model, mesh, scaling );
+                
+                // Define the vertical position of the surface marker chain
+                BuildInitialTopography( &topo,     &topo_chain,     model, mesh, scaling );
+                BuildInitialTopography( &topo_ini, &topo_chain_ini, model, mesh, scaling );
+                
+                // Project topography on vertices
+                ProjectTopography( &topo, &topo_chain, model, mesh, scaling, mesh.xg_coord, 0 );
+                
+                // Marker chain polynomial fit
+                MarkerChainPolyFit( &topo, &topo_chain, model, mesh );
+                
+                // Call cell flagging routine for free surface calculations
+                CellFlagging( &mesh, model, topo, scaling );
+            }
+            // Set particles coordinates
+            PutPartInBox( &particles, &mesh, model, topo, scaling );
             
-            // Marker chain polynomial fit
-            MarkerChainPolyFit( &topo, &topo_chain, model, mesh );
+            // Set phases on particles
+            SetParticles( &particles, scaling, model, &materials );
+            if ( model.free_surf == 1 ) CleanUpSurfaceParticles( &particles, &mesh, topo, scaling ); /////////!!!!!!!!!
             
-            // Call cell flagging routine for free surface calculations
-            CellFlagging( &mesh, model, topo, scaling );
-        }
-        
-        // Set particles coordinates
-        PutPartInBox( &particles, &mesh, model, topo, scaling );
-        
-        // Set phases on particles
-        SetParticles( &particles, scaling, model, &materials );
+#endif
         
         if ( model.free_surf == 1 ) CleanUpSurfaceParticles( &particles, &mesh, topo, scaling ); /////////!!!!!!!!!
         
@@ -178,7 +200,11 @@ int main( int nargs, char *args[] ) {
         printf("****** Initialize temperature *******\n");
         printf("*************************************\n");
         
+#ifdef _NEW_INPUT_
+        SetBCs_new( &mesh, &model, scaling , &particles, &materials );
+#else
         SetBCs( &mesh, &model, scaling , &particles, &materials );
+#endif
         
         // Get energy and related material parameters from particles
         Interp_P2C ( particles, materials.Cv,   &mesh, mesh.Cv,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
@@ -187,7 +213,11 @@ int main( int nargs, char *args[] ) {
         Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kx,   mesh.xg_coord, mesh.zvx_coord,  mesh.Nx, mesh.Nz+1,   0, mesh.BCu.type , &model);
         Interp_P2C ( particles, particles.T, &mesh, mesh.T, mesh.xg_coord, mesh.zg_coord,  1, 0 );
         
+#ifdef _NEW_INPUT_
+        SetBCs_new( &mesh, &model, scaling , &particles, &materials );
+#else
         SetBCs( &mesh, &model, scaling , &particles, &materials );
+#endif
         if ( model.thermal_eq == 1 ) ThermalSteps( &mesh, model,  mesh.T,  mesh.dT,  mesh.rhs_t, mesh.T, &particles, model.cooling_time, scaling );
         if ( model.therm_pert == 1 ) SetThermalPert( &mesh, model, scaling );
         Interp_Grid2P( particles, particles.T,    &mesh, mesh.T, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type );
@@ -451,7 +481,11 @@ int main( int nargs, char *args[] ) {
         printf("** Time for particles interpolations I = %lf sec\n",  (double)((double)omp_get_wtime() - t_omp) );
 
         // Allocate and initialise solution and RHS vectors
+#ifdef _NEW_INPUT_
+        SetBCs_new( &mesh, &model, scaling , &particles, &materials );
+#else
         SetBCs( &mesh, &model, scaling , &particles, &materials );
+#endif
         EvalNumberOfEquations( &mesh, &Stokes );
         if ( model.Newton == 1 ) EvalNumberOfEquations( &mesh, &Jacob  );
         SAlloc( &Stokes,  Stokes.neq );
@@ -985,6 +1019,7 @@ int main( int nargs, char *args[] ) {
     // Free char*'s
     free(model.input_file);
     free(fin_name);
+    free(PartFileName);
 
     printf("\n********************************************************\n");
     printf("************* Ending MDOODZ 6.0 simulation *************\n");

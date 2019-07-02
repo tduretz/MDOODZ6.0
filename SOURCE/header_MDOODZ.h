@@ -128,6 +128,9 @@ struct _params {
     double **PDMrho, *PDMTmin, *PDMTmax, *PDMPmin, *PDMPmax;
     // Visualisation
     int rec_T_P_x_z, rm_break;
+    // Boundary conditions
+    int    BC_setup_type;
+
 };
 
 // Nparams contains numerical parameters of the non-linear solver
@@ -285,10 +288,12 @@ void InterpCentroidsToVerticesDouble( double*, double*, grid*, params*, scale* )
 //void InterpVerticesToCentroidsDouble( double*, double*, grid*, params*, scale* );
 //
 //
-//// Grid related function
+// Grid initialisation and boundary conditions
 //void MInitialiseSolutionFields( grid*, params* );
 //void MinitMG( grid*, paramsOutputSparseMatrix  );
 void SetBCs( grid*, params*, scale, markers*, mat_prop* );
+void SetBCs_new( grid*, params*, scale, markers*, mat_prop* );
+void SetBCs_user( grid*, params*, scale, markers*, mat_prop* );
 //void MSetRes( grid*, paramsOutputSparseMatrix  );
 //void gridFillLevels( grid*, paramsOutputSparseMatrix  );
 //void gridSetCoords( grid*, params*OutputSparseMatrix );
@@ -356,6 +361,7 @@ void WriteResiduals( grid, params, Nparams, scale );
 // Output
 void MakeBreakpointParticles( markers*, grid*, markers*, markers*, params , surface*, surface*, scale );
 void LoadBreakpointParticles( markers*, grid*, markers*, markers*, params*, surface*, surface*, scale );
+void LoadIniParticles       ( char*, markers*, grid* , markers*, markers*, params*, scale );
 void DeletePreviousBreakpoint( int, int );
 //
 // Direct solver
