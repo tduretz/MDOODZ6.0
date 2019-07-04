@@ -73,15 +73,26 @@ int main( int nargs, char *args[] ) {
     mesh.Ut   = 0.0; // heat
     mesh.Ue   = 0.0; // elastic energy
     
-	// Input file name
-	if ( nargs < 3 ) {
-		printf( "You should (at least) enter the setup file as a command line argument.\nExiting...\n" );
-		exit(1);
-	}
-	else {
-		asprintf(&fin_name,"%s", args[1]);
+#ifdef _NEW_INPUT_
+    // Input file name
+    if ( nargs < 3 ) {
+        printf( "NEW INPUT: You should enter the setup file and the initial particle file names as command line arguments.\nExiting...\n" );
+        exit(1);
+    }
+    else {
+        asprintf(&fin_name,"%s", args[1]);
         asprintf(&PartFileName,"%s", args[2]);
-	}
+    }
+#else
+    // Input file name
+    if ( nargs < 2 ) {
+        printf( "OLD INPUT: You should (at least) enter the setup file name as a command line argument.\nExiting...\n" );
+        exit(1);
+    }
+    else {
+        asprintf(&fin_name,"%s", args[1]);
+    }
+#endif
     
     printf("\n********************************************************\n");
     printf("************ Starting MDOODZ 6.0 simulation ************\n");
@@ -380,87 +391,87 @@ int main( int nargs, char *args[] ) {
         // Interpolate material properties from particles to nodes
         t_omp = (double)omp_get_wtime();
 
-//        // Energy - interpolate thermal parameters and advected energy
-//        if ( model.isthermal == 1 ) {
-//
-//            // Get energy and related material parameters from particles
-//            Interp_P2C ( particles, materials.Cv,   &mesh, mesh.Cv,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
-//            Interp_P2C ( particles, materials.Qr,   &mesh, mesh.Qr,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
-//
-//            Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kz,   mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz,   0, mesh.BCv.type , &model);
-//            Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kx,   mesh.xg_coord, mesh.zvx_coord,  mesh.Nx, mesh.Nz+1,   0, mesh.BCu.type , &model);
-//
-//            // Get T from previous step from particles
-//            Interp_P2C ( particles, particles.T, &mesh, mesh.T, mesh.xg_coord, mesh.zg_coord,  1, 0 );
-//        }
-//
-//        // Get physical properties that are constant throughout each timestep
-//        if ( model.eqn_state  > 0 ) {
-//            UpdateDensity( &mesh, &particles, &materials, &model, &scaling );
-//        }
-//        else {
-//            Interp_P2N ( particles, materials.rho,  &mesh, mesh.rho_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
-//            Interp_P2C ( particles, materials.rho,  &mesh, mesh.rho_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
-//        }
-//
-//        Interp_P2C ( particles, materials.alp, &mesh, mesh.alp,      mesh.xg_coord, mesh.zg_coord, 0, 0 );
-//        Interp_P2C ( particles, materials.bet, &mesh, mesh.bet,      mesh.xg_coord, mesh.zg_coord, 0, 0 );
-//
-//        // Free surface - subgrid density correction
-//        if ( model.free_surf == 1 ) {
-//            SurfaceDensityCorrection( &mesh, model, topo, scaling  );
-//        }
-//        else {
-//            ArrayEqualArray( mesh.rho_app_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
-//            ArrayEqualArray( mesh.rho_app_s, mesh.rho_s, (mesh.Nx  )*(mesh.Nz  ) );
-//        }
-//
-//        // Lithostatic pressure
-//        ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 1 );
-//
-//        // Elasticity - interpolate advected/rotated stresses
-//        if  (model.iselastic == 1 ) {
-//
-//            // Get old stresses from particles
-//            Interp_P2C ( particles, particles.sxxd, &mesh, mesh.sxxd0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
-//            Interp_P2N ( particles, particles.sxxd, &mesh, mesh.sxxd0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-//            Interp_P2C ( particles, particles.szzd, &mesh, mesh.szzd0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
-//            Interp_P2N ( particles, particles.szzd, &mesh, mesh.szzd0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-//
-//            Interp_P2N ( particles, particles.sxz,  &mesh, mesh.sxz0,    mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-//            Interp_P2C ( particles, particles.sxz,  &mesh, mesh.sxz0_n,  mesh.xg_coord, mesh.zg_coord, 1, 0 );
-//
-//            // Interpolate elastic energy from previous step
-//            Interp_P2C ( particles, particles.rhoUe0, &mesh, mesh.rhoUe0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
-//
-//            // Interpolate shear modulus
-//            ShearModulusGrid( &mesh, materials, model, scaling );
-//        }
-//
-//        // Interpolate Grain size
-//        Interp_P2C ( particles,   particles.d, &mesh, mesh.d0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
-//        ArrayEqualArray(  mesh.d,  mesh.d0, Ncx*Ncz );
-//
-//        // Interpolate Melt fraction
-//        Interp_P2C ( particles, particles.phi, &mesh, mesh.phi,  mesh.xg_coord, mesh.zg_coord, 1, 0 );
-//        //        Interp_P2G ( particles, particles.phi,   &mesh, mesh.phi,  mesh.xg_coord,   mesh.zg_coord, Ncx, Ncz, xmin_c, zmin_c, 1, 0, &model, mesh.BCp.type );
-//        
-//        // Interpolate pressure
-//        Interp_P2C ( particles, particles.P, &mesh, mesh.p_in,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
-//
-//        if (model.isPl_soft == 1) {
-//            Interp_P2C ( particles, particles.strain_pl, &mesh, mesh.strain_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-//            Interp_P2N ( particles, particles.strain_pl, &mesh, mesh.strain_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-//        }
-//
-//        // Compute cohesion and friction angle on the grid
-//        CohesionFrictionGrid( &mesh, materials, model, scaling );
-//        
-//        // Detect compressible cells
-//        if (model.compressible == 1) DetectCompressibleCells ( &mesh, &model );
-//        
-//        // Some stuff to be put on vertices
-//        Interp_TPdphi_centroid2vertices (&mesh, &model );
+        // Energy - interpolate thermal parameters and advected energy
+        if ( model.isthermal == 1 ) {
+
+            // Get energy and related material parameters from particles
+            Interp_P2C ( particles, materials.Cv,   &mesh, mesh.Cv,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
+            Interp_P2C ( particles, materials.Qr,   &mesh, mesh.Qr,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
+
+            Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kz,   mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz,   0, mesh.BCv.type , &model);
+            Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kx,   mesh.xg_coord, mesh.zvx_coord,  mesh.Nx, mesh.Nz+1,   0, mesh.BCu.type , &model);
+
+            // Get T from previous step from particles
+            Interp_P2C ( particles, particles.T, &mesh, mesh.T, mesh.xg_coord, mesh.zg_coord,  1, 0 );
+        }
+
+        // Get physical properties that are constant throughout each timestep
+        if ( model.eqn_state  > 0 ) {
+            UpdateDensity( &mesh, &particles, &materials, &model, &scaling );
+        }
+        else {
+            Interp_P2N ( particles, materials.rho,  &mesh, mesh.rho_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
+            Interp_P2C ( particles, materials.rho,  &mesh, mesh.rho_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
+        }
+
+        Interp_P2C ( particles, materials.alp, &mesh, mesh.alp,      mesh.xg_coord, mesh.zg_coord, 0, 0 );
+        Interp_P2C ( particles, materials.bet, &mesh, mesh.bet,      mesh.xg_coord, mesh.zg_coord, 0, 0 );
+
+        // Free surface - subgrid density correction
+        if ( model.free_surf == 1 ) {
+            SurfaceDensityCorrection( &mesh, model, topo, scaling  );
+        }
+        else {
+            ArrayEqualArray( mesh.rho_app_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
+            ArrayEqualArray( mesh.rho_app_s, mesh.rho_s, (mesh.Nx  )*(mesh.Nz  ) );
+        }
+
+        // Lithostatic pressure
+        ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 1 );
+
+        // Elasticity - interpolate advected/rotated stresses
+        if  (model.iselastic == 1 ) {
+
+            // Get old stresses from particles
+            Interp_P2C ( particles, particles.sxxd, &mesh, mesh.sxxd0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
+            Interp_P2N ( particles, particles.sxxd, &mesh, mesh.sxxd0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+            Interp_P2C ( particles, particles.szzd, &mesh, mesh.szzd0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
+            Interp_P2N ( particles, particles.szzd, &mesh, mesh.szzd0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+
+            Interp_P2N ( particles, particles.sxz,  &mesh, mesh.sxz0,    mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+            Interp_P2C ( particles, particles.sxz,  &mesh, mesh.sxz0_n,  mesh.xg_coord, mesh.zg_coord, 1, 0 );
+
+            // Interpolate elastic energy from previous step
+            Interp_P2C ( particles, particles.rhoUe0, &mesh, mesh.rhoUe0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
+
+            // Interpolate shear modulus
+            ShearModulusGrid( &mesh, materials, model, scaling );
+        }
+
+        // Interpolate Grain size
+        Interp_P2C ( particles,   particles.d, &mesh, mesh.d0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
+        ArrayEqualArray(  mesh.d,  mesh.d0, Ncx*Ncz );
+
+        // Interpolate Melt fraction
+        Interp_P2C ( particles, particles.phi, &mesh, mesh.phi,  mesh.xg_coord, mesh.zg_coord, 1, 0 );
+        //        Interp_P2G ( particles, particles.phi,   &mesh, mesh.phi,  mesh.xg_coord,   mesh.zg_coord, Ncx, Ncz, xmin_c, zmin_c, 1, 0, &model, mesh.BCp.type );
+        
+        // Interpolate pressure
+        Interp_P2C ( particles, particles.P, &mesh, mesh.p_in,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
+
+        if (model.isPl_soft == 1) {
+            Interp_P2C ( particles, particles.strain_pl, &mesh, mesh.strain_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+            Interp_P2N ( particles, particles.strain_pl, &mesh, mesh.strain_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+        }
+
+        // Compute cohesion and friction angle on the grid
+        CohesionFrictionGrid( &mesh, materials, model, scaling );
+        
+        // Detect compressible cells
+        if (model.compressible == 1) DetectCompressibleCells ( &mesh, &model );
+        
+        // Some stuff to be put on vertices
+        Interp_TPdphi_centroid2vertices (&mesh, &model );
 
         // Min/Max interpolated fields
         MinMaxArrayTag( mesh.rho_s,    scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s   ", mesh.BCg.type );
@@ -1019,7 +1030,9 @@ int main( int nargs, char *args[] ) {
     // Free char*'s
     free(model.input_file);
     free(fin_name);
+#ifdef _NEW_INPUT_
     free(PartFileName);
+#endif
 
     printf("\n********************************************************\n");
     printf("************* Ending MDOODZ 6.0 simulation *************\n");
