@@ -63,11 +63,6 @@ int main( int nargs, char *args[] ) {
     SparseMat    JacobA,  JacobB,  JacobC,  JacobD;
     int          Nx, Nz, Ncx, Ncz;
     
-    // Initialise some of the knobs
-    model.Newton          = 1;
-    model.lsolver         = 1;
-    if ( model.Newton == 1 ) model.lsolver         = 1;
-    
     // Initialise integrated quantities
     mesh.W    = 0.0; // Work
     mesh.Ut   = 0.0; // heat
@@ -585,7 +580,6 @@ int main( int nargs, char *args[] ) {
                     if ( model.Newton          == 1 )  ExtractDiagonalScale( &JacobA,  &JacobB,  &JacobC,   &JacobD );
                     if ( model.Newton          == 1 )  ArrayEqualArray(StokesA.d, JacobA.d, StokesA.neq);
                     if ( model.Newton          == 1 )  ArrayEqualArray(StokesC.d, JacobC.d, StokesC.neq);
-                    ScaleMatrix( &JacobA,  &JacobB,  &JacobC,  &JacobD  );
                     ScaleMatrix( &StokesA, &StokesB, &StokesC, &StokesD );
                 }
                 
@@ -599,6 +593,8 @@ int main( int nargs, char *args[] ) {
                     if ( model.Newton          == 1 ) {
                         ArrayEqualArray( JacobA.F, StokesA.F,  StokesA.neq );
                         ArrayEqualArray( JacobC.F, StokesC.F,  StokesC.neq );
+                         if ( model.diag_scaling ) ScaleMatrix( &JacobA,  &JacobB,  &JacobC,  &JacobD  );
+
                     }
                     Nmodel.resx_f = Nmodel.resx;
                     Nmodel.resz_f = Nmodel.resz;
@@ -606,7 +602,6 @@ int main( int nargs, char *args[] ) {
 #ifndef _VG_
                     if ( model.write_debug == 1 ) WriteResiduals( mesh, model, Nmodel, scaling );
 #endif
-                    printf("---- Non-linear residual ----\n");
 
                     // if pass --> clear matrix break
                     if ( (Nmodel.resx < Nmodel.tol_u) && (Nmodel.resz < Nmodel.tol_u) && (Nmodel.resp < Nmodel.tol_p) ) {

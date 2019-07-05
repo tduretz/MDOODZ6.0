@@ -2840,7 +2840,7 @@ void ComputeViscosityDerivatives_FD( grid* mesh, mat_prop *materials, params *mo
     
     double eta_exx, eta_ezz, eta_exz, eta_p;
     double etaVE_exx, etaVE_ezz, etaVE_exz, etaVE_p;
-    double eps = 1e-7, pert_xx, pert_zz, pert_xz , pert_p;
+    double eps = 1e-13, pert_xx, pert_zz, pert_xz , pert_p;
     
     Nx = mesh->Nx;
     Nz = mesh->Nz;

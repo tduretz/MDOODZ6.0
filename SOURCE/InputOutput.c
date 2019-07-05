@@ -1199,6 +1199,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     
     // Nonlinear iteration parameters
     model->Newton           = ReadInt2( fin, "Newton", 0 );
+    model->rel_tol_KSP      = ReadDou2( fin, "rel_tol_KSP", 1e-13 );
     Nmodel->nit_max         = ReadInt2( fin, "nit_max", 1 );
     Nmodel->tol_u           = ReadDou2( fin, "tol_u", 5.0e-6 );// / (scaling->F/pow(scaling->L,3.0));
     Nmodel->tol_p           = ReadDou2( fin, "tol_p", 5.0e-6 );// / scaling->E;
@@ -1208,7 +1209,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     
     // Direct solver parameters
     model->lsolver          = ReadInt2( fin, "lsolver", 0 );
-    if ( model->Newton == 1 ) model->lsolver         = 1;
+    if ( model->Newton == 1 ) model->lsolver         = 2;
 
     // Close input file
     fclose(fin);
