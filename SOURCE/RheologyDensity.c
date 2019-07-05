@@ -1030,7 +1030,7 @@ void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_pr
             for (l=0; l<Nz-1; l++) {
                 c0 = k  + l*(Nx-1);
                 if (mesh->BCp.type[c0] !=30 && mesh->BCp.type[c0] !=31) dsxxd[c0] = mesh->sxxd[c0] - mesh->sxxd0[c0];
-                if (mesh->BCp.type[c0] !=30 && mesh->BCp.type[c0] !=31) dsxxd[c0] = mesh->szzd[c0] - mesh->szzd0[c0];
+                if (mesh->BCp.type[c0] !=30 && mesh->BCp.type[c0] !=31) dszzd[c0] = mesh->szzd[c0] - mesh->szzd0[c0];
             }
         }
         
