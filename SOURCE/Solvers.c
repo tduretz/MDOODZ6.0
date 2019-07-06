@@ -44,23 +44,162 @@
 #define printf(...) printf("")
 #endif
 
-//void ConstructPC( SparseMat *PC,  SparseMat *StokesA ) {
+void kspgcr( cholmod_sparse *M, cholmod_dense *b, cholmod_dense *x, cholmod_factor *Lfact, int N, cholmod_common *c, double eps, int noisy) {
+    
+    // Initialise KSP
+    int restart = 20, cc;//6;
+    int max_it  = 1000;
+    int ncycles = 0;
+    int its     = 0, i1, i2, success=0;
+    double  norm_r, rnorm0, fact, r_dot_v, nrm;
+    double **VV, **SS;
+    double mone[2] = {-1.0,0.0}, one[2] = {1.0,0.0}, zero[2] = {0.0,0.0};
+    cholmod_dense *f, *s, *v, *val;
+//    b      = cholmod_zeros (N, 1, CHOLMOD_REAL, &c );
+    
+//    x      = cholmod_zeros (N, 1, CHOLMOD_REAL, c );
+//    x    = cholmod_allocate_dense( N, 1, N, CHOLMOD_REAL, c );
+
+    f      = cholmod_zeros (N, 1, CHOLMOD_REAL, c );
+    v      = cholmod_zeros (       N,     1, CHOLMOD_REAL, c );
+    val    = cholmod_zeros ( restart,     1, CHOLMOD_REAL, c );
+    s      = cholmod_zeros (N, 1, CHOLMOD_REAL, c );
+
+    
+//    D_zero = cholmod_spzeros ( Dcm->nrow, Dcm->ncol, 0, CHOLMOD_REAL, &c ) ;
+//    fu     = cholmod_zeros (   Ac->m,     1, CHOLMOD_REAL, &c );
+//    fp     = cholmod_zeros (   Dc->m,     1, CHOLMOD_REAL, &c );
+//    val    = cholmod_zeros ( restart,     1, CHOLMOD_REAL, &c );
+//    s      = cholmod_zeros (       N,     1, CHOLMOD_REAL, &c );
+//    v      = cholmod_zeros (       N,     1, CHOLMOD_REAL, &c );
+//    Iu     = cholmod_speye (   Ac->m, Ac->n, CHOLMOD_REAL, &c );
+//    Ip     = cholmod_speye (   Dc->m, Dc->n, CHOLMOD_REAL, &c );
+    
+    // Allocate temp vecs
+    VV  = (double**) DoodzCalloc( restart, sizeof(double*));
+    SS  = (double**) DoodzCalloc( restart, sizeof(double*));
+    for (cc=0; cc<restart; cc++) {
+        VV[cc]  = (double*) DoodzCalloc( N, sizeof(double));
+        SS[cc]  = (double*) DoodzCalloc( N, sizeof(double));
+    }
+    
+    copy_cholmod_dense_to_cholmod_dense( f, b );
+    cholmod_sdmult ( M, 0, mone, one, x, f, c) ;
+    norm_r = cholmod_norm_dense ( f, 2, c );
+
+    // Evaluate reference norm
+    rnorm0 = norm_r;
+    if (noisy > 1) printf("       %1.4d KSP GCR Residual %1.12e %1.12e\n", 0, norm_r, norm_r/rnorm0);
+
+    while ( success == 0 && its<max_it ) {
+
+        for ( i1=0; i1<restart; i1++ ) {
+
+            // ---------------- Apply preconditioner, s = Q^{-1} r ---------------- //
+
+//            // extract ru from r = [ru; rp]
+//#pragma omp parallel for shared( fu, f ) private( cc )
+//            for (cc=0; cc<fu->nrow; cc++) {
+//                ((double*)fu->x)[cc] = ((double*)f->x)[cc];
+//            }
+//#pragma omp parallel for shared( fp, f ) private( cc, cc2 ) firstprivate( fu )
+//            for (cc=0; cc<fp->nrow; cc++) {
+//                cc2=fu->nrow+cc;
+//                ((double*)fp->x)[cc] = ((double*)f->x)[cc2];
+//            }
 //
-//    int i, j, locNNZ;
-//    int I1, J1;
+//            cholmod_sdmult ( Dcm, 0,  one, zero, fp, pdum, &c );
+//            cholmod_sdmult ( Bcm, 0, mone,  one, pdum, fu, &c );
+//            cholmod_free_dense( &u, &c );
+//            u = cholmod_solve ( CHOLMOD_A, Lfact, fu, &c );
+//            cholmod_sdmult ( Dcm, 0,  one, zero, fp,    p, &c );
+//            cholmod_sdmult ( Ccm, 0,  one, zero,     u, pdum, &c );
+//            cholmod_sdmult ( Dcm, 0, mone,  one,  pdum,    p, &c );
 //
-//    // Scale A
-//#pragma omp parallel for shared(StokesA) private(I1,J1, i, j, locNNZ )
-//    for (i=0;i<StokesA->neq; i++) {
-//
-//        I1     = StokesA->Ic[i];
-//        locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
-//        for (J1=0;J1<locNNZ; J1++) {
-//            j = StokesA->J[I1 + J1];
-//            PC->A[I1 + J1] = 0.5*( StokesA->A[I1 + J1] +  StokesA->A[I1 + J1] );
-//        }
-//    }
-//}
+//            // Concatenate s = [u; p]
+//#pragma omp parallel for shared( s, u ) private( cc )
+//            for (cc=0; cc<u->nrow; cc++) {
+//                ((double*)s->x)[cc] = ((double*)u->x)[cc];
+//            }
+//#pragma omp parallel for shared( s, p ) private( cc, cc2 ) firstprivate( u )
+//            for (cc=0; cc<p->nrow; cc++) {
+//                cc2=u->nrow+cc;
+//                ((double*)s->x)[cc2] =((double*)p->x)[cc];
+//            }
+
+            cholmod_free_dense( &s, c );
+            s = cholmod_solve (CHOLMOD_A, Lfact, f, c);
+
+            // Simplest preconditionning: PC = I
+            //            ArrayEqualArray( s->x, f->x, N );
+
+            // ---------------- Apply preconditioner, s = Q^{-1} r ---------------- //
+
+            // Action of Jacobian on s
+            cholmod_sdmult ( M, 0, one, zero, s, v, c) ;
+
+            // Approximation of the Jv product
+            for (i2=0; i2<i1; i2++) {
+                ((double*)val->x)[i2] = DotProduct( ((double*)v->x), VV[i2], N );
+            }
+
+            for(i2=0; i2<i1+1; i2++) {
+                fact = -((double*)val->x)[i2];
+                ArrayPlusScalarArray( ((double*)v->x), fact, VV[i2], N );
+                ArrayPlusScalarArray( ((double*)s->x), fact, SS[i2], N );
+            }
+
+            r_dot_v = DotProduct( ((double*)f->x), ((double*)v->x), N );
+            nrm     = sqrt(  DotProduct( ((double*)v->x), ((double*)v->x), N )  );
+            r_dot_v = r_dot_v / nrm;
+
+            fact = 1.0/nrm;
+            ArrayTimesScalar( ((double*)v->x), fact, N );
+            ArrayTimesScalar( ((double*)s->x), fact, N );
+
+            fact = r_dot_v;
+            ArrayPlusScalarArray( ((double*)x->x), fact, ((double*)s->x), N );
+            fact =-r_dot_v;
+            ArrayPlusScalarArray( ((double*)f->x), fact, ((double*)v->x), N );
+
+            // Check convergence
+            norm_r = cholmod_norm_dense ( f, 2, c );
+            if (norm_r < eps * rnorm0 ) { // || norm_r < epsa
+                success = 1;
+                break;
+            }
+            if (noisy>1) printf("[%1.4d] %1.4d KSP GCR Residual %1.12e %1.12e\n", ncycles, its, norm_r, norm_r/rnorm0);
+
+
+            // Store arrays
+            ArrayEqualArray( VV[i1], ((double*)v->x), N );
+            ArrayEqualArray( SS[i1], ((double*)s->x), N );
+
+
+            its++;
+        }
+        its++;
+        ncycles++;
+    }
+    if (noisy>1) printf("[%1.4d] %1.4d KSP GCR Residual %1.12e %1.12e\n", ncycles, its, norm_r, norm_r/rnorm0);
+    
+    
+    cholmod_free_dense( &s,   c );
+    cholmod_free_dense( &f,   c );
+    cholmod_free_dense( &v,   c );
+    cholmod_free_dense( &val, c );
+    
+    // Free temp vecs
+    for (cc=0; cc<restart; cc++) {
+        DoodzFree(VV[cc]);
+        DoodzFree(SS[cc]);
+    }
+    DoodzFree(VV);
+    DoodzFree(SS);
+    
+}
+
+
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
@@ -1560,11 +1699,13 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     //int    *P, msglvl = 0;
     DoodzFP  *u0, *p0, *F;
     int  noisy=1;
-    int k, cc, i; //nitmax=5
+    int nitmax=50, k, cc, i; //nitmax=5
     double celvol = model.dx*model.dz;
+    double maxdiv0, mindiv, maxdiv, maxdivit=0, rel_tol_div=model.rel_tol_div;
+
     
     cholmod_common c ;
-    cholmod_sparse *Lcm, *Lcml, *Acm, *Bcm, *Ccm, *Dcm; //, *A1
+    cholmod_sparse *Lcm, *Kcm, *Lcml, *Acm, *Bcm, *Ccm, *Dcm; //, *A1
     cholmod_sparse *AcmJ, *BcmJ, *CcmJ;
     cholmod_sparse *Dcm0, *D1cm0; //, *BDC, *DC, *Lcm0, *Lcml0, *Acm0, *Bcm0, *Ccm0
     cholmod_factor *Lfact ;
@@ -1750,12 +1891,14 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     // Factor Jts
     printf("Cholesky factors of Jts...\n");
 
-//    int N = AJc->m + CJc->m, cc2; //NNZ=Ac->nzmax+Bc->nzmax+Cc->nzmax+Dc->nzmax
+    int N = AJc->m;; //NNZ=Ac->nzmax+Bc->nzmax+Cc->nzmax+Dc->nzmax
 //        c.supernodal = 2;
 
     // Prepare Jacobian preconditioner blocks
     Lcm = cholmod_allocate_sparse (Jts->m, Jts->n, Jts->nzmax, 0, 1, 0, 1, &c) ;
     copy_cs_to_cholmod_matrix( Lcm, Jts );
+    Kcm = cholmod_allocate_sparse (Js->m, Js->n, Js->nzmax, 0, 1, 0, 1, &c) ;
+    copy_cs_to_cholmod_matrix( Kcm, Js );
     Acm = cholmod_allocate_sparse (Ac->m, Ac->n, Ac->nzmax, 0, 1, 0, 1, &c) ;
     copy_cs_to_cholmod_matrix( Acm, Ac );
     Bcm = cholmod_allocate_sparse (B1->m, B1->n, B1->nzmax, 0, 1, 0, 1, &c) ;
@@ -1822,14 +1965,134 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
 
     printf("Initial residual:\n");
     copy_cholmod_dense_to_cholmod_dense( fu, bu );     // fu = bu
-    cholmod_sdmult ( Acm, 0, mone, one, u, fu, &c) ;   // fu -= A*u
-    cholmod_sdmult ( Bcm, 0, mone, one, p, fu, &c) ;   // fu -= B*p
+    cholmod_sdmult ( AcmJ, 0, mone, one, u, fu, &c) ;   // fu -= A*u
+    cholmod_sdmult ( BcmJ, 0, mone, one, p, fu, &c) ;   // fu -= B*p
     copy_cholmod_dense_to_cholmod_dense( fp, bp );     // fp = bp
-    cholmod_sdmult ( Ccm, 0, mone, one, u, fp, &c) ;   // fp -= C*u
+    cholmod_sdmult ( CcmJ, 0, mone, one, u, fp, &c) ;   // fp -= C*u
     cholmod_sdmult ( D1cm0, 0, mone, one, p, fp, &c) ; // fp -= D*p
 
     MinMaxArrayVal( fu->x, matA->neq, &minru0, &maxru0 );
     NormResidualCholmod( &ru, &rp, fu, fp, matA->neq, matC->neq, model, scaling, 0 );
+    
+    
+    for ( k=0; k<nitmax; k++) {
+        
+        // Residuals
+        copy_cholmod_dense_to_cholmod_dense( fu, bu  );
+        cholmod_sdmult ( AcmJ, 0, mone, one, u, fu, &c);
+        cholmod_sdmult ( BcmJ, 0, mone, one, p, fu, &c);
+        copy_cholmod_dense_to_cholmod_dense( fp, bp );
+        cholmod_sdmult ( CcmJ, 0, mone, one, u, fp, &c);
+        cholmod_sdmult ( D1cm0, 0, mone, one, p, fp, &c) ;
+        
+        cholmod_sdmult ( Dcm, 0, one, zero, fp, pdum, &c) ;   // pdum <-- D * fp
+        copy_cholmod_dense_to_cholmod_dense( udum, fu );      // udum <-- fu
+        cholmod_sdmult ( BcmJ, 0, mone, one, pdum, udum, &c) ; // udum <-- bu - B*(D*fp)
+        
+//        cholmod_free_dense( &du, &c );
+//        du = cholmod_solve (CHOLMOD_A, Lfact, udum, &c);
+        
+//        cholmod_free_dense( &du, &c );
+        kspgcr( Kcm, udum, du, Lfact, matA->neq, &c, model.rel_tol_KSP, noisy);
+
+        
+        //        cholmod_free_dense( &u, &c );
+        //        //        t_omp = (double)omp_get_wtime;
+        //        u = cholmod_solve (CHOLMOD_A, Lfact, udum, &c) ;
+        //        //        printf( "substitution: %lf s\n", (double)((double)omp_get_wtime() - t_omp));
+        //
+        copy_cholmod_dense_to_cholmod_dense( pdum, fp );      // pdum <-- bp
+        cholmod_sdmult ( CcmJ, 0, mone, one, du, pdum, &c);    // pdum <-- bp - C*u
+        cholmod_sdmult ( Dcm , 0, one, zero, pdum, dp, &c) ;   // dp <-- D*(bp - C*u)
+        
+        cholmod_dense_plus_cholmod_dense( u, du );
+        cholmod_dense_plus_cholmod_dense( p, dp );
+        
+        copy_cholmod_dense_to_cholmod_dense( fp, bp );
+        cholmod_sdmult ( CcmJ , 0, mone, one, u, fp, &c) ;
+        cholmod_sdmult ( D1cm0, 0, mone, one, p, fp, &c) ;
+        if (k>0) maxdivit = maxdiv;
+        MinMaxArrayVal( fp->x, matC->neq, &mindiv, &maxdiv );
+        MinMaxArrayVal( fu->x, matA->neq, &minru , &maxru  );
+        
+        //        ru       = -(        K*u +        grad*p  - Fu ); resu = norm(ru)/length(ru);
+        //        rp       = -(      div*u +   compD.*PP*p  - Fp ); resp = norm(rp)/length(rp);
+        //        rusc     = ru - grad*(PPi*rp);
+        //        du(sA)   = cs_ltsolve(AsccP,cs_lsolve(AsccP,rusc(sA)));
+        //        dp       = PPi*(rp-div*du);
+        //        u        = u + du; % Updates
+        //        p        = p + dp;
+        
+        if (k==0) maxdiv0 = maxdiv;
+        
+        if ( noisy == 1 ) {
+            
+            printf("PH comp it. %01d. rel. max. div. = %2.2e -- max. abs. div = %2.2e-- max. rel. div = %2.2e  / max. mom. = %2.2e rel. max. mom. = %2.2e\n", k, fabs(maxdiv/maxdiv0), maxdiv, maxdivit, maxru, maxru/maxru0);
+        }
+        //        if (fabs(maxdiv/maxdiv0)<rel_tol_div) break;
+        //        if (k>0 && fabs(maxdiv)/fabs(maxdivit)>0.75) break;
+        if (k>1 && (fabs(maxdiv)<model.abs_tol_div || maxdiv/maxdiv0<rel_tol_div ) ) break;
+        
+        //        if ( ru<1e-11/(scaling.F/pow(scaling.L,3)) && rp<1e-11/scaling.E) break;
+    }
+    
+    //    if (fabs(maxdiv/maxdiv0)>rel_tol_div || fabs(maxdiv) > rel_tol_div ){
+    if (fabs(maxdiv)>model.abs_tol_div && maxdiv/maxdiv0>rel_tol_div) {
+        printf("The code has exited since the incompressibility constrain was not satisfied to abs. tol. = %2.2e and rel. tol. = %2.2e\n Try modifying the PENALTY factor or check MIN/MAX viscosities\n Good luck!\n", model.abs_tol_div, rel_tol_div);
+        exit(1);
+    }
+    printf("** PH - iterations = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
+    
+    SumArray(u->x, 1.0, matC->neq, "u");
+    SumArray(p->x, 1.0, matC->neq, "p");
+    
+    // --------------- Solution vector --------------- //
+    BackToSolutionVector( u, p, sol, mesh, Stokes );
+    
+    // separate residuals
+    double Area =0.0, resx=0.0,resz=0.0, resp=0.0;
+    int ndofx=0, ndofz=0, ndofp=0;
+    int nx=model.Nx, nz=model.Nz, nzvx=nz+1, nxvz=nx+1, ncx=nx-1, ncz=nz-1;
+    
+    BackToSolutionVector( fu, fp, F, mesh, Stokes );
+    
+    // Integrate residuals
+#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, nx, nzvx ) reduction(+:resx,ndofx)
+    for( cc=0; cc<nzvx*nx; cc++) {
+        if ( mesh->BCu.type[cc] != 0 && mesh->BCu.type[cc] != 30 && mesh->BCu.type[cc] != 11 && mesh->BCu.type[cc] != 13 && mesh->BCu.type[cc] != -12 ) {
+            ndofx++;
+            resx += F[Stokes->eqn_u[cc]]*F[Stokes->eqn_u[cc]];//*celvol;
+        }
+    }
+    
+#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, nz, nxvz ) reduction(+:resz,ndofz)
+    for( cc=0; cc<nz*nxvz; cc++) {
+        if ( mesh->BCv.type[cc] != 0 && mesh->BCv.type[cc] != 30 && mesh->BCv.type[cc] != 11 && mesh->BCv.type[cc] != 13 && mesh->BCv.type[cc] != -12 ) {
+            ndofz++;
+            resz += F[Stokes->eqn_v[cc]]*F[Stokes->eqn_v[cc]];//*celvol;
+            //            if ( mesh->BCv.type[cc] == 2) printf("F=%2.2e\n", F[Stokes->eqn_v[cc]]);
+        }
+    }
+    
+#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, ncz, ncx ) reduction(+:resp,ndofp,Area)
+    for( cc=0; cc<ncz*ncx; cc++) {
+        if ( mesh->BCp.type[cc] != 0 && mesh->BCp.type[cc] != 30  && mesh->BCp.type[cc] != 31) {
+            ndofp++;
+            Area += celvol;
+            resp += F[Stokes->eqn_p[cc]]*F[Stokes->eqn_p[cc]];//*celvol;
+        }
+    }
+    
+    // Sqrt
+    resx =  sqrt(resx/ndofx);
+    resz =  sqrt(resz/ndofz);
+    resp =  sqrt(resp/ndofp);
+    
+    if ( noisy == 1 ) {
+        printf("Fu = %2.6e\n", resx ); // Units of momentum
+        printf("Fv = %2.6e\n", resz ); // Units of momentum
+        printf("Fp = %2.6e\n", resp ); // Units of velocity gradient
+    }
 
     
 //    if Newton==0, J = K; end
@@ -1863,15 +2126,16 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     cholmod_free_dense( &bp, &c );
     cholmod_free_dense( &u, &c );
     cholmod_free_dense( &p, &c );
+    cholmod_free_dense( &du, &c );
+    cholmod_free_dense( &dp, &c );
     cholmod_free_dense( &fu, &c );
     cholmod_free_dense( &fp, &c );
     cholmod_free_dense( &pdum, &c );
     cholmod_free_dense( &udum, &c );
-    cholmod_free_sparse( &Lcm, &c );
-
 
     cholmod_free_sparse( &Lcml, &c );
     cholmod_free_sparse( &Lcm, &c );
+    cholmod_free_sparse( &Kcm, &c );
     cholmod_free_sparse( &Acm, &c );
     cholmod_free_sparse( &Bcm, &c );
     cholmod_free_sparse( &Ccm, &c );
