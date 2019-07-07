@@ -34,7 +34,7 @@ struct _surface {
 typedef struct _OutputSparseMatrix OutputSparseMatrix ;
 struct _OutputSparseMatrix  {
     double params[4];
-    double *V, *eta_cell, *b;
+    double *V, *eta_cell, *b, *F;
     int *Ic, *J, *eqn_u, *eqn_v, *eqn_p;
 };
 
@@ -96,7 +96,7 @@ struct _params {
 	double  xmin, zmin, xmax, zmax, time, dx, dz, dt, dt0, dt_start, L0;
     double  xmin0, zmin0, xmax0, zmax0;
 	double gx, gz;
-	int Nx, Nz, Nt, step, Newton;
+	int Nx, Nz, Nt, step, nit, Newton;
 	int eta_avg, p_avg;
 	int ismechanical, isperiodic_x, isinertial, iselastic, isnonnewtonian, isthermal, ispureshear_ale, free_surf, eqn_state, write_markers, write_debug, write_energies;
     double free_surf_stab;
@@ -109,7 +109,7 @@ struct _params {
     double Courant, mineta, maxeta;
     // Linear solver
     int decoupled_solve, lsolver, diag_scaling;
-    double penalty, abs_tol_div, rel_tol_div, auto_penalty, compressible;
+    double penalty, abs_tol_div, rel_tol_div, auto_penalty, compressible, rel_tol_KSP;
     // Deformation maps
     int nT, nE, nd, def_maps;
     double Pn, Tmin, Tmax, Emin, Emax, dmin, dmax, PrBG;
@@ -454,6 +454,7 @@ void AddPartSed( markers *, mat_prop , markers *, surface *, params , scale , gr
 void CorrectTopoIni( markers *, mat_prop , markers *, surface *, params , scale , grid *);
 //
 // Decoupled solver
+void KillerSolver( SparseMat*,  SparseMat*,  SparseMat*,  SparseMat*, DirectSolver*, double*, double*, double*, params, grid*, scale, SparseMat*, SparseMat*, SparseMat*,  SparseMat*,  SparseMat* );
 void KSPStokesDecoupled( SparseMat*,  SparseMat*,  SparseMat*,  SparseMat*, DirectSolver*, double*, double*, double*, params, grid*, scale, SparseMat*, SparseMat*, SparseMat*,  SparseMat*,  SparseMat* );
 double LineSearchDecoupled( SparseMat*, SparseMat*, SparseMat*, SparseMat*, SparseMat*, double*, grid*, params*, Nparams*, markers*, markers*, surface*, mat_prop, scale );
 void EvaluateStokesResidualDecoupled( SparseMat*, SparseMat*, SparseMat*, SparseMat*, SparseMat*, Nparams*, grid*, params, scale, int );

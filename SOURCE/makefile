@@ -44,7 +44,7 @@ endif
 # Rules
 all: Doodzi_$(MODEL)
 
-FILES = Main_MDOODZ_GREAT.o Routines_BEN.o StokesRoutines.o StokesAssemblyCoupled.o StokesAssemblyDecoupled.o AdvectionRoutines.o RheologyDensity.o OutputHDF5.o SparseTools.o ThermalRoutines.o ThermalSolver.o ParticleRoutines.o free_surf.o FlowLaws.o MemoryAllocFree.o InputOutput.o MiscFunctions.o GridRoutines.o
+FILES = Main_MDOODZ_GREAT.o Solvers.c Routines_BEN.o StokesRoutines.o StokesAssemblyCoupled.o StokesAssemblyDecoupled.o AdvectionRoutines.o RheologyDensity.o OutputHDF5.o SparseTools.o ThermalRoutines.o ThermalSolver.o ParticleRoutines.o free_surf.o FlowLaws.o MemoryAllocFree.o InputOutput.o MiscFunctions.o GridRoutines.o
 
 ifeq ($(NEW_INPUT),yes)
         FILES += BC.o
