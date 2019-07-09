@@ -6,7 +6,7 @@ irestart = 0
 writer          = 1
 writer_step     = 1
 writer_markers  = 0
-writer_debug    = 1
+writer_debug    = 0
 writer_energies = 0
 
 /**** SCALES ****/

@@ -1,12 +1,12 @@
 /**** RESTART ****/
-istep = 00001
+istep = 00020
 irestart = 0
 
 /**** OUTPUT FILES ****/
 writer          = 1
 writer_step     = 1
 writer_markers  = 0
-writer_debug    = 1
+writer_debug    = 0
 writer_energies = 0
 
 /**** SCALES ****/
@@ -18,7 +18,7 @@ T   = 20
 /**** SPACE-TIME ****/
 Nx      = 101
 Nz      = 101
-Nt      = 1
+Nt      = 20
 xmin    = -5.000000e-1
 zmin    = -5.000000e-1
 xmax    =  5.000000e-1
@@ -30,8 +30,8 @@ penalty = 1e5
 lsolver = -1
 DefectCorrectionForm = 1
 diag_scaling = 0
-abs_tol_div = 1e-8
-rel_tol_div = 1e-8
+abs_tol_div = 1e-11
+rel_tol_div = 1e-11
 
 /**** SWITCHES ****/
 ismechanical    = 1
@@ -40,7 +40,7 @@ RK              = 4
 isperiodic_x    = 0
 ispureshear_ALE = 1
 isinertial      = 0
-iselastic       = 0
+iselastic       = 1
 isthermal       = 0
 line_search     = 1
 free_surf       = 0
@@ -88,7 +88,7 @@ expv = 0             / peierls creep
 gsel = 0             / grain size evo.
 eta0 = 1
 npwl = 30
-Qpwl = 0
+Qpwl = 20
 
 /**** PHASE 2 ****/
 ID   = 1
@@ -134,7 +134,7 @@ min_part_cell = 16
 Newton  = 1 
 nit_max = 10
 rel_tol_KSP = 5e-4
-tol_u   = 1e-10
-tol_p   = 1e-10
+tol_u   = 1e-8
+tol_p   = 1e-8
 mineta  = 1e-3
 maxeta  = 1e6

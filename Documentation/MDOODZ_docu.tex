@@ -238,6 +238,81 @@ isperiodic_x = 1
 \label{Inc2Bouless}
 \end{figure}
 
+\section{Visco-elasticity with linear rheology}
+
+setup file:
+\begin{verbatim} 
+PureShear_VE.txt
+\end{verbatim}
+
+Linear rheology with viscosity contrast of 10 (weak inclusion).
+Same shear modulus in both the matrix and the inclusion.
+
+\begin{figure}[ht!]
+\centerline{\includegraphics[height=3.0in]{./Figures/PureShear_VE_evol}}
+\caption{Evolution of effective stress.}
+\label{PureShear_VE_evol}
+\end{figure}
+
+\begin{figure}[ht!]
+\centerline{\includegraphics[height=3.0in]{./Figures/PureShear_VE_cmaps}}
+\caption{Color maps of strain rate ($\log_{10}$) and stress.}
+\label{PureShear_VE_cmapsl}
+\end{figure}
+
+The results can also be reproduced using the M2Di example:
+\begin{verbatim} 
+M2Di2_LinearVE_Newton_PureShear_MDOODZ.m
+\end{verbatim}
+
+\section{Power-law rheology}
+
+setup file:
+\begin{verbatim} 
+PureShear_pwl.txt
+\end{verbatim}
+
+Power-law exponent of matrix is 30, inclusion is 3.
+Newton solver converges in 7 nonlinear iterations.
+No time dependence, only one time step yields.
+
+\begin{figure}[ht!]
+\centerline{\includegraphics[height=3.0in]{./Figures/PureShear_pwl_cmaps}}
+\caption{Color maps of strain rate ($\log_{10}$) and stress.}
+\label{PureShear_pwl_cmaps}
+\end{figure}
+
+The results can also be reproduced using the M2Di example:
+\begin{verbatim} 
+M2Di2_PowerLaw_Newton_PureShear_MDOODZ.m
+\end{verbatim}
+
+\section{Visco-elasticity with power-law rheology}
+
+
+setup file:
+\begin{verbatim} 
+PureShear_pwl_VE.txt
+\end{verbatim}
+
+Time dependence, therefore stress builds up to eventually yield a comparable result than in the viscus end-member (section above).
+
+\begin{figure}[ht!]
+\centerline{\includegraphics[height=3.0in]{./Figures/PureShear_pwl_VE_evol}}
+\caption{Evolution of effective stress.}
+\label{PureShear_pwl_VE_evol}
+\end{figure}
+
+\begin{figure}[ht!]
+\centerline{\includegraphics[height=3.0in]{./Figures/PureShear_pwl_VE_cmaps}}
+\caption{Color maps of strain rate ($\log_{10}$) and stress.}
+\label{PureShear_pwl_VE_cmaps}
+\end{figure}
+The results can also be reproduced using the M2Di example:
+\begin{verbatim} 
+M2Di2_PowerLawVE_Newton_PureShear_LocIt_MDOODZ.m
+\end{verbatim}
+
 %---------------------------------------------------------------------------------------------------------------%
 \addchap{Matlab Examples}
 \section{Finite Strain ellipsoid and tensor and vector rotation}

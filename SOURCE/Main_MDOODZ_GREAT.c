@@ -540,29 +540,12 @@ int main( int nargs, char *args[] ) {
         
         while ( Nmodel.nit <= Nmax_picard ) {
             
-            printf("******************************************\n");
-            printf("*** Picard it. %02d of %02d (step = %05d) ***\n", Nmodel.nit, Nmodel.nit_max, model.step);
-            printf("******************************************\n");
+            printf("**********************************************\n");
+            printf("*** Non-linear it. %02d of %02d (step = %05d) ***\n", Nmodel.nit, Nmodel.nit_max, model.step);
+            printf("**********************************************\n");
             
             // Non-Linearity
             UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
-            
-//            MinMaxArrayTag( mesh.exxd, scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "exx", mesh.BCp.type );
-//            MinMaxArrayTag( mesh.exz_n, scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "exz_n", mesh.BCp.type );
-//            MinMaxArrayTag( mesh.exz, scaling.E, (mesh.Nx-0)*(mesh.Nz-0), "exz", mesh.BCg.type );
-//
-//            MinMaxArrayTag( mesh.exxd_s, scaling.E, (mesh.Nx-0)*(mesh.Nz-0), "exx_s", mesh.BCg.type );
-//
-            MinMaxArrayTag( mesh.eta_phys_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_phys_n", mesh.BCp.type );
-            MinMaxArrayTag( mesh.eta_phys_s, scaling.eta, (mesh.Nx-0)*(mesh.Nz-0), "eta_phys_s", mesh.BCg.type );
-            MinMaxArrayTag( mesh.eta_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),   "eta_eff_n", mesh.BCp.type );
-            MinMaxArrayTag( mesh.eta_s, scaling.eta, (mesh.Nx)*(mesh.Nz),       "eta_eff_s", mesh.BCg.type );
-            
-//            MinMaxArrayTag( mesh.sxz,     scaling.S,   (mesh.Nx)*(mesh.Nz),     "sxz    ", mesh.BCg.type );
-//            MinMaxArrayTag( mesh.sxxd,    scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "sxx    ", mesh.BCp.type );
-//            MinMaxArrayTag( mesh.szzd,    scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "szz    ", mesh.BCp.type );
-//            MinMaxArray(particles.szzd, scaling.S, particles.Nb_part, "szz part  ");
-
             
             // Stokes solver
             if ( model.ismechanical == 1 ) {
