@@ -1676,6 +1676,8 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     double celvol = model.dx*model.dz;
     double maxdiv0, mindiv, maxdiv, maxdivit=0, rel_tol_div=model.rel_tol_div;
     
+    int pc_type = 0;
+    
     
     cholmod_common c ;
     cholmod_sparse *Lcm, *Kcm, *Lcml, *Acm, *Bcm, *Ccm, *Dcm; //, *A1
@@ -1830,17 +1832,23 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     //------------------------------------------------------------------------------------------------//
     
     // Contruct preconditionner: Js  = 1/2*(J'+ J);
-    printf("Contruct preconditionner: Js  = 1/2 * (J'+ J)...\n");
+    if ( pc_type == 0 ) {
+        printf("Contruct preconditionner: PC  = K\n");
+        PC = cs_di_add( Ac, Ac, 1.0, 0.0 );
+    }
     
-    Jt = cs_di_transpose( AJc, 1);
-    PC = cs_di_add( AJc, Jt, 0.5, 0.5);
-    cs_spfree(Jt);
+    if ( pc_type == 1 ) {
+        printf("Contruct preconditionner: PC  = 1/2 * (J'+ J)\n");
+        Jt = cs_di_transpose( AJc, 1);
+        PC = cs_di_add( AJc, Jt, 0.5, 0.5);
+        cs_spfree(Jt);
+    }
     
     //------------------------------------------------------------------------------------------------//
     
     // --------------- Schur complements --------------- //
     printf("Compute Schur complement 1:  Jt  = J  - grad*(PPI*div);...\n");
-    printf("Compute Schur complement 2:  Jts = Js - grad*(PPI*div);...\n");
+    printf("Compute Schur complement 2:  Jts = PC - grad*(PPI*div);...\n");
     
     // Matrix multiplication: D*C
     L =  cs_di_multiply( Dc, Cc );
@@ -1935,12 +1943,12 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     copy_vec_to_cholmod_dense( bp, rhs_cont );
     
     printf("Initial residual:\n");
-    copy_cholmod_dense_to_cholmod_dense( fu, bu );     // fu = bu
+    copy_cholmod_dense_to_cholmod_dense( fu, bu );       // fu = bu
     cholmod_sdmult ( AcmJ, 0, mone, one, du, fu, &c) ;   // fu -= A*u
     cholmod_sdmult ( BcmJ, 0, mone, one, dp, fu, &c) ;   // fu -= B*p
-    copy_cholmod_dense_to_cholmod_dense( fp, bp );     // fp = bp
+    copy_cholmod_dense_to_cholmod_dense( fp, bp );       // fp = bp
     cholmod_sdmult ( CcmJ, 0, mone, one, du, fp, &c) ;   // fp -= C*u
-    cholmod_sdmult ( D1cm0, 0, mone, one, dp, fp, &c) ; // fp -= D*p
+    cholmod_sdmult ( D1cm0, 0, mone, one, dp, fp, &c) ;  // fp -= D*p
     
     MinMaxArrayVal( fu->x, matA->neq, &minru0, &maxru0 );
     NormResidualCholmod( &ru, &rp, fu, fp, matA->neq, matC->neq, model, scaling, 0 );
@@ -1948,8 +1956,8 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     
     for ( k=0; k<nitmax; k++) {
         
-        cholmod_sdmult ( Dcm, 0, one, zero, bp, pdum, &c) ;   // pdum <-- D * fp
-        copy_cholmod_dense_to_cholmod_dense( udum, bu );      // udum <-- fu
+        cholmod_sdmult ( Dcm, 0, one, zero, bp, pdum, &c) ;    // pdum <-- D * fp
+        copy_cholmod_dense_to_cholmod_dense( udum, bu );       // udum <-- fu
         cholmod_sdmult ( BcmJ, 0, mone, one, pdum, udum, &c) ; // udum <-- bu - B*(D*fp)
         cholmod_sdmult ( BcmJ, 0, mone, one,   dp, udum, &c) ; // udum <-- bu - B*(D*fp) - B*dp
         
@@ -1959,17 +1967,17 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
         kspgcr( Kcm, udum, du, Lfact, matA->neq, &c, model.rel_tol_KSP, noisy, &its_KSP);
         its_KSP_tot += its_KSP;
         
-        copy_cholmod_dense_to_cholmod_dense( pdum, bp );      // pdum <-- bp
+        copy_cholmod_dense_to_cholmod_dense( pdum, bp );       // pdum <-- bp
         cholmod_sdmult ( CcmJ, 0, mone, one, du, pdum, &c);    // pdum <-- bp - C*u
         cholmod_sdmult ( Dcm , 0,  one, one, pdum, dp, &c) ;   // dp <-- dp + D*(bp - C*u)
         
         
-        copy_cholmod_dense_to_cholmod_dense( fu, bu );     // fu = bu
+        copy_cholmod_dense_to_cholmod_dense( fu, bu );       // fu = bu
         cholmod_sdmult ( AcmJ, 0, mone, one, du, fu, &c) ;   // fu -= A*u
         cholmod_sdmult ( BcmJ, 0, mone, one, dp, fu, &c) ;   // fu -= B*p
-        copy_cholmod_dense_to_cholmod_dense( fp, bp );     // fp = bp
-        cholmod_sdmult ( CcmJ, 0, mone, one, du, fp, &c) ;   // fp -= C*u
-        cholmod_sdmult ( D1cm0, 0, mone, one, dp, fp, &c) ; // fp -= D*p
+        copy_cholmod_dense_to_cholmod_dense( fp, bp );       // fp = bp
+        cholmod_sdmult (  CcmJ, 0, mone, one, du, fp, &c) ;   // fp -= C*u
+        cholmod_sdmult ( D1cm0, 0, mone, one, dp, fp, &c) ;  // fp -= D*p
         
         if (k>0) maxdivit = maxdiv;
         MinMaxArrayVal( fp->x, matC->neq, &mindiv, &maxdiv );
@@ -1992,8 +2000,6 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
         
         //        if ( ru<1e-11/(scaling.F/pow(scaling.L,3)) && rp<1e-11/scaling.E) break;
     }
-    
-    
     
     
     
