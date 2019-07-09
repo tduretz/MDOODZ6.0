@@ -709,7 +709,7 @@ int main( int nargs, char *args[] ) {
                 }
             } // end is_mechanical
             
-            Nmodel.nit++;
+            Nmodel.nit++; model.nit = Nmodel.nit;
         }
         
         // Clean solver context

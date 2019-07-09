@@ -1976,8 +1976,8 @@ void BuildStokesOperatorDecoupled( grid *mesh, params model, int lev, double *p,
         if ( model.write_debug == 1 ) {
             
             char *filename;
-            asprintf( &filename, "MatrixDecoupled.gzip_%dcpu.h5", n_th );
-            printf("Writing Matrix file to disk...\n");
+            asprintf( &filename, "Stokes.gzip_%02dcpu_step%02d_iter%02d.h5", n_th, model.step, model.nit );
+            printf("Writing Stokes matrix file: %s to disk...\n", filename);
             
             // Fill in DD data structure
             OutputSparseMatrix OutputDDA, OutputDDB, OutputDDC, OutputDDD;
@@ -1986,6 +1986,7 @@ void BuildStokesOperatorDecoupled( grid *mesh, params model, int lev, double *p,
             OutputDDA.Ic = StokesA->Ic;
             OutputDDA.J = StokesA->J;
             OutputDDA.b = StokesA->b;
+            OutputDDA.F = StokesA->F;
             OutputDDB.V = StokesB->A;
             OutputDDB.Ic = StokesB->Ic;
             OutputDDB.J = StokesB->J;
@@ -1994,6 +1995,7 @@ void BuildStokesOperatorDecoupled( grid *mesh, params model, int lev, double *p,
             OutputDDC.Ic = StokesC->Ic;
             OutputDDC.J = StokesC->J;
             OutputDDC.b = StokesC->b;
+            OutputDDC.F = StokesC->F;
             OutputDDD.V = StokesD->A;
             OutputDDD.Ic = StokesD->Ic;
             OutputDDD.J = StokesD->J;
@@ -2064,6 +2066,8 @@ void BuildStokesOperatorDecoupled( grid *mesh, params model, int lev, double *p,
             AddFieldToGroup_generic( _TRUE_, filename, "matrix", "eta_cell", 'd', ncx*ncz, OutputDDA.eta_cell,  1 );
             AddFieldToGroup_generic( _TRUE_, filename, "matrix", "rhs_mom" , 'd', StokesA->neq, OutputDDA.b,  1 );
             AddFieldToGroup_generic( _TRUE_, filename, "matrix", "rhs_cont", 'd', StokesC->neq, OutputDDC.b,  1 );
+            AddFieldToGroup_generic( _TRUE_, filename, "matrix", "F_mom" , 'd', StokesA->neq, OutputDDA.F,  1 );
+            AddFieldToGroup_generic( _TRUE_, filename, "matrix", "F_cont", 'd', StokesC->neq, OutputDDC.F,  1 );
             //            AddFieldToGroup_generic( _TRUE_, filename, "matrix", "rhs", 'd', Stokes->neq, OutputDD.b,  1 );
             DoodzFree(OutputDDA.eqn_u);
             DoodzFree(OutputDDA.eqn_v);
@@ -4387,8 +4391,8 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
         if ( model.write_debug == 1 ) {
             
             char *filename;
-            asprintf( &filename, "Jacobian.gzip_%dcpu.h5", n_th );
-            printf("Writing Jacobian file to disk...\n");
+            asprintf( &filename, "Jacobian.gzip_%02dcpu_step%02d_iter%02d.h5", n_th, model.step, model.nit );
+            printf("Writing Jacobian matrix file: %s to disk...\n", filename);
             
             // Fill in DD data structure
             OutputSparseMatrix OutputDDA, OutputDDB, OutputDDC, OutputDDD;
@@ -4397,6 +4401,7 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
             OutputDDA.Ic = StokesA->Ic;
             OutputDDA.J = StokesA->J;
             OutputDDA.b = StokesA->b;
+            OutputDDA.F = StokesA->F;
             OutputDDB.V = StokesB->A;
             OutputDDB.Ic = StokesB->Ic;
             OutputDDB.J = StokesB->J;
@@ -4405,6 +4410,7 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
             OutputDDC.Ic = StokesC->Ic;
             OutputDDC.J = StokesC->J;
             OutputDDC.b = StokesC->b;
+            OutputDDC.F = StokesC->F;
             OutputDDD.V = StokesD->A;
             OutputDDD.Ic = StokesD->Ic;
             OutputDDD.J = StokesD->J;
@@ -4475,6 +4481,8 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
             AddFieldToGroup_generic( _TRUE_, filename, "matrix", "eta_cell", 'd', ncx*ncz, OutputDDA.eta_cell,  1 );
             AddFieldToGroup_generic( _TRUE_, filename, "matrix", "rhs_mom" , 'd', StokesA->neq, OutputDDA.b,  1 );
             AddFieldToGroup_generic( _TRUE_, filename, "matrix", "rhs_cont", 'd', StokesC->neq, OutputDDC.b,  1 );
+            AddFieldToGroup_generic( _TRUE_, filename, "matrix", "F_mom" , 'd', StokesA->neq, OutputDDA.F,  1 );
+            AddFieldToGroup_generic( _TRUE_, filename, "matrix", "F_cont", 'd', StokesC->neq, OutputDDC.F,  1 );
             //            AddFieldToGroup_generic( _TRUE_, filename, "matrix", "rhs", 'd', Stokes->neq, OutputDD.b,  1 );
             
             DoodzFree(OutputDDA.eqn_u);
