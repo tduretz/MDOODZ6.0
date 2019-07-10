@@ -134,9 +134,9 @@ def get_data(filename,key,average="none"):
     found = False
     with h5py.File(filename, 'r') as f:
         for superKey in f.keys():
-            print("\n" + superKey ) #Names of the groups in HDF5 file.
+#            print("\n" + superKey ) #Names of the groups in HDF5 file.
             for thisKey in f[superKey].keys():
-                print("  " + thisKey + " - " + str(f[superKey][thisKey].shape))    
+#                print("  " + thisKey + " - " + str(f[superKey][thisKey].shape))    
                 if thisKey==key:
                     if superKey == 'Centers':
                         data = get_center_data(filename,key)
