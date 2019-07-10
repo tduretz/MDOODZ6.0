@@ -35,21 +35,20 @@ class TopoChain():
     def __init__(self,
                  model,
                  fact=24,
-                 Topo_level=0.0,
+                 topo_level=0.0,
                  over_alloc_fac=2.0,
                  phase=0):
-        
-        
         # Calculate Nb_part using algorithm from SetTopoChainHorizontalCoords
         dxGrid = model.get_dx()
-        dx = dxGrid/fact;
+        dx = dxGrid/fact
         Nb_part = int(round(model.Nx*fact-(fact-1) - 2))
-        
+
         
         self.Nb_part = Nb_part
         self.Nb_part_max = int(round(over_alloc_fac*self.Nb_part))
+        
         self.x = np.zeros(Nb_part)
-        self.z = np.ones(Nb_part) * Topo_level
+        self.z = np.ones(Nb_part) * topo_level
         self.Vx = np.ones(Nb_part)
         self.Vz = np.ones(Nb_part)
         self.phase = np.zeros(Nb_part,dtype=int)
