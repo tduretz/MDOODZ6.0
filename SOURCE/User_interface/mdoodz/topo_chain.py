@@ -43,7 +43,7 @@ class TopoChain():
         # Calculate Nb_part using algorithm from SetTopoChainHorizontalCoords
         dxGrid = model.get_dx()
         dx = dxGrid/fact;
-        Nb_part = model.Nx*fact-(fact-1) - 2;
+        Nb_part = int(round(model.Nx*fact-(fact-1) - 2))
         
         
         self.Nb_part = Nb_part
