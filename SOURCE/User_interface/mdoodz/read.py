@@ -83,7 +83,9 @@ class Time():
             self.time  = time
             self.timeLabel = timeLabel
            
-            
+    
+
+        
 def get_center_data(filename,key):
         with h5py.File(filename, 'r') as f:
             params = f['Model/Params'][()]
@@ -109,3 +111,55 @@ def get_viz_grid_data(filename,key):
                 ncx *= 2
                 ncz *= 2
             return np.reshape(f['VizGrid'][key][()],(ncz,ncx))
+        
+def get_vx_nodes_data(filename,key):
+        with h5py.File(filename, 'r') as f:
+            params = f['Model/Params'][()]
+            nx   = int(params[3])
+            nz   = int(params[4])+1
+            return np.reshape(f['VxNodes'][key][()],(nz,nx))
+
+def get_vz_nodes_data(filename,key):
+        with h5py.File(filename, 'r') as f:
+            params = f['Model/Params'][()]
+            nx   = int(params[3])+1
+            nz   = int(params[4])
+            return np.reshape(f['VzNodes'][key][()],(nz,nx))
+        
+        
+        
+def get_data(filename,key,average="none"):
+    # average = "none" (default), "center" or "vertex"
+    # note: unfinished, only "vertex" is implemented for vx and vy
+    found = False
+    with h5py.File(filename, 'r') as f:
+        for superKey in f.keys():
+            print("\n" + superKey ) #Names of the groups in HDF5 file.
+            for thisKey in f[superKey].keys():
+                print("  " + thisKey + " - " + str(f[superKey][thisKey].shape))    
+                if thisKey==key:
+                    if superKey == 'Centers':
+                        data = get_center_data(filename,key)
+                    elif superKey == 'Vertices':
+                        data = get_vertex_data(filename,key)
+                    elif superKey == 'VizGrid':
+                        data = get_viz_grid_data(filename,key)
+                    elif superKey == 'VxNodes':
+                        data = get_vx_nodes_data(filename,key)
+                        if average.lower()=="vertex":
+                            data = (data[:-1:,:] + data[1::,:])/2.0                            
+                    elif superKey == 'VzNodes':
+                        data = get_vz_nodes_data(filename,key)
+                        if average.lower()=="vertex":
+                            data = (data[:,:-1:] + data[:,1::])/2.0
+                    else:
+                        raise ValueError("Unknown superKey %s" % superKey)
+                    found = True
+                    break
+                # end if thisKey=key
+            # end for thisKey
+            if found:
+                break
+        # end for superKey
+    return data
+            
