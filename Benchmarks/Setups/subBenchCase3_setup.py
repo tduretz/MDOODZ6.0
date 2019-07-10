@@ -97,14 +97,14 @@ slab.rotate(xc=0.2,angle=34.0*np.pi/180.0)
 
 # Topo chain
 # ==========================================
-topo_chain  = TopoChain(model,Topo_level=0.000,fact=24)
+topo_chain  = TopoChain(model,topo_level=0.000,fact=24)
 
 # Particles
 # ==========================================
 print("Initializing particles: ", end = ''); tic = time.time()
-Tbg  = 773.15/scaling.T;                         # reference temperature
-gsbg = 2e-3/scaling.L;                           # reference grain size
-H    = 1.2e-2/scaling.L;                         # plate thickness
+Tbg  = 773.15;                         # reference temperature
+gsbg = 2e-3;                           # reference grain size
+H    = 1.2e-2;                         # plate thickness
 
 particles   = Particles(model, 
                               topo_chain=topo_chain,
@@ -175,7 +175,7 @@ mantle_mat = Material(model,
 
 ## Plot
 ## ==========================================
-print("Plotting: ", end = ''); tic = time.time();
+print("Plotting: ", end = ''); tic = time.time()
 plt.clf()    
 if fastPlotting:
     df = pd.DataFrame(np.array([particles.x,particles.z,particles.phase]).T,columns=('x','y','phase'))
@@ -204,3 +204,7 @@ print("%.1f s" % (time.time()-tic))
 # ==========================================
 write.text_file(model, scaling, particles, filename='../Input/input.txt')
 write.ini_particles_file(model, particles, topo_chain,filename='../Input/input.dat')
+
+#write.text_file(model, scaling, particles, filename='Benchmarks/Input/input.txt')
+#write.ini_particles_file(model, particles, topo_chain,filename='Benchmarks/Input/input.dat')
+

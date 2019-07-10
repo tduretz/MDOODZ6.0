@@ -165,9 +165,9 @@ class Model():
 # Input
         self.input_file = input_file
 # Domain size       
-        self.Nx = Nx
-        self.Nz = Nz
-        self.Nt = Nt
+        self.Nx = int(Nx)
+        self.Nz = int(Nz)
+        self.Nt = int(Nt)
         self.xmin = xmin
         self.xmax = xmax
         self.zmin = zmin
