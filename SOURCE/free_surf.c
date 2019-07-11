@@ -428,7 +428,7 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
         topo->height[k] = BmWm[k]/Wm[k];
         
         if (isnan(topo->height[k])) {
-            printf("%2.2e %2.2e\n", BmWm[k], Wm[k]);
+            printf("error: NaN in topo, %2.2e %2.2e\n", BmWm[k], Wm[k]);
             exit(1);
         }
         if (itp_type==1) topo->height[k] =  1.0 / topo->height[k];
