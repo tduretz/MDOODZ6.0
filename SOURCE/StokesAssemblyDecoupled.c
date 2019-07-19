@@ -2385,26 +2385,31 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     double  uC=0.0;
     double  uS=0.0,  uN=0.0,  uW=0.0,  uE=0.0,  vSW=0.0,  vSE=0.0,  vNW=0.0,  vNE=0.0, pE=0.0, pW=0.0;
     double uSW=0.0, uSE=0.0, uNW=0.0, uNE=0.0, vSWW=0.0, vSEE=0.0, vNWW=0.0, vNEE=0.0, vSSW=0.0, vSSE = 0.0, vNNW=0.0, vNNE=0.0;
+    double pSW=0.0, pSE=0.0, pNW=0.0, pNE=0.0;
     
     double D11E = mesh->D11_n[c2+1];
     double D12E = mesh->D12_n[c2+1];
     double D13E = mesh->D13_n[c2+1];
+    double D14E = mesh->D14_n[c2+1];
     
     double D11W = mesh->D11_n[c2];
     double D12W = mesh->D12_n[c2];
     double D13W = mesh->D13_n[c2];
+    double D14W = mesh->D14_n[c2];
     
     double D31N = mesh->D31_s[c1];
     double D32N = mesh->D32_s[c1];
     double D33N = mesh->D33_s[c1];
+    double D34N = mesh->D34_s[c1];
     
     double D31S = mesh->D31_s[c1-nx];
     double D32S = mesh->D32_s[c1-nx];
     double D33S = mesh->D33_s[c1-nx];
+    double D34S = mesh->D34_s[c1-nx];
     
     
-    if ( mesh->BCu.type[c1+nx] == 13 ) {D31N = 0.0; D32N = 0.0; D33N = 0.0;}
-    if ( mesh->BCu.type[c1-nx] == 13 ) {D31S = 0.0; D32S = 0.0; D33S = 0.0;}
+    if ( mesh->BCu.type[c1+nx] == 13 ) {D31N = 0.0; D32N = 0.0; D33N = 0.0; D34N = 0.0;}
+    if ( mesh->BCu.type[c1-nx] == 13 ) {D31S = 0.0; D32S = 0.0; D33S = 0.0; D34S = 0.0;}
     
     double inE=0.0, inW=0.0, inS=0.0, inN = 0.0;
     
@@ -2477,12 +2482,19 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     vNNW = (1.0/3.0)*inN*inNWc*wN*(D31N*comp + D32N*(comp - 3))/pow(dz, 2);
     vNNE = (1.0/3.0)*inN*inNEc*wN*(D31N*comp + D32N*(comp - 3))/pow(dz, 2);
     
+    pW  =  -inW*one_dx + (inW*( D14W*dz + dx*(-D34N*inN*wN + D34S*inS*wS))/(dx*dz));
+    pE  =   inE*one_dx + (inE*(-D14E*dz + dx*(-D34N*inN*wN + D34S*inS*wS))/(dx*dz));
+    pSW = (D34S*inS*inSWc*wS/dz);
+    pSE = ( D34S*inS*inSEc*wS/dz);
+    pNW = (-D34N*inN*inNWc*wN/dz);
+    pNE = (-D34N*inN*inNEc*wN/dz);
     
-    // Pressure gradient
-    if ( mesh->BCp.type[c2+1] != 30 && mesh->BCp.type[c2] != 30 ) {
-        pW  =  -one_dx;
-        pE  =   one_dx;
-    }
+    
+//    // Pressure gradient
+//    if ( mesh->BCp.type[c2+1] != 30 && mesh->BCp.type[c2] != 30 ) {
+//        pW  =  -one_dx;
+//        pE  =   one_dx;
+//    }
     
     if ( Assemble == 1 ) {
         StokesA->b[eqn] *= celvol;
@@ -2583,11 +2595,37 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         
         //--------------------
         
+        if (l>1) {
+        // pSW
+        if ( mesh->BCp.type[c2-ncx] != 30 ) {
+            AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2-ncx] - Stokes->neq_mom,   &(nnzc2B[ith]), pSW*celvol, mesh->BCp.type[c2-ncx],   mesh->BCp.val[c2-ncx],   StokesB->bbc);
+        }
+
+        // pSE
+        if ( mesh->BCp.type[c2-ncx+1] != 30 ) {
+            AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2-ncx+1] - Stokes->neq_mom,   &(nnzc2B[ith]), pSE*celvol, mesh->BCp.type[c2-ncx+1],   mesh->BCp.val[c2-ncx+1],   StokesB->bbc);
+        }
+        }
+
         // pE && pW
         if ( mesh->BCp.type[c2+1] != 30 && mesh->BCp.type[c2] != 30 ) {
             AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2] - Stokes->neq_mom,   &(nnzc2B[ith]), pW*celvol, mesh->BCp.type[c2],   mesh->BCp.val[c2],   StokesB->bbc);
             AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+1] - Stokes->neq_mom, &(nnzc2B[ith]), pE*celvol, mesh->BCp.type[c2+1], mesh->BCp.val[c2+1], StokesB->bbc);
         }
+
+        if ( l<nz-1 ) {
+        // pNW
+        if ( mesh->BCp.type[c2+ncx] != 30 ) {
+            AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+ncx] - Stokes->neq_mom,   &(nnzc2B[ith]), pNW*celvol, mesh->BCp.type[c2+ncx],   mesh->BCp.val[c2+ncx],   StokesB->bbc);
+        }
+
+        // pNW
+        if ( mesh->BCp.type[c2+ncx+1] != 30 ) {
+            AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+ncx+1] - Stokes->neq_mom,   &(nnzc2B[ith]), pNE*celvol, mesh->BCp.type[c2+ncx+1],   mesh->BCp.val[c2+ncx+1],   StokesB->bbc);
+        }
+        }
+
+        
     }
     else {
         //        // Residual function
@@ -3339,25 +3377,30 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     double uSW=0.0, uSE=0.0, uNW=0.0, uNE=0.0,   vS=0.0,   vW=0.0,   vE=0.0,   vN=0.0, pN=0.0, pS=0.0;
     double vSW=0.0, vSE=0.0, vNW=0.0, vNE=0.0, uSSW=0.0, uSSE=0.0, uNNW=0.0, uNNE=0.0;
     double uSWW=0.0, uSEE=0.0, uNWW=0.0, uNEE=0.0;
+    double pSW=0.0, pSE=0.0, pNW=0.0, pNE=0.0;
     
     double D31W  = mesh->D31_s[c1-1];
     double D32W  = mesh->D32_s[c1-1];
     double D33W  = mesh->D33_s[c1-1];
+    double D34W  = mesh->D34_s[c1-1];
     
     double D31E  = mesh->D31_s[c1];
     double D32E  = mesh->D32_s[c1];
     double D33E  = mesh->D33_s[c1];
+    double D34E  = mesh->D34_s[c1];
     
     double D21S  = mesh->D21_n[c2];
     double D22S  = mesh->D22_n[c2];
     double D23S  = mesh->D23_n[c2];
+    double D24S  = mesh->D24_n[c2];
     
     double D21N  = mesh->D21_n[c2+ncx];
     double D22N  = mesh->D22_n[c2+ncx];
     double D23N  = mesh->D23_n[c2+ncx];
+    double D24N  = mesh->D24_n[c2+ncx];
     
-    if ( mesh->BCv.type[c3+1] == 13 ) {D31E = 0.0; D32E = 0.0; D33E = 0.0;}
-    if ( mesh->BCv.type[c3-1] == 13 ) {D31W = 0.0; D32W = 0.0; D33W = 0.0;}
+    if ( mesh->BCv.type[c3+1] == 13 ) {D31E = 0.0; D32E = 0.0; D33E = 0.0; D34E = 0.0;}
+    if ( mesh->BCv.type[c3-1] == 13 ) {D31W = 0.0; D32W = 0.0; D33W = 0.0; D34W = 0.0;}
     
     double inS=0.0,inN=0.0,inW=0.0, inE = 0.0;
     
@@ -3429,11 +3472,21 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     uNNW = -D23N*inN*inNWv*wN/pow(dz, 2);
     uNNE = -D23N*inN*inNEv*wN/pow(dz, 2);
     
-    // Pressure gradient
-    if ( mesh->BCp.type[c2] != 30 && mesh->BCp.type[c2+ncx] != 30 ) {
-        pS  =  -one_dz;
-        pN  =   one_dz;
-    }
+    pS  = -inS*one_dz + (inS*(D24S*dx + dz*(-D34E*inE*wE + D34W*inW*wW))/(dx*dz));
+    pN  =  inN*one_dz + (inN*(-D24N*dx + dz*(-D34E*inE*wE + D34W*inW*wW))/(dx*dz));
+    pSW = (D34W*inSWc*inW*wW/dx);
+    pSE = (-D34E*inE*inSEc*wE/dx);
+    pNW = (D34W*inNWc*inW*wW/dx);
+    pNE = (-D34E*inE*inNEc*wE/dx);
+    
+//    printf("pS = %2.2e %2.2e %2.2e %2.2e %2.2e\n", pS, D24S*dx, -D34E*inE*wE, D34W*inW*wW, mesh->detadp_n[c2]  );
+
+    
+//    // Pressure gradient
+//    if ( mesh->BCp.type[c2] != 30 && mesh->BCp.type[c2+ncx] != 30 ) {
+//        pS  =  -one_dz;
+//        pN  =   one_dz;
+//    }
     
     if ( Assemble == 1 ) {
         StokesA->b[eqn] *= celvol;
@@ -3541,11 +3594,46 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         
         //--------------------
         
-        // pS && pN
+        // pSW
+        if ( k>1 ) {
+        if ( mesh->BCp.type[c2-1] != 30 ) {
+            AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2-1] - Stokes->neq_mom,      &(nnzc2B[ith]), pSW*celvol, mesh->BCp.type[c2-1],     mesh->BCp.val[c2-1],     StokesB->bbc );
+        }
+        }
+
+        // pS
         if ( mesh->BCp.type[c2] != 30 && mesh->BCp.type[c2+ncx] != 30) {
             AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2] - Stokes->neq_mom,      &(nnzc2B[ith]), pS*celvol, mesh->BCp.type[c2],     mesh->BCp.val[c2],     StokesB->bbc );
-            AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+ncx] - Stokes->neq_mom,  &(nnzc2B[ith]), pN*celvol, mesh->BCp.type[c2+ncx], mesh->BCp.val[c2+ncx], StokesB->bbc );
         }
+
+        // pSE
+        if ( k<nx-1 ) {
+        if ( mesh->BCp.type[c2+1] != 30 ) {
+            AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+1] - Stokes->neq_mom,      &(nnzc2B[ith]), pSE*celvol, mesh->BCp.type[c2+1],     mesh->BCp.val[c2+1],     StokesB->bbc );
+        }
+        }
+
+       
+        // pNW
+        if ( k>1 ) {
+        if ( mesh->BCp.type[c2+ncx-1] != 30) {
+            AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+ncx-1] - Stokes->neq_mom,  &(nnzc2B[ith]), pNW*celvol, mesh->BCp.type[c2+ncx-1], mesh->BCp.val[c2+ncx-1], StokesB->bbc );
+        }
+        }
+
+        // pN
+        if ( mesh->BCp.type[c2] != 30 && mesh->BCp.type[c2+ncx] != 30) {
+                    AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+ncx] - Stokes->neq_mom,  &(nnzc2B[ith]), pN*celvol, mesh->BCp.type[c2+ncx], mesh->BCp.val[c2+ncx], StokesB->bbc );
+        }
+        
+        if ( k<nx-1 ) {
+        // pNE
+        if ( mesh->BCp.type[c2+ncx+1] != 30) {
+            AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+ncx+1] - Stokes->neq_mom,  &(nnzc2B[ith]), pNE*celvol, mesh->BCp.type[c2+ncx+1], mesh->BCp.val[c2+ncx+1], StokesB->bbc );
+        }
+        }
+
+//        if(fabs(pNW)>1e-13 || fabs(pNE)>1e-13) printf("%2.2e %2.2e\n", pNW, pNE);
     }
     else {
         
@@ -4014,8 +4102,8 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
     if ( Assemble == 1 ) {
         
         nnzA  = 21*((mesh->Nx-1) * mesh->Nz + (mesh->Nz-1) * mesh->Nx);
-        nnzB  = 5*((mesh->Nx-1) * (mesh->Nz-1));
-        nnzC  = nnzB;
+        nnzB  = 6*((mesh->Nx-1) * mesh->Nz + (mesh->Nz-1) * mesh->Nx);
+        nnzC  = 2*((mesh->Nx-1) * mesh->Nz + (mesh->Nz-1) * mesh->Nx);
         nnzD  = 1*((mesh->Nx-1) * (mesh->Nz-1));
         StokesA->neq = Stokes->neq_mom;
         StokesB->neq = Stokes->neq_mom;

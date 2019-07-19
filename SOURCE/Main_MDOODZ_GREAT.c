@@ -556,6 +556,10 @@ int main( int nargs, char *args[] ) {
                 if ( model.Newton          == 1 ) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling, 1 );
                 if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
                 if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
+                
+                MinMaxArrayTag( mesh.D14_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D14   ", mesh.BCp.type );
+                MinMaxArrayTag( mesh.D24_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D24   ", mesh.BCp.type );
+                 MinMaxArrayTag( mesh.D34_s,    1.0, (mesh.Nx)*(mesh.Nz),     "D34   ", mesh.BCg.type );
 
                 // Diagonal scaling
                 if ( model.diag_scaling ) {

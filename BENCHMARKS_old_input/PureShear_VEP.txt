@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00008
+istep =00020
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -16,22 +16,18 @@ V   = 1
 T   = 20
 
 /**** SPACE-TIME ****/
-Nx      = 101
-Nz      = 101
+Nx      = 51
+Nz      = 51
 Nt      = 20
 xmin    = -5.000000e-1
 zmin    = -5.000000e-1
 xmax    =  5.000000e-1
 zmax    =  5.000000e-1
-dt      = 0.5
+dt      = 0.25
 dt_constant = 1
 Courant = 0.3
 penalty = 1e5
-lsolver = -1
-DefectCorrectionForm = 1
-diag_scaling = 0
-abs_tol_div = 1e-11
-rel_tol_div = 1e-11
+lsolver = 0
 
 /**** SWITCHES ****/
 ismechanical    = 1
@@ -74,8 +70,8 @@ mu   = 1
 Cv   = 1050
 k    = 2.5
 Qr   = 0
-C    = 1e90
-phi  = 30
+C    = 2
+phi  = 0
 Slim = 500e9
 alp  = 10.0e-6
 bet  = 1e-11
@@ -86,9 +82,9 @@ linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
 gsel = 0             / grain size evo.
-eta0 = 1
-npwl = 30
-Qpwl = 20
+eta0 = 1e1
+npwl = 1
+Qpwl = 0
 
 /**** PHASE 2 ****/
 ID   = 1
@@ -97,8 +93,8 @@ mu   = 1
 Cv   = 1050
 k    = 2.5
 Qr   = 0
-C    = 1e90
-phi  = 30
+C    = 1e3
+phi  = 0
 Slim = 500e9
 alp  = 10.0e-6
 bet  = 1e-11
@@ -109,8 +105,8 @@ linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
 gsel = 0             / grain size evo.
-eta0 = 1e1
-npwl = 3
+eta0 = 1e0
+npwl = 1
 Qpwl = 0
 
 /**** DEFMAPS ****/
@@ -131,10 +127,10 @@ Nz_part  = 4
 min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
-Newton  = 1 
+Newton  = 0 
 nit_max = 10
+tol_u   = 1e-10
+tol_p   = 1e-10
 rel_tol_KSP = 5e-4
-tol_u   = 1e-8
-tol_p   = 1e-8
-mineta  = 1e-3
-maxeta  = 1e6
+mineta  = 1e-8
+maxeta  = 1e8

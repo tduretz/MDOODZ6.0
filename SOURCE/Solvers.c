@@ -137,7 +137,7 @@ void kspgcr( cholmod_sparse *M, cholmod_dense *b, cholmod_dense *x, cholmod_fact
             
             // Check convergence
             norm_r = cholmod_norm_dense ( f, 2, c );
-            if (norm_r < eps * rnorm0 ) { // || norm_r < eps 
+            if (norm_r < eps * rnorm0 ) { // || norm_r < eps
                 success = 1;
                 break;
             }
@@ -1666,7 +1666,7 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
 void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseMat *matD, DirectSolver *pardi, double *rhs_mom, double *rhs_cont, double *sol, params model, grid *mesh, scale scaling, SparseMat *Stokes, SparseMat *Jacobian, SparseMat *JmatA,  SparseMat *JmatB,  SparseMat *JmatC ) {
     
     //double Control [AMD_CONTROL], Info [AMD_INFO] ;
-    cs_di  A, B, D, C, *B1, *L, *Ac, *Bc,  *Cc,  *Dc, *L1;
+    cs_di  A, B, D, C, *L, *Ac, *Bc,  *Cc,  *Dc, *L1, *L2;
     cs_di  AJ, BJ, CJ, *AJc, *BJc, *CJc;
     cs_di  *PC, *Jt, *Jts, *Js;
     //int    *P, msglvl = 0;
@@ -1854,20 +1854,22 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     // Matrix multiplication: D*C
     L =  cs_di_multiply( Dc, Cc );
 
-    //----- test - in case C' != B (assume B is deficient)
-    B1 = cs_di_transpose( Cc, 1);
-
-    // minus sign: B = -C'
-    for (k=0; k<B1->nzmax; k++)  B1->x[k] *= -1.0; // could be implicitly included in the next lines
+//    //----- test - in case C' != B (assume B is deficient)
+//    B1 = cs_di_transpose( Cc, 1);
+//
+//    // minus sign: B = -C'
+//    for (k=0; k<B1->nzmax; k++)  B1->x[k] *= -1.0; // could be implicitly included in the next lines
 
     // Matrix multiplication: B*(D*C)
-    L1 = cs_di_multiply( B1, L);
+    L1 = cs_di_multiply(  Bc, L);
+    L2 = cs_di_multiply( BJc, L);
     cs_spfree(L);
 
     // Matrix addition: Js = AJ - B*(D*C)
-    Js  = cs_di_add( AJc, L1, 1, -1);
+    Js  = cs_di_add( AJc, L2, 1, -1);
     Jts = cs_di_add(  PC, L1, 1, -1);
     cs_spfree(L1);
+    cs_spfree(L2);
 
     //------------------------------------------------------------------------------------------------//
     // Factor Jts
@@ -1883,8 +1885,8 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     copy_cs_to_cholmod_matrix( Kcm, Js );
     Acm = cholmod_allocate_sparse (Ac->m, Ac->n, Ac->nzmax, 0, 1, 0, 1, &c) ;
     copy_cs_to_cholmod_matrix( Acm, Ac );
-    Bcm = cholmod_allocate_sparse (B1->m, B1->n, B1->nzmax, 0, 1, 0, 1, &c) ;
-    copy_cs_to_cholmod_matrix( Bcm, B1 );
+    Bcm = cholmod_allocate_sparse (Bc->m, Bc->n, Bc->nzmax, 0, 1, 0, 1, &c) ;
+    copy_cs_to_cholmod_matrix( Bcm, Bc );
     Ccm = cholmod_allocate_sparse (Cc->m, Cc->n, Cc->nzmax, 0, 1, 0, 1, &c) ;
     copy_cs_to_cholmod_matrix( Ccm, Cc );
     Dcm = cholmod_allocate_sparse (Dc->m, Dc->n, Dc->nzmax, 0, 1, 0, 1, &c) ;
@@ -2160,7 +2162,7 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     cs_spfree(PC);
     cs_spfree(Js);
     cs_spfree(Jts);
-    cs_spfree(B1);
+//    cs_spfree(B1);
     
 }
 
