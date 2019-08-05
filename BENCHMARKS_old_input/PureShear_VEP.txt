@@ -1,10 +1,10 @@
 /**** RESTART ****/
-istep =00020
-irestart = 0
+istep =00014
+irestart = 1
 
 /**** OUTPUT FILES ****/
 writer          = 1
-writer_step     = 1
+writer_step     = 2
 writer_markers  = 0
 writer_debug    = 0
 writer_energies = 0
@@ -18,7 +18,7 @@ T   = 20
 /**** SPACE-TIME ****/
 Nx      = 51
 Nz      = 51
-Nt      = 20
+Nt      = 15
 xmin    = -5.000000e-1
 zmin    = -5.000000e-1
 xmax    =  5.000000e-1
@@ -28,6 +28,10 @@ dt_constant = 1
 Courant = 0.3
 penalty = 1e5
 lsolver = 0
+DefectCorrectionForm = 0
+diag_scaling = 0
+abs_tol_div = 1e-12
+rel_tol_div = 1e-12
 
 /**** SWITCHES ****/
 ismechanical    = 1
@@ -66,11 +70,11 @@ Nb_phases = 2
 /**** PHASE 1 ****/
 ID   = 0
 rho  = 2700.00 / matrix
-mu   = 1
+mu   = 10
 Cv   = 1050
 k    = 2.5
 Qr   = 0
-C    = 2
+C    = 20
 phi  = 0
 Slim = 500e9
 alp  = 10.0e-6
@@ -89,11 +93,11 @@ Qpwl = 0
 /**** PHASE 2 ****/
 ID   = 1
 rho  = 2700.00 / inclusion
-mu   = 1
+mu   = 10
 Cv   = 1050
 k    = 2.5
 Qr   = 0
-C    = 1e3
+C    = 1e4
 phi  = 0
 Slim = 500e9
 alp  = 10.0e-6
@@ -127,10 +131,10 @@ Nz_part  = 4
 min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
-Newton  = 0 
+Newton  = 1 
 nit_max = 10
 tol_u   = 1e-10
 tol_p   = 1e-10
-rel_tol_KSP = 5e-4
+rel_tol_KSP = 1e-4
 mineta  = 1e-8
 maxeta  = 1e8
