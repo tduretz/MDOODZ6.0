@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00008
+istep = 00012
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -18,7 +18,7 @@ T   = 20
 /**** SPACE-TIME ****/
 Nx      = 101
 Nz      = 101
-Nt      = 20
+Nt      = 15
 xmin    = -5.000000e-1
 zmin    = -5.000000e-1
 xmax    =  5.000000e-1
@@ -52,6 +52,7 @@ shear_heat      = 1
 adiab_heat      = 0
 fstrain         = 1
 advection       = 0
+HomoFields      = 1
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = 1
@@ -88,7 +89,7 @@ expv = 0             / peierls creep
 gsel = 0             / grain size evo.
 eta0 = 1
 npwl = 30
-Qpwl = 20
+Qpwl = 0
 
 /**** PHASE 2 ****/
 ID   = 1
@@ -134,7 +135,7 @@ min_part_cell = 16
 Newton  = 1 
 nit_max = 10
 rel_tol_KSP = 5e-4
-tol_u   = 1e-8
-tol_p   = 1e-8
+tol_u   = 1e-12
+tol_p   = 1e-12
 mineta  = 1e-3
 maxeta  = 1e6

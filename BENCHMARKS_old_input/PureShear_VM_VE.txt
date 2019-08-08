@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00001
+istep = 00002
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -18,40 +18,44 @@ T   = 20
 /**** SPACE-TIME ****/
 Nx      = 101
 Nz      = 101
-Nt      = 1
+Nt      = 20
 xmin    = -5.000000e-1
-zmin    = -5.000000e-1
+zmin    = -6.000000e-1
 xmax    =  5.000000e-1
-zmax    =  5.000000e-1
-dt      = 0.5
+zmax    =  6.000000e-1
+dt      = 0.25
 dt_constant = 1
 Courant = 0.3
-penalty = 1e5
+penalty = 1e3
 lsolver = -1
 DefectCorrectionForm = 1
 diag_scaling = 0
-abs_tol_div = 1e-8
-rel_tol_div = 1e-8
+abs_tol_div = 1e-13
+rel_tol_div = 1e-13
 
 /**** SWITCHES ****/
 ismechanical    = 1
 dt_constant     = 0
 RK              = 4
 isperiodic_x    = 0
-ispureshear_ALE = 1
+ispureshear_ALE = 0
 isinertial      = 0
-iselastic       = 0
+iselastic       = 1
 isthermal       = 0
 line_search     = 1
 free_surf       = 0
 free_surf_stab  = 0
 eqn_state       = 0
 thermal_eq      = 0
-subgrid_diff    = 1
+subgrid_diff    = 2
 shear_heat      = 1
 adiab_heat      = 0
 fstrain         = 1
 advection       = 0
+HomoFields      = 0
+delete_breakpoints = 0
+eta_VP          = 1e-1
+GNUplot_residuals = 1
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = 1
@@ -70,12 +74,12 @@ Nb_phases = 2
 /**** PHASE 1 ****/
 ID   = 0
 rho  = 2700.00 / matrix
-mu   = 1
+mu   = 10
 Cv   = 1050
 k    = 2.5
 Qr   = 0
-C    = 1e90
-phi  = 30
+C    = 20
+phi  = 0
 Slim = 500e9
 alp  = 10.0e-6
 bet  = 1e-11
@@ -86,14 +90,14 @@ linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
 gsel = 0             / grain size evo.
-eta0 = 1
-npwl = 30
+eta0 = 1e1
+npwl = 1
 Qpwl = 0
 
 /**** PHASE 2 ****/
 ID   = 1
 rho  = 2700.00 / inclusion
-mu   = 1
+mu   = 10
 Cv   = 1050
 k    = 2.5
 Qr   = 0
@@ -109,8 +113,8 @@ linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
 gsel = 0             / grain size evo.
-eta0 = 1e1
-npwl = 3
+eta0 = 1e0
+npwl = 1
 Qpwl = 0
 
 /**** DEFMAPS ****/
@@ -132,9 +136,9 @@ min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
 Newton  = 1 
-nit_max = 10
+nit_max = 50
 rel_tol_KSP = 5e-4
-tol_u   = 1e-11
-tol_p   = 1e-11
+tol_u   = 1e-10
+tol_p   = 1e-10
 mineta  = 1e-3
 maxeta  = 1e6

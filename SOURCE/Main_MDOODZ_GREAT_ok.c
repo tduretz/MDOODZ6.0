@@ -63,8 +63,6 @@ int main( int nargs, char *args[] ) {
     SparseMat    JacobA,  JacobB,  JacobC,  JacobD;
     int          Nx, Nz, Ncx, Ncz;
     
-    double *rx_array, *rz_array, *rp_array;
-    
     // Initialise integrated quantities
     mesh.W    = 0.0; // Work
     mesh.Ut   = 0.0; // heat
@@ -113,10 +111,6 @@ int main( int nargs, char *args[] ) {
     
     // Get grid indices
     GridIndices( &mesh );
-    
-    rx_array = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
-    rz_array = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
-    rp_array = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
     
     Nx = mesh.Nx; Nz = mesh.Nz; Ncx = Nx-1; Ncz = Nz-1;
     
@@ -553,11 +547,6 @@ int main( int nargs, char *args[] ) {
             // Non-Linearity
             UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
             
-            MinMaxArrayTag( mesh.eta_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "eta_s     ", mesh.BCg.type );
-            MinMaxArrayTag( mesh.eta_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_n     ", mesh.BCp.type );
-            MinMaxArrayTag( mesh.eta_phys_s, scaling.eta, (mesh.Nx)*(mesh.Nz),     "eta_phys_s", mesh.BCg.type );
-            MinMaxArrayTag( mesh.eta_phys_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_phys_n", mesh.BCp.type );
-            
             // Stokes solver
             if ( model.ismechanical == 1 ) {
 
@@ -567,22 +556,6 @@ int main( int nargs, char *args[] ) {
                 if ( model.Newton          == 1 ) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling, 1 );
                 if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
                 if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
-                
-
-                MinMaxArrayTag( mesh.D11_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D11   ", mesh.BCp.type );
-                MinMaxArrayTag( mesh.D12_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D12   ", mesh.BCp.type );
-                MinMaxArrayTag( mesh.D13_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D13   ", mesh.BCp.type );
-                MinMaxArrayTag( mesh.D14_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D14   ", mesh.BCp.type );
-                
-                MinMaxArrayTag( mesh.D21_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D21   ", mesh.BCp.type );
-                MinMaxArrayTag( mesh.D22_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D22   ", mesh.BCp.type );
-                MinMaxArrayTag( mesh.D23_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D23   ", mesh.BCp.type );
-                MinMaxArrayTag( mesh.D24_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D24   ", mesh.BCp.type );
-                
-                MinMaxArrayTag( mesh.D31_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D31   ", mesh.BCg.type );
-                MinMaxArrayTag( mesh.D32_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D32   ", mesh.BCg.type );
-                MinMaxArrayTag( mesh.D33_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D33   ", mesh.BCg.type );
-                MinMaxArrayTag( mesh.D34_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D34   ", mesh.BCg.type );
 
                 // Diagonal scaling
                 if ( model.diag_scaling ) {
@@ -603,16 +576,12 @@ int main( int nargs, char *args[] ) {
                     if ( model.Newton          == 1 ) {
                         ArrayEqualArray( JacobA.F, StokesA.F,  StokesA.neq );
                         ArrayEqualArray( JacobC.F, StokesC.F,  StokesC.neq );
-                    if ( model.diag_scaling ) ScaleMatrix( &JacobA,  &JacobB,  &JacobC,  &JacobD  );
+                         if ( model.diag_scaling ) ScaleMatrix( &JacobA,  &JacobB,  &JacobC,  &JacobD  );
 
                     }
                     Nmodel.resx_f = Nmodel.resx;
                     Nmodel.resz_f = Nmodel.resz;
                     Nmodel.resp_f = Nmodel.resp;
-                    
-                    rx_array[Nmodel.nit] = Nmodel.resx;
-                    rz_array[Nmodel.nit] = Nmodel.resz;
-                    rp_array[Nmodel.nit] = Nmodel.resp;
 #ifndef _VG_
                     if ( model.write_debug == 1 ) WriteResiduals( mesh, model, Nmodel, scaling );
 #endif
@@ -695,6 +664,9 @@ int main( int nargs, char *args[] ) {
                         if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
                         if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
                         printf("---- Direct solve residual ----\n");
+                        
+                        
+                        
 #ifndef _VG_
                         if ( model.write_debug == 1 ) WriteResiduals( mesh, model, Nmodel, scaling );
 #endif
@@ -738,29 +710,6 @@ int main( int nargs, char *args[] ) {
         MinMaxArray( mesh.v_in,  scaling.V, (mesh.Nx+1)*(mesh.Nz),   "Vz. grid" );
         MinMaxArray( mesh.p_in,  scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "       P" );
         MinMaxArray( mesh.div_u, scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "  div(V)" );
-        
-        // plot residuals
-        if ( model.GNUplot_residuals == 1 ) {
-    //        int NumCommands = 3;
-    //        char *GNUplotCommands[] = {"set title sprintf(a)", "set logscale y", "plot 'F_x'"};
-            
-            int NumCommands = 4;
-            char *GNUplotCommands[] = {"set title \"Non-linear residuals\"", "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3", "plot 'F_x' with linespoints ls 1"};
-            FILE *temp = fopen("F_x", "w");
-            FILE *GNUplotPipe = popen ("gnuplot -persistent", "w");
-            int i;
-            for (i=0; i< Nmodel.nit+1; i++) {
-                fprintf(temp, "%lf %lf \n", (double)i, log10(rx_array[i])); //Write the data to a temporary file
-                printf("%02d %2.2e %2.2f\n", i, rx_array[i], log10(rx_array[i]));
-            }
-
-            for (i=0; i<NumCommands; i++) {
-                fprintf(GNUplotPipe, "%s \n", GNUplotCommands[i]); //Send commands to gnuplot one by one.
-            }
-            fclose(temp);
-            fclose(GNUplotPipe);
-        }
-        
         
         //------------------------------------------------------------------------------------------------------------------------------//
         
@@ -1011,6 +960,7 @@ int main( int nargs, char *args[] ) {
             DoodzFree( Jacob.eqn_p );
         }
 
+        
         //------------------------------------------------------------------------------------------------------------------------------//
         
         // Write output data
@@ -1067,11 +1017,6 @@ int main( int nargs, char *args[] ) {
 #ifdef _NEW_INPUT_
     free(PartFileName);
 #endif
-    
-    // GNU plot
-    DoodzFree( rx_array );
-    DoodzFree( rz_array );
-    DoodzFree( rp_array );
 
     printf("\n********************************************************\n");
     printf("************* Ending MDOODZ 6.0 simulation *************\n");

@@ -422,6 +422,8 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
 	
         }
     }
+    
+    printf("Velocity field was set to background pure shear\n");
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/

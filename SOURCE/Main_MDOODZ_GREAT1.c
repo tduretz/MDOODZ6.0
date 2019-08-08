@@ -551,8 +551,6 @@ int main( int nargs, char *args[] ) {
             printf("**********************************************\n");
             
             // Non-Linearity
-            UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
-            
             MinMaxArrayTag( mesh.eta_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "eta_s     ", mesh.BCg.type );
             MinMaxArrayTag( mesh.eta_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_n     ", mesh.BCp.type );
             MinMaxArrayTag( mesh.eta_phys_s, scaling.eta, (mesh.Nx)*(mesh.Nz),     "eta_phys_s", mesh.BCg.type );

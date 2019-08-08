@@ -2382,6 +2382,8 @@ void Xjacobian_InnerNodesDecoupled2( SparseMat *Stokes, SparseMat *StokesA, Spar
 
 void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, SparseMat *StokesB, int Assemble, int lev, int stab, int comp, double om, int sign, params model, double one_dx, double one_dz, double one_dx_dx, double one_dz_dz, double one_dx_dz, double celvol, grid* mesh, int ith, int c1, int c2, int c3, int nx, int ncx, int nxvz, int eqn, double* u, double* v, double* p, int **JtempA, double **AtempA, int *nnzc2A, int **JtempB, double **AtempB, int *nnzc2B, int k, int l  ) {
     
+    int Newton = 1;
+    
     double  uC=0.0;
     double  uS=0.0,  uN=0.0,  uW=0.0,  uE=0.0,  vSW=0.0,  vSE=0.0,  vNW=0.0,  vNE=0.0, pE=0.0, pW=0.0;
     double uSW=0.0, uSE=0.0, uNW=0.0, uNE=0.0, vSWW=0.0, vSEE=0.0, vNWW=0.0, vNEE=0.0, vSSW=0.0, vSSE = 0.0, vNNW=0.0, vNNE=0.0;
@@ -2406,7 +2408,6 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     double D32S = mesh->D32_s[c1-nx];
     double D33S = mesh->D33_s[c1-nx];
     double D34S = mesh->D34_s[c1-nx];
-    
     
     if ( mesh->BCu.type[c1+nx] == 13 ) {D31N = 0.0; D32N = 0.0; D33N = 0.0; D34N = 0.0;}
     if ( mesh->BCu.type[c1-nx] == 13 ) {D31S = 0.0; D32S = 0.0; D33S = 0.0; D34S = 0.0;}
@@ -2488,7 +2489,6 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     pSE = ( D34S*inS*inSEc*wS/dz);
     pNW = (-D34N*inN*inNWc*wN/dz);
     pNE = (-D34N*inN*inNEc*wN/dz);
-    
     
 //    // Pressure gradient
 //    if ( mesh->BCp.type[c2+1] != 30 && mesh->BCp.type[c2] != 30 ) {
@@ -2595,37 +2595,35 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         
         //--------------------
         
-        if (l>1) {
-        // pSW
-        if ( mesh->BCp.type[c2-ncx] != 30 ) {
-            AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2-ncx] - Stokes->neq_mom,   &(nnzc2B[ith]), pSW*celvol, mesh->BCp.type[c2-ncx],   mesh->BCp.val[c2-ncx],   StokesB->bbc);
+        if ( Newton==1 && l>1) {
+            // pSW
+            if ( mesh->BCp.type[c2-ncx] != 30 ) {
+                AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2-ncx] - Stokes->neq_mom,   &(nnzc2B[ith]), pSW*celvol, mesh->BCp.type[c2-ncx],   mesh->BCp.val[c2-ncx],   StokesB->bbc);
+            }
+            
+            // pSE
+            if ( mesh->BCp.type[c2-ncx+1] != 30 ) {
+                AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2-ncx+1] - Stokes->neq_mom,   &(nnzc2B[ith]), pSE*celvol, mesh->BCp.type[c2-ncx+1],   mesh->BCp.val[c2-ncx+1],   StokesB->bbc);
+            }
         }
-
-        // pSE
-        if ( mesh->BCp.type[c2-ncx+1] != 30 ) {
-            AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2-ncx+1] - Stokes->neq_mom,   &(nnzc2B[ith]), pSE*celvol, mesh->BCp.type[c2-ncx+1],   mesh->BCp.val[c2-ncx+1],   StokesB->bbc);
-        }
-        }
-
+        
         // pE && pW
         if ( mesh->BCp.type[c2+1] != 30 && mesh->BCp.type[c2] != 30 ) {
             AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2] - Stokes->neq_mom,   &(nnzc2B[ith]), pW*celvol, mesh->BCp.type[c2],   mesh->BCp.val[c2],   StokesB->bbc);
             AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+1] - Stokes->neq_mom, &(nnzc2B[ith]), pE*celvol, mesh->BCp.type[c2+1], mesh->BCp.val[c2+1], StokesB->bbc);
         }
-
-        if ( l<nz-1 ) {
-        // pNW
-        if ( mesh->BCp.type[c2+ncx] != 30 ) {
-            AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+ncx] - Stokes->neq_mom,   &(nnzc2B[ith]), pNW*celvol, mesh->BCp.type[c2+ncx],   mesh->BCp.val[c2+ncx],   StokesB->bbc);
-        }
-
-        // pNW
-        if ( mesh->BCp.type[c2+ncx+1] != 30 ) {
-            AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+ncx+1] - Stokes->neq_mom,   &(nnzc2B[ith]), pNE*celvol, mesh->BCp.type[c2+ncx+1],   mesh->BCp.val[c2+ncx+1],   StokesB->bbc);
-        }
-        }
-
         
+        if ( Newton==1 && l<nz-1 ) {
+            // pNW
+            if ( mesh->BCp.type[c2+ncx] != 30 ) {
+                AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+ncx] - Stokes->neq_mom,   &(nnzc2B[ith]), pNW*celvol, mesh->BCp.type[c2+ncx],   mesh->BCp.val[c2+ncx],   StokesB->bbc);
+            }
+            
+            // pNW
+            if ( mesh->BCp.type[c2+ncx+1] != 30 ) {
+                AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+ncx+1] - Stokes->neq_mom,   &(nnzc2B[ith]), pNE*celvol, mesh->BCp.type[c2+ncx+1],   mesh->BCp.val[c2+ncx+1],   StokesB->bbc);
+            }
+        }
     }
     else {
         //        // Residual function
@@ -3373,6 +3371,8 @@ void Zjacobian_InnerNodesDecoupled2( SparseMat *Stokes, SparseMat *StokesA, Spar
 
 void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, SparseMat *StokesB, int Assemble, int lev, int stab, int comp, double om, int sign, params model, double one_dx, double one_dz, double one_dx_dx, double one_dz_dz, double one_dx_dz, double celvol, grid* mesh, int ith, int c1, int c2, int c3, int nx, int ncx, int nxvz, int eqn, double* u, double* v, double* p, int **JtempA, double **AtempA, int *nnzc2A, int **JtempB, double **AtempB, int *nnzc2B, int k, int l ) {
     
+    int Newton = 1;
+    
     double  vC=0.0;
     double uSW=0.0, uSE=0.0, uNW=0.0, uNE=0.0,   vS=0.0,   vW=0.0,   vE=0.0,   vN=0.0, pN=0.0, pS=0.0;
     double vSW=0.0, vSE=0.0, vNW=0.0, vNE=0.0, uSSW=0.0, uSSE=0.0, uNNW=0.0, uNNE=0.0;
@@ -3478,9 +3478,6 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     pSE = (-D34E*inE*inSEc*wE/dx);
     pNW = (D34W*inNWc*inW*wW/dx);
     pNE = (-D34E*inE*inNEc*wE/dx);
-    
-//    printf("pS = %2.2e %2.2e %2.2e %2.2e %2.2e\n", pS, D24S*dx, -D34E*inE*wE, D34W*inW*wW, mesh->detadp_n[c2]  );
-
     
 //    // Pressure gradient
 //    if ( mesh->BCp.type[c2] != 30 && mesh->BCp.type[c2+ncx] != 30 ) {
@@ -3595,45 +3592,43 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         //--------------------
         
         // pSW
-        if ( k>1 ) {
-        if ( mesh->BCp.type[c2-1] != 30 ) {
-            AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2-1] - Stokes->neq_mom,      &(nnzc2B[ith]), pSW*celvol, mesh->BCp.type[c2-1],     mesh->BCp.val[c2-1],     StokesB->bbc );
+        if ( Newton==1 && k>1 ) {
+            if ( mesh->BCp.type[c2-1] != 30 ) {
+                AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2-1] - Stokes->neq_mom,      &(nnzc2B[ith]), pSW*celvol, mesh->BCp.type[c2-1],     mesh->BCp.val[c2-1],     StokesB->bbc );
+            }
         }
-        }
-
+        
         // pS
         if ( mesh->BCp.type[c2] != 30 && mesh->BCp.type[c2+ncx] != 30) {
             AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2] - Stokes->neq_mom,      &(nnzc2B[ith]), pS*celvol, mesh->BCp.type[c2],     mesh->BCp.val[c2],     StokesB->bbc );
         }
-
+        
         // pSE
-        if ( k<nx-1 ) {
-        if ( mesh->BCp.type[c2+1] != 30 ) {
-            AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+1] - Stokes->neq_mom,      &(nnzc2B[ith]), pSE*celvol, mesh->BCp.type[c2+1],     mesh->BCp.val[c2+1],     StokesB->bbc );
-        }
-        }
-
-       
-        // pNW
-        if ( k>1 ) {
-        if ( mesh->BCp.type[c2+ncx-1] != 30) {
-            AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+ncx-1] - Stokes->neq_mom,  &(nnzc2B[ith]), pNW*celvol, mesh->BCp.type[c2+ncx-1], mesh->BCp.val[c2+ncx-1], StokesB->bbc );
-        }
-        }
-
-        // pN
-        if ( mesh->BCp.type[c2] != 30 && mesh->BCp.type[c2+ncx] != 30) {
-                    AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+ncx] - Stokes->neq_mom,  &(nnzc2B[ith]), pN*celvol, mesh->BCp.type[c2+ncx], mesh->BCp.val[c2+ncx], StokesB->bbc );
+        if ( Newton==1 && k<nx-1 ) {
+            if ( mesh->BCp.type[c2+1] != 30 ) {
+                AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+1] - Stokes->neq_mom,      &(nnzc2B[ith]), pSE*celvol, mesh->BCp.type[c2+1],     mesh->BCp.val[c2+1],     StokesB->bbc );
+            }
         }
         
-        if ( k<nx-1 ) {
-        // pNE
-        if ( mesh->BCp.type[c2+ncx+1] != 30) {
-            AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+ncx+1] - Stokes->neq_mom,  &(nnzc2B[ith]), pNE*celvol, mesh->BCp.type[c2+ncx+1], mesh->BCp.val[c2+ncx+1], StokesB->bbc );
+        
+        // pNW
+        if ( Newton==1 &&  k>1 ) {
+            if ( mesh->BCp.type[c2+ncx-1] != 30) {
+                AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+ncx-1] - Stokes->neq_mom,  &(nnzc2B[ith]), pNW*celvol, mesh->BCp.type[c2+ncx-1], mesh->BCp.val[c2+ncx-1], StokesB->bbc );
+            }
         }
+        
+        // pN
+        if ( mesh->BCp.type[c2] != 30 && mesh->BCp.type[c2+ncx] != 30) {
+            AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+ncx] - Stokes->neq_mom,  &(nnzc2B[ith]), pN*celvol, mesh->BCp.type[c2+ncx], mesh->BCp.val[c2+ncx], StokesB->bbc );
         }
-
-//        if(fabs(pNW)>1e-13 || fabs(pNE)>1e-13) printf("%2.2e %2.2e\n", pNW, pNE);
+        
+        if ( Newton==1 && k<nx-1 ) {
+            // pNE
+            if ( mesh->BCp.type[c2+ncx+1] != 30) {
+                AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+ncx+1] - Stokes->neq_mom,  &(nnzc2B[ith]), pNE*celvol, mesh->BCp.type[c2+ncx+1], mesh->BCp.val[c2+ncx+1], StokesB->bbc );
+            }
+        }
     }
     else {
         

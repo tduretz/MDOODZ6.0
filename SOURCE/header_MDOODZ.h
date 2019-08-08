@@ -131,8 +131,8 @@ struct _params {
     int    isPD, num_PD, *PDMnT, *PDMnP;
     double **PDMrho, *PDMTmin, *PDMTmax, *PDMPmin, *PDMPmax;
     // Visualisation
-    int rec_T_P_x_z, rm_break;
-    // Boundary conditions
+    int rec_T_P_x_z, delete_breakpoints, GNUplot_residuals;
+    // Boundary conditions type
     int    BC_setup_type;
 
 };
