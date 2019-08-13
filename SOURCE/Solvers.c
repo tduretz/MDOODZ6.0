@@ -2181,7 +2181,7 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     double celvol = model.dx*model.dz;
     double maxdiv0, mindiv, maxdiv, maxdivit=0, rel_tol_div=model.rel_tol_div;
 
-    int pc_type = 1;
+    int pc_type = 0;
 
 
     cholmod_common c ;

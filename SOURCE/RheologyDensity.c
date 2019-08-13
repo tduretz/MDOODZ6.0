@@ -114,7 +114,6 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Newton
                         mesh->D24_n[k] =                      2.0*mesh->detadp_n[k]  *mesh->ezzd[k] + mesh->szzd0[k]*mesh->detadp_n[k]   / etae;
                         break;
                 }
-                
             }
             else {
                 mesh->D11_n[k] = 0.0;
@@ -157,6 +156,9 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Newton
                 mesh->D33_s[k] = 0.0;
                 mesh->D34_s[k] = 0.0;
             }
+            if (isnan(mesh->D34_s[k])) exit(1);
+            if (isinf(mesh->D34_s[k])) exit(1);
+
         }
         
     }
@@ -2997,16 +2999,20 @@ void ComputeViscosityDerivatives_FD( grid* mesh, mat_prop *materials, params *mo
                 eta_p     = exp(eta_p);
             }
             
+            // General FD
+            mesh->detadexx_n[c0]      = (eta_exx - mesh->eta_n[c0]) / pert_xx;
+            mesh->detadezz_n[c0]      = (eta_ezz - mesh->eta_n[c0]) / pert_zz;
+            mesh->detadgxz_n[c0]      = (eta_exz - mesh->eta_n[c0]) / pert_xz / 2.0;
+            mesh->detadp_n[c0]        = (eta_p   - mesh->eta_n[c0]) / pert_p;
+            
+            //        printf("pert_p = %2.2e Pn = %2.2e\n", pert_p, Pn);
+//            if (isnan(mesh->detadp_n[c0])) {
+//                printf("%2.2e %2.2e %2.2e\n", pert_p, Pn, mesh->detadp_n[c0] );
+//                exit(1);
+//            }
+            
         }
         
-        // General FD
-        mesh->detadexx_n[c0]      = (eta_exx - mesh->eta_n[c0]) / pert_xx;
-        mesh->detadezz_n[c0]      = (eta_ezz - mesh->eta_n[c0]) / pert_zz;
-        mesh->detadgxz_n[c0]      = (eta_exz - mesh->eta_n[c0]) / pert_xz / 2.0;
-        mesh->detadp_n[c0]        = (eta_p   - mesh->eta_n[c0]) / pert_p;
-        
-//        printf("pert_p = %2.2e Pn = %2.2e\n", pert_p, Pn);
-
     }
     
     
@@ -3108,16 +3114,19 @@ void ComputeViscosityDerivatives_FD( grid* mesh, mat_prop *materials, params *mo
                 eta_p     = exp(eta_p);
             }
             
-         
+            // General FD
+            mesh->detadexx_s[c1]      = (eta_exx - mesh->eta_s[c1]) / pert_xx;
+            mesh->detadezz_s[c1]      = (eta_ezz - mesh->eta_s[c1]) / pert_zz;
+            mesh->detadgxz_s[c1]      = (eta_exz - mesh->eta_s[c1]) / pert_xz / 2.0;
+            mesh->detadp_s[c1]        = (eta_p   - mesh->eta_s[c1]) / pert_p;
+            
+            
+//            if (isnan(mesh->detadp_s[c1] )) {
+//                exit(1);
+//            }
         }
         
-        // General FD
-        mesh->detadexx_s[c1]      = (eta_exx - mesh->eta_s[c1]) / pert_xx;
-        mesh->detadezz_s[c1]      = (eta_ezz - mesh->eta_s[c1]) / pert_zz;
-        mesh->detadgxz_s[c1]      = (eta_exz - mesh->eta_s[c1]) / pert_xz / 2.0;
-        mesh->detadp_s[c1]        = (eta_p   - mesh->eta_s[c1]) / pert_p;
-        
-//        printf("pert_p = %2.2e Pn = %2.2e eta_p=%2.2e mesh->eta_s=%2.2e\n", pert_p, Pn, eta_p, mesh->eta_s[c1]);
+        //        printf("pert_p = %2.2e Pn = %2.2e eta_p=%2.2e mesh->eta_s=%2.2e\n", pert_p, Pn, eta_p, mesh->eta_s[c1]);
         
     }
     

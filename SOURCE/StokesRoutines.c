@@ -77,6 +77,8 @@ void ExtractSolutions( SparseMat *Stokes, grid* mesh, params* model ) {
     
     int cc, nx=model->Nx, nz=model->Nz, nzvx=nz+1, nxvz=nx+1, ncx=nx-1, ncz=nz-1, kk;
     
+    double eps = 1e-13;
+    
     // -------- Get U -------- //
 #pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( nzvx, nx )
     for( cc=0; cc<nzvx*nx; cc++) {
@@ -136,6 +138,8 @@ void ExtractSolutions( SparseMat *Stokes, grid* mesh, params* model ) {
                 mesh->p_in[cc] = Stokes->x[Stokes->eqn_p[cc]];
                 if (Stokes->eqn_p[cc]==870) printf("Surface pressure %d  %2.2e\n", 870, Stokes->x[Stokes->eqn_p[cc]]);
             }
+            // This is important for FD Jacobian of pressure --- it fixes a minimum values where the solution exactly zero
+            if (fabs(mesh->p_in[cc])<eps ) mesh->p_in[cc] = eps;
         }
     }
     

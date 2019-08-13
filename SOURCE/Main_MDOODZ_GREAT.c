@@ -642,6 +642,7 @@ int main( int nargs, char *args[] ) {
                 MinMaxArrayTag( mesh.D32_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D32   ", mesh.BCg.type );
                 MinMaxArrayTag( mesh.D33_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D33   ", mesh.BCg.type );
                 MinMaxArrayTag( mesh.D34_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D34   ", mesh.BCg.type );
+
                 
                 MinMaxArrayTag( mesh.detadp_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "detadp_s   ", mesh.BCg.type );
 
@@ -665,13 +666,16 @@ int main( int nargs, char *args[] ) {
                     if ( model.Newton          == 1 ) {
                         ArrayEqualArray( JacobA.F, StokesA.F,  StokesA.neq );
                         ArrayEqualArray( JacobC.F, StokesC.F,  StokesC.neq );
-
-
-
                     }
                     
                     if ( model.Newton          == 1 ) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling, 1 );
                     if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
+                    
+                    
+                    IsNanArray2DFP(mesh.D14_n, (mesh.Nx-1)*(mesh.Nz-1));
+                    IsNanArray2DFP(mesh.D24_n, (mesh.Nx-1)*(mesh.Nz-1));
+                    IsNanArray2DFP(mesh.D34_s, (mesh.Nx-0)*(mesh.Nz-0));
+                    
                     if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
                     if ( model.diag_scaling ) ScaleMatrix( &JacobA,  &JacobB,  &JacobC,  &JacobD  );
 
