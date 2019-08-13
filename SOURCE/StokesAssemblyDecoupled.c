@@ -169,6 +169,8 @@ void Xmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
 //    vNW = -1.0/3.0*D11W*comp*inW/(dx*dz) + D33N*inNv/(dx*dz);
 //    vNE = (1.0/3.0)*D11E*comp*inE/(dx*dz) - D33N*inNv/(dx*dz);
     
+//    comp=1.0;
+    
     // simpler
     uW = D11W*inW*((1.0/3.0)*comp/dx - 1.0/dx)/dx;
     uC = -(-D33N*inN/dz - D33S*inS/dz)/dz - (D11E*inE*((1.0/3.0)*comp/dx - 1/dx) - D11W*inW*(-1.0/3.0*comp/dx + 1.0/dx))/dx;
@@ -971,6 +973,8 @@ void Zmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
 //    uSE = -1.0/3.0*D22S*comp*inS/(dx*dz) + D33E*inEu/(dx*dz);
 //    uNW = -1.0/3.0*D22N*comp*inN/(dx*dz) + D33W*inWu/(dx*dz);
 //    uNE = (1.0/3.0)*D22N*comp*inN/(dx*dz) - D33E*inEu/(dx*dz);
+    
+     comp=1.0;
     
     // simpler
     vW = -D33W*inW/pow(dx, 2);
@@ -1976,7 +1980,7 @@ void BuildStokesOperatorDecoupled( grid *mesh, params model, int lev, double *p,
         if ( model.write_debug == 1 ) {
             
             char *filename;
-            asprintf( &filename, "Stokes.gzip_%02dcpu_step%02d_iter%02d.h5", n_th, model.step, model.nit );
+            asprintf( &filename, "Stokes_%02dcpu_step%02d_iter%02d.gzip.h5", n_th, model.step, model.nit );
             printf("Writing Stokes matrix file: %s to disk...\n", filename);
             
             // Fill in DD data structure
@@ -4474,7 +4478,7 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
         if ( model.write_debug == 1 ) {
             
             char *filename;
-            asprintf( &filename, "Jacobian.gzip_%02dcpu_step%02d_iter%02d.h5", n_th, model.step, model.nit );
+            asprintf( &filename, "Jacobian_%02dcpu_step%02d_iter%02d.gzip.h5", n_th, model.step, model.nit );
             printf("Writing Jacobian matrix file: %s to disk...\n", filename);
             
             // Fill in DD data structure

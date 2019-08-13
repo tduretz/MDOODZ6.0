@@ -289,6 +289,35 @@ void InterpCentroidsToVerticesDouble( double* CentroidArray, double* VertexArray
     DoodzFree(temp);
 }
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+void InterpVerticesToCentroidsDouble( double* CentroidArray, double* VertexArray, grid* mesh, params *model, scale *scaling ) {
+    
+    int k, l, Nx, Nz, Ncx, Ncz, c0, c1;
+    double *temp;
+    double accu = model->accu;
+    
+    Nx = mesh->Nx;
+    Nz = mesh->Nz;
+    Ncx = Nx-1;
+    Ncz = Nz-1;
+    
+    // Fill interior points
+    for (k=0; k<Ncx; k++) {
+        for (l=0; l<Ncz; l++) {
+            c0 = k + l*(Ncx);
+            c1 = k + l*(Nx);
+            
+            if ( mesh->BCp.type[c1] != 30 &&  mesh->BCp.type[c1] != 31 ) {
+            CentroidArray[c0] = 0.25*( VertexArray[c1] + VertexArray[c1+1] + VertexArray[c1+Nx] + VertexArray[c1+1+Nx] );
+            }
+        }
+    }
+    
+}
+
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
@@ -385,13 +414,16 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
     
     // Set initial velocity and pressure fields
 	
-    int nx,nz,nxvz,nzvx;
-    int k,l,c;
+    int nx, nz, nxvz, nzvx, ncx, ncz;
+    int k, l, c;
+    double eps = 1e-13; // perturbation to avoid zero pressure that results in Nan d(eta)dP in numerical differentiation
 	
     nx  = mesh->Nx;
     nz  = mesh->Nz;
     nxvz = nx+1;
     nzvx = nz+1;
+    ncx  = nx-1;
+    ncz  = nz-1;
 
     for( l=0; l<nzvx; l++) {
         for( k=0; k<nx; k++) {
@@ -423,6 +455,16 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
         }
     }
     
+    for( l=0; l<ncz; l++) {
+        for( k=0; k<ncx; k++) {
+            c = k + l*ncx;
+            
+            // Initial pressure field
+            mesh->p_in[c]  = eps;
+            
+        }
+    }
+    
     printf("Velocity field was set to background pure shear\n");
 }
 
@@ -437,7 +479,9 @@ void ComputeLithostaticPressure( grid *mesh, params *model, double RHO_REF, scal
     int nx, nz, ncx, ncz;
     int k, l, c;
     double rho_eff;
-	
+    double eps = 1e-13; // perturbation to avoid zero pressure that results in Nan d(eta)dP in numerical differentiation
+
+    
     nx  = mesh->Nx;
     nz  = mesh->Nz;
     ncx = nx-1;
@@ -460,7 +504,7 @@ void ComputeLithostaticPressure( grid *mesh, params *model, double RHO_REF, scal
 
             // Initialise pressure variables : Compute lithostatic pressure
             if ( mesh->BCp.type[c] != 30 && mesh->BCp.type[c] != 31 ) { // First row (surface)
-                mesh->p_lith[c]  = mesh->p_lith[c+ncx] -  model->gz * mesh->dz * rho_eff;
+                mesh->p_lith[c]  = mesh->p_lith[c+ncx] -  model->gz * mesh->dz * rho_eff + eps;
                 mesh->p[c]       = mesh->p_in[c];
             }
         }
@@ -664,8 +708,67 @@ void Interp_TPdphi_centroid2vertices ( grid* mesh, params *model ) {
              mesh->d0_s[c1]  = 0.5*(mesh->d0[c0-Ncx-1] + mesh->d0[c0-Ncx-Ncx]);
              mesh->phi1_s[c1] = 0.5*(mesh->phi[c0-Ncx-1] + mesh->phi[c0-Ncx-Ncx]);
         }
-            
+    }
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+void SetUpModel_NoMarkers ( grid* mesh, params *model, scale *scaling ) {
+    
+    int k, l, Nx, Nz, Ncx, Ncz, k1, c0, c1;
+    double x, z;
+    double radius = model->user1/scaling->L;
+    
+    Nx = mesh->Nx;
+    Nz = mesh->Nz;
+    Ncx = Nx-1;
+    Ncz = Nz-1;
+    
+    printf("Setting up mode without using markers --- DEBUG !!!!\n");
+    
+    // Vertices
+    for ( k1=0; k1<Ncx*Ncz; k1++ ) {
+        
+        k  = mesh->kp[k1];
+        l  = mesh->lp[k1];
+        c0 = k + l*(Ncx);
+        
+        x = mesh->xc_coord[k];
+        z = mesh->zc_coord[l];
+        
+        mesh->T[k1] = 0.05;
+        
+        mesh->phase_perc_n[0][k1] = 1.0;
+        mesh->phase_perc_n[1][k1] = 0.0;
+        
+        if (x*x + z*z < radius*radius) {
+            mesh->phase_perc_n[0][k1] = 0.0;
+            mesh->phase_perc_n[1][k1] = 1.0;
+        }
+    }
+    
+    
+    
+    // Vertices
+    for ( k1=0; k1<Nx*Nz; k1++ ) {
+        
+        k  = mesh->kn[k1];
+        l  = mesh->ln[k1];
+        c1 = k + l*Nx;
+        
+        x = mesh->xg_coord[k];
+        z = mesh->zg_coord[l];
+        
+        mesh->phase_perc_s[0][k1] = 1.0;
+        mesh->phase_perc_s[1][k1] = 0.0;
+        
+        if (x*x + z*z < radius*radius) {
+            mesh->phase_perc_s[0][k1] = 0.0;
+            mesh->phase_perc_s[1][k1] = 1.0;
+        }
     }
 
-
+    
 }

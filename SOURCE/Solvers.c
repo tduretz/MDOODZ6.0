@@ -2212,23 +2212,21 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     penalty = gamma / celvol;
     printf("Penalty factor = %2.2e\n", penalty);
     //    for (k=0;k<Dcm0->nzmax;k++) ((double*)Dcm0->x)[k] *= gamma*celvol;
-    //    printf("-gamma*celvol = %2.2e %2.2e %2.2e %d %d\n", -gamma*celvol, model.dx*scaling.L, model.dz*scaling.L, model.Nx, model.Nz);
+//    printf("-gamma*celvol = %2.2e %2.2e %2.2e %d %d\n", -gamma*celvol, model.dx*scaling.L, model.dz*scaling.L, model.Nx, model.Nz);
 
 
 #pragma omp parallel for shared(D1cm0, Dcm0, mesh, Stokes, matA, matD ) private( i ) firstprivate( model, celvol )
     for( k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
         if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31 ) {
             i = Stokes->eqn_p[k] - matA->neq;
-            // Here Dcm0 is the pressure block
+            // Here Dcm0 is the pressure block - This relates to physics (0 is incompressible, Beta/dt is compressible)
             if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[i] *= 0.0;
             if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i]  = mesh->bet[k] / model.dt * celvol * matD->d[k]*matD->d[k];
-            // Here Dcm0 is the inverse of the pressure block
-            if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i] *= penalty; // Should be /celvol
-            if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k]; // Should be /celvol
-            //          printf("%2.2e %2.2e %2.2e %2.2e\n", mesh->bet[k]/model.dt, penalty, mesh->bet[k]*(1/scaling.S), model.dt*scaling.t);
+            // Here Dcm0 is the inverse of the pressure block - THis relates to numerics in this incompressible case (penalty) or physics in the compressible case (dt/Beta)
+            if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i] *= penalty;
+            if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k];
         }
     }
-
 
     clock_t t_omp;
     t_omp = (double)omp_get_wtime();
@@ -2371,8 +2369,8 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     cs_spfree(L);
 
     // Matrix addition: Js = AJ - B*(D*C)
-    Js  = cs_di_add( AJc, L2, 1, -1);
     Jts = cs_di_add(  PC, L1, 1, -1);
+    Js  = cs_di_add( AJc, L2, 1, -1);
     cs_spfree(L1);
     cs_spfree(L2);
 
@@ -2446,7 +2444,6 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     fu    = cholmod_zeros( matA->neq, 1, CHOLMOD_REAL, &c );
     fp    = cholmod_zeros( matC->neq, 1, CHOLMOD_REAL, &c );
 
-
     copy_vec_to_cholmod_dense( bu, rhs_mom );
     copy_vec_to_cholmod_dense( bp, rhs_cont );
 
@@ -2460,8 +2457,6 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
 
     MinMaxArrayVal( fu->x, matA->neq, &minru0, &maxru0 );
     NormResidualCholmod( &ru, &rp, fu, fp, matA->neq, matC->neq, model, scaling, 0 );
-
-
 
     for ( k=0; k<nitmax; k++) {
 
@@ -2481,12 +2476,11 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
         cholmod_sdmult ( CcmJ, 0, mone, one, du, pdum, &c);    // pdum <-- bp - C*u
         cholmod_sdmult ( Dcm , 0,  one, one, pdum, dp, &c) ;   // dp <-- dp + D*(bp - C*u)
 
-
         copy_cholmod_dense_to_cholmod_dense( fu, bu );       // fu = bu
         cholmod_sdmult ( AcmJ, 0, mone, one, du, fu, &c) ;   // fu -= A*u
         cholmod_sdmult ( BcmJ, 0, mone, one, dp, fu, &c) ;   // fu -= B*p
         copy_cholmod_dense_to_cholmod_dense( fp, bp );       // fp = bp
-        cholmod_sdmult (  CcmJ, 0, mone, one, du, fp, &c) ;   // fp -= C*u
+        cholmod_sdmult (  CcmJ, 0, mone, one, du, fp, &c) ;  // fp -= C*u
         cholmod_sdmult ( D1cm0, 0, mone, one, dp, fp, &c) ;  // fp -= D*p
 
         if (k>0) maxdivit = maxdiv;

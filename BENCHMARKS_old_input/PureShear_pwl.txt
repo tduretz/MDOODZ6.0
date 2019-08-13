@@ -52,6 +52,7 @@ shear_heat      = 1
 adiab_heat      = 0
 fstrain         = 1
 advection       = 0
+GNUplot_residuals = 1
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = 1

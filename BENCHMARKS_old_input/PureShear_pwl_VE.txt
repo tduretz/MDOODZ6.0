@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00012
+istep = 00015
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -53,6 +53,7 @@ adiab_heat      = 0
 fstrain         = 1
 advection       = 0
 HomoFields      = 1
+GNUplot_residuals = 1
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = 1

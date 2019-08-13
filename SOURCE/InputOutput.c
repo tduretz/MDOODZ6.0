@@ -975,6 +975,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->aniso           = ReadInt2( fin, "aniso",           0 );
     model->compressible    = ReadInt2( fin, "compressible",    0 );
     model->GNUplot_residuals = ReadInt2( fin, "GNUplot_residuals",    0 );
+    model->no_markers      = ReadInt2( fin, "no_markers",    0 );
     
     // Setup dependant
     model->EpsBG           = ReadDou2( fin, "EpsBG",           0.0 ) / scaling->E;

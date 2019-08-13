@@ -137,6 +137,8 @@ int main( int nargs, char *args[] ) {
         model.step = 0;
         model.time = 0.0;
         
+        if ( model.no_markers == 0 ) {
+        
         // Initialise particle fields
         PartInit( &particles, &model );
         
@@ -291,6 +293,38 @@ int main( int nargs, char *args[] ) {
         Interp_TPdphi_centroid2vertices (&mesh, &model );
         if ( model.rheo_on_cells == 0 ) NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling, 1 );
         if ( model.rheo_on_cells == 1 ) NonNewtonianViscosityCells(     &mesh, &materials, &model, Nmodel, &scaling, 1 );
+            
+            
+        } // end of no_markers --- debug
+        else {
+            
+            
+            InitialiseSolutionFields( &mesh, &model );
+            
+            StrainRateComponents( &mesh, scaling, &model );
+ 
+
+            if ( model.iselastic == 1 ) ShearModulusGrid( &mesh, materials, model, scaling );
+
+            
+            SetBCs( &mesh, &model, scaling , &particles, &materials );
+            
+            SetUpModel_NoMarkers ( &mesh, &model, &scaling );
+
+            ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 0 );
+            
+            Interp_TPdphi_centroid2vertices (&mesh, &model );
+
+            if ( model.rheo_on_cells == 0 ) NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling, 1 );
+            
+            MinMaxArrayTag( mesh.phase_perc_n[0],          1.0,   (mesh.Nx-1)*(mesh.Nz-1), "ph 0         ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.phase_perc_n[1],          1.0,   (mesh.Nx-1)*(mesh.Nz-1), "ph 1         ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.phase_perc_s[0],          1.0,   (mesh.Nx)*(mesh.Nz),     "ph 0         ", mesh.BCg.type );
+            MinMaxArrayTag( mesh.phase_perc_s[1],          1.0,   (mesh.Nx)*(mesh.Nz),     "ph 1         ", mesh.BCg.type );
+
+            
+        }
+            
         
         printf("Number of phases : %d\n", model.Nb_phases);
         MinMaxArrayTag( mesh.p_lith,     scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P litho   ", mesh.BCp.type );
@@ -383,6 +417,9 @@ int main( int nargs, char *args[] ) {
 
         //------------------------------------------------------------------------------------------------------------------------------//
 
+        if (model.no_markers == 0 ) {
+            
+        
         // Remove particles that would be above the surface
         if ( model.free_surf == 1 ) {
             CleanUpSurfaceParticles( &particles, &mesh, topo, scaling );
@@ -456,7 +493,7 @@ int main( int nargs, char *args[] ) {
         // Interpolate Melt fraction
         Interp_P2C ( particles, particles.phi, &mesh, mesh.phi,  mesh.xg_coord, mesh.zg_coord, 1, 0 );
         //        Interp_P2G ( particles, particles.phi,   &mesh, mesh.phi,  mesh.xg_coord,   mesh.zg_coord, Ncx, Ncz, xmin_c, zmin_c, 1, 0, &model, mesh.BCp.type );
-        
+
         // Interpolate pressure
         Interp_P2C ( particles, particles.P, &mesh, mesh.p_in,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
 
@@ -467,13 +504,31 @@ int main( int nargs, char *args[] ) {
 
         // Compute cohesion and friction angle on the grid
         CohesionFrictionGrid( &mesh, materials, model, scaling );
-        
+
         // Detect compressible cells
         if (model.compressible == 1) DetectCompressibleCells ( &mesh, &model );
-        
+            
+        }
+        else {
+            
+            ArrayEqualArray(  mesh.sxxd0,  mesh.sxxd, Ncx*Ncz );
+            ArrayEqualArray(  mesh.szzd0,  mesh.szzd, Ncx*Ncz );
+            ArrayEqualArray(  mesh.sxz0,  mesh.sxz, Nx*Nz );
+            
+            InterpCentroidsToVerticesDouble( mesh.sxxd0, mesh.sxxd0_s, &mesh, &model, &scaling );
+            InterpCentroidsToVerticesDouble( mesh.szzd0, mesh.szzd0_s, &mesh, &model, &scaling );
+            InterpVerticesToCentroidsDouble( mesh.sxz0_n,  mesh.sxz0,  &mesh, &model, &scaling );
+
+            
+            ShearModulusGrid( &mesh, materials, model, scaling );
+
+            CohesionFrictionGrid( &mesh, materials, model, scaling );
+
+        }
+
         // Some stuff to be put on vertices
         Interp_TPdphi_centroid2vertices (&mesh, &model );
-
+        
         // Min/Max interpolated fields
         MinMaxArrayTag( mesh.rho_s,    scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s   ", mesh.BCg.type );
         MinMaxArrayTag( mesh.rho_n,    scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n   ", mesh.BCp.type );
@@ -524,6 +579,7 @@ int main( int nargs, char *args[] ) {
 
         // Picard iteration cycle
         Nmodel.nit       = 0;
+        model.nit        = 0;
         Nmodel.stagnated = 0;
         nstag            = 0;
         Nmax_picard      = Nmodel.nit_max;
@@ -550,6 +606,9 @@ int main( int nargs, char *args[] ) {
             printf("*** Non-linear it. %02d of %02d (step = %05d) ***\n", Nmodel.nit, Nmodel.nit_max, model.step);
             printf("**********************************************\n");
             
+            // Some stuff to be put on vertices                       < ---------------------- get P from centroids to vertices
+            Interp_TPdphi_centroid2vertices (&mesh, &model );
+
             // Non-Linearity
             UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
             
@@ -564,9 +623,9 @@ int main( int nargs, char *args[] ) {
                 // Build discrete system of equations - MATRIX
                 if ( model.decoupled_solve == 0 ) BuildStokesOperator           ( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, 1 );
                 if ( model.decoupled_solve == 1 ) BuildStokesOperatorDecoupled  ( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, 1 );
-                if ( model.Newton          == 1 ) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling, 1 );
-                if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
-                if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
+//                if ( model.Newton          == 1 ) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling, 1 );
+//                if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
+//                if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
                 
 
                 MinMaxArrayTag( mesh.D11_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D11   ", mesh.BCp.type );
@@ -583,6 +642,8 @@ int main( int nargs, char *args[] ) {
                 MinMaxArrayTag( mesh.D32_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D32   ", mesh.BCg.type );
                 MinMaxArrayTag( mesh.D33_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D33   ", mesh.BCg.type );
                 MinMaxArrayTag( mesh.D34_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D34   ", mesh.BCg.type );
+                
+                MinMaxArrayTag( mesh.detadp_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "detadp_s   ", mesh.BCg.type );
 
                 // Diagonal scaling
                 if ( model.diag_scaling ) {
@@ -600,12 +661,21 @@ int main( int nargs, char *args[] ) {
                     RheologicalOperators( &mesh, &model, &scaling, 0 );
                     if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
                     if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
+                    
                     if ( model.Newton          == 1 ) {
                         ArrayEqualArray( JacobA.F, StokesA.F,  StokesA.neq );
                         ArrayEqualArray( JacobC.F, StokesC.F,  StokesC.neq );
-                    if ( model.diag_scaling ) ScaleMatrix( &JacobA,  &JacobB,  &JacobC,  &JacobD  );
+
+
 
                     }
+                    
+                    if ( model.Newton          == 1 ) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling, 1 );
+                    if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
+                    if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
+                    if ( model.diag_scaling ) ScaleMatrix( &JacobA,  &JacobB,  &JacobC,  &JacobD  );
+
+                    
                     Nmodel.resx_f = Nmodel.resx;
                     Nmodel.resz_f = Nmodel.resz;
                     Nmodel.resp_f = Nmodel.resp;
