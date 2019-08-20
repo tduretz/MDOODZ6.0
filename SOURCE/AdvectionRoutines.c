@@ -584,7 +584,7 @@ private ( k )
 
 void DefineInitialTimestep( params *model, grid *Mmesh, markers particles, mat_prop materials, scale scaling ) {
     int k;
-    double dt_maxwell, minMaxwell = 0.00, maxMaxwell = 1e100;
+    double dt_maxwell, minMaxwell = 1e100, maxMaxwell = 0.0;
 
 // Define initial timestep is elasticity is turned on
 if ( model->iselastic == 1 && model->dt_constant != 1 ) {
@@ -593,11 +593,14 @@ if ( model->iselastic == 1 && model->dt_constant != 1 ) {
     Interp_P2N ( particles, materials.mu,  Mmesh, Mmesh->mu_s,      Mmesh->xg_coord, Mmesh->zg_coord, 0, 1, model );
     
     for ( k=0; k<Mmesh->Nx*Mmesh->Nz; k++) {
-        if ( Mmesh->eta_s[k]/Mmesh->mu_s[k] < minMaxwell ) {
-            minMaxwell = Mmesh->eta_s[k]/Mmesh->mu_s[k];
-        }
-        if ( Mmesh->eta_s[k]/Mmesh->mu_s[k] > maxMaxwell ) {
-            maxMaxwell = Mmesh->eta_s[k]/Mmesh->mu_s[k];
+        
+        if ( Mmesh->BCg.type[k] != 30 ) {
+            if ( Mmesh->eta_s[k]/Mmesh->mu_s[k] < minMaxwell ) {
+                minMaxwell = Mmesh->eta_s[k]/Mmesh->mu_s[k];
+            }
+            if ( Mmesh->eta_s[k]/Mmesh->mu_s[k] > maxMaxwell ) {
+                maxMaxwell = Mmesh->eta_s[k]/Mmesh->mu_s[k];
+            }
         }
     }
     dt_maxwell = minMaxwell;// exp((log(minMaxwell)+log(maxMaxwell))/2); // Good for stress loading
@@ -605,7 +608,7 @@ if ( model->iselastic == 1 && model->dt_constant != 1 ) {
     if (dt_maxwell < model->dt) {
         model->dt = dt_maxwell;
         model->dt0 = model->dt;
-        printf("Setting initial dt to minimum Maxwell time\n");
+        printf("Setting initial dt to minimum Maxwell time: %2.2e\n", dt_maxwell*scaling.t);
     }
 }
 

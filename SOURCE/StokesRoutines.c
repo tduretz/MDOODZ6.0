@@ -430,29 +430,29 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
             
         }
         
-        //        // Look for the minimum predicted residuals
-        //        minx  = rx[0];
-        //        ix = 0;
-        //        for( k=1; k<ntry[niter]; k++ ) {
-        //            if(rx[k]<minx) {
-        //                minx = rx[k];
-        //                ix = k;
-        //            }
-        //        }
-        //        alpha = alphav[ix];
+                // Look for the minimum predicted residuals
+                minx  = rz[0];
+                ix = 0;
+                for( k=1; k<ntry[niter]; k++ ) {
+                    if(rz[k]<minx) {
+                        minx = rz[k];
+                        ix = k;
+                    }
+                }
+                alpha = alphav[ix];
         
-        // Look for the minimum predicted residuals
-        double r;
-        minx  = sqrt( pow( rx[0],2 ) + pow( rz[0],2 ) );
-        ix = 0;
-        for( k=1; k<ntry[niter]; k++ ) {
-            r = sqrt( pow( rx[k],2 ) + pow( rz[k],2 ) );
-            if( r < minx ) {
-                minx = r;
-                ix = k;
-            }
-        }
-        alpha = alphav[ix];
+//        // Look for the minimum predicted residuals
+//        double r;
+//        minx  = sqrt( pow( rx[0],2 ) + pow( rz[0],2 ) );
+//        ix = 0;
+//        for( k=1; k<ntry[niter]; k++ ) {
+//            r = sqrt( pow( rx[k],2 ) + pow( rz[k],2 ) );
+//            if( r < minx ) {
+//                minx = r;
+//                ix = k;
+//            }
+//        }
+//        alpha = alphav[ix];
         
         // if the minmimun residuals are lower than starting ones, then success
         if ( rx[ix] < frac*Nmodel->resx_f || rz[ix]<frac*Nmodel->resz_f  ) { //|| rp[ix]<frac*Nmodel->resp
@@ -778,7 +778,7 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
     int NCX, NCZ;
     double rhoVx, rhoVz;
     double dx, dz;
-    int comp = 0;
+    double inW, inE, inS, inN;
     
     NX   = mesh->Nx;
     NXVZ = mesh->Nx+1;
@@ -805,6 +805,13 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                 
                 if ( mesh->BCu.type[c] == -1 || mesh->BCu.type[c] == 2 || mesh->BCu.type[c] == -2 ) {
                     
+                    // Free surface
+                    inW=0.0, inE = 0.0, inS=0.0, inN = 0.0;
+                    if (mesh->BCp.type[c2-1 ] == -1) inW = 1.0;
+                    if (mesh->BCp.type[c2   ] == -1) inE = 1.0;
+                    if (mesh->BCg.type[c -NX] != 30 && mesh->BCu.type[c -NX] != 13) inS = 1.0;
+                    if (mesh->BCg.type[c    ] != 30 && mesh->BCu.type[c +NX] != 13) inN = 1.0;
+                    
                     // Gravity force: take apparent viscosity (free surface correction)
                     rhoVx = 0.5*(mesh->rho_app_s[c] + mesh->rho_app_s[c-NX]);
                     mesh->roger_x[c]  = - model.gx * rhoVx;
@@ -816,8 +823,11 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                         if (   l>0 && l<NZVX-1 && k==0 && k==0 && mesh->BCu.type[c] == -2 ) {
 //                            mesh->roger_x[c]  -= 1.0/dx * ( mesh->VE_n[c2] * mesh->sxxd0[c2] - mesh->VE_n[c2+NCX-1]  * mesh->sxxd0[c2+NCX-1] );
 //                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->VE_s[c]  * mesh->sxz0[c]   - mesh->VE_s[c-NX]  * mesh->sxz0[c-NX]  );
-                            mesh->roger_x[c]  -= 1.0/dx * (mesh->eta_n[c2]/(mesh->mu_n[c2]*model.dt)  * mesh->sxxd0[c2] - mesh->eta_n[c2+NCX-1]/(mesh->mu_n[c2+NCX-1]*model.dt)  * mesh->sxxd0[c2+NCX-1] );
-                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->eta_s[c] /(mesh->mu_s[c]*model.dt)  * mesh->sxz0[c]   - mesh->eta_s[c-NX] /(mesh->mu_s[c-NX]*model.dt)  * mesh->sxz0[c-NX]  );
+                            
+                            if ( inE ) mesh->roger_x[c]  -= 1.0/dx * ( mesh->eta_n[c2      ] / (mesh->mu_n[c2      ]*model.dt)  * mesh->sxxd0[c2      ] );
+                            if ( inW ) mesh->roger_x[c]  -= 1.0/dx * (-mesh->eta_n[c2+NCX-1] / (mesh->mu_n[c2+NCX-1]*model.dt)  * mesh->sxxd0[c2+NCX-1] );
+                            if ( inN ) mesh->roger_x[c]  -= 1.0/dz * ( mesh->eta_s[c       ] / (mesh->mu_s[c       ]*model.dt)  * mesh->sxz0[c        ] );
+                            if ( inS ) mesh->roger_x[c]  -= 1.0/dz * (-mesh->eta_s[c-NX    ] / (mesh->mu_s[c-NX    ]*model.dt)  * mesh->sxz0[c-NX     ] );
                         }
                         
                         // Inner nodes
@@ -825,9 +835,21 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
 //                            // Elasticity
 //                            mesh->roger_x[c]  -= 1.0/dx * ( mesh->VE_n[c2] * mesh->sxxd0[c2] - mesh->VE_n[c2-1]  * mesh->sxxd0[c2-1] );
 //                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->VE_s[c]  * mesh->sxz0[c]   - mesh->VE_s[c-NX]  * mesh->sxz0[c-NX]  );
+                            
                             // Elasticity - important fix here !!
-                            mesh->roger_x[c]  -= 1.0/dx * ( mesh->eta_n[c2]/(mesh->mu_n[c2]*model.dt) * mesh->sxxd0[c2] - mesh->eta_n[c2-1]/(mesh->mu_n[c2-1]*model.dt) * mesh->sxxd0[c2-1] );
-                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->eta_s[c] /(mesh->mu_s[c]*model.dt)  * mesh->sxz0[c]   - mesh->eta_s[c-NX]/(mesh->mu_s[c-NX]*model.dt) * mesh->sxz0[c-NX]  );
+//                            mesh->roger_x[c]  -= 1.0/dx * ( mesh->eta_n[c2]/(mesh->mu_n[c2]*model.dt) * mesh->sxxd0[c2] - mesh->eta_n[c2-1]/(mesh->mu_n[c2-1]*model.dt) * mesh->sxxd0[c2-1] );
+//                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->eta_s[c] /(mesh->mu_s[c]*model.dt)  * mesh->sxz0[c]   - mesh->eta_s[c-NX]/(mesh->mu_s[c-NX]*model.dt) * mesh->sxz0[c-NX]  );
+                            
+                            if ( inE ) mesh->roger_x[c]  -= 1.0/dx * ( mesh->eta_n[c2      ] / (mesh->mu_n[c2      ]*model.dt)  * mesh->sxxd0[c2      ] );
+                            if ( inW ) mesh->roger_x[c]  -= 1.0/dx * (-mesh->eta_n[c2-1    ] / (mesh->mu_n[c2-1    ]*model.dt)  * mesh->sxxd0[c2-1    ] );
+                            if ( inN ) mesh->roger_x[c]  -= 1.0/dz * ( mesh->eta_s[c       ] / (mesh->mu_s[c       ]*model.dt)  * mesh->sxz0[c        ] );
+                            if ( inS ) mesh->roger_x[c]  -= 1.0/dz * (-mesh->eta_s[c-NX    ] / (mesh->mu_s[c-NX    ]*model.dt)  * mesh->sxz0[c-NX     ] );
+                            
+//                            if (isnan( mesh->roger_x[c])) {
+//                            printf("%2.2e %2.2e %2.2e %2.2e %2.2e\n", mesh->roger_x[c], mesh->eta_n[c2], mesh->eta_n[c2-1], mesh->eta_s[c], mesh->eta_s[c-NX]);
+//                            printf("%2.2e %2.2e %2.2e %2.2e %2.2e\n", mesh->roger_x[c], mesh->mu_n[c2], mesh->mu_n[c2-1], mesh->mu_s[c], mesh->mu_s[c-NX]);
+//                            printf("         %2.2e %2.2e %2.2e %2.2e\n", inE, inW, inN, inS );
+//                            }
                         }
                         
                         // WEST OPEN  --- TO BE MODIFIED AS ABOVE
@@ -868,6 +890,13 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                 
                 if ( mesh->BCv.type[c] == -1  ) {
                     
+                    // Free surface
+                    inW=0.0, inE = 0.0, inS=0.0, inN = 0.0;
+                    if (mesh->BCp.type[c2    ] == -1) inS = 1.0;
+                    if (mesh->BCp.type[c2+NCX] == -1) inN = 1.0;
+                    if (mesh->BCg.type[c1]    != 30 && mesh->BCv.type[c -1] != 13 ) inW = 1.0;
+                    if (mesh->BCg.type[c1+1 ] != 30 && mesh->BCv.type[c +1] != 13 ) inE = 1.0;
+                    
                     // Gravity force: use apparent density (free surface correction)
                     rhoVz = 0.5 * (mesh->rho_app_s[c1] + mesh->rho_app_s[c1+1]);  // USE THIS ALWAYS
 //                    rhoVz = 0.5 * (mesh->rho_app_n[c2] + mesh->rho_app_n[c2+(NX-1)]); // DO NOT USE THIS
@@ -884,9 +913,16 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
 //                            mesh->roger_z[c]  -= 1.0/dz * ( mesh->VE_n[c2+(NCX)] *   mesh->szzd0[c2+(NCX)] - mesh->VE_n[c2] *  mesh->szzd0[c2] );
 //                            mesh->roger_z[c]  -= 1.0/dx * ( mesh->VE_s[c1+1]     *   mesh->sxz0[c1+1]      - mesh->VE_s[c1] *   mesh->sxz0[c1]  );
 //
-                            // Elasticity - important fix here !!
-                            mesh->roger_z[c]  -= 1.0/dz * ( mesh->eta_n[c2+(NCX)] / (mesh->mu_n[c2+(NCX)] *model.dt ) * (mesh->szzd0[c2+(NCX)]) - mesh->eta_n[c2] / (mesh->mu_n[c2] *model.dt ) * (mesh->szzd0[c2]) );
-                            mesh->roger_z[c]  -= 1.0/dx * ( mesh->eta_s[c1+1] / (mesh->mu_s[c1+1]*model.dt)    *   mesh->sxz0[c1+1]      - mesh->eta_s[c1]  / (mesh->mu_s[c1]*model.dt) *   mesh->sxz0[c1]  );
+//                            // Elasticity - important fix here !!
+//                            mesh->roger_z[c]  -= 1.0/dz * ( mesh->eta_n[c2+(NCX)] / (mesh->mu_n[c2+(NCX)] *model.dt ) * (mesh->szzd0[c2+(NCX)]) - mesh->eta_n[c2] / (mesh->mu_n[c2] *model.dt ) * (mesh->szzd0[c2]) );
+//                            mesh->roger_z[c]  -= 1.0/dx * ( mesh->eta_s[c1+1] / (mesh->mu_s[c1+1]*model.dt)    *   mesh->sxz0[c1+1]      - mesh->eta_s[c1]  / (mesh->mu_s[c1]*model.dt) *   mesh->sxz0[c1]  );
+                            
+                            
+                            if ( inN ) mesh->roger_z[c]  -= 1.0/dz * (  mesh->eta_n[c2+(NCX)] / (mesh->mu_n[c2+(NCX)] *model.dt ) * (mesh->szzd0[c2+(NCX)]) );
+                            if ( inS ) mesh->roger_z[c]  -= 1.0/dz * ( -mesh->eta_n[c2      ] / (mesh->mu_n[c2      ] *model.dt ) * (mesh->szzd0[c2      ]) );
+                            if ( inE ) mesh->roger_z[c]  -= 1.0/dx * (  mesh->eta_s[c1+1    ] / (mesh->mu_s[c1+1    ] *model.dt ) *  mesh->sxz0[c1+1     ]) ;
+                            if ( inW ) mesh->roger_z[c]  -= 1.0/dx * ( -mesh->eta_s[c1      ] / (mesh->mu_s[c1      ] *model.dt ) *  mesh->sxz0[c1       ]) ;
+
                         }
                         // SOUTH OPEN  --- TO BE MODIFIED AS ABOVE
                         if ( l==0 && k>0 && k<NXVZ-1 ) {

@@ -345,7 +345,7 @@ int main( int nargs, char *args[] ) {
         printf("*************************************\n");
         
         DefineInitialTimestep( &model, &mesh, particles, materials, scaling );
-        
+    
         if ( model.rec_T_P_x_z == 1 ) {
             ArrayEqualArray( particles.T0,   particles.T, particles.Nb_part );
             ArrayEqualArray( particles.P0,   particles.P, particles.Nb_part );
@@ -406,7 +406,7 @@ int main( int nargs, char *args[] ) {
 
         // Define new time step
         EvaluateCourantCriterion_BEN( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
-
+        
         // Save initial dt
         model.dt0 = model.dt;
 
@@ -623,25 +623,26 @@ int main( int nargs, char *args[] ) {
                 // Build discrete system of equations - MATRIX
                 if ( model.decoupled_solve == 0 ) BuildStokesOperator           ( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, 1 );
                 if ( model.decoupled_solve == 1 ) BuildStokesOperatorDecoupled  ( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, 1 );
-//                if ( model.Newton          == 1 ) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling, 1 );
-//                if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
-//                if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
+                if ( model.Newton          == 1 ) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling, 1 );
+                if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
+                if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
+
                 
 
-                MinMaxArrayTag( mesh.D11_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D11   ", mesh.BCp.type );
-                MinMaxArrayTag( mesh.D12_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D12   ", mesh.BCp.type );
-                MinMaxArrayTag( mesh.D13_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D13   ", mesh.BCp.type );
-                MinMaxArrayTag( mesh.D14_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D14   ", mesh.BCp.type );
-                
-                MinMaxArrayTag( mesh.D21_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D21   ", mesh.BCp.type );
-                MinMaxArrayTag( mesh.D22_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D22   ", mesh.BCp.type );
-                MinMaxArrayTag( mesh.D23_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D23   ", mesh.BCp.type );
-                MinMaxArrayTag( mesh.D24_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D24   ", mesh.BCp.type );
-                
-                MinMaxArrayTag( mesh.D31_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D31   ", mesh.BCg.type );
-                MinMaxArrayTag( mesh.D32_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D32   ", mesh.BCg.type );
-                MinMaxArrayTag( mesh.D33_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D33   ", mesh.BCg.type );
-                MinMaxArrayTag( mesh.D34_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D34   ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.D11_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D11   ", mesh.BCp.type );
+//                MinMaxArrayTag( mesh.D12_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D12   ", mesh.BCp.type );
+//                MinMaxArrayTag( mesh.D13_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D13   ", mesh.BCp.type );
+//                MinMaxArrayTag( mesh.D14_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D14   ", mesh.BCp.type );
+//                
+//                MinMaxArrayTag( mesh.D21_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D21   ", mesh.BCp.type );
+//                MinMaxArrayTag( mesh.D22_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D22   ", mesh.BCp.type );
+//                MinMaxArrayTag( mesh.D23_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D23   ", mesh.BCp.type );
+//                MinMaxArrayTag( mesh.D24_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D24   ", mesh.BCp.type );
+//                
+//                MinMaxArrayTag( mesh.D31_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D31   ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.D32_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D32   ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.D33_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D33   ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.D34_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D34   ", mesh.BCg.type );
 
                 
                 MinMaxArrayTag( mesh.detadp_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "detadp_s   ", mesh.BCg.type );
@@ -666,19 +667,8 @@ int main( int nargs, char *args[] ) {
                     if ( model.Newton          == 1 ) {
                         ArrayEqualArray( JacobA.F, StokesA.F,  StokesA.neq );
                         ArrayEqualArray( JacobC.F, StokesC.F,  StokesC.neq );
+                        if ( model.diag_scaling ) ScaleMatrix( &JacobA,  &JacobB,  &JacobC,  &JacobD  );
                     }
-                    
-                    if ( model.Newton          == 1 ) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling, 1 );
-                    if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
-                    
-                    
-                    IsNanArray2DFP(mesh.D14_n, (mesh.Nx-1)*(mesh.Nz-1));
-                    IsNanArray2DFP(mesh.D24_n, (mesh.Nx-1)*(mesh.Nz-1));
-                    IsNanArray2DFP(mesh.D34_s, (mesh.Nx-0)*(mesh.Nz-0));
-                    
-                    if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
-                    if ( model.diag_scaling ) ScaleMatrix( &JacobA,  &JacobB,  &JacobC,  &JacobD  );
-
                     
                     Nmodel.resx_f = Nmodel.resx;
                     Nmodel.resz_f = Nmodel.resz;
@@ -729,6 +719,9 @@ int main( int nargs, char *args[] ) {
 
                     if ( Nmodel.stagnated == 1 && safe == 0 ) {
                         printf( "Non-linear solver stagnated to res_u = %2.2e res_z = %2.2e\n", Nmodel.resx_f, Nmodel.resz_f );
+                        
+                        exit(0);
+
 
                         if ( model.decoupled_solve == 0 ) { FreeMat( &Stokes ); }
                         if ( model.decoupled_solve == 1 ) {
@@ -743,7 +736,9 @@ int main( int nargs, char *args[] ) {
                             FreeMat( &JacobC );
                             FreeMat( &JacobD );
                         }
+
                         break;
+                        
                     }
                     if ( Nmodel.stagnated == 1 && model.iselastic == 1 && safe == 1 ) {
                         printf( "\e[1;31mWARNING : Non-linear solver stagnated (tol_u = %2.2e tol_p = %2.2e)\e[m\n", Nmodel.tol_u, Nmodel.tol_p );
@@ -813,8 +808,18 @@ int main( int nargs, char *args[] ) {
         MinMaxArray( mesh.p_in,  scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "       P" );
         MinMaxArray( mesh.div_u, scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "  div(V)" );
         
+        
+        int i;
+
+        for (i=0; i< Nmodel.nit+1; i++) {
+            printf("%02d %2.2e %2.2f\n", i, rx_array[i], log10(rx_array[i]));
+        }
+        
+        
         // plot residuals
         if ( model.GNUplot_residuals == 1 ) {
+            
+            printf("DOING GNU PLOTTING\n");
     //        int NumCommands = 3;
     //        char *GNUplotCommands[] = {"set title sprintf(a)", "set logscale y", "plot 'F_x'"};
             
@@ -822,10 +827,9 @@ int main( int nargs, char *args[] ) {
             char *GNUplotCommands[] = {"set title \"Non-linear residuals\"", "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3", "plot 'F_x' with linespoints ls 1"};
             FILE *temp = fopen("F_x", "w");
             FILE *GNUplotPipe = popen ("gnuplot -persistent", "w");
-            int i;
             for (i=0; i< Nmodel.nit+1; i++) {
                 fprintf(temp, "%lf %lf \n", (double)i, log10(rx_array[i])); //Write the data to a temporary file
-                printf("%02d %2.2e %2.2f\n", i, rx_array[i], log10(rx_array[i]));
+//                printf("%02d %2.2e %2.2f\n", i, rx_array[i], log10(rx_array[i]));
             }
 
             for (i=0; i<NumCommands; i++) {

@@ -1169,7 +1169,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     else           *d1 = materials->gs_ref[phase];
     
     // Tensional cut-off
-    if ( model->gz>0.0 && P<0.0     ) P = 0.0;
+    if ( model->gz>0.0 && P<0.0     ) { P = 0.0; printf("Aie aie aie P < 0 !!!\n"); exit(122);}
     
     // Visco-plastic limit
     if ( elastic==0                 ) G = 10.0;
@@ -1931,7 +1931,7 @@ void NonNewtonianViscosityGrid( grid* mesh, mat_prop *materials, params *model, 
             }
             
         }
-        
+        if (mesh->eta_n[c0]<1e-8) exit;
     }
  ;
 
