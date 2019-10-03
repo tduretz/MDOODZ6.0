@@ -102,7 +102,7 @@ struct _params {
 	double gx, gz;
 	int Nx, Nz, Nt, step, nit, Newton;
 	int eta_avg, p_avg;
-	int ismechanical, isperiodic_x, isinertial, iselastic, isnonnewtonian, isthermal, ispureshear_ale, free_surf, eqn_state, write_markers, write_debug, write_energies;
+	int ismechanical, isperiodic_x, isinertial, iselastic, isnonnewtonian, isthermal, ispureshear_ale, free_surf, eqn_state, write_markers, write_debug, write_energies, no_markers;
     double free_surf_stab;
     int dt_constant, moving_front, imp_advection, RK, line_search, thermal_eq, subgrid_diff, adiab_heat, shear_heat, advection, fstrain;
     int isPl_soft, surf_processes, cpc, surf_remesh, loc_iter, therm_pert, surf_ised1, surf_ised2, MantleID, topografix, aniso;
@@ -124,15 +124,15 @@ struct _params {
     double accu;
     // Initial thermal perturbation
     double therm_pert_x0, therm_pert_z0, therm_pert_dT, therm_pert_rad, cooling_time;
-    // For rheological database reasons...
+    // For rheological database...
     int    force_act_vol_ast;
     double act_vol_dis_ast, act_vol_dif_ast;
     // Phase diagrams
     int    isPD, num_PD, *PDMnT, *PDMnP;
     double **PDMrho, *PDMTmin, *PDMTmax, *PDMPmin, *PDMPmax;
     // Visualisation
-    int rec_T_P_x_z, rm_break;
-    // Boundary conditions
+    int rec_T_P_x_z, delete_breakpoints, GNUplot_residuals;
+    // Boundary conditions type
     int    BC_setup_type;
 
 };
@@ -289,7 +289,7 @@ void Initialise1DArrayInt( int*, int, int );
 void IsNanArray2DFP( DoodzFP*, int );
 void IsInfArray2DFP( DoodzFP*, int );
 void InterpCentroidsToVerticesDouble( double*, double*, grid*, params*, scale* );
-//void InterpVerticesToCentroidsDouble( double*, double*, grid*, params*, scale* );
+void InterpVerticesToCentroidsDouble( double*, double*, grid*, params*, scale* );
 //
 //
 // Grid initialisation and boundary conditions
@@ -567,3 +567,4 @@ void RheologicalOperators( grid*, params*, scale*, int );
 void ComputeViscosityDerivatives_FD( grid*, mat_prop*, params*, Nparams, scale*, int );
 void ComputeViscosityDerivatives_anal( grid*, mat_prop*, params*, Nparams, scale*, int );
 void Interp_TPdphi_centroid2vertices ( grid*, params* );
+void SetUpModel_NoMarkers ( grid*, params*, scale* );

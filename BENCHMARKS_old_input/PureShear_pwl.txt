@@ -52,6 +52,7 @@ shear_heat      = 1
 adiab_heat      = 0
 fstrain         = 1
 advection       = 0
+GNUplot_residuals = 1
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = 1
@@ -134,7 +135,7 @@ min_part_cell = 16
 Newton  = 1 
 nit_max = 10
 rel_tol_KSP = 5e-4
-tol_u   = 1e-10
-tol_p   = 1e-10
+tol_u   = 1e-11
+tol_p   = 1e-11
 mineta  = 1e-3
 maxeta  = 1e6

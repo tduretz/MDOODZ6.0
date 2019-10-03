@@ -63,6 +63,8 @@ int main( int nargs, char *args[] ) {
     SparseMat    JacobA,  JacobB,  JacobC,  JacobD;
     int          Nx, Nz, Ncx, Ncz;
     
+    double *rx_array, *rz_array, *rp_array;
+    
     // Initialise integrated quantities
     mesh.W    = 0.0; // Work
     mesh.Ut   = 0.0; // heat
@@ -112,6 +114,10 @@ int main( int nargs, char *args[] ) {
     // Get grid indices
     GridIndices( &mesh );
     
+    rx_array = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
+    rz_array = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
+    rp_array = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
+    
     Nx = mesh.Nx; Nz = mesh.Nz; Ncx = Nx-1; Ncz = Nz-1;
     
     printf("*************************************\n");
@@ -130,6 +136,8 @@ int main( int nargs, char *args[] ) {
         
         model.step = 0;
         model.time = 0.0;
+        
+        if ( model.no_markers == 0 ) {
         
         // Initialise particle fields
         PartInit( &particles, &model );
@@ -285,6 +293,38 @@ int main( int nargs, char *args[] ) {
         Interp_TPdphi_centroid2vertices (&mesh, &model );
         if ( model.rheo_on_cells == 0 ) NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling, 1 );
         if ( model.rheo_on_cells == 1 ) NonNewtonianViscosityCells(     &mesh, &materials, &model, Nmodel, &scaling, 1 );
+            
+            
+        } // end of no_markers --- debug
+        else {
+            
+            
+            InitialiseSolutionFields( &mesh, &model );
+            
+            StrainRateComponents( &mesh, scaling, &model );
+ 
+
+            if ( model.iselastic == 1 ) ShearModulusGrid( &mesh, materials, model, scaling );
+
+            
+            SetBCs( &mesh, &model, scaling , &particles, &materials );
+            
+            SetUpModel_NoMarkers ( &mesh, &model, &scaling );
+
+            ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 0 );
+            
+            Interp_TPdphi_centroid2vertices (&mesh, &model );
+
+            if ( model.rheo_on_cells == 0 ) NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling, 1 );
+            
+            MinMaxArrayTag( mesh.phase_perc_n[0],          1.0,   (mesh.Nx-1)*(mesh.Nz-1), "ph 0         ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.phase_perc_n[1],          1.0,   (mesh.Nx-1)*(mesh.Nz-1), "ph 1         ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.phase_perc_s[0],          1.0,   (mesh.Nx)*(mesh.Nz),     "ph 0         ", mesh.BCg.type );
+            MinMaxArrayTag( mesh.phase_perc_s[1],          1.0,   (mesh.Nx)*(mesh.Nz),     "ph 1         ", mesh.BCg.type );
+
+            
+        }
+            
         
         printf("Number of phases : %d\n", model.Nb_phases);
         MinMaxArrayTag( mesh.p_lith,     scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P litho   ", mesh.BCp.type );
@@ -305,7 +345,7 @@ int main( int nargs, char *args[] ) {
         printf("*************************************\n");
         
         DefineInitialTimestep( &model, &mesh, particles, materials, scaling );
-        
+    
         if ( model.rec_T_P_x_z == 1 ) {
             ArrayEqualArray( particles.T0,   particles.T, particles.Nb_part );
             ArrayEqualArray( particles.P0,   particles.P, particles.Nb_part );
@@ -366,7 +406,7 @@ int main( int nargs, char *args[] ) {
 
         // Define new time step
         EvaluateCourantCriterion_BEN( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
-
+        
         // Save initial dt
         model.dt0 = model.dt;
 
@@ -377,6 +417,9 @@ int main( int nargs, char *args[] ) {
 
         //------------------------------------------------------------------------------------------------------------------------------//
 
+        if (model.no_markers == 0 ) {
+            
+        
         // Remove particles that would be above the surface
         if ( model.free_surf == 1 ) {
             CleanUpSurfaceParticles( &particles, &mesh, topo, scaling );
@@ -450,7 +493,7 @@ int main( int nargs, char *args[] ) {
         // Interpolate Melt fraction
         Interp_P2C ( particles, particles.phi, &mesh, mesh.phi,  mesh.xg_coord, mesh.zg_coord, 1, 0 );
         //        Interp_P2G ( particles, particles.phi,   &mesh, mesh.phi,  mesh.xg_coord,   mesh.zg_coord, Ncx, Ncz, xmin_c, zmin_c, 1, 0, &model, mesh.BCp.type );
-        
+
         // Interpolate pressure
         Interp_P2C ( particles, particles.P, &mesh, mesh.p_in,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
 
@@ -461,13 +504,31 @@ int main( int nargs, char *args[] ) {
 
         // Compute cohesion and friction angle on the grid
         CohesionFrictionGrid( &mesh, materials, model, scaling );
-        
+
         // Detect compressible cells
         if (model.compressible == 1) DetectCompressibleCells ( &mesh, &model );
-        
+            
+        }
+        else {
+            
+            ArrayEqualArray(  mesh.sxxd0,  mesh.sxxd, Ncx*Ncz );
+            ArrayEqualArray(  mesh.szzd0,  mesh.szzd, Ncx*Ncz );
+            ArrayEqualArray(  mesh.sxz0,  mesh.sxz, Nx*Nz );
+            
+            InterpCentroidsToVerticesDouble( mesh.sxxd0, mesh.sxxd0_s, &mesh, &model, &scaling );
+            InterpCentroidsToVerticesDouble( mesh.szzd0, mesh.szzd0_s, &mesh, &model, &scaling );
+            InterpVerticesToCentroidsDouble( mesh.sxz0_n,  mesh.sxz0,  &mesh, &model, &scaling );
+
+            
+            ShearModulusGrid( &mesh, materials, model, scaling );
+
+            CohesionFrictionGrid( &mesh, materials, model, scaling );
+
+        }
+
         // Some stuff to be put on vertices
         Interp_TPdphi_centroid2vertices (&mesh, &model );
-
+        
         // Min/Max interpolated fields
         MinMaxArrayTag( mesh.rho_s,    scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s   ", mesh.BCg.type );
         MinMaxArrayTag( mesh.rho_n,    scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n   ", mesh.BCp.type );
@@ -518,6 +579,7 @@ int main( int nargs, char *args[] ) {
 
         // Picard iteration cycle
         Nmodel.nit       = 0;
+        model.nit        = 0;
         Nmodel.stagnated = 0;
         nstag            = 0;
         Nmax_picard      = Nmodel.nit_max;
@@ -544,8 +606,16 @@ int main( int nargs, char *args[] ) {
             printf("*** Non-linear it. %02d of %02d (step = %05d) ***\n", Nmodel.nit, Nmodel.nit_max, model.step);
             printf("**********************************************\n");
             
+            // Some stuff to be put on vertices                       < ---------------------- get P from centroids to vertices
+            Interp_TPdphi_centroid2vertices (&mesh, &model );
+
             // Non-Linearity
             UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
+            
+            MinMaxArrayTag( mesh.eta_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "eta_s     ", mesh.BCg.type );
+            MinMaxArrayTag( mesh.eta_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_n     ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.eta_phys_s, scaling.eta, (mesh.Nx)*(mesh.Nz),     "eta_phys_s", mesh.BCg.type );
+            MinMaxArrayTag( mesh.eta_phys_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_phys_n", mesh.BCp.type );
             
             // Stokes solver
             if ( model.ismechanical == 1 ) {
@@ -556,6 +626,26 @@ int main( int nargs, char *args[] ) {
                 if ( model.Newton          == 1 ) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling, 1 );
                 if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
                 if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
+
+                
+
+//                MinMaxArrayTag( mesh.D11_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D11   ", mesh.BCp.type );
+//                MinMaxArrayTag( mesh.D12_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D12   ", mesh.BCp.type );
+//                MinMaxArrayTag( mesh.D13_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D13   ", mesh.BCp.type );
+//                MinMaxArrayTag( mesh.D14_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D14   ", mesh.BCp.type );
+//                
+//                MinMaxArrayTag( mesh.D21_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D21   ", mesh.BCp.type );
+//                MinMaxArrayTag( mesh.D22_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D22   ", mesh.BCp.type );
+//                MinMaxArrayTag( mesh.D23_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D23   ", mesh.BCp.type );
+//                MinMaxArrayTag( mesh.D24_n,    1.0, (mesh.Nx-1)*(mesh.Nz-1),     "D24   ", mesh.BCp.type );
+//                
+//                MinMaxArrayTag( mesh.D31_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D31   ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.D32_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D32   ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.D33_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D33   ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.D34_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D34   ", mesh.BCg.type );
+
+                
+                MinMaxArrayTag( mesh.detadp_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "detadp_s   ", mesh.BCg.type );
 
                 // Diagonal scaling
                 if ( model.diag_scaling ) {
@@ -573,15 +663,20 @@ int main( int nargs, char *args[] ) {
                     RheologicalOperators( &mesh, &model, &scaling, 0 );
                     if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
                     if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
+                    
                     if ( model.Newton          == 1 ) {
                         ArrayEqualArray( JacobA.F, StokesA.F,  StokesA.neq );
                         ArrayEqualArray( JacobC.F, StokesC.F,  StokesC.neq );
-                         if ( model.diag_scaling ) ScaleMatrix( &JacobA,  &JacobB,  &JacobC,  &JacobD  );
-
+                        if ( model.diag_scaling ) ScaleMatrix( &JacobA,  &JacobB,  &JacobC,  &JacobD  );
                     }
+                    
                     Nmodel.resx_f = Nmodel.resx;
                     Nmodel.resz_f = Nmodel.resz;
                     Nmodel.resp_f = Nmodel.resp;
+                    
+                    rx_array[Nmodel.nit] = Nmodel.resx;
+                    rz_array[Nmodel.nit] = Nmodel.resz;
+                    rp_array[Nmodel.nit] = Nmodel.resp;
 #ifndef _VG_
                     if ( model.write_debug == 1 ) WriteResiduals( mesh, model, Nmodel, scaling );
 #endif
@@ -624,6 +719,9 @@ int main( int nargs, char *args[] ) {
 
                     if ( Nmodel.stagnated == 1 && safe == 0 ) {
                         printf( "Non-linear solver stagnated to res_u = %2.2e res_z = %2.2e\n", Nmodel.resx_f, Nmodel.resz_f );
+                        
+//                        exit(0);
+
 
                         if ( model.decoupled_solve == 0 ) { FreeMat( &Stokes ); }
                         if ( model.decoupled_solve == 1 ) {
@@ -638,7 +736,9 @@ int main( int nargs, char *args[] ) {
                             FreeMat( &JacobC );
                             FreeMat( &JacobD );
                         }
+
                         break;
+                        
                     }
                     if ( Nmodel.stagnated == 1 && model.iselastic == 1 && safe == 1 ) {
                         printf( "\e[1;31mWARNING : Non-linear solver stagnated (tol_u = %2.2e tol_p = %2.2e)\e[m\n", Nmodel.tol_u, Nmodel.tol_p );
@@ -664,9 +764,6 @@ int main( int nargs, char *args[] ) {
                         if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
                         if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
                         printf("---- Direct solve residual ----\n");
-                        
-                        
-                        
 #ifndef _VG_
                         if ( model.write_debug == 1 ) WriteResiduals( mesh, model, Nmodel, scaling );
 #endif
@@ -710,6 +807,38 @@ int main( int nargs, char *args[] ) {
         MinMaxArray( mesh.v_in,  scaling.V, (mesh.Nx+1)*(mesh.Nz),   "Vz. grid" );
         MinMaxArray( mesh.p_in,  scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "       P" );
         MinMaxArray( mesh.div_u, scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "  div(V)" );
+        
+        
+        int i;
+
+        for (i=0; i< Nmodel.nit+1; i++) {
+            printf("%02d %2.2e %2.2f\n", i, rx_array[i], log10(rx_array[i]));
+        }
+        
+        
+        // plot residuals
+        if ( model.GNUplot_residuals == 1 ) {
+            
+            printf("DOING GNU PLOTTING\n");
+    //        int NumCommands = 3;
+    //        char *GNUplotCommands[] = {"set title sprintf(a)", "set logscale y", "plot 'F_x'"};
+            
+            int NumCommands = 4;
+            char *GNUplotCommands[] = {"set title \"Non-linear residuals\"", "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3", "plot 'F_x' with linespoints ls 1"};
+            FILE *temp = fopen("F_x", "w");
+            FILE *GNUplotPipe = popen ("gnuplot -persistent", "w");
+            for (i=0; i< Nmodel.nit+1; i++) {
+                fprintf(temp, "%lf %lf \n", (double)i, log10(rx_array[i])); //Write the data to a temporary file
+//                printf("%02d %2.2e %2.2f\n", i, rx_array[i], log10(rx_array[i]));
+            }
+
+            for (i=0; i<NumCommands; i++) {
+                fprintf(GNUplotPipe, "%s \n", GNUplotCommands[i]); //Send commands to gnuplot one by one.
+            }
+            fclose(temp);
+            fclose(GNUplotPipe);
+        }
+        
         
         //------------------------------------------------------------------------------------------------------------------------------//
         
@@ -960,7 +1089,6 @@ int main( int nargs, char *args[] ) {
             DoodzFree( Jacob.eqn_p );
         }
 
-        
         //------------------------------------------------------------------------------------------------------------------------------//
         
         // Write output data
@@ -972,7 +1100,7 @@ int main( int nargs, char *args[] ) {
             
             // Breakpoint file
             t_omp = (double)omp_get_wtime();
-            if ( model.rm_break == 1 ) DeletePreviousBreakpoint( model.step, writer_step  );
+            if ( model.delete_breakpoints == 1 ) DeletePreviousBreakpoint( model.step, writer_step  );
             MakeBreakpointParticles( &particles, &mesh, &topo_chain, &topo_chain_ini, model, &topo, &topo_ini, scaling );
             UpdateInputFile( fin_name, model.step);
             printf("** Time for Breakpoint file write = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
@@ -1017,6 +1145,11 @@ int main( int nargs, char *args[] ) {
 #ifdef _NEW_INPUT_
     free(PartFileName);
 #endif
+    
+    // GNU plot
+    DoodzFree( rx_array );
+    DoodzFree( rz_array );
+    DoodzFree( rp_array );
 
     printf("\n********************************************************\n");
     printf("************* Ending MDOODZ 6.0 simulation *************\n");

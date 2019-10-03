@@ -665,20 +665,20 @@ void AddPartVert( markers *particles, grid mesh, int ic, int jc, int* ind_list, 
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void PutPartInBox( markers *particles, grid *mesh, params model, surface topo, scale scaling )
+void PutPartInBox( markers *particles, grid *mesh, params model, surface topo, scale scaling ) {
 
-// Set the original particle layout throughout the mesh.
-// The particles are set with regular spacing.
-
-{
+    // Set the original particle layout throughout the mesh.
+    // The particles are set with regular spacing.
     int i, j, ki, kj, np;
     double dx_particles, dz_particles;
     
     //int add_noise, double noise, double* random_x, double* random_z
     
     // Compute the spacing between particles:
-    dx_particles = mesh->dx/(double)(particles->Nx_part+1);
-    dz_particles = mesh->dz/(double)(particles->Nz_part+1);
+//    dx_particles = mesh->dx/(double)(particles->Nx_part+1);
+//    dz_particles = mesh->dz/(double)(particles->Nz_part+1);
+    dx_particles = mesh->dx/(double)(particles->Nx_part); // new
+    dz_particles = mesh->dz/(double)(particles->Nz_part); // new
     printf("Initial particle spacing : dxm = %lf dzm = %lf m\n", dx_particles*scaling.L, dz_particles*scaling.L);
     
     // Loop over loop over loop over loop (on s'en branle, c'est du C)
@@ -697,8 +697,11 @@ void PutPartInBox( markers *particles, grid *mesh, params model, surface topo, s
                     
                     if (model.free_surf == 1) {
                         
-                        coord_x = mesh->xg_coord[j] + dx_particles*kj + dx_particles;
-                        coord_z = mesh->zg_coord[i] + dz_particles*ki + dz_particles;
+//                        coord_x = mesh->xg_coord[j] + dx_particles*kj + dx_particles;
+//                        coord_z = mesh->zg_coord[i] + dz_particles*ki + dz_particles;
+                        
+                        coord_x = mesh->xg_coord[j] + dx_particles*(kj+0.5);
+                        coord_z = mesh->zg_coord[i] + dz_particles*(ki+0.5);
                         
                         h = b + a*coord_x;
                         
@@ -710,8 +713,11 @@ void PutPartInBox( markers *particles, grid *mesh, params model, surface topo, s
                     }
                     
                     if (model.free_surf == 0) {
-                        coord_x = mesh->xg_coord[j] + dx_particles*kj + dx_particles;
-                        coord_z = mesh->zg_coord[i] + dz_particles*ki + dz_particles;
+//                        coord_x = mesh->xg_coord[j] + dx_particles*kj + dx_particles;
+//                        coord_z = mesh->zg_coord[i] + dz_particles*ki + dz_particles;
+                        
+                        coord_x = mesh->xg_coord[j] + dx_particles*(kj+0.5);
+                        coord_z = mesh->zg_coord[i] + dz_particles*(ki+0.5);
                         particles->x[np]  = coord_x;
                         particles->z[np]  = coord_z;
                         np++;

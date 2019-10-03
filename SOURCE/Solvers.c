@@ -1663,10 +1663,515 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+//void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseMat *matD, DirectSolver *pardi, double *rhs_mom, double *rhs_cont, double *sol, params model, grid *mesh, scale scaling, SparseMat *Stokes, SparseMat *Jacobian, SparseMat *JmatA,  SparseMat *JmatB,  SparseMat *JmatC ) {
+//
+//    //double Control [AMD_CONTROL], Info [AMD_INFO] ;
+//    cs_di  A, B, D, C, *B1, *L, *Ac, *Bc,  *Cc,  *Dc, *L1;
+//    cs_di  AJ, BJ, CJ, *AJc, *BJc, *CJc;
+//    cs_di  *PC, *Jt, *Jts, *Js;
+//    //int    *P, msglvl = 0;
+//    DoodzFP  *u0, *p0, *F;
+//    int  noisy=1;
+//    int nitmax=20, k, cc, i; //nitmax=5
+//    double celvol = model.dx*model.dz;
+//    double maxdiv0, mindiv, maxdiv, maxdivit=0, rel_tol_div=model.rel_tol_div;
+//
+//    int pc_type = 1;
+//
+//
+//    cholmod_common c ;
+//    cholmod_sparse *Lcm, *Kcm, *Lcml, *Acm, *Bcm, *Ccm, *Dcm; //, *A1
+//    cholmod_sparse *AcmJ, *BcmJ, *CcmJ;
+//    cholmod_sparse *Dcm0, *D1cm0; //, *BDC, *DC, *Lcm0, *Lcml0, *Acm0, *Bcm0, *Ccm0
+//    cholmod_factor *Lfact ;
+//    cholmod_sparse *M, *AB, *CD, *Iu, *Ip, *D_zero; // *bs, *bus, *bps, *M0
+//    cholmod_dense *b, *x, *f, *val, *s, *v;
+//    //    cholmod_start( &c ) ;
+//    double mone[2] = {-1.0,0.0}, one[2] = {1.0,0.0}, zero[2] = {0.0,0.0};
+//
+//    Lfact = pardi->Lfact;
+//    c     = pardi->c;
+//
+//    // --------------- Pre-process--------------- //
+//
+//    printf("Killer solver...\n");
+//    printf("Preparing Matrices...\n");
+//
+//    // ************** D ************** //
+//    SuiteSparse_long rsize;
+//    double gamma  = model.penalty, penalty;//1e12;//1e10*model.Nx*model.Nz;
+//    rsize = Stokes->neq_cont;
+//    Dcm0  = cholmod_speye (rsize, rsize, CHOLMOD_REAL, &c );
+//    D1cm0 = cholmod_speye (rsize, rsize, CHOLMOD_REAL, &c );
+//
+//    penalty = gamma / celvol;
+//    printf("Penalty factor = %2.2e\n", penalty);
+//    //    for (k=0;k<Dcm0->nzmax;k++) ((double*)Dcm0->x)[k] *= gamma*celvol;
+//    //    printf("-gamma*celvol = %2.2e %2.2e %2.2e %d %d\n", -gamma*celvol, model.dx*scaling.L, model.dz*scaling.L, model.Nx, model.Nz);
+//
+//
+//#pragma omp parallel for shared(D1cm0, Dcm0, mesh, Stokes, matA, matD ) private( i ) firstprivate( model, celvol )
+//    for( k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
+//        if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31 ) {
+//            i = Stokes->eqn_p[k] - matA->neq;
+//            // Here Dcm0 is the pressure block
+//            if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[i] *= 0.0;
+//            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i]  = mesh->bet[k] / model.dt * celvol * matD->d[k]*matD->d[k];
+//            // Here Dcm0 is the inverse of the pressure block
+//            if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i] *= penalty; // Should be /celvol
+//            if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k]; // Should be /celvol
+//            //          printf("%2.2e %2.2e %2.2e %2.2e\n", mesh->bet[k]/model.dt, penalty, mesh->bet[k]*(1/scaling.S), model.dt*scaling.t);
+//        }
+//    }
+//
+//
+//    clock_t t_omp;
+//    t_omp = (double)omp_get_wtime();
+//
+//    // Build initial solution vector
+//    F  = DoodzCalloc(matA->neq+matC->neq, sizeof(double));
+//    u0 = DoodzCalloc( matA->neq, sizeof(double) );
+//    p0 = DoodzCalloc( matC->neq, sizeof(double) );
+//    //    BuildInitialSolutions( u0, p0, mesh );
+//
+//    //------------------------------------------------------------------------------------------------//
+//
+//    // Prepare A
+//    A.nzmax = matA->nnz;
+//    A.nz    = matA->nnz;
+//    A.m     = matA->neq;
+//    A.n     = A.m;
+//    //    printf( "A.nzmax = %d\n", matA->nnz );
+//    A.p     = DoodzCalloc( A.nzmax, sizeof(int) );
+//    A.i     = DoodzCalloc( A.nzmax, sizeof(int) );
+//    A.x     = DoodzCalloc( A.nzmax, sizeof(double) );
+//    DecompressCSRtoTriplets( A.m, matA->Ic, A.i );
+//    ArrayEqualArrayI( A.p, matA->J,  A.nzmax );
+//    ArrayEqualArray(  A.x, matA->A,  A.nzmax );
+//    Ac  = cs_di_compress( &A );
+////        cs_droptol( Ac, 1.0e-15 );
+//
+//    // Prepare B
+//    B.nzmax = matB->nnz;
+//    B.nz    = matB->nnz;
+//    B.m     = matB->neq;
+//    B.n     = matC->neq;
+//    B.p     = DoodzCalloc( B.nzmax, sizeof(int) );
+//    B.i     = DoodzCalloc( B.nzmax, sizeof(int) );
+//    B.x     = DoodzCalloc( B.nzmax, sizeof(double) );
+//    DecompressCSRtoTriplets( B.m, matB->Ic, B.i );
+//    ArrayEqualArrayI( B.p, matB->J,  B.nzmax );
+//    ArrayEqualArray(  B.x, matB->A,  B.nzmax );
+//    Bc  = cs_di_compress( &B );
+//
+//    // Prepare C
+//    C.nzmax = matC->nnz;
+//    C.nz    = matC->nnz;
+//    C.m     = matC->neq;
+//    C.n     = matB->neq;
+//    C.p     = DoodzCalloc( C.nzmax, sizeof(int) );
+//    C.i     = DoodzCalloc( C.nzmax, sizeof(int) );
+//    C.x     = DoodzCalloc( C.nzmax, sizeof(double) );
+//    DecompressCSRtoTriplets( C.m, matC->Ic, C.i );
+//    ArrayEqualArrayI( C.p, matC->J,  C.nzmax );
+//    ArrayEqualArray(  C.x, matC->A,  C.nzmax );
+//    Cc  = cs_di_compress( &C );
+//
+//    // Prepare D
+//    D.nzmax = Stokes->neq_cont;
+//    D.nz    = Stokes->neq_cont;
+//    D.m     = matD->neq;
+//    D.n     = matD->neq;
+//    D.p     = DoodzCalloc( D.nzmax+1, sizeof(int) );
+//    D.i     = DoodzCalloc( D.nzmax, sizeof(int) );
+//    D.x     = DoodzCalloc( D.nzmax, sizeof(double) );
+//    copy_cholmod_to_cs_matrix( Dcm0, &D );
+//    Dc  = cs_di_compress( &D );
+//
+//
+//    //------------------------------------------------------------------------------------------------//
+//
+//    // Prepare AJ
+//    AJ.nzmax = JmatA->nnz;
+//    AJ.nz    = JmatA->nnz;
+//    AJ.m     = JmatA->neq;
+//    AJ.n     = AJ.m;
+//    AJ.p     = DoodzCalloc( AJ.nzmax, sizeof(int) );
+//    AJ.i     = DoodzCalloc( AJ.nzmax, sizeof(int) );
+//    AJ.x     = DoodzCalloc( AJ.nzmax, sizeof(double) );
+//    DecompressCSRtoTriplets( AJ.m, JmatA->Ic, AJ.i );
+//    ArrayEqualArrayI( AJ.p, JmatA->J,  AJ.nzmax );
+//    ArrayEqualArray(  AJ.x, JmatA->A,  AJ.nzmax );
+//    AJc  = cs_di_compress( &AJ );
+////     cs_droptol( Ac, 1.0e-15 );
+//
+//    // Prepare BJ
+//    BJ.nzmax = JmatB->nnz;
+//    BJ.nz    = JmatB->nnz;
+//    BJ.m     = JmatB->neq;
+//    BJ.n     = JmatC->neq;
+//    BJ.p     = DoodzCalloc( BJ.nzmax, sizeof(int) );
+//    BJ.i     = DoodzCalloc( BJ.nzmax, sizeof(int) );
+//    BJ.x     = DoodzCalloc( BJ.nzmax, sizeof(double) );
+//    DecompressCSRtoTriplets( BJ.m, JmatB->Ic, BJ.i );
+//    ArrayEqualArrayI( BJ.p, JmatB->J,  BJ.nzmax );
+//    ArrayEqualArray(  BJ.x, JmatB->A,  BJ.nzmax );
+//    BJc  = cs_di_compress( &BJ );
+//
+//    // Prepare CJ
+//    CJ.nzmax = JmatC->nnz;
+//    CJ.nz    = JmatC->nnz;
+//    CJ.m     = JmatC->neq;
+//    CJ.n     = JmatB->neq;
+//    CJ.p     = DoodzCalloc( CJ.nzmax, sizeof(int) );
+//    CJ.i     = DoodzCalloc( CJ.nzmax, sizeof(int) );
+//    CJ.x     = DoodzCalloc( CJ.nzmax, sizeof(double) );
+//    DecompressCSRtoTriplets( CJ.m, JmatC->Ic, CJ.i );
+//    ArrayEqualArrayI( CJ.p, JmatC->J,  CJ.nzmax );
+//    ArrayEqualArray(  CJ.x, JmatC->A,  CJ.nzmax );
+//    CJc  = cs_di_compress( &CJ );
+//
+//    //------------------------------------------------------------------------------------------------//
+//
+//    // Contruct preconditionner:
+//    if ( pc_type == 0 ) {
+//        printf("Contruct preconditionner: PC = K\n");
+//        PC = cs_di_add( Ac, Ac, 1.0, 0.0 );
+//    }
+//
+//    if ( pc_type == 1 ) {
+//        printf("Contruct preconditionner: PC = 1/2 * (J'+ J)\n");
+//        Jt = cs_di_transpose( AJc, 1);
+//        PC = cs_di_add( AJc, Jt, 0.5, 0.5);
+//        cs_spfree(Jt);
+//    }
+//
+//    //------------------------------------------------------------------------------------------------//
+//
+//    // --------------- Schur complements --------------- //
+//    printf("Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)\n");
+//    printf("Compute Schur complement 2:  Jts = PC - grad*(PPI*div)\n");
+//
+//    // Matrix multiplication: D*C
+//    L =  cs_di_multiply( Dc, Cc );
+//
+//    //----- test - in case C' != B (assume B is deficient)
+//    B1 = cs_di_transpose( Cc, 1);
+//
+//    // minus sign: B = -C'
+//    for (k=0; k<B1->nzmax; k++)  B1->x[k] *= -1.0; // could be implicitly included in the next lines
+//
+//    // Matrix multiplication: B*(D*C)
+//    L1 = cs_di_multiply( B1, L);
+//    cs_spfree(L);
+//
+//    // Matrix addition: Js = AJ - B*(D*C)
+//    Js  = cs_di_add( AJc, L1, 1, -1);
+//    Jts = cs_di_add(  PC, L1, 1, -1);
+//    cs_spfree(L1);
+//
+//    //------------------------------------------------------------------------------------------------//
+//    // Factor Jts
+//    printf("Cholesky factors of Jts...\n");
+//
+//    int N = AJc->m;; //NNZ=Ac->nzmax+Bc->nzmax+Cc->nzmax+Dc->nzmax
+//    //        c.supernodal = 2;
+//
+//    // Prepare Jacobian preconditioner blocks
+//    Lcm = cholmod_allocate_sparse (Jts->m, Jts->n, Jts->nzmax, 0, 1, 0, 1, &c) ;
+//    copy_cs_to_cholmod_matrix( Lcm, Jts );
+//    Kcm = cholmod_allocate_sparse (Js->m, Js->n, Js->nzmax, 0, 1, 0, 1, &c) ;
+//    copy_cs_to_cholmod_matrix( Kcm, Js );
+//    Acm = cholmod_allocate_sparse (Ac->m, Ac->n, Ac->nzmax, 0, 1, 0, 1, &c) ;
+//    copy_cs_to_cholmod_matrix( Acm, Ac );
+//    Bcm = cholmod_allocate_sparse (B1->m, B1->n, B1->nzmax, 0, 1, 0, 1, &c) ;
+//    copy_cs_to_cholmod_matrix( Bcm, B1 );
+//    Ccm = cholmod_allocate_sparse (Cc->m, Cc->n, Cc->nzmax, 0, 1, 0, 1, &c) ;
+//    copy_cs_to_cholmod_matrix( Ccm, Cc );
+//    Dcm = cholmod_allocate_sparse (Dc->m, Dc->n, Dc->nzmax, 0, 1, 0, 1, &c) ;
+//    copy_cs_to_cholmod_matrix( Dcm, Dc );
+//
+//    // Prepare Jacobian blocks
+//    AcmJ = cholmod_allocate_sparse (AJc->m, AJc->n, AJc->nzmax, 0, 1, 0, 1, &c) ;
+//    copy_cs_to_cholmod_matrix( AcmJ, AJc );
+//    BcmJ = cholmod_allocate_sparse (BJc->m, BJc->n, BJc->nzmax, 0, 1, 0, 1, &c) ;
+//    copy_cs_to_cholmod_matrix( BcmJ, BJc );
+//    CcmJ = cholmod_allocate_sparse (CJc->m, CJc->n, CJc->nzmax, 0, 1, 0, 1, &c) ;
+//    copy_cs_to_cholmod_matrix( CcmJ, CJc );
+//
+//    // Keep lower part
+//    Lcml  = cholmod_copy ( Lcm,  -1, 1, &c );
+//
+//    if (Lcml == NULL || Lcml->stype == 0)
+//    {
+//        printf("Unsymmetric matrix\n");
+//        cholmod_free_sparse (&Lcml, &c) ;
+//        cholmod_finish (&c) ;
+//    }
+//
+//    if (pardi->Analyze == 1) {
+//        c.nmethods           = 1;
+//        c.method[0].ordering = CHOLMOD_AMD;
+//        c.postorder          = 1;
+//        t_omp                = (double)omp_get_wtime();
+//        Lfact                = cholmod_analyze( Lcml, &c ) ;
+//        pardi->Analyze       = 0;
+//        printf("** Time for Cholesky analysis = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
+//    }
+//
+//    t_omp = (double)omp_get_wtime();
+//    cholmod_factorize( Lcml, Lfact, &c);
+//    printf("** Time for Cholesky factorization = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
+//
+//    //------------------------------------------------------------------------------------------------//
+//
+//    // Powell-Hestenes iterations
+//    printf("Powell-Hestenes iterations, noisy = %d...\n", noisy);
+//
+//    cholmod_dense  *du, *dp, *bu, *bp, *pdum, *udum, *fu, *fp;
+//    double minru0, maxru0, minru, maxru, ru, rp;
+//    int its_KSP, its_KSP_tot=0;
+//    udum  = cholmod_zeros( matA->neq, 1, CHOLMOD_REAL, &c );
+//    pdum  = cholmod_zeros( matC->neq, 1, CHOLMOD_REAL, &c );
+//    bu    = cholmod_zeros( matA->neq, 1, CHOLMOD_REAL, &c );
+//    bp    = cholmod_zeros( matC->neq, 1, CHOLMOD_REAL, &c );
+//    du    = cholmod_zeros( matA->neq, 1, CHOLMOD_REAL, &c );
+//    dp    = cholmod_zeros( matC->neq, 1, CHOLMOD_REAL, &c );
+//    fu    = cholmod_zeros( matA->neq, 1, CHOLMOD_REAL, &c );
+//    fp    = cholmod_zeros( matC->neq, 1, CHOLMOD_REAL, &c );
+//
+//
+//    copy_vec_to_cholmod_dense( bu, rhs_mom );
+//    copy_vec_to_cholmod_dense( bp, rhs_cont );
+//
+//    printf("Initial residual:\n");
+//    copy_cholmod_dense_to_cholmod_dense( fu, bu );       // fu = bu
+//    cholmod_sdmult ( AcmJ, 0, mone, one, du, fu, &c) ;   // fu -= A*u
+//    cholmod_sdmult ( BcmJ, 0, mone, one, dp, fu, &c) ;   // fu -= B*p
+//    copy_cholmod_dense_to_cholmod_dense( fp, bp );       // fp = bp
+//    cholmod_sdmult ( CcmJ, 0, mone, one, du, fp, &c) ;   // fp -= C*u
+//    cholmod_sdmult ( D1cm0, 0, mone, one, dp, fp, &c) ;  // fp -= D*p
+//
+//    MinMaxArrayVal( fu->x, matA->neq, &minru0, &maxru0 );
+//    NormResidualCholmod( &ru, &rp, fu, fp, matA->neq, matC->neq, model, scaling, 0 );
+//
+//
+//
+//    for ( k=0; k<nitmax; k++) {
+//
+//        cholmod_sdmult ( Dcm, 0, one, zero, bp, pdum, &c) ;    // pdum <-- D * fp
+//        copy_cholmod_dense_to_cholmod_dense( udum, bu );       // udum <-- fu
+//        cholmod_sdmult ( BcmJ, 0, mone, one, pdum, udum, &c) ; // udum <-- bu - B*(D*fp)
+//        cholmod_sdmult ( BcmJ, 0, mone, one,   dp, udum, &c) ; // udum <-- bu - B*(D*fp) - B*dp
+//
+////                cholmod_free_dense( &du, &c );
+////                du = cholmod_solve (CHOLMOD_A, Lfact, udum, &c);
+//
+//        kspgcr( Kcm, udum, du, Lfact, matA->neq, &c, model.rel_tol_KSP, noisy, &its_KSP);
+//        its_KSP_tot += its_KSP;
+//
+//        copy_cholmod_dense_to_cholmod_dense( pdum, bp );       // pdum <-- bp
+//        cholmod_sdmult ( CcmJ, 0, mone, one, du, pdum, &c);    // pdum <-- bp - C*u
+//        cholmod_sdmult ( Dcm , 0,  one, one, pdum, dp, &c) ;   // dp <-- dp + D*(bp - C*u)
+//
+//
+//        copy_cholmod_dense_to_cholmod_dense( fu, bu );       // fu = bu
+//        cholmod_sdmult ( AcmJ, 0, mone, one, du, fu, &c) ;   // fu -= A*u
+//        cholmod_sdmult ( BcmJ, 0, mone, one, dp, fu, &c) ;   // fu -= B*p
+//        copy_cholmod_dense_to_cholmod_dense( fp, bp );       // fp = bp
+//        cholmod_sdmult (  CcmJ, 0, mone, one, du, fp, &c) ;   // fp -= C*u
+//        cholmod_sdmult ( D1cm0, 0, mone, one, dp, fp, &c) ;  // fp -= D*p
+//
+//        if (k>0) maxdivit = maxdiv;
+//        MinMaxArrayVal( fp->x, matC->neq, &mindiv, &maxdiv );
+//        MinMaxArrayVal( fu->x, matA->neq, &minru , &maxru  );
+//
+////        MinMaxArray( fu->x, 1, matA->neq, "fu");
+////        MinMaxArray( fp->x, 1, matC->neq, "fp");
+////        SumArray(fu->x, 1.0, matA->neq, "fu");
+////        SumArray(fp->x, 1.0, matC->neq, "fp");
+//
+//        if (k==0) maxdiv0 = maxdiv;
+//
+//        if ( noisy > 0 ) {
+//
+//            printf("PH comp it. %01d. its_KSP = %02d: max. cont. = %2.2e - rel. max. div. = %2.2e / max. mom. = %2.2e - rel. max. mom. = %2.2e\n", k, its_KSP, maxdiv, fabs(maxdiv/maxdiv0), maxru, maxru/maxru0);
+//        }
+//        //        if (fabs(maxdiv/maxdiv0)<rel_tol_div) break;
+//        //        if (k>0 && fabs(maxdiv)/fabs(maxdivit)>0.75) break;
+////        if ( (fabs(maxdiv)<model.abs_tol_div || maxdiv/maxdiv0<rel_tol_div )  && (fabs(maxru)<model.abs_tol_div || maxru/maxru0<rel_tol_div ) ) break;
+//        if (k>1 && (fabs(maxdiv)<model.abs_tol_div || maxdiv/maxdiv0<rel_tol_div ) ) break;
+//
+//        //        if ( ru<1e-11/(scaling.F/pow(scaling.L,3)) && rp<1e-11/scaling.E) break;
+//    }
+//
+//    //    if (fabs(maxdiv/maxdiv0)>rel_tol_div || fabs(maxdiv) > rel_tol_div ){
+//    if (fabs(maxdiv)>model.abs_tol_div && maxdiv/maxdiv0>rel_tol_div) {
+//        printf("The code has exited since the incompressibility constrain was not satisfied to abs. tol. = %2.2e and rel. tol. = %2.2e\n Try modifying the PENALTY factor or check MIN/MAX viscosities\n Good luck!\n", model.abs_tol_div, rel_tol_div);
+//        exit(1);
+//    }
+//    printf("** PH - iterations = %lf sec - its_KSP_tot = %02d\n", (double)((double)omp_get_wtime() - t_omp), its_KSP_tot);
+//
+//    //    SumArray(du->x, 1.0, matC->neq, "u");
+//    //    SumArray(dp->x, 1.0, matC->neq, "p");
+//
+//    // --------------- Solution vector --------------- //
+//    BackToSolutionVector( du, dp, sol, mesh, Stokes );
+//
+//    // separate residuals
+//    double Area =0.0, resx=0.0,resz=0.0, resp=0.0;
+//    int ndofx=0, ndofz=0, ndofp=0;
+//    int nx=model.Nx, nz=model.Nz, nzvx=nz+1, nxvz=nx+1, ncx=nx-1, ncz=nz-1;
+//
+//    BackToSolutionVector( fu, fp, F, mesh, Stokes );
+//
+//    // Integrate residuals
+//#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, nx, nzvx ) reduction(+:resx,ndofx)
+//    for( cc=0; cc<nzvx*nx; cc++) {
+//        if ( mesh->BCu.type[cc] != 0 && mesh->BCu.type[cc] != 30 && mesh->BCu.type[cc] != 11 && mesh->BCu.type[cc] != 13 && mesh->BCu.type[cc] != -12 ) {
+//            ndofx++;
+//            resx += F[Stokes->eqn_u[cc]]*F[Stokes->eqn_u[cc]];//*celvol;
+//        }
+//    }
+//
+//#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, nz, nxvz ) reduction(+:resz,ndofz)
+//    for( cc=0; cc<nz*nxvz; cc++) {
+//        if ( mesh->BCv.type[cc] != 0 && mesh->BCv.type[cc] != 30 && mesh->BCv.type[cc] != 11 && mesh->BCv.type[cc] != 13 && mesh->BCv.type[cc] != -12 ) {
+//            ndofz++;
+//            resz += F[Stokes->eqn_v[cc]]*F[Stokes->eqn_v[cc]];//*celvol;
+//            //            if ( mesh->BCv.type[cc] == 2) printf("F=%2.2e\n", F[Stokes->eqn_v[cc]]);
+//        }
+//    }
+//
+//#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( celvol, ncz, ncx ) reduction(+:resp,ndofp,Area)
+//    for( cc=0; cc<ncz*ncx; cc++) {
+//        if ( mesh->BCp.type[cc] != 0 && mesh->BCp.type[cc] != 30  && mesh->BCp.type[cc] != 31) {
+//            ndofp++;
+//            Area += celvol;
+//            resp += F[Stokes->eqn_p[cc]]*F[Stokes->eqn_p[cc]];//*celvol;
+//        }
+//    }
+//
+//    // Sqrt
+//    resx =  sqrt(resx/ndofx);
+//    resz =  sqrt(resz/ndofz);
+//    resp =  sqrt(resp/ndofp);
+//
+//    if ( noisy > 0 ) {
+//        printf("Fu = %2.6e\n", resx ); // Units of momentum
+//        printf("Fv = %2.6e\n", resz ); // Units of momentum
+//        printf("Fp = %2.6e\n", resp ); // Units of velocity gradient
+//    }
+//
+//
+//    //    if Newton==0, J = K; end
+//    //    tic
+//    //    Js  = 1/2*(J'+ J);                                                     % Symmetrisation of Jacobian
+//    //    Jt  = J  - grad*(PPI*div);                                            % Velocity Schur complement of Jacobian operator
+//    //    Jts = Js - grad*(PPI*div);                                            % Velocity Schur complement of symmetrised Jacobian operator
+//    //    [Jcs,e,s] = chol(Jts,'lower','vector');                               % Choleski factorization of Jts
+//    //    norm_r = 0; its = 0;
+//    //               cpu(5)=cpu(5)+toc;
+//    //               tic
+//    //               % Powell-Hestenes iterations
+//    //               fu0 = fu;                                                                    % Save linear norm 0
+//    //               for itPH=1:nPH
+//    //               fut  = fu - grad*dp - grad*PPI*fp;                                       % Iterative right hand side
+//    //               [du,norm_r,its] = M2Di2_kspgcr_m(Jt,fut,du,Jcs,s,eps_kspgcr,noisy,SuiteSparse); % Apply inverse of Schur complement
+//    //               dp   = dp + PPI*(fp -  div*du);                                          % Pressure corrctions
+//    //               fu1  = fu -   J*du  - grad*dp;                                           % Compute linear velocity residual
+//    //               fp1  = fp - div*du;                                                      % Compute linear pressure residual
+//    //               if noisy>1, fprintf('--- iteration %d --- \n',itPH);
+//    //               fprintf('  Res. |u| = %2.2e \n',norm(fu1)/length(fu1));
+//    //               fprintf('  Res. |p| = %2.2e \n',norm(fp1)/length(fp1));
+//    //               fprintf('  KSP GCR: its=%1.4d, Resid=%1.4e \n',its,norm_r); end
+//    //               if ((norm(fu1)/length(fu1)) < tol_linu) && ((norm(fp1)/length(fp1)) < tol_linp), break; end
+//    //               if ((norm(fu1)/length(fu1)) > (norm(fu0)/length(fu1)) && norm(fu1)/length(fu1) < tol_glob), fprintf(' > Linear residuals do no converge further:\n'); break; end
+//    //               fu0 = fu1;
+//    //               end
+//
+//    // Freedom
+//    cholmod_free_dense( &bu, &c );
+//    cholmod_free_dense( &bp, &c );
+//    //    cholmod_free_dense( &u, &c );
+//    //    cholmod_free_dense( &p, &c );
+//    cholmod_free_dense( &du, &c );
+//    cholmod_free_dense( &dp, &c );
+//    cholmod_free_dense( &fu, &c );
+//    cholmod_free_dense( &fp, &c );
+//    cholmod_free_dense( &pdum, &c );
+//    cholmod_free_dense( &udum, &c );
+//
+//    cholmod_free_sparse( &Lcml, &c );
+//    cholmod_free_sparse( &Lcm, &c );
+//    cholmod_free_sparse( &Kcm, &c );
+//    cholmod_free_sparse( &Acm, &c );
+//    cholmod_free_sparse( &Bcm, &c );
+//    cholmod_free_sparse( &Ccm, &c );
+//    cholmod_free_sparse( &Dcm, &c );
+//    cholmod_free_sparse( &Dcm0, &c );
+//    cholmod_free_sparse( &D1cm0, &c );
+//
+//    cholmod_free_sparse( &AcmJ, &c );
+//    cholmod_free_sparse( &BcmJ, &c );
+//    cholmod_free_sparse( &CcmJ, &c );
+//
+//    pardi->Lfact = Lfact;
+//    pardi->c     = c;
+//
+//    //    cs_spfree(L);
+//    //
+//    DoodzFree(u0);
+//    DoodzFree(p0);
+//    DoodzFree(F);
+//
+//    DoodzFree(A.p);
+//    DoodzFree(A.i);
+//    DoodzFree(A.x);
+//    cs_spfree(Ac);
+//    DoodzFree(B.p);
+//    DoodzFree(B.i);
+//    DoodzFree(B.x);
+//    cs_spfree(Bc);
+//    DoodzFree(C.p);
+//    DoodzFree(C.i);
+//    DoodzFree(C.x);
+//    cs_spfree(Cc);
+//    DoodzFree(D.p);
+//    DoodzFree(D.i);
+//    DoodzFree(D.x);
+//    cs_spfree(Dc);
+//
+//    DoodzFree(AJ.p);
+//    DoodzFree(AJ.i);
+//    DoodzFree(AJ.x);
+//    cs_spfree(AJc);
+//    DoodzFree(BJ.p);
+//    DoodzFree(BJ.i);
+//    DoodzFree(BJ.x);
+//    cs_spfree(BJc);
+//    DoodzFree(CJ.p);
+//    DoodzFree(CJ.i);
+//    DoodzFree(CJ.x);
+//    cs_spfree(CJc);
+//
+//    cs_spfree(PC);
+//    cs_spfree(Js);
+//    cs_spfree(Jts);
+//    cs_spfree(B1);
+//
+//}
+
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+
 void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseMat *matD, DirectSolver *pardi, double *rhs_mom, double *rhs_cont, double *sol, params model, grid *mesh, scale scaling, SparseMat *Stokes, SparseMat *Jacobian, SparseMat *JmatA,  SparseMat *JmatB,  SparseMat *JmatC ) {
-    
+
     //double Control [AMD_CONTROL], Info [AMD_INFO] ;
-    cs_di  A, B, D, C, *B1, *L, *Ac, *Bc,  *Cc,  *Dc, *L1;
+    cs_di  A, B, D, C, *L, *Ac, *Bc,  *Cc,  *Dc, *L1, *L2;
     cs_di  AJ, BJ, CJ, *AJc, *BJc, *CJc;
     cs_di  *PC, *Jt, *Jts, *Js;
     //int    *P, msglvl = 0;
@@ -1676,7 +2181,7 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     double celvol = model.dx*model.dz;
     double maxdiv0, mindiv, maxdiv, maxdivit=0, rel_tol_div=model.rel_tol_div;
 
-    int pc_type = 0;
+    int pc_type = 1;
 
 
     cholmod_common c ;
@@ -1707,23 +2212,21 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     penalty = gamma / celvol;
     printf("Penalty factor = %2.2e\n", penalty);
     //    for (k=0;k<Dcm0->nzmax;k++) ((double*)Dcm0->x)[k] *= gamma*celvol;
-    //    printf("-gamma*celvol = %2.2e %2.2e %2.2e %d %d\n", -gamma*celvol, model.dx*scaling.L, model.dz*scaling.L, model.Nx, model.Nz);
+//    printf("-gamma*celvol = %2.2e %2.2e %2.2e %d %d\n", -gamma*celvol, model.dx*scaling.L, model.dz*scaling.L, model.Nx, model.Nz);
 
 
 #pragma omp parallel for shared(D1cm0, Dcm0, mesh, Stokes, matA, matD ) private( i ) firstprivate( model, celvol )
     for( k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
         if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31 ) {
             i = Stokes->eqn_p[k] - matA->neq;
-            // Here Dcm0 is the pressure block
+            // Here Dcm0 is the pressure block - This relates to physics (0 is incompressible, Beta/dt is compressible)
             if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[i] *= 0.0;
             if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i]  = mesh->bet[k] / model.dt * celvol * matD->d[k]*matD->d[k];
-            // Here Dcm0 is the inverse of the pressure block
-            if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i] *= penalty; // Should be /celvol
-            if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k]; // Should be /celvol
-            //          printf("%2.2e %2.2e %2.2e %2.2e\n", mesh->bet[k]/model.dt, penalty, mesh->bet[k]*(1/scaling.S), model.dt*scaling.t);
+            // Here Dcm0 is the inverse of the pressure block - THis relates to numerics in this incompressible case (penalty) or physics in the compressible case (dt/Beta)
+            if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i] *= penalty;
+            if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k];
         }
     }
-
 
     clock_t t_omp;
     t_omp = (double)omp_get_wtime();
@@ -1854,20 +2357,22 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     // Matrix multiplication: D*C
     L =  cs_di_multiply( Dc, Cc );
 
-    //----- test - in case C' != B (assume B is deficient)
-    B1 = cs_di_transpose( Cc, 1);
-
-    // minus sign: B = -C'
-    for (k=0; k<B1->nzmax; k++)  B1->x[k] *= -1.0; // could be implicitly included in the next lines
+    //    //----- test - in case C' != B (assume B is deficient)
+    //    B1 = cs_di_transpose( Cc, 1);
+    //
+    //    // minus sign: B = -C'
+    //    for (k=0; k<B1->nzmax; k++)  B1->x[k] *= -1.0; // could be implicitly included in the next lines
 
     // Matrix multiplication: B*(D*C)
-    L1 = cs_di_multiply( B1, L);
+    L1 = cs_di_multiply(  Bc, L);
+    L2 = cs_di_multiply( BJc, L);
     cs_spfree(L);
 
     // Matrix addition: Js = AJ - B*(D*C)
-    Js  = cs_di_add( AJc, L1, 1, -1);
     Jts = cs_di_add(  PC, L1, 1, -1);
+    Js  = cs_di_add( AJc, L2, 1, -1);
     cs_spfree(L1);
+    cs_spfree(L2);
 
     //------------------------------------------------------------------------------------------------//
     // Factor Jts
@@ -1883,8 +2388,8 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     copy_cs_to_cholmod_matrix( Kcm, Js );
     Acm = cholmod_allocate_sparse (Ac->m, Ac->n, Ac->nzmax, 0, 1, 0, 1, &c) ;
     copy_cs_to_cholmod_matrix( Acm, Ac );
-    Bcm = cholmod_allocate_sparse (B1->m, B1->n, B1->nzmax, 0, 1, 0, 1, &c) ;
-    copy_cs_to_cholmod_matrix( Bcm, B1 );
+    Bcm = cholmod_allocate_sparse (Bc->m, Bc->n, Bc->nzmax, 0, 1, 0, 1, &c) ;
+    copy_cs_to_cholmod_matrix( Bcm, Bc );
     Ccm = cholmod_allocate_sparse (Cc->m, Cc->n, Cc->nzmax, 0, 1, 0, 1, &c) ;
     copy_cs_to_cholmod_matrix( Ccm, Cc );
     Dcm = cholmod_allocate_sparse (Dc->m, Dc->n, Dc->nzmax, 0, 1, 0, 1, &c) ;
@@ -1939,7 +2444,6 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     fu    = cholmod_zeros( matA->neq, 1, CHOLMOD_REAL, &c );
     fp    = cholmod_zeros( matC->neq, 1, CHOLMOD_REAL, &c );
 
-
     copy_vec_to_cholmod_dense( bu, rhs_mom );
     copy_vec_to_cholmod_dense( bp, rhs_cont );
 
@@ -1953,8 +2457,6 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
 
     MinMaxArrayVal( fu->x, matA->neq, &minru0, &maxru0 );
     NormResidualCholmod( &ru, &rp, fu, fp, matA->neq, matC->neq, model, scaling, 0 );
-
-
 
     for ( k=0; k<nitmax; k++) {
 
@@ -1974,22 +2476,21 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
         cholmod_sdmult ( CcmJ, 0, mone, one, du, pdum, &c);    // pdum <-- bp - C*u
         cholmod_sdmult ( Dcm , 0,  one, one, pdum, dp, &c) ;   // dp <-- dp + D*(bp - C*u)
 
-
         copy_cholmod_dense_to_cholmod_dense( fu, bu );       // fu = bu
         cholmod_sdmult ( AcmJ, 0, mone, one, du, fu, &c) ;   // fu -= A*u
         cholmod_sdmult ( BcmJ, 0, mone, one, dp, fu, &c) ;   // fu -= B*p
         copy_cholmod_dense_to_cholmod_dense( fp, bp );       // fp = bp
-        cholmod_sdmult (  CcmJ, 0, mone, one, du, fp, &c) ;   // fp -= C*u
+        cholmod_sdmult (  CcmJ, 0, mone, one, du, fp, &c) ;  // fp -= C*u
         cholmod_sdmult ( D1cm0, 0, mone, one, dp, fp, &c) ;  // fp -= D*p
 
         if (k>0) maxdivit = maxdiv;
         MinMaxArrayVal( fp->x, matC->neq, &mindiv, &maxdiv );
         MinMaxArrayVal( fu->x, matA->neq, &minru , &maxru  );
 
-//        MinMaxArray( fu->x, 1, matA->neq, "fu");
-//        MinMaxArray( fp->x, 1, matC->neq, "fp");
-//        SumArray(fu->x, 1.0, matA->neq, "fu");
-//        SumArray(fp->x, 1.0, matC->neq, "fp");
+        //        MinMaxArray( fu->x, 1, matA->neq, "fu");
+        //        MinMaxArray( fp->x, 1, matC->neq, "fp");
+        //        SumArray(fu->x, 1.0, matA->neq, "fu");
+        //        SumArray(fp->x, 1.0, matC->neq, "fp");
 
         if (k==0) maxdiv0 = maxdiv;
 
@@ -2160,11 +2661,12 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     cs_spfree(PC);
     cs_spfree(Js);
     cs_spfree(Jts);
-    cs_spfree(B1);
-    
+    //    cs_spfree(B1);
+
 }
 
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
+

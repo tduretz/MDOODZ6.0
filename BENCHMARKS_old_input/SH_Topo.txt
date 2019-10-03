@@ -48,6 +48,7 @@ subgrid_diff    = 1
 shear_heat      = 1
 adiab_heat      = 0
 fstrain         = 1
+GNUplot_residuals = 1
 
 /**** SETUP DEPENDANT ****/
 EpsBG           =-5e-14

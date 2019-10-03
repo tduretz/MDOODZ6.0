@@ -77,6 +77,8 @@ void ExtractSolutions( SparseMat *Stokes, grid* mesh, params* model ) {
     
     int cc, nx=model->Nx, nz=model->Nz, nzvx=nz+1, nxvz=nx+1, ncx=nx-1, ncz=nz-1, kk;
     
+    double eps = 1e-13;
+    
     // -------- Get U -------- //
 #pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( nzvx, nx )
     for( cc=0; cc<nzvx*nx; cc++) {
@@ -136,6 +138,8 @@ void ExtractSolutions( SparseMat *Stokes, grid* mesh, params* model ) {
                 mesh->p_in[cc] = Stokes->x[Stokes->eqn_p[cc]];
                 if (Stokes->eqn_p[cc]==870) printf("Surface pressure %d  %2.2e\n", 870, Stokes->x[Stokes->eqn_p[cc]]);
             }
+            // This is important for FD Jacobian of pressure --- it fixes a minimum values where the solution exactly zero
+            if (fabs(mesh->p_in[cc])<eps ) mesh->p_in[cc] = eps;
         }
     }
     
@@ -403,6 +407,10 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
             ApplyBC( mesh, model );
             
             //------------------------------------------------------------------------------------------------------
+            
+            // Some stuff to be put on vertices                       < ---------------------- get P from centroids to vertices
+            Interp_TPdphi_centroid2vertices (mesh, model );
+            
             // Update non-linearity
             UpdateNonLinearity( mesh, particles, topo_chain, topo, materials, model, Nmodel, scaling, 0, 1.0 );
         
@@ -417,34 +425,34 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
             rz[kk] = residuals.resz;
             rp[kk] = residuals.resp;
             //            printf("\e[1;34mAlpha\e[m = %lf --> rx = %2.6e rz = %2.6e rp = %2.6e\n", alpha, rx[kk]* (scaling.F/pow(scaling.L,3)), rz[kk]* (scaling.F/pow(scaling.L,3)), rp[kk]*scaling.E );
-            printf("\e[1;34mAlpha\e[m = %lf --> rx = %2.6e rz = %2.6e rp = %2.6e\n", alpha, rx[kk], rz[kk], rp[kk]);
+            printf("\e[1;34mAlpha\e[m = %lf --> rx = %2.4e rz = %2.4e rp = %2.4e\n", alpha, rx[kk], rz[kk], rp[kk]);
             
             
         }
         
-        //        // Look for the minimum predicted residuals
-        //        minx  = rx[0];
-        //        ix = 0;
-        //        for( k=1; k<ntry[niter]; k++ ) {
-        //            if(rx[k]<minx) {
-        //                minx = rx[k];
-        //                ix = k;
-        //            }
-        //        }
-        //        alpha = alphav[ix];
+                // Look for the minimum predicted residuals
+                minx  = rz[0];
+                ix = 0;
+                for( k=1; k<ntry[niter]; k++ ) {
+                    if(rz[k]<minx) {
+                        minx = rz[k];
+                        ix = k;
+                    }
+                }
+                alpha = alphav[ix];
         
-        // Look for the minimum predicted residuals
-        double r;
-        minx  = sqrt( pow( rx[0],2 ) + pow( rz[0],2 ) );
-        ix = 0;
-        for( k=1; k<ntry[niter]; k++ ) {
-            r = sqrt( pow( rx[k],2 ) + pow( rz[k],2 ) );
-            if( r < minx ) {
-                minx = r;
-                ix = k;
-            }
-        }
-        alpha = alphav[ix];
+//        // Look for the minimum predicted residuals
+//        double r;
+//        minx  = sqrt( pow( rx[0],2 ) + pow( rz[0],2 ) );
+//        ix = 0;
+//        for( k=1; k<ntry[niter]; k++ ) {
+//            r = sqrt( pow( rx[k],2 ) + pow( rz[k],2 ) );
+//            if( r < minx ) {
+//                minx = r;
+//                ix = k;
+//            }
+//        }
+//        alpha = alphav[ix];
         
         // if the minmimun residuals are lower than starting ones, then success
         if ( rx[ix] < frac*Nmodel->resx_f || rz[ix]<frac*Nmodel->resz_f  ) { //|| rp[ix]<frac*Nmodel->resp
@@ -549,15 +557,17 @@ void SolveStokesDefect( SparseMat *Stokes, DirectSolver *PardisoStokes, Nparams*
 
 void SolveStokesDecoupled( SparseMat *StokesA, SparseMat *StokesB, SparseMat *StokesC, SparseMat *StokesD, SparseMat *Stokes, DirectSolver* PardisoStokes, params model, grid *mesh, scale scaling ) {
     
-    printf("---- Solve Stokes in a decoupled/segregated fashion ----\n");
+    printf("---- Solve Stokes in a decoupled/segregated fashion, lsolver = %d ----\n", model.lsolver);
     
     clock_t t_omp;
     
     // Call direct solver
     t_omp = (double)omp_get_wtime();
-    if (model.lsolver==0) DirectStokesDecoupled( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->b, StokesC->b, Stokes->x, model, mesh, scaling, Stokes );
-    if (model.lsolver==1) KSPStokesDecoupled   ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->b, StokesC->b, Stokes->x, model, mesh, scaling, Stokes, Stokes, StokesA, StokesB, StokesC );
-    if (model.lsolver==2) KillerSolver         ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->b, StokesC->b, Stokes->x, model, mesh, scaling, Stokes, Stokes, StokesA, StokesB, StokesC );
+//   KSPStokesDecoupled       ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->b, StokesC->b, Stokes->x, model, mesh, scaling, Stokes, Stokes, StokesA, StokesB, StokesC );
+    
+    if (model.lsolver== 0) DirectStokesDecoupled    ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->b, StokesC->b, Stokes->x, model, mesh, scaling, Stokes );
+    if (model.lsolver== 1) KSPStokesDecoupled       ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->b, StokesC->b, Stokes->x, model, mesh, scaling, Stokes, Stokes, StokesA, StokesB, StokesC );
+    if (model.lsolver== 2) KillerSolver             ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->b, StokesC->b, Stokes->x, model, mesh, scaling, Stokes, Stokes, StokesA, StokesB, StokesC );
     if (model.lsolver==-1) DirectStokesDecoupledComp( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->b, StokesC->b, Stokes->x, model, mesh, scaling, Stokes );
     
     ScaleVelocitiesRHSBack(StokesA, StokesD, Stokes->x);
@@ -571,7 +581,7 @@ void SolveStokesDecoupled( SparseMat *StokesA, SparseMat *StokesB, SparseMat *St
 
 void SolveStokesDefectDecoupled( SparseMat *StokesA, SparseMat *StokesB, SparseMat *StokesC, SparseMat *StokesD, SparseMat *Stokes, DirectSolver *PardisoStokes, Nparams* Nmodel, grid* mesh, params* model, markers* particles, markers* topo_chain, surface *topo, mat_prop materials, scale scaling, SparseMat *JacobA, SparseMat *JacobB, SparseMat *JacobC ) {
     
-    printf("---- Solve Stokes in a decoupled/segregated fashion and defect correction mode ----\n");
+    printf("---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = %d ----\n", model->lsolver);
     
     double alpha = -1.0;
     double *dx, *fu, *fp;
@@ -583,13 +593,20 @@ void SolveStokesDefectDecoupled( SparseMat *StokesA, SparseMat *StokesB, SparseM
     
     // Call direct solver
     t_omp = (double)omp_get_wtime();
-    if ( model->lsolver == 0 ) DirectStokesDecoupled( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes );
-    if ( model->lsolver == 1 ) KSPStokesDecoupled   ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes, Stokes, JacobA, JacobB, JacobC );
+//    DirectStokesDecoupled( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes );
+//    DirectStokesDecoupledComp( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes );
+//    KSPStokesDecoupled       ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes, Stokes, JacobA, JacobB, JacobC );
+//    KillerSolver             ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes, Stokes, JacobA, JacobB, JacobC );
+    
+    if ( model->lsolver == 0 ) DirectStokesDecoupled    ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes );
+    if ( model->lsolver == 1 ) KSPStokesDecoupled       ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes, Stokes, JacobA, JacobB, JacobC );
+    if ( model->lsolver == 2 ) KillerSolver             ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes, Stokes, JacobA, JacobB, JacobC );
     if ( model->lsolver ==-1 ) DirectStokesDecoupledComp( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes );
-    if ( model->lsolver == 2 ) KillerSolver         ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes, Stokes, JacobA, JacobB, JacobC );
     printf("** Time for direct Stokes solver = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
     
+    if ( model->diag_scaling == 1 ) {
     ScaleVelocitiesRHSBack(StokesA, StokesD, dx);
+    }
     
     // Line search
     if ( model->line_search == 1 ) {
@@ -761,7 +778,7 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
     int NCX, NCZ;
     double rhoVx, rhoVz;
     double dx, dz;
-    int comp = 0;
+    double inW, inE, inS, inN;
     
     NX   = mesh->Nx;
     NXVZ = mesh->Nx+1;
@@ -770,36 +787,6 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
     NCX=NX-1; NCZ=NZ-1;
     dx   = mesh->dx;
     dz   = mesh->dz;
-    
-//    double eii;
-//    int    pl=0;
-//
-//    if (model.loc_iter==2) pl=-1;
-//
-//    // Evaluate plastic strain rate
-//    double *exx_pl, *exz_pl;
-//    exx_pl = DoodzCalloc(NCX*NCZ, sizeof(double));
-//    exz_pl = DoodzCalloc(NX *NZ , sizeof(double));
-//
-//    double *eiin, *eiis;
-//    eiin = DoodzCalloc(NCX*NCZ, sizeof(double));
-//    eiis = DoodzCalloc(NX *NZ , sizeof(double));
-//
-//    //#pragma omp parallel for shared( mesh, exx_pl, eiin ) private( eii, c ) firstprivate( NCX, NCZ )
-//    for (c=0; c<NCX*NCZ; c++) {
-//        eii       = sqrt(mesh->exxd[c]*mesh->exxd[c]  + mesh->exz_n[c]*mesh->exz_n[c]);
-//        exx_pl[c] = mesh->eII_pl[c]*mesh->exxd[c]/eii;
-//        exx_pl[c] = mesh->exx_pl[c];
-//    }
-//
-//    //#pragma omp parallel for shared( mesh, exz_pl, eiis ) private( eii, c ) firstprivate( NX, NZ )
-//    for (c=0; c<NX*NZ; c++) {
-//        eii       = sqrt(mesh->exxd_s[c]*mesh->exxd_s[c] + mesh->exz[c]*mesh->exz[c]);
-//        exz_pl[c] = mesh->eII_pl_s[c]*mesh->exz[c]/eii;
-//        exz_pl[c] = mesh->exz_pl[c];
-//    }
-//    DoodzFree( eiin );
-//    DoodzFree( eiis );
     
     /* --------------------------------------------------------------------*/
     /* Here we calculate the forcing term -rho*gx on the finest grid level */
@@ -818,6 +805,13 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                 
                 if ( mesh->BCu.type[c] == -1 || mesh->BCu.type[c] == 2 || mesh->BCu.type[c] == -2 ) {
                     
+                    // Free surface
+                    inW=0.0, inE = 0.0, inS=0.0, inN = 0.0;
+                    if (mesh->BCp.type[c2-1 ] == -1) inW = 1.0;
+                    if (mesh->BCp.type[c2   ] == -1) inE = 1.0;
+                    if (mesh->BCg.type[c -NX] != 30 && mesh->BCu.type[c -NX] != 13) inS = 1.0;
+                    if (mesh->BCg.type[c    ] != 30 && mesh->BCu.type[c +NX] != 13) inN = 1.0;
+                    
                     // Gravity force: take apparent viscosity (free surface correction)
                     rhoVx = 0.5*(mesh->rho_app_s[c] + mesh->rho_app_s[c-NX]);
                     mesh->roger_x[c]  = - model.gx * rhoVx;
@@ -827,38 +821,47 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                         
                         // Elasticity in periodic
                         if (   l>0 && l<NZVX-1 && k==0 && k==0 && mesh->BCu.type[c] == -2 ) {
-                            mesh->roger_x[c]  -= 1.0/dx * ( mesh->VE_n[c2] * mesh->sxxd0[c2] - mesh->VE_n[c2+NCX-1]  * mesh->sxxd0[c2+NCX-1] );
-                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->VE_s[c]  * mesh->sxz0[c]   - mesh->VE_s[c-NX]  * mesh->sxz0[c-NX]  );
+//                            mesh->roger_x[c]  -= 1.0/dx * ( mesh->VE_n[c2] * mesh->sxxd0[c2] - mesh->VE_n[c2+NCX-1]  * mesh->sxxd0[c2+NCX-1] );
+//                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->VE_s[c]  * mesh->sxz0[c]   - mesh->VE_s[c-NX]  * mesh->sxz0[c-NX]  );
+                            
+                            if ( inE ) mesh->roger_x[c]  -= 1.0/dx * ( mesh->eta_n[c2      ] / (mesh->mu_n[c2      ]*model.dt)  * mesh->sxxd0[c2      ] );
+                            if ( inW ) mesh->roger_x[c]  -= 1.0/dx * (-mesh->eta_n[c2+NCX-1] / (mesh->mu_n[c2+NCX-1]*model.dt)  * mesh->sxxd0[c2+NCX-1] );
+                            if ( inN ) mesh->roger_x[c]  -= 1.0/dz * ( mesh->eta_s[c       ] / (mesh->mu_s[c       ]*model.dt)  * mesh->sxz0[c        ] );
+                            if ( inS ) mesh->roger_x[c]  -= 1.0/dz * (-mesh->eta_s[c-NX    ] / (mesh->mu_s[c-NX    ]*model.dt)  * mesh->sxz0[c-NX     ] );
                         }
                         
                         // Inner nodes
                         if (  l>0 && l<NZVX-1 && k>0 && k<NX-1 && model.subgrid_diff != 4 ) {
-                            // Elasticity
-                            mesh->roger_x[c]  -= 1.0/dx * ( mesh->VE_n[c2] * mesh->sxxd0[c2] - mesh->VE_n[c2-1]  * mesh->sxxd0[c2-1] );
-                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->VE_s[c]  * mesh->sxz0[c]   - mesh->VE_s[c-NX]  * mesh->sxz0[c-NX]  );
-//                            // Plasticity
-//                            mesh->roger_x[c]  -= pl*2.0/dx * ( yE*mesh->eta_n[c2] * exx_pl[c2] - yW*mesh->eta_n[c2-1]  * exx_pl[c2-1] );
-//                            mesh->roger_x[c]  -= pl*2.0/dz * ( yN*mesh->eta_s[c]  * exz_pl[c]   - yS*mesh->eta_s[c-NX]  * exz_pl[c-NX]  );
+//                            // Elasticity
+//                            mesh->roger_x[c]  -= 1.0/dx * ( mesh->VE_n[c2] * mesh->sxxd0[c2] - mesh->VE_n[c2-1]  * mesh->sxxd0[c2-1] );
+//                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->VE_s[c]  * mesh->sxz0[c]   - mesh->VE_s[c-NX]  * mesh->sxz0[c-NX]  );
+                            
+                            // Elasticity - important fix here !!
+//                            mesh->roger_x[c]  -= 1.0/dx * ( mesh->eta_n[c2]/(mesh->mu_n[c2]*model.dt) * mesh->sxxd0[c2] - mesh->eta_n[c2-1]/(mesh->mu_n[c2-1]*model.dt) * mesh->sxxd0[c2-1] );
+//                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->eta_s[c] /(mesh->mu_s[c]*model.dt)  * mesh->sxz0[c]   - mesh->eta_s[c-NX]/(mesh->mu_s[c-NX]*model.dt) * mesh->sxz0[c-NX]  );
+                            
+                            if ( inE ) mesh->roger_x[c]  -= 1.0/dx * ( mesh->eta_n[c2      ] / (mesh->mu_n[c2      ]*model.dt)  * mesh->sxxd0[c2      ] );
+                            if ( inW ) mesh->roger_x[c]  -= 1.0/dx * (-mesh->eta_n[c2-1    ] / (mesh->mu_n[c2-1    ]*model.dt)  * mesh->sxxd0[c2-1    ] );
+                            if ( inN ) mesh->roger_x[c]  -= 1.0/dz * ( mesh->eta_s[c       ] / (mesh->mu_s[c       ]*model.dt)  * mesh->sxz0[c        ] );
+                            if ( inS ) mesh->roger_x[c]  -= 1.0/dz * (-mesh->eta_s[c-NX    ] / (mesh->mu_s[c-NX    ]*model.dt)  * mesh->sxz0[c-NX     ] );
+                            
+//                            if (isnan( mesh->roger_x[c])) {
+//                            printf("%2.2e %2.2e %2.2e %2.2e %2.2e\n", mesh->roger_x[c], mesh->eta_n[c2], mesh->eta_n[c2-1], mesh->eta_s[c], mesh->eta_s[c-NX]);
+//                            printf("%2.2e %2.2e %2.2e %2.2e %2.2e\n", mesh->roger_x[c], mesh->mu_n[c2], mesh->mu_n[c2-1], mesh->mu_s[c], mesh->mu_s[c-NX]);
+//                            printf("         %2.2e %2.2e %2.2e %2.2e\n", inE, inW, inN, inS );
+//                            }
                         }
                         
-                        // WEST OPEN
+                        // WEST OPEN  --- TO BE MODIFIED AS ABOVE
                         if (  l>0 && l<NZVX-1 && k==0 && mesh->BCu.type[c] == 2) {
-                            // Elasticity
                             mesh->roger_x[c]  -= 1.0/dx * ( mesh->VE_n[c2] * mesh->sxxd0[c2] );
                             mesh->roger_x[c]  -= 1.0/dz * ( mesh->VE_s[c]  * mesh->sxz0[c]   - mesh->VE_s[c-NX]  * mesh->sxz0[c-NX]  );
-//                            // Plasticity
-//                            mesh->roger_x[c]  -= pl*2.0/dx * ( yW*mesh->eta_n[c2] * exx_pl[c2] );
-//                            mesh->roger_x[c]  -= pl*2.0/dz * ( yN*mesh->eta_s[c]  * exz_pl[c]   - yS*mesh->eta_s[c-NX]  * exz_pl[c-NX]  );
                         }
                         
-                        // EAST OPEN
+                        // EAST OPEN  --- TO BE MODIFIED AS ABOVE
                         if (  l>0 && l<NZVX-1 && k==NX-1 && mesh->BCu.type[c] == 2) {
-                            // Elasticity
                             mesh->roger_x[c]  -= 1.0/dx * ( - mesh->VE_n[c2-1]  * mesh->sxxd0[c2-1] );
                             mesh->roger_x[c]  -= 1.0/dz * ( mesh->VE_s[c]  * mesh->sxz0[c]   - mesh->VE_s[c-NX]  * mesh->sxz0[c-NX]  );
-//                            // Plasticity
-//                            mesh->roger_x[c]  -= pl*2.0/dx * ( - yW*mesh->eta_n[c2-1]  * exx_pl[c2-1] );
-//                            mesh->roger_x[c]  -= pl*2.0/dz * ( yN*mesh->eta_s[c]  * exz_pl[c]   - yS*mesh->eta_s[c-NX]  * exz_pl[c-NX]  );
                         }
                         
                     }
@@ -887,9 +890,16 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                 
                 if ( mesh->BCv.type[c] == -1  ) {
                     
+                    // Free surface
+                    inW=0.0, inE = 0.0, inS=0.0, inN = 0.0;
+                    if (mesh->BCp.type[c2    ] == -1) inS = 1.0;
+                    if (mesh->BCp.type[c2+NCX] == -1) inN = 1.0;
+                    if (mesh->BCg.type[c1]    != 30 && mesh->BCv.type[c -1] != 13 ) inW = 1.0;
+                    if (mesh->BCg.type[c1+1 ] != 30 && mesh->BCv.type[c +1] != 13 ) inE = 1.0;
+                    
                     // Gravity force: use apparent density (free surface correction)
                     rhoVz = 0.5 * (mesh->rho_app_s[c1] + mesh->rho_app_s[c1+1]);  // USE THIS ALWAYS
-//                    rhoVz = 0.5 * (mesh->rho_app_n[c2] + mesh->rho_app_n[c2+(NX-1)]); // DO NOT USE
+//                    rhoVz = 0.5 * (mesh->rho_app_n[c2] + mesh->rho_app_n[c2+(NX-1)]); // DO NOT USE THIS
                     
                     // Remove background pressure
                     mesh->roger_z[c]  = - model.gz * rhoVz;
@@ -899,33 +909,31 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                         
                         // Backward Euler
                         if ( l>0 && l<NZ-1 && k>0 && k<NXVZ-1 && model.subgrid_diff!=4  ) {
-                            // Elasticity
-                            mesh->roger_z[c]  -= 1.0/dz * ( mesh->VE_n[c2+(NCX)] * -(mesh->sxxd0[c2+(NCX)]) - mesh->VE_n[c2] * -(mesh->sxxd0[c2]) );
-                            mesh->roger_z[c]  -= 1.0/dx * ( mesh->VE_s[c1+1]     *   mesh->sxz0[c1+1]      - mesh->VE_s[c1] *   mesh->sxz0[c1]  );
-//                            // Plasticity
-//                            mesh->roger_z[c]  -= pl*2.0/dz * ( yN*mesh->eta_n[c2+(NCX)] * -(exx_pl[c2+(NCX)]) - yS*mesh->eta_n[c2] * -(exx_pl[c2]) );
-//                            mesh->roger_z[c]  -= pl*2.0/dx * ( yE*mesh->eta_s[c1+1]     *   exz_pl[c1+1]      - yW*mesh->eta_s[c1] *   exz_pl[c1]  );
+////                            // Elasticity
+//                            mesh->roger_z[c]  -= 1.0/dz * ( mesh->VE_n[c2+(NCX)] *   mesh->szzd0[c2+(NCX)] - mesh->VE_n[c2] *  mesh->szzd0[c2] );
+//                            mesh->roger_z[c]  -= 1.0/dx * ( mesh->VE_s[c1+1]     *   mesh->sxz0[c1+1]      - mesh->VE_s[c1] *   mesh->sxz0[c1]  );
+//
+//                            // Elasticity - important fix here !!
+//                            mesh->roger_z[c]  -= 1.0/dz * ( mesh->eta_n[c2+(NCX)] / (mesh->mu_n[c2+(NCX)] *model.dt ) * (mesh->szzd0[c2+(NCX)]) - mesh->eta_n[c2] / (mesh->mu_n[c2] *model.dt ) * (mesh->szzd0[c2]) );
+//                            mesh->roger_z[c]  -= 1.0/dx * ( mesh->eta_s[c1+1] / (mesh->mu_s[c1+1]*model.dt)    *   mesh->sxz0[c1+1]      - mesh->eta_s[c1]  / (mesh->mu_s[c1]*model.dt) *   mesh->sxz0[c1]  );
+                            
+                            
+                            if ( inN ) mesh->roger_z[c]  -= 1.0/dz * (  mesh->eta_n[c2+(NCX)] / (mesh->mu_n[c2+(NCX)] *model.dt ) * (mesh->szzd0[c2+(NCX)]) );
+                            if ( inS ) mesh->roger_z[c]  -= 1.0/dz * ( -mesh->eta_n[c2      ] / (mesh->mu_n[c2      ] *model.dt ) * (mesh->szzd0[c2      ]) );
+                            if ( inE ) mesh->roger_z[c]  -= 1.0/dx * (  mesh->eta_s[c1+1    ] / (mesh->mu_s[c1+1    ] *model.dt ) *  mesh->sxz0[c1+1     ]) ;
+                            if ( inW ) mesh->roger_z[c]  -= 1.0/dx * ( -mesh->eta_s[c1      ] / (mesh->mu_s[c1      ] *model.dt ) *  mesh->sxz0[c1       ]) ;
+
                         }
-                        // SOUTH OPEN
+                        // SOUTH OPEN  --- TO BE MODIFIED AS ABOVE
                         if ( l==0 && k>0 && k<NXVZ-1 ) {
-                            // Elasticity
                             mesh->roger_z[c]  -= 1.0/dz * ( mesh->VE_n[c2+(NCX)] * -(mesh->sxxd0[c2+(NCX)]) );
                             mesh->roger_z[c]  -= 1.0/dx * ( mesh->VE_s[c1+1]     *   mesh->sxz0[c1+1]      - mesh->VE_s[c1] *   mesh->sxz0[c1]  );
-//                            // Plasticity
-//                            mesh->roger_z[c]  -= pl*2.0/dz * (yN* mesh->eta_n[c2+(NCX)] * -(exx_pl[c2+(NCX)]) );
-//                            mesh->roger_z[c]  -= pl*2.0/dx * ( yE*mesh->eta_s[c1+1]     *   exz_pl[c1+1]      - yW*mesh->eta_s[c1] *   exz_pl[c1]  );
-                            
                         }
                         
-                        // NORTH OPEN
+                        // NORTH OPEN  --- TO BE MODIFIED AS ABOVE
                         if ( l==NZ-1 && k>0 && k<NXVZ-1 ) {
-                            // Elasticity
                             mesh->roger_z[c]  -= 1.0/dz * ( - mesh->VE_n[c2] * -(mesh->sxxd0[c2]) );
                             mesh->roger_z[c]  -= 1.0/dx * ( mesh->VE_s[c1+1]     *   mesh->sxz0[c1+1]      - mesh->VE_s[c1] *   mesh->sxz0[c1]  );
-//                            // Plasticity
-//                            mesh->roger_z[c]  -= pl*2.0/dz * ( - yS*mesh->eta_n[c2] * -(exx_pl[c2]) );
-//                            mesh->roger_z[c]  -= pl*2.0/dx * ( yE*mesh->eta_s[c1+1]     *   exz_pl[c1+1]      - yW*mesh->eta_s[c1] *   exz_pl[c1]  );
-                            
                         }
                     }
                 }

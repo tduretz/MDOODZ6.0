@@ -166,7 +166,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
     
     // Filename
 //    asprintf(&name, "Breakpoint%05d.dat", model->step);
-    if( model->rm_break == -1 ) asprintf(&name, "BreakpointXXXXX.dat");
+    if( model->delete_breakpoints == -1 ) asprintf(&name, "BreakpointXXXXX.dat");
     else asprintf(&name, "Breakpoint%05d.dat", model->step);
     if (fopen(name, "rb")==NULL) {
         printf("Error opening %s, this file is probably corrupted or non-existant\nExiting...\n", name);
@@ -220,6 +220,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
     
     if (model->iselastic == 1) {
         fread( particles->sxxd,   s3, particles->Nb_part, file );
+        fread( particles->szzd,   s3, particles->Nb_part, file );
         fread( particles->sxz,    s3, particles->Nb_part, file );
         
         fread( mesh->eta_n, s3, (Nx-1)*(Nz-1), file );
@@ -348,6 +349,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
         particles->X[k]     /=1.0;
         if ( model->iselastic == 1 ) {
             particles->sxxd[k]    /= scaling.S;
+            particles->szzd[k]    /= scaling.S;
             particles->sxz[k]     /= scaling.S;
         }
         if ( model->isthermal == 1 ) {
@@ -483,6 +485,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
         particles->X[k]      *= 1.0;
         if (model.iselastic == 1) {
             particles->sxxd[k]   *= scaling.S;
+            particles->szzd[k]   *= scaling.S;
             particles->sxz[k]    *= scaling.S;
         }
         if (model.isthermal == 1) {
@@ -587,7 +590,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     FILE *file;
     
     // Filename
-    if( model.rm_break == -1 ) asprintf(&name, "BreakpointXXXXX.dat");
+    if( model.delete_breakpoints == -1 ) asprintf(&name, "BreakpointXXXXX.dat");
     else asprintf(&name, "Breakpoint%05d.dat", model.step);
     
     if (fopen(name, "wb")==NULL) {
@@ -642,6 +645,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     
     if (model.iselastic == 1) {
         fwrite( particles->sxxd,   s3, particles->Nb_part, file );
+        fwrite( particles->szzd,   s3, particles->Nb_part, file );
         fwrite( particles->sxz,    s3, particles->Nb_part, file );
         
         fwrite( mesh->eta_n, s3, (Nx-1)*(Nz-1), file );
@@ -768,6 +772,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
         
         if (model.iselastic == 1) {
             particles->sxxd[k]   /= scaling.S;
+            particles->szzd[k]   /= scaling.S;
             particles->sxz[k]    /= scaling.S;
         }
         if (model.isthermal == 1) {
@@ -964,11 +969,13 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->HsOnly          = ReadInt2( fin, "HsOnly",          0 );
     model->HomoFields      = ReadInt2( fin, "HomoFields",      0 );
     model->rec_T_P_x_z     = ReadInt2( fin, "rec_T_P_x_z",     0 );
-    model->rm_break        = ReadInt2( fin, "rm_break",        1 );
+    model->delete_breakpoints = ReadInt2( fin, "delete_breakpoints",        1 );
     materials->eta_VP      = ReadDou2( fin, "eta_VP",        0.0 ) / scaling->S / scaling->t;
     model->topografix      = ReadInt2( fin, "topografix",      0 );
     model->aniso           = ReadInt2( fin, "aniso",           0 );
     model->compressible    = ReadInt2( fin, "compressible",    0 );
+    model->GNUplot_residuals = ReadInt2( fin, "GNUplot_residuals",    0 );
+    model->no_markers      = ReadInt2( fin, "no_markers",    0 );
     
     // Setup dependant
     model->EpsBG           = ReadDou2( fin, "EpsBG",           0.0 ) / scaling->E;
