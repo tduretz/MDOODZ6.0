@@ -112,7 +112,7 @@ struct _params {
     int    ncont;
     double Courant, mineta, maxeta;
     // Linear solver
-    int decoupled_solve, lsolver, diag_scaling;
+    int decoupled_solve, lsolver, diag_scaling, pc_type;
     double penalty, abs_tol_div, rel_tol_div, auto_penalty, compressible, rel_tol_KSP;
     // Deformation maps
     int nT, nE, nd, def_maps;

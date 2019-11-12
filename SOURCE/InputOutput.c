@@ -935,6 +935,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->auto_penalty    = ReadDou2( fin, "auto_penalty",    0.0  );
     model->decoupled_solve = ReadInt2( fin, "decoupled_solve",    1 );
     model->diag_scaling    = ReadInt2( fin, "diag_scaling",       1 );
+    model->pc_type         = ReadInt2( fin, "pc_type",       0 );
     
     // Switches
     model->ismechanical    = ReadInt2( fin, "ismechanical",    1 );

@@ -1833,14 +1833,14 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
 //
 //    //------------------------------------------------------------------------------------------------//
 //
-//    // Contruct preconditionner:
+//    // Construct preconditionner:
 //    if ( pc_type == 0 ) {
-//        printf("Contruct preconditionner: PC = K\n");
+//        printf("Construct preconditionner: PC = K\n");
 //        PC = cs_di_add( Ac, Ac, 1.0, 0.0 );
 //    }
 //
 //    if ( pc_type == 1 ) {
-//        printf("Contruct preconditionner: PC = 1/2 * (J'+ J)\n");
+//        printf("Construct preconditionner: PC = 1/2 * (J'+ J)\n");
 //        Jt = cs_di_transpose( AJc, 1);
 //        PC = cs_di_add( AJc, Jt, 0.5, 0.5);
 //        cs_spfree(Jt);
@@ -2181,7 +2181,7 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     double celvol = model.dx*model.dz;
     double maxdiv0, mindiv, maxdiv, maxdivit=0, rel_tol_div=model.rel_tol_div;
 
-    int pc_type = 1;
+    int pc_type = model.pc_type;
 
 
     cholmod_common c ;
@@ -2335,14 +2335,14 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
 
     //------------------------------------------------------------------------------------------------//
 
-    // Contruct preconditionner:
+    // Construct preconditionner:
     if ( pc_type == 0 ) {
-        printf("Contruct preconditionner: PC = K\n");
+        printf("Construct preconditionner: PC = K\n");
         PC = cs_di_add( Ac, Ac, 1.0, 0.0 );
     }
 
     if ( pc_type == 1 ) {
-        printf("Contruct preconditionner: PC = 1/2 * (J'+ J)\n");
+        printf("Construct preconditionner: PC = 1/2 * (J'+ J)\n");
         Jt = cs_di_transpose( AJc, 1);
         PC = cs_di_add( AJc, Jt, 0.5, 0.5);
         cs_spfree(Jt);

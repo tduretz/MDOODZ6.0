@@ -957,6 +957,7 @@ int main( int nargs, char *args[] ) {
 
                 // Roration of stresses (visco-elastic flow)
                 if ( model.iselastic == 1 ) RotateStresses( mesh, &particles, model, &scaling );
+                if ( model.aniso     == 1 ) RotateDirectorVector( mesh, &particles, model, &scaling  );
 
                 // Update accumulated strain
 //                AccumulatedStrain( &mesh, scaling, model, &particles );
