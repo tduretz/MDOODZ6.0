@@ -88,7 +88,7 @@ double SumArray( double* array, double scale, int size, char* text ) {
     for (k=0; k<size; k++) {
         sum += (array[k]);
     }
-    //    printf( "sum(%s) = %2.12e\n", text, sum*scale );
+    printf( "sum(%s) = %2.12e\n", text, sum*scale );
     return sum;
 }
 

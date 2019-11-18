@@ -119,6 +119,7 @@ int main( int nargs, char *args[] ) {
     rp_array = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
     
     Nx = mesh.Nx; Nz = mesh.Nz; Ncx = Nx-1; Ncz = Nz-1;
+    if ( model.aniso == 1 ) model.Newton = 1;
     
     printf("*************************************\n");
     printf("******* Initialize particles ********\n");
@@ -297,8 +298,6 @@ int main( int nargs, char *args[] ) {
             
         } // end of no_markers --- debug
         else {
-            
-            
             InitialiseSolutionFields( &mesh, &model );
             
             StrainRateComponents( &mesh, scaling, &model );
@@ -321,8 +320,6 @@ int main( int nargs, char *args[] ) {
             MinMaxArrayTag( mesh.phase_perc_n[1],          1.0,   (mesh.Nx-1)*(mesh.Nz-1), "ph 1         ", mesh.BCp.type );
             MinMaxArrayTag( mesh.phase_perc_s[0],          1.0,   (mesh.Nx)*(mesh.Nz),     "ph 0         ", mesh.BCg.type );
             MinMaxArrayTag( mesh.phase_perc_s[1],          1.0,   (mesh.Nx)*(mesh.Nz),     "ph 1         ", mesh.BCg.type );
-
-            
         }
             
         
@@ -468,7 +465,7 @@ int main( int nargs, char *args[] ) {
         ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 1 );
 
         // Elasticity - interpolate advected/rotated stresses
-        if  (model.iselastic == 1 ) {
+        if  ( model.iselastic == 1 ) {
 
             // Get old stresses from particles
             Interp_P2C ( particles, particles.sxxd, &mesh, mesh.sxxd0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
@@ -484,6 +481,14 @@ int main( int nargs, char *args[] ) {
 
             // Interpolate shear modulus
             ShearModulusGrid( &mesh, materials, model, scaling );
+        }
+            
+        // Director vector
+        if  ( model.aniso == 1 ) {
+            Interp_P2C ( particles, particles.nx, &mesh, mesh.nx_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+            Interp_P2C ( particles, particles.nz, &mesh, mesh.nz_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+            Interp_P2N ( particles, particles.nx, &mesh, mesh.nx_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+            Interp_P2N ( particles, particles.nz, &mesh, mesh.nz_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
         }
 
         // Interpolate Grain size
@@ -545,6 +550,11 @@ int main( int nargs, char *args[] ) {
         MinMaxArrayTag( mesh.strain_n,   1.0,       (mesh.Nx-1)*(mesh.Nz-1), "strain_n", mesh.BCp.type );
         MinMaxArrayTag( mesh.T,      scaling.T,     (mesh.Nx-1)*(mesh.Nz-1), "T       ", mesh.BCt.type );
         MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part  ");
+        if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nx_n,     1.0,   (mesh.Nx-1)*(mesh.Nz-1), "nx_n    ", mesh.BCp.type );
+        if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nz_n,     1.0,   (mesh.Nx-1)*(mesh.Nz-1), "nz_n    ", mesh.BCp.type );
+        if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nx_s,     1.0,   (mesh.Nx)*(mesh.Nz),     "nx_s    ", mesh.BCg.type );
+        if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nz_s,     1.0,   (mesh.Nx)*(mesh.Nz),     "nz_s    ", mesh.BCg.type );
+
         printf("** Time for particles interpolations I = %lf sec\n",  (double)((double)omp_get_wtime() - t_omp) );
 
         // Allocate and initialise solution and RHS vectors
@@ -609,8 +619,17 @@ int main( int nargs, char *args[] ) {
             // Some stuff to be put on vertices                       < ---------------------- get P from centroids to vertices
             Interp_TPdphi_centroid2vertices (&mesh, &model );
 
+            int aniso;
             // Non-Linearity
+            if  (model.aniso==1) {
+                aniso = 1;
+                model.aniso=0;
+            }
             UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
+            if  (aniso==1) {
+                model.aniso=1;
+            }
+            
             
             MinMaxArrayTag( mesh.eta_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "eta_s     ", mesh.BCg.type );
             MinMaxArrayTag( mesh.eta_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_n     ", mesh.BCp.type );
@@ -619,13 +638,21 @@ int main( int nargs, char *args[] ) {
             
             // Stokes solver
             if ( model.ismechanical == 1 ) {
-
-                // Build discrete system of equations - MATRIX
-                if ( model.decoupled_solve == 0 ) BuildStokesOperator           ( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, 1 );
-                if ( model.decoupled_solve == 1 ) BuildStokesOperatorDecoupled  ( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, 1 );
-                if ( model.Newton          == 1 ) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling, 1 );
-                if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
-                if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
+         
+                    // Build discrete system of equations - MATRIX
+                    if ( model.decoupled_solve == 0 ) BuildStokesOperator           ( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, 1 );
+                    if ( model.decoupled_solve == 1 ) BuildStokesOperatorDecoupled  ( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, 1 );
+                
+                if (model.aniso == 0) {
+                    if ( model.Newton          == 1 ) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling, 1 );
+                    if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
+                    if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
+                }
+                else {
+                    RheologicalOperators( &mesh, &model, &scaling, 0 );
+                    if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
+//                    BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in,  &Stokes,  &StokesA,  &StokesB,  &StokesC,   &StokesD, 1 );
+                }
 
                 
 
@@ -645,7 +672,7 @@ int main( int nargs, char *args[] ) {
 //                MinMaxArrayTag( mesh.D34_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "D34   ", mesh.BCg.type );
 
                 
-                MinMaxArrayTag( mesh.detadp_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "detadp_s   ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.detadp_s,    1.0, (mesh.Nx-0)*(mesh.Nz-0),     "detadp_s   ", mesh.BCg.type );
 
                 // Diagonal scaling
                 if ( model.diag_scaling ) {
@@ -656,7 +683,7 @@ int main( int nargs, char *args[] ) {
                     ScaleMatrix( &StokesA, &StokesB, &StokesC, &StokesD );
                 }
                 
-                // If iteration > 0 ---> Evaluate non linear residual and test
+                // If iteration > 0 ---> Evaluate non-linear residual and test
                 if ( model.DefectCorrectionForm == 1 || (Nmodel.nit>0 && model.DefectCorrectionForm == 0 ) ) {
 
                     printf("---- Non-linear residual ----\n");
@@ -664,11 +691,20 @@ int main( int nargs, char *args[] ) {
                     if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
                     if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
                     
-                    if ( model.Newton          == 1 ) {
+//                    model.aniso=0;
+//                    if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
+
+                    
+                    if ( model.Newton == 1 && model.aniso == 0 ) {
                         ArrayEqualArray( JacobA.F, StokesA.F,  StokesA.neq );
                         ArrayEqualArray( JacobC.F, StokesC.F,  StokesC.neq );
-                        if ( model.diag_scaling ) ScaleMatrix( &JacobA,  &JacobB,  &JacobC,  &JacobD  );
                     }
+                    if ( model.Newton == 1 && model.diag_scaling ) ScaleMatrix( &JacobA,  &JacobB,  &JacobC,  &JacobD  );
+
+                    
+                    
+//                    exit(1);
+                    
                     
                     Nmodel.resx_f = Nmodel.resx;
                     Nmodel.resz_f = Nmodel.resz;
@@ -705,17 +741,17 @@ int main( int nargs, char *args[] ) {
 
                 // Direct solve
                 t_omp = (double)omp_get_wtime();
-                if ( Nmodel.nit == 0 && model.DefectCorrectionForm == 0  ) {
-                    if ( model.decoupled_solve == 0 ) SolveStokes( &Stokes, &CholmodSolver );
-                    if ( model.decoupled_solve == 1 ) SolveStokesDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, model, &mesh, scaling );
-                }
-                else {
+//                if ( Nmodel.nit == 0 && model.DefectCorrectionForm == 0  ) {
+//                    if ( model.decoupled_solve == 0 ) SolveStokes( &Stokes, &CholmodSolver );
+//                    if ( model.decoupled_solve == 1 ) SolveStokesDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, model, &mesh, scaling );
+//                }
+//                else {
                     if ( model.decoupled_solve == 0 ) SolveStokesDefect( &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling );
                     if ( model.decoupled_solve == 1 ) {
                         if ( model.Newton==0 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling, &StokesA, &StokesB, &StokesC );
                         if ( model.Newton==1 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling, &JacobA, &JacobB, &JacobC );
                         
-                    }
+//                    }
 
                     if ( Nmodel.stagnated == 1 && safe == 0 ) {
                         printf( "Non-linear solver stagnated to res_u = %2.2e res_z = %2.2e\n", Nmodel.resx_f, Nmodel.resz_f );
@@ -754,10 +790,10 @@ int main( int nargs, char *args[] ) {
 
                 if ( Nmodel.stagnated == 0 ) {
                     printf("EXTRACT SOLS\n");
-                    Initialise2DArray( mesh.u_in, mesh.Nx, (mesh.Nz+1), 0.0 );
-                    Initialise2DArray( mesh.v_in, (mesh.Nx+1), mesh.Nz, 0.0 );
-                    ExtractSolutions( &Stokes, &mesh, &model );
-                    //                    }
+//                    Initialise2DArray( mesh.u_in, mesh.Nx, (mesh.Nz+1), 0.0 );
+//                    Initialise2DArray( mesh.v_in, (mesh.Nx+1), mesh.Nz, 0.0 );
+//                    ExtractSolutions( &Stokes, &mesh, &model );
+                    
                     if ( Nmodel.nit == 0  ) {
                         printf("---- Direct solve residual ----\n");
                         RheologicalOperators( &mesh, &model, &scaling, 0 );
@@ -767,11 +803,6 @@ int main( int nargs, char *args[] ) {
 #ifndef _VG_
                         if ( model.write_debug == 1 ) WriteResiduals( mesh, model, Nmodel, scaling );
 #endif
-                        
-                        //                        if ( Nmodel.resx>1e-8/(scaling.F/pow(scaling.L,3)) || Nmodel.resz>1e-8/(scaling.F/pow(scaling.L,3)) || Nmodel.resp>1e-10/scaling.E ) {
-                        //                            printf("Direct solve residuals are too large !\n Stopping now !");
-                        //                            exit(22);
-                        //                        }
                     }
                 }
                 if ( model.decoupled_solve == 0 ) { FreeMat( &Stokes ); }

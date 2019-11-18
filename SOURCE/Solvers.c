@@ -2170,11 +2170,9 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
 
 void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseMat *matD, DirectSolver *pardi, double *rhs_mom, double *rhs_cont, double *sol, params model, grid *mesh, scale scaling, SparseMat *Stokes, SparseMat *Jacobian, SparseMat *JmatA,  SparseMat *JmatB,  SparseMat *JmatC ) {
 
-    //double Control [AMD_CONTROL], Info [AMD_INFO] ;
     cs_di  A, B, D, C, *L, *Ac, *Bc,  *Cc,  *Dc, *L1, *L2;
     cs_di  AJ, BJ, CJ, *AJc, *BJc, *CJc;
     cs_di  *PC, *Jt, *Jts, *Js;
-    //int    *P, msglvl = 0;
     DoodzFP  *u0, *p0, *F;
     int  noisy=1;
     int nitmax=20, k, cc, i; //nitmax=5

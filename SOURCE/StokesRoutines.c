@@ -136,7 +136,7 @@ void ExtractSolutions( SparseMat *Stokes, grid* mesh, params* model ) {
             else {
                 mesh->dp[cc]   = Stokes->x[Stokes->eqn_p[cc]] * Stokes->d[Stokes->eqn_p[cc]] - mesh->p_start[cc];
                 mesh->p_in[cc] = Stokes->x[Stokes->eqn_p[cc]];
-                if (Stokes->eqn_p[cc]==870) printf("Surface pressure %d  %2.2e\n", 870, Stokes->x[Stokes->eqn_p[cc]]);
+//                if (Stokes->eqn_p[cc]==870) printf("Surface pressure %d  %2.2e\n", 870, Stokes->x[Stokes->eqn_p[cc]]);
             }
             // This is important for FD Jacobian of pressure --- it fixes a minimum values where the solution exactly zero
             if (fabs(mesh->p_in[cc])<eps ) mesh->p_in[cc] = eps;
@@ -146,6 +146,45 @@ void ExtractSolutions( SparseMat *Stokes, grid* mesh, params* model ) {
     // Apply Bc to Vx and Vz
     ApplyBC( mesh, model );
     
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+
+void ExtractSolutions2( SparseMat *Stokes, grid* mesh, params* model, double* dx, double alpha ) {
+    
+    int cc, nx=model->Nx, nz=model->Nz, nzvx=nz+1, nxvz=nx+1, ncx=nx-1, ncz=nz-1, kk;
+    
+    double eps = 1e-13;
+
+
+// Test relaxed u-v-p solutions
+#pragma omp parallel for shared( mesh, dx, Stokes ) private( cc ) firstprivate( alpha, nzvx, nx )
+for( cc=0; cc<nzvx*nx; cc++) {
+    if ( mesh->BCu.type[cc] != 30 && mesh->BCu.type[cc] != 0 && mesh->BCu.type[cc] != 11 && mesh->BCu.type[cc] != 13 && mesh->BCu.type[cc] != -12 ) {
+        mesh->u_in[cc] += alpha*dx[Stokes->eqn_u[cc]];
+    }
+}
+
+#pragma omp parallel for shared( mesh, dx, Stokes ) private( cc ) firstprivate( alpha, nz, nxvz )
+for( cc=0; cc<nz*nxvz; cc++) {
+    if ( mesh->BCv.type[cc] != 30 && mesh->BCv.type[cc] != 0 && mesh->BCv.type[cc] != 11 && mesh->BCv.type[cc] != 13 && mesh->BCv.type[cc] != -12 ) {
+        mesh->v_in[cc] += alpha*dx[Stokes->eqn_v[cc]];
+    }
+}
+
+#pragma omp parallel for shared( mesh, dx, Stokes ) private( cc ) firstprivate( alpha, ncx, ncz )
+for( cc=0; cc<ncz*ncx; cc++) {
+    
+    if ( mesh->BCp.type[cc] != 30 && mesh->BCp.type[cc] != 0  && mesh->BCp.type[cc] != 31 ) {
+        mesh->p_in[cc] += alpha*dx[Stokes->eqn_p[cc]];
+    }
+}
+
+// Apply Bc to Vx and Vz
+ApplyBC( mesh, model );
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -406,6 +445,9 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
             // Apply Bc to Vx and Vz
             ApplyBC( mesh, model );
             
+//            MinMaxArray( mesh->u_in, 1, nx*nzvx, "u in");
+//            SumArray( mesh->u_in, 1, nx*nzvx, "u in");
+            
             //------------------------------------------------------------------------------------------------------
             
             // Some stuff to be put on vertices                       < ---------------------- get P from centroids to vertices
@@ -605,7 +647,7 @@ void SolveStokesDefectDecoupled( SparseMat *StokesA, SparseMat *StokesB, SparseM
     printf("** Time for direct Stokes solver = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
     
     if ( model->diag_scaling == 1 ) {
-    ScaleVelocitiesRHSBack(StokesA, StokesD, dx);
+        ScaleVelocitiesRHSBack(StokesA, StokesD, dx);
     }
     
     // Line search
@@ -613,8 +655,27 @@ void SolveStokesDefectDecoupled( SparseMat *StokesA, SparseMat *StokesB, SparseM
         alpha = LineSearchDecoupled( Stokes, StokesA, StokesB, StokesC, StokesD, dx, mesh, model, Nmodel, particles, topo_chain, topo, materials, scaling  );
     }
     
-    // Return updated solution vector
-    if ( Nmodel->stagnated == 0) ArrayPlusScalarArray( Stokes->x, alpha, dx, Stokes->neq );
+    // Same solution extraction than in line search - consistent
+    ExtractSolutions2( Stokes, mesh, model, dx, alpha );
+    
+//    InitialiseSolutionVector( mesh, Stokes, model );
+    
+    
+//    // Return updated solution vector
+//    if ( Nmodel->stagnated == 0) ArrayPlusScalarArray( Stokes->x, alpha, dx, Stokes->neq );
+//
+//    //    MinMaxArray( mesh->u_in, 1, mesh->Nx*(mesh->Nz+1), "u in");
+//    SumArray( mesh->u_in, 1, mesh->Nx*(mesh->Nz+1), "u in");
+//
+//    ExtractSolutions( Stokes, mesh, model );
+    
+    //    MinMaxArray( mesh->u_in, 1, mesh->Nx*(mesh->Nz+1), "u in");
+    SumArray( mesh->u_in, 1, mesh->Nx*(mesh->Nz+1), "u in");
+    
+    EvaluateStokesResidualDecoupled( Stokes, StokesA, StokesB, StokesC, StokesD, Nmodel, mesh, *model, scaling, 0 );
+    
+    
+//    exit(1);
 
     DoodzFree(dx);
     DoodzFree(fu);
@@ -646,7 +707,7 @@ void EvaluateStokesResidual( SparseMat *Stokes, Nparams *Nmodel, grid *mesh, par
     for( cc=0; cc<nzvx*nx; cc++) {
         if ( mesh->BCu.type[cc] != 0 && mesh->BCu.type[cc] != 30 && mesh->BCu.type[cc] != 11 && mesh->BCu.type[cc] != 13 && mesh->BCu.type[cc] != -12) {
             ndofx++;
-            resx += Stokes->F[Stokes->eqn_u[cc]]*Stokes->F[Stokes->eqn_u[cc]];
+            resx        += Stokes->F[Stokes->eqn_u[cc]]*Stokes->F[Stokes->eqn_u[cc]];
             mesh->ru[cc] = Stokes->F[Stokes->eqn_u[cc]];
         }
     }
@@ -656,7 +717,7 @@ void EvaluateStokesResidual( SparseMat *Stokes, Nparams *Nmodel, grid *mesh, par
     for( cc=0; cc<nz*nxvz; cc++) {
         if ( mesh->BCv.type[cc] != 0 && mesh->BCv.type[cc] != 30 && mesh->BCv.type[cc] != 11 && mesh->BCv.type[cc] != 13 && mesh->BCv.type[cc] != -12) {
             ndofz++;
-            resz += Stokes->F[Stokes->eqn_v[cc]]*Stokes->F[Stokes->eqn_v[cc]];
+            resz        += Stokes->F[Stokes->eqn_v[cc]]*Stokes->F[Stokes->eqn_v[cc]];
             mesh->rv[cc] = Stokes->F[Stokes->eqn_v[cc]];
         }
     }
@@ -666,8 +727,8 @@ void EvaluateStokesResidual( SparseMat *Stokes, Nparams *Nmodel, grid *mesh, par
     for( cc=0; cc<ncz*ncx; cc++) {
         if ( mesh->BCp.type[cc] != 0 && mesh->BCp.type[cc] != 30  && mesh->BCp.type[cc] != 31) {
             ndofp++;
-            Area += celvol;
-            resp += Stokes->F[Stokes->eqn_p[cc]]*Stokes->F[Stokes->eqn_p[cc]];
+            Area        += celvol;
+            resp        += Stokes->F[Stokes->eqn_p[cc]]*Stokes->F[Stokes->eqn_p[cc]];
             mesh->rp[cc] = Stokes->F[Stokes->eqn_p[cc]];
         }
     }
@@ -713,6 +774,9 @@ void EvaluateStokesResidualDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
     double resp = 0.0;
     
     // Function evaluation
+//    if ( model.aniso == 0 ) BuildStokesOperatorDecoupled( mesh, model, 0, mesh->p_in,  mesh->u_in,  mesh->v_in, Stokes, StokesA, StokesB, StokesC, StokesD, 0 );
+//    if ( model.aniso == 1 ) BuildJacobianOperatorDecoupled( mesh, model, 0, mesh->p_in,  mesh->u_in,  mesh->v_in, Stokes, StokesA, StokesB, StokesC, StokesD, 0 );
+    
     BuildStokesOperatorDecoupled( mesh, model, 0, mesh->p_in,  mesh->u_in,  mesh->v_in, Stokes, StokesA, StokesB, StokesC, StokesD, 0 );
     
     // Integrate residuals
@@ -720,8 +784,8 @@ void EvaluateStokesResidualDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
     for( cc=0; cc<nzvx*nx; cc++) {
         if ( mesh->BCu.type[cc] != 0 && mesh->BCu.type[cc] != 30 && mesh->BCu.type[cc] != 11 && mesh->BCu.type[cc] != 13 && mesh->BCu.type[cc] != -12) {
             ndofx++;
-            resx += StokesA->F[Stokes->eqn_u[cc]]*StokesA->F[Stokes->eqn_u[cc]];
-            mesh->ru[cc] = StokesA->F[Stokes->eqn_u[cc]];
+            resx                          += StokesA->F[Stokes->eqn_u[cc]]*StokesA->F[Stokes->eqn_u[cc]];
+            mesh->ru[cc]                   = StokesA->F[Stokes->eqn_u[cc]];
             StokesA->F[Stokes->eqn_u[cc]] *= StokesA->d[Stokes->eqn_u[cc]]; // Need to scale the residual here for Defect Correction formulation (F is the RHS)
         }
     }
@@ -731,8 +795,8 @@ void EvaluateStokesResidualDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
     for( cc=0; cc<nz*nxvz; cc++) {
         if ( mesh->BCv.type[cc] != 0 && mesh->BCv.type[cc] != 30 && mesh->BCv.type[cc] != 11 && mesh->BCv.type[cc] != 13 && mesh->BCv.type[cc] != -12) {
             ndofz++;
-            resz += StokesA->F[Stokes->eqn_v[cc]]*StokesA->F[Stokes->eqn_v[cc]];
-            mesh->rv[cc] = StokesA->F[Stokes->eqn_v[cc]];
+            resz                          += StokesA->F[Stokes->eqn_v[cc]]*StokesA->F[Stokes->eqn_v[cc]];
+            mesh->rv[cc]                   = StokesA->F[Stokes->eqn_v[cc]];
             StokesA->F[Stokes->eqn_v[cc]] *= StokesA->d[Stokes->eqn_v[cc]]; // Need to scale the residual here for Defect Correction formulation (F is the RHS)
         }
     }
@@ -742,8 +806,8 @@ void EvaluateStokesResidualDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
     for( cc=0; cc<ncz*ncx; cc++) {
         if ( mesh->BCp.type[cc] != 0 && mesh->BCp.type[cc] != 30  && mesh->BCp.type[cc] != 31) {
             ndofp++;
-            resp += StokesD->F[Stokes->eqn_p[cc]- Stokes->neq_mom]*StokesD->F[Stokes->eqn_p[cc]- Stokes->neq_mom];
-            mesh->rp[cc] = StokesD->F[Stokes->eqn_p[cc]- Stokes->neq_mom];
+            resp                                           += StokesD->F[Stokes->eqn_p[cc]- Stokes->neq_mom]*StokesD->F[Stokes->eqn_p[cc]- Stokes->neq_mom];
+            mesh->rp[cc]                                    = StokesD->F[Stokes->eqn_p[cc]- Stokes->neq_mom];
             StokesD->F[Stokes->eqn_p[cc]- Stokes->neq_mom] *= StokesD->d[Stokes->eqn_p[cc]- Stokes->neq_mom]; // Need to scale the residual here for Defect Correction formulation (F is the RHS)
         }
     }

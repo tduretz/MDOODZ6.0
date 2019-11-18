@@ -487,6 +487,8 @@ void ComputeLithostaticPressure( grid *mesh, params *model, double RHO_REF, scal
     ncx = nx-1;
     ncz = nz-1;
     
+    printf("MODEL Gz = %2.2e\n", model->gz);
+    
     Initialise1DArrayDouble( mesh->p_lith,  (mesh->Nx-1)*(mesh->Nz-1), 0.0 );
 
     // Cell center arrays
@@ -495,20 +497,31 @@ void ComputeLithostaticPressure( grid *mesh, params *model, double RHO_REF, scal
             
             // Initialise vertices variables
             c  = k + l*ncx;
-            
+
             mesh->p_lith[c]  = 0.0;
-            
+
             // density
             if ( mode == 0 ) rho_eff = RHO_REF;
             if ( mode == 1 ) rho_eff = mesh->rho_app_n[c];
 
             // Initialise pressure variables : Compute lithostatic pressure
             if ( mesh->BCp.type[c] != 30 && mesh->BCp.type[c] != 31 ) { // First row (surface)
-                mesh->p_lith[c]  = mesh->p_lith[c+ncx] -  model->gz * mesh->dz * rho_eff + eps;
-                mesh->p[c]       = mesh->p_in[c];
+                mesh->p_lith[c]  = mesh->p_lith[c+ncx] -  model->gz * mesh->dz * rho_eff;
+  
             }
         }
     }
+    
+    // + eps
+    // Cell center arrays
+    for( l=0; l<ncz; l++) {
+        for( k=0; k<ncx; k++) {            
+            c  = k + l*ncx;
+            mesh->p_lith[c] += eps;
+            mesh->p[c]       = mesh->p_in[c];
+        }
+    }
+    
 
 }
 

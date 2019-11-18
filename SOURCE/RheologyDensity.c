@@ -42,13 +42,15 @@
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Newton ) {
+void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobian ) {
     
     int Nx, Nz, Ncx, Ncz, k;
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
     
-    if (Newton == 0  && model->aniso == 0) {
+    double nx, nz, deta=5e21/scaling->eta;
+    
+    if (Jacobian == 0  && model->aniso == 0) {
         
         // Loop on cell centers
 #pragma omp parallel for shared( mesh )
@@ -78,7 +80,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Newton
         
     }
     
-    if (Newton == 1  && model->aniso == 0) {
+    if (Jacobian == 1  && model->aniso == 0) {
         
         double etae;
         int el = model->iselastic;
@@ -163,7 +165,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Newton
         
     }
     
-    if ( Newton == 0 && model->aniso == 1 ) {
+    if ( Jacobian == 0 && model->aniso == 1 ) {
         
         printf("Computing anisotropic viscosity tensor\n");
         
@@ -171,15 +173,19 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Newton
 #pragma omp parallel for shared( mesh ) private ( etae, el )
         for (k=0; k<Ncx*Ncz; k++) {
             
+            // Director
+            nx = mesh->nx_n[k];
+            nz = mesh->nz_n[k];
+            
             if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
-                mesh->D11_n[k] = 2.0*mesh->eta_n[k] + 0.0;
-                mesh->D12_n[k] =                      0.0;
-                mesh->D13_n[k] =                      0.0;
+                mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 4.0*deta*pow(nx, 2.0)*pow(nz, 2.0);
+                mesh->D12_n[k] =                      4.0*deta*pow(nx, 2.0)*pow(nz, 2.0);
+                mesh->D13_n[k] =                      1.0*deta*(pow(nx, 3.0)*nz - pow(nx, 4.0));
                 mesh->D14_n[k] =                      0.0;
                 
-                mesh->D21_n[k] =                      0.0;
-                mesh->D22_n[k] = 2.0*mesh->eta_n[k] + 0.0;
-                mesh->D23_n[k] =                      0.0;
+                mesh->D21_n[k] =                      4.0*deta*pow(nx, 2.0)*pow(nz, 2.0);
+                mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 4.0*deta*pow(nx, 2.0)*pow(nz, 2.0);
+                mesh->D23_n[k] =                      1.0*deta*(-pow(nx, 3.0)*nz + pow(nx, 4.0));
                 mesh->D24_n[k] =                      0.0;
             }
             else {
@@ -199,10 +205,14 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Newton
 #pragma omp parallel for shared( mesh )  private ( etae, el ) firstprivate ( Newton )
         for (k=0; k<Nx*Nz; k++) {
             
+            // Director
+            nx = mesh->nx_s[k];
+            nz = mesh->nz_s[k];
+            
             if ( mesh->BCg.type[k] != 30 ) {
-                mesh->D31_s[k] =                  0.0;  // Factor 2 is important!!
-                mesh->D32_s[k] =                  0.0;
-                mesh->D33_s[k] = mesh->eta_s[k] + 0.0;
+                mesh->D31_s[k] =                  2.0*deta*(pow(nx, 3.0)*nz - pow(nx, 4.0));
+                mesh->D32_s[k] =                  2.0*deta*(-pow(nx, 3.0)*nz + pow(nx, 4.0));
+                mesh->D33_s[k] = mesh->eta_s[k] + deta*(2.0*pow(nx, 2.0)*pow(nz, 2.0) - 0.5);
                 mesh->D34_s[k] =                  0.0;
             }
             else {
@@ -2984,6 +2994,7 @@ void ComputeViscosityDerivatives_FD( grid* mesh, mat_prop *materials, params *mo
             pert_zz = eps*eii;
             pert_xz = eps*eii;
             pert_p  = eps*Pn;//eps1;
+            pert_p  = eps1;
 
             // Loop on phases
             for ( p=0; p<model->Nb_phases; p++) {
@@ -3055,7 +3066,7 @@ void ComputeViscosityDerivatives_FD( grid* mesh, mat_prop *materials, params *mo
             mesh->detadexx_n[c0]      = (eta_exx - mesh->eta_n[c0]) / pert_xx;
             mesh->detadezz_n[c0]      = (eta_ezz - mesh->eta_n[c0]) / pert_zz;
             mesh->detadgxz_n[c0]      = (eta_exz - mesh->eta_n[c0]) / pert_xz / 2.0;
-            mesh->detadp_n[c0]        = 0.0;//(eta_p   - mesh->eta_n[c0]) / pert_p;
+            mesh->detadp_n[c0]        = (eta_p   - mesh->eta_n[c0]) / pert_p;
             
             //        printf("pert_p = %2.2e Pn = %2.2e\n", pert_p, Pn);
 //            if (isnan(mesh->detadp_n[c0])) {
@@ -3097,6 +3108,7 @@ void ComputeViscosityDerivatives_FD( grid* mesh, mat_prop *materials, params *mo
             pert_zz = eps*eii;
             pert_xz = eps*eii;
             pert_p  = eps*Ps;//eps1;
+            pert_p  = eps1;
             
 //            pert_xx = eps1;
 //            pert_zz = eps1;
@@ -3170,7 +3182,7 @@ void ComputeViscosityDerivatives_FD( grid* mesh, mat_prop *materials, params *mo
             mesh->detadexx_s[c1]      = (eta_exx - mesh->eta_s[c1]) / pert_xx;
             mesh->detadezz_s[c1]      = (eta_ezz - mesh->eta_s[c1]) / pert_zz;
             mesh->detadgxz_s[c1]      = (eta_exz - mesh->eta_s[c1]) / pert_xz / 2.0;
-            mesh->detadp_s[c1]        = 0.0;//(eta_p   - mesh->eta_s[c1]) / pert_p;
+            mesh->detadp_s[c1]        = (eta_p   - mesh->eta_s[c1]) / pert_p;
             
             
 //            if (isnan(mesh->detadp_s[c1] )) {
@@ -3178,7 +3190,7 @@ void ComputeViscosityDerivatives_FD( grid* mesh, mat_prop *materials, params *mo
 //            }
         }
         
-        //        printf("pert_p = %2.2e Pn = %2.2e eta_p=%2.2e mesh->eta_s=%2.2e\n", pert_p, Pn, eta_p, mesh->eta_s[c1]);
+//                printf("pert_p = %2.2e Pn = %2.2e eta_p=%2.2e mesh->eta_s=%2.2e\n", pert_p, Pn, eta_p, mesh->eta_s[c1]);
         
     }
     
