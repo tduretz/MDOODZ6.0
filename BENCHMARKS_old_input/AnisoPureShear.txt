@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00020
+istep = 00001
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -24,14 +24,17 @@ T   = 3.3197e+04
 /**** SPACE-TIME ****/
 Nx      = 101
 Nz      = 101
-Nt      = 20
+Nt      = 1
 xmin    = -25.000000e3
 zmin    = -25.000000e3
 xmax    =  25.000000e3
 zmax    =  25.000000e3
 dt      = 1.2623e+11
 Courant = 0.3
-penalty = 1e15
+penalty = 1e1
+lsolver = 2
+pc_type = 0
+DefectCorrectionForm = 1
 
 /**** SWITCHES ****/
 ismechanical    = 1
@@ -51,12 +54,13 @@ subgrid_diff    = 1
 shear_heat      = 1
 adiab_heat      = 0
 fstrain         = 1
+aniso           = 1
 
 /**** SETUP DEPENDANT ****/
 EpsBG           =-5e-14
 user0           = 400   / temperature [°C]
 user1           = 3e3   / inclusion radius [m]
-user2           = 0
+user2           = 1     / 1 is pure shear
 user3           = 0
 
 /**** GRAVITY ****/
@@ -79,8 +83,8 @@ Slim = 500e9
 alp  = 10.0e-6
 bet  = 1e-11
 drho = 0
-cstv = 0             / constant visc law
-pwlv = -12            / disloc. creep
+cstv = 1             / constant visc law
+pwlv = 0             / disloc. creep
 linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
@@ -103,13 +107,13 @@ Slim = 500e9
 alp  = 10.0e-6
 bet  = 1e-11
 drho = 0
-cstv = 0             / constant visc law
-pwlv = -10            / disloc. creep
+cstv = 1             / constant visc law
+pwlv = 0             / disloc. creep
 linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
 gsel = 0             / grain size evo.
-eta0 = 1e22
+eta0 = 1e20
 npwl = 1
 Qpwl = 0
 
@@ -132,43 +136,8 @@ min_part_cell = 16
 
 /**** PICARD ITERATIONS ****/
 Newton  = 0 
-nit_max = 10
+nit_max = 0
 tol_u   = 5e-10
 tol_p   = 5e-10
 mineta  = 1e19
 maxeta  = 1e25
-
-/**** DIRECT SOLVER SETTINGS ****/
-lsolver     = 0
-direct_iter = 0
-pivot_pert  = 13
-
-/**** MULTIGRID SETTINGS ****/
-n_level     = 1
-nit_out_max = 100
-tol_u       = 1e-6
-tol_p       = 1e-6
-coarsen     = 0               0/coarsen homogeneously                       1/control the coarser resolution (semi-coarsening)
-Nx_min      = 10
-Nz_min      = 10
-
-/**** Smoothers ****/
-urlx  = 0.9
-vrlx  = 0.9
-prlx  = 0.35
-ucoef = 1.0
-vcoef = 1.0
-pcoef = 1.0
-smoother = 0             0/smooth proportionally to resolution            1/fixed number of smoothing cycles
-SmoothElse     = 10               /smoothing cycles per level
-SmoothCoarse  = 1000        /smoothing cycles on corser level
-
-/**** Viscosity continuation ****/
-eta_min   = 1.0e4
-eta_max   = 1.0e11
-eta_n_stp = 5
-eta_cyc   = 3
-eta_nnn   = 0
-xmax      = 1000000
-xmax      = 50e3
-xmax      = 200000

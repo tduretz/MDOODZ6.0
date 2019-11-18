@@ -27,6 +27,7 @@ dt      = 1.2623e+11
 Courant = 0.3
 penalty = 1e5
 lsolver = -1
+pc_type = 0
 
 /**** SWITCHES ****/
 ismechanical    = 1
