@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00010
+istep = 00020
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -18,7 +18,7 @@ T   = 100
 /**** SPACE-TIME ****/
 Nx      = 101
 Nz      = 81
-Nt      = 200
+Nt      = 50
 xmin    = -5.000000e4
 zmin    = -3.000000e4
 xmax    =  5.000000e4
@@ -32,6 +32,8 @@ DefectCorrectionForm = 1
 diag_scaling = 1
 abs_tol_div = 1e-11
 rel_tol_div = 1e-11
+pc_type     = 1
+
 
 /**** SWITCHES ****/
 ismechanical    = 1
@@ -51,13 +53,14 @@ subgrid_diff    = 2
 shear_heat      = 0
 adiab_heat      = 0
 fstrain         = 0
-advection       = 1
 HomoFields      = 0
 delete_breakpoints = 0
 eta_VP          = 1e21
 GNUplot_residuals = 0
 no_markers      = 0
 eta_avg         = 1
+advection       = 1
+cpc             = -1
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = -1e-15
