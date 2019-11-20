@@ -254,9 +254,9 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
         fread( particles->Pmax       , s3, particles->Nb_part, file);
     }
     
-    if (model->isthermal == 1) {
+//    if (model->isthermal == 1) {
         fread( particles->T, s3, particles->Nb_part, file);
-    }
+   // }
     
     if (model->eqn_state > 0) {
         fread( particles->rho, s3, particles->Nb_part, file);
@@ -310,15 +310,18 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
         fread( mesh->BCu.val,   s3,  Nx*(Nz+1), file );
         fread( mesh->BCv.val,   s3,  (Nx+1)*Nz, file );
         fread( mesh->BCg.val,      s3,  Nx *Nz ,   file );
-        printf("Loading phase proportions:\n");
-        // Phase proportions
-        fread( &model->Nb_phases,  s1,        1,   file );
-        for ( k=0; k< model->Nb_phases; k++ ) {
+    MinMaxArray(mesh->BCg.val, 1.0, Nx *Nz, "mesh->BCg.val");
+
+    
+     // Phase proportions
+        printf("Loading phase proportions - Nb_phases = %d:\n", model->Nb_phases);
+//        fread( &model->Nb_phases,  s1,        1,   file );
+        for ( k=0; k<  model->Nb_phases; k++ ) { //model->Nb_phases
             fread( mesh->phase_perc_n[k], s3,  Ncx*Ncz,   file );
             fread( mesh->phase_perc_s[k], s3,  Nx *Nz ,   file );
-            //            printf("phase %02d:\n", k);
-            //            MinMaxArray(mesh->phase_perc_n[k], 1.0, Ncx*Ncz, "phase_perc_n");
-            //            MinMaxArray(mesh->phase_perc_s[k], 1.0, Nx *Nz, "phase_perc_s");
+            printf("phase %02d:\n", k);
+            MinMaxArray(mesh->phase_perc_n[k], 1.0, Ncx*Ncz, "phase_perc_n");
+            MinMaxArray(mesh->phase_perc_s[k], 1.0, Nx *Nz , "phase_perc_s");
         }
         fread( mesh->nb_part_cell, s1,  Ncx*Ncz,   file );
         fread( mesh->nb_part_vert, s1,  Nx *Nz ,   file );
@@ -679,9 +682,9 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
         fwrite( particles->Pmax       , s3, particles->Nb_part, file);
     }
     
-    if (model.isthermal == 1) {
+    //if (model.isthermal == 1) {
         fwrite( particles->T, s3, particles->Nb_part, file);
-    }
+    //}
     if (model.eqn_state > 0) {
         fwrite( particles->rho, s3, particles->Nb_part, file);
     }
@@ -731,15 +734,18 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     fwrite( mesh->BCu.val,   s3,  Nx*(Nz+1), file );
     fwrite( mesh->BCv.val,   s3,  (Nx+1)*Nz, file );
     fwrite( mesh->BCg.val,      s3,  Nx *Nz ,   file );
+    
+     MinMaxArray(mesh->BCg.val, 1.0, Nx *Nz, "mesh->BCg.val");
+    
     // Phase proportions
-    printf("Writing phase proportions:\n");
-    fwrite( &model.Nb_phases, s1,        1,   file );
+    printf("Loading phase proportions - Nb_phases = %d:\n", model.Nb_phases);
+//    fwrite( &model.Nb_phases, s1,        1,   file );
     for ( k=0; k< model.Nb_phases; k++ ) {
         fwrite( mesh->phase_perc_n[k], s3,  Ncx*Ncz,   file );
         fwrite( mesh->phase_perc_s[k], s3,  Nx *Nz ,   file );
-        //            printf("phase %02d:\n", k);
-        //            MinMaxArray(mesh->phase_perc_n[k], 1.0, Ncx*Ncz, "phase_perc_n");
-        //            MinMaxArray(mesh->phase_perc_s[k], 1.0, Nx *Nz, "phase_perc_s");
+        printf("phase %02d:\n", k);
+        MinMaxArray(mesh->phase_perc_n[k], 1.0, Ncx*Ncz, "phase_perc_n");
+        MinMaxArray(mesh->phase_perc_s[k], 1.0, Nx *Nz, "phase_perc_s");
     }
     fwrite( mesh->nb_part_cell, s1,  Ncx*Ncz,   file );
     fwrite( mesh->nb_part_vert, s1,  Nx *Nz ,   file );
@@ -775,9 +781,9 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             particles->szzd[k]   /= scaling.S;
             particles->sxz[k]    /= scaling.S;
         }
-        if (model.isthermal == 1) {
+//        if (model.isthermal == 1) {
             particles->T[k]  /= scaling.T;
-        }
+//        }
         if (model.eqn_state > 0) {
             particles->rho[k]  /= scaling.rho;
         }

@@ -185,6 +185,8 @@ struct _grid {
     double *detadexx_s, *detadezz_s, *detadgxz_s, *detadp_s;
     double *phi1_s, *d0_s, *T_s, *P_s;
     
+    double *nx_n, *nz_n, *nx_s, *nz_s;
+    
     // To remove
     double *exx_pwl_n, *exz_pwl_n, *exx_pwl_s, *exz_pwl_s, *exx_pl, *exz_pl;
     

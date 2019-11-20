@@ -2064,7 +2064,8 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
                 for (jc=0; jc<Ncz; jc++) {
                     ip =        ic + jc*ncx[ith];
                     kc = offc + ic + jc*Ncx;
-                    mesh->phase_perc_n[k][kc] = phc[ith][k][ip];
+                    mesh->nb_part_cell[kc]    = npc[ith][ip];
+                    if ( mesh->nb_part_cell[kc]>0 ) mesh->phase_perc_n[k][kc] = phc[ith][k][ip];
                 }
             }
 
@@ -2076,11 +2077,15 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
                 for (jc=0; jc<Nz; jc++) {
                     ip =        ic + jc*nx[ith];
                     kc = offc + ic + jc*Nx;
-                    mesh->phase_perc_s[k][kc] = phv[ith][k][ip];
+                    mesh->nb_part_vert[kc]    = npv[ith][ip];
+                    if ( mesh->nb_part_vert[kc]>0 ) mesh->phase_perc_s[k][kc] = phv[ith][k][ip];
                 }
             }
 
         }
+        
+        MinMaxArrayTag( mesh->phase_perc_n[0], 1.0, Ncx*Ncz, "phase % n", mesh->BCp.type );
+        
 
 
         // ------------------------------------ RE-SEEDING ------------------------------------ //

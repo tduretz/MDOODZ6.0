@@ -2069,11 +2069,15 @@ void NonNewtonianViscosityGrid( grid* mesh, mat_prop *materials, params *model, 
                 if (isinf (mesh->eta_phys_s[c1]) ) {
                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_s[p][c1]);
                     printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e \n", mesh->mu_s[c1],  mesh->eii_s[c1],  mesh->tii0_s[c1], mesh->exxd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->sxz0[c1]);
+                    printf("x=%2.2e z=%2.2e\n", mesh->xg_coord[k]*scaling->L/1000, mesh->zg_coord[l]*scaling->L/1000);
+
                     exit(1);
                 }
                 if (isnan (mesh->eta_phys_s[c1]) ) {
                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_s[p][c1]);
                     printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e \n", mesh->mu_s[c1],  mesh->eii_s[c1],  mesh->tii0_s[c1], mesh->exxd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->sxz0[c1]);
+                    printf("x=%2.2e z=%2.2e\n", mesh->xg_coord[k]*scaling->L/1000, mesh->zg_coord[l]*scaling->L/1000);
+
                     exit(1);
                 }
             }
