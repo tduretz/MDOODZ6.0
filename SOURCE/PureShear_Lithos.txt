@@ -1,6 +1,6 @@
 /**** RESTART ****/
-istep = 00100
-irestart = 1
+istep = 00090
+irestart = 0
 Nt       = 100
 
 /**** OUTPUT FILES ****/
