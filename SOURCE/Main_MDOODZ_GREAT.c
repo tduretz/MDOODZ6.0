@@ -427,7 +427,7 @@ int main( int nargs, char *args[] ) {
         t_omp = (double)omp_get_wtime();
 
         // Energy - interpolate thermal parameters and advected energy
-//        if ( model.isthermal == 1 ) {
+        if ( model.isthermal == 1 ) {
 
             // Get energy and related material parameters from particles
             Interp_P2C ( particles, materials.Cv,   &mesh, mesh.Cv,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
@@ -438,7 +438,7 @@ int main( int nargs, char *args[] ) {
 
             // Get T from previous step from particles
             Interp_P2C ( particles, particles.T, &mesh, mesh.T, mesh.xg_coord, mesh.zg_coord,  1, 0 );
-//        }
+        }
 
         // Get physical properties that are constant throughout each timestep
         if ( model.eqn_state  > 0 ) {
@@ -619,7 +619,7 @@ int main( int nargs, char *args[] ) {
             // Some stuff to be put on vertices                       < ---------------------- get P from centroids to vertices
             Interp_TPdphi_centroid2vertices (&mesh, &model );
 
-            int aniso;
+            int aniso = 0;
             // Non-Linearity
             if  (model.aniso==1) {
                 aniso = 1;
