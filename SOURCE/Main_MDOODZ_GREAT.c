@@ -62,6 +62,7 @@ int main( int nargs, char *args[] ) {
     SparseMat    StokesA, StokesB, StokesC, StokesD;
     SparseMat    JacobA,  JacobB,  JacobC,  JacobD;
     int          Nx, Nz, Ncx, Ncz;
+    int          Np0;
     
     double *rx_array, *rz_array, *rp_array;
     
@@ -1070,13 +1071,15 @@ int main( int nargs, char *args[] ) {
             printf("Before re-seeding : number of particles = %d\n", particles.Nb_part);
             t_omp = (double)omp_get_wtime();
             
+            Np0 = particles.Nb_part;
+            
             // Count the number of particle per cell
             t_omp = (double)omp_get_wtime();
 //            if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 1, scaling );
             if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
 //            if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 1, scaling );
             if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
-//            if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
+            if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
             if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
             printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
             
@@ -1149,6 +1152,9 @@ int main( int nargs, char *args[] ) {
         printf("** Total timestep calculation time = %lf sec\n", (double)((double)omp_get_wtime() - t_omp_step) );
         printf("** Model time = %2.2e sec\n", model.time*scaling.t );
         printf("** Current dt = %2.2e sec, Old dt = %2.2e sec\n", model.dt*scaling.t, model.dt0*scaling.t );
+        
+       // if (Np0 - particles.Nb_part != 0) exit (1);
+        
 
     }
     

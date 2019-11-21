@@ -359,7 +359,7 @@ int FindClosestPhase2( markers* particles, double *newx, double* newz, int ic, i
     double dst, min_dst;
     int ind, min_index=ind_list[0];
 
-    min_dst = 20.0*sqrt( pow( mesh.dx, 2.0) + pow( mesh.dz, 2.0) );
+    min_dst = (model.xmax-model.xmin);//*sqrt( pow( mesh.dx, 2.0) + pow( mesh.dz, 2.0) );
 
     if (sedim==0) {
 
@@ -2035,16 +2035,16 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
                 }
             }
         }
-
-        // Count number of particles available for re-use (no overlapping particles)
-        for (ip=0; ip<npartr[ith]; ip++) {
-            k = pidxr[ith][ip];
-            if ( particles->phase[k] == -1 ) {
-                // -------- Check What's OUT  ----------
-                // If particles are taged as 'out' (-1): count them for re-use
-                (npreuse[ith])++;
-            }
-        }
+//
+//        // Count number of particles available for re-use (no overlapping particles)
+//        for (ip=0; ip<npartr[ith]; ip++) {
+//            k = pidxr[ith][ip];
+//            if ( particles->phase[k] == -1 ) {
+//                // -------- Check What's OUT  ----------
+//                // If particles are taged as 'out' (-1): count them for re-use
+//                (npreuse[ith])++;
+//            }
+//        }
 
         // Phase proportions
         for (k=0; k<model.Nb_phases; k++) {
@@ -2105,11 +2105,11 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
 
                     // -------- Check CELLS ---------- //
                     distance                      = particles->x[k] - (xc_e[ith][0]-dx/4.0);
-                    ic                            = ceil((distance/dx*2)+0.5) -1;
+                    ic                            = ceil((distance/dx*2.0)+0.5) -1;
                     if (ic<0)                  ic = 0;
                     if (ic>2*(ncx_e[ith]+0)-1) ic = 2*(ncx_e[ith]+0)-1;
                     distance                      = particles->z[k] - (zc_e[0]-dz/4.0);
-                    jc                            = ceil((distance/dz*2)+0.5) -1;
+                    jc                            = ceil((distance/dz*2.0)+0.5) -1;
                     if (jc<0)                  jc = 0;
                     if (jc>2*ncz_e-1)          jc = 2*ncz_e-1;
 
@@ -2131,7 +2131,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
                                 mpc[ith][kc]++;
                             }
 
-                            // Count particles from Wesr side to East side of last thread
+                            // Count particles from West side to East side of last thread
                             if (ic==0 && ith==nthreads-1) {
                                 kc =  2*(ncx_e[ith]+0)-1+ jc * 2*(ncx_e[ith]+0);
                                 mpc[ith][kc]++;
@@ -2151,10 +2151,10 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
             ic           = 0;
             for (ip=0; ip<npartr[ith]; ip++) {
                 k = pidxr[ith][ip];
-                if ( particles->phase[k] == -1 ) {
-                    ipreuse[ith][ic] = k;
-                    ic++;
-                }
+//                if ( particles->phase[k] == -1 ) {
+//                    ipreuse[ith][ic] = k;
+//                    ic++;
+//                }
             }
 
             // Build list of particles index and particles number per cell
@@ -2212,8 +2212,8 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
             }
 
             // Loop on cells and add particles
-            for (k=0; k<2*ncx_e[ith]-0; k++) {
-                for (l=0; l<2*ncz_e-0; l++) {
+            for (k=2; k<2*ncx_e[ith]-2; k++) {
+                for (l=2; l<2*ncz_e-2; l++) {
 
                     kd = k + l * 2*(ncx_e[ith]+0);
 
@@ -2253,30 +2253,30 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
                             neighs += mpc[ith][kd+1];
                             neighs += mpc[ith][kd-nxl];
                             neighs += mpc[ith][kd+nxl];
-//                            // Diagonal neighbours
-//                            neighs += mpc[ith][kd-1-nxl];
-//                            neighs += mpc[ith][kd+1-nxl];
-//                            neighs += mpc[ith][kd-1+nxl];
-//                            neighs += mpc[ith][kd+1+nxl];
-//                            // Extended neighbours
-//                            neighs += mpc[ith][kd-2];
-//                            neighs += mpc[ith][kd+2];
-//                            neighs += mpc[ith][kd-2*nxl];
-//                            neighs += mpc[ith][kd+2*nxl];
-//                            // Extended diagonal neighbours
-//                            neighs += mpc[ith][kd-2 - 2*nxl];
-//                            neighs += mpc[ith][kd+2 - 2*nxl];
-//                            neighs += mpc[ith][kd-2 + 2*nxl];
-//                            neighs += mpc[ith][kd+2 + 2*nxl];
-//                            // Missing guys
-//                            neighs += mpc[ith][kd-1 -2*nxl];
-//                            neighs += mpc[ith][kd+1 -2*nxl];
-//                            neighs += mpc[ith][kd-1 +2*nxl];
-//                            neighs += mpc[ith][kd+1 +2*nxl];
-//                            neighs += mpc[ith][kd-2 -1*nxl];
-//                            neighs += mpc[ith][kd-2 +1*nxl];
-//                            neighs += mpc[ith][kd+2 -1*nxl];
-//                            neighs += mpc[ith][kd+2 +1*nxl];
+                            // Diagonal neighbours
+                            neighs += mpc[ith][kd-1-nxl];
+                            neighs += mpc[ith][kd+1-nxl];
+                            neighs += mpc[ith][kd-1+nxl];
+                            neighs += mpc[ith][kd+1+nxl];
+                            // Extended neighbours
+                            neighs += mpc[ith][kd-2];
+                            neighs += mpc[ith][kd+2];
+                            neighs += mpc[ith][kd-2*nxl];
+                            neighs += mpc[ith][kd+2*nxl];
+                            // Extended diagonal neighbours
+                            neighs += mpc[ith][kd-2 - 2*nxl];
+                            neighs += mpc[ith][kd+2 - 2*nxl];
+                            neighs += mpc[ith][kd-2 + 2*nxl];
+                            neighs += mpc[ith][kd+2 + 2*nxl];
+                            // Missing guys
+                            neighs += mpc[ith][kd-1 -2*nxl];
+                            neighs += mpc[ith][kd+1 -2*nxl];
+                            neighs += mpc[ith][kd-1 +2*nxl];
+                            neighs += mpc[ith][kd+1 +2*nxl];
+                            neighs += mpc[ith][kd-2 -1*nxl];
+                            neighs += mpc[ith][kd-2 +1*nxl];
+                            neighs += mpc[ith][kd+2 -1*nxl];
+                            neighs += mpc[ith][kd+2 +1*nxl];
 
                             if (neighs == 0) {
                                 printf("All the neighbouring CELLS of ix = %d iz = %d are empty, simulation will stop\n", k, l);
@@ -2313,111 +2313,111 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
                                 oo++;
                             }
 
-//                            // Diagonal cells: add particles from neigbours
-//                            for ( nb=0; nb<mpc[ith][kd-1-nxl]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd-1-nxl][nb];
-//                                oo++;
-//                            }
-//
-//                            for ( nb=0; nb<mpc[ith][kd+1-nxl]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd+1-nxl][nb];
-//                                oo++;
-//                            }
-//
-//                            for ( nb=0; nb<mpc[ith][kd-1+nxl]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd-1+nxl][nb];
-//                                oo++;
-//                            }
-//
-//                            for ( nb=0; nb<mpc[ith][kd+1+nxl]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd+1+nxl][nb];
-//                                oo++;
-//                            }
-//
-//                            // Extended neighbours
-//                            for ( nb=0; nb<mpc[ith][kd-2]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd-2][nb];
-//                                oo++;
-//                            }
-//
-//                            for ( nb=0; nb<mpc[ith][kd+2]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd+2][nb];
-//                                oo++;
-//                            }
-//
-//                            for ( nb=0; nb<mpc[ith][kd-2*nxl]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd-2*nxl][nb];
-//                                oo++;
-//                            }
-//
-//                            for ( nb=0; nb<mpc[ith][kd+2*nxl]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd+2*nxl][nb];
-//                                oo++;
-//                            }
-//
-//                            // Extended diagonal neighbours
-//                            for ( nb=0; nb<mpc[ith][kd-2-2*nxl]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd-2-2*nxl][nb];
-//                                oo++;
-//                            }
-//
-//                            for ( nb=0; nb<mpc[ith][kd+2-2*nxl]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd+2-2*nxl][nb];
-//                                oo++;
-//                            }
-//
-//                            for ( nb=0; nb<mpc[ith][kd-2+2*nxl]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd-2+2*nxl][nb];
-//                                oo++;
-//                            }
-//
-//                            for ( nb=0; nb<mpc[ith][kd+2+2*nxl]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd+2+2*nxl][nb];
-//                                oo++;
-//                            }
-//
-//                            // Missing guys
-//                            for ( nb=0; nb<mpc[ith][kd-1 -2*nxl]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd-1 -2*nxl][nb];
-//                                oo++;
-//                            }
-//
-//                            for ( nb=0; nb<mpc[ith][kd+1 -2*nxl]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd+1 -2*nxl][nb];
-//                                oo++;
-//                            }
-//
-//                            for ( nb=0; nb<mpc[ith][kd-1 +2*nxl]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd-1 +2*nxl][nb];
-//                                oo++;
-//                            }
-//
-//                            for ( nb=0; nb<mpc[ith][kd+1 +2*nxl]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd+1 +2*nxl][nb];
-//                                oo++;
-//                            }
-//
-//                            for ( nb=0; nb<mpc[ith][kd-2 -1*nxl]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd-2 -1*nxl][nb];
-//                                oo++;
-//                            }
-//
-//
-//                            for ( nb=0; nb<mpc[ith][kd-2 +1*nxl]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd-2 +1*nxl][nb];
-//                                oo++;
-//                            }
-//
-//
-//                            for ( nb=0; nb<mpc[ith][kd+2 -1*nxl]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd+2 -1*nxl][nb];
-//                                oo++;
-//                            }
-//
-//                            for ( nb=0; nb<mpc[ith][kd+2 +1*nxl]; nb++ ) {
-//                                ind_list[ith][oo] = ipcell[ith][kd+2 +1*nxl][nb];
-//                                oo++;
-//                            }
+                            // Diagonal cells: add particles from neigbours
+                            for ( nb=0; nb<mpc[ith][kd-1-nxl]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd-1-nxl][nb];
+                                oo++;
+                            }
+
+                            for ( nb=0; nb<mpc[ith][kd+1-nxl]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd+1-nxl][nb];
+                                oo++;
+                            }
+
+                            for ( nb=0; nb<mpc[ith][kd-1+nxl]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd-1+nxl][nb];
+                                oo++;
+                            }
+
+                            for ( nb=0; nb<mpc[ith][kd+1+nxl]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd+1+nxl][nb];
+                                oo++;
+                            }
+
+                            // Extended neighbours
+                            for ( nb=0; nb<mpc[ith][kd-2]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd-2][nb];
+                                oo++;
+                            }
+
+                            for ( nb=0; nb<mpc[ith][kd+2]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd+2][nb];
+                                oo++;
+                            }
+
+                            for ( nb=0; nb<mpc[ith][kd-2*nxl]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd-2*nxl][nb];
+                                oo++;
+                            }
+
+                            for ( nb=0; nb<mpc[ith][kd+2*nxl]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd+2*nxl][nb];
+                                oo++;
+                            }
+
+                            // Extended diagonal neighbours
+                            for ( nb=0; nb<mpc[ith][kd-2-2*nxl]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd-2-2*nxl][nb];
+                                oo++;
+                            }
+
+                            for ( nb=0; nb<mpc[ith][kd+2-2*nxl]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd+2-2*nxl][nb];
+                                oo++;
+                            }
+
+                            for ( nb=0; nb<mpc[ith][kd-2+2*nxl]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd-2+2*nxl][nb];
+                                oo++;
+                            }
+
+                            for ( nb=0; nb<mpc[ith][kd+2+2*nxl]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd+2+2*nxl][nb];
+                                oo++;
+                            }
+
+                            // Missing guys
+                            for ( nb=0; nb<mpc[ith][kd-1 -2*nxl]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd-1 -2*nxl][nb];
+                                oo++;
+                            }
+
+                            for ( nb=0; nb<mpc[ith][kd+1 -2*nxl]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd+1 -2*nxl][nb];
+                                oo++;
+                            }
+
+                            for ( nb=0; nb<mpc[ith][kd-1 +2*nxl]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd-1 +2*nxl][nb];
+                                oo++;
+                            }
+
+                            for ( nb=0; nb<mpc[ith][kd+1 +2*nxl]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd+1 +2*nxl][nb];
+                                oo++;
+                            }
+
+                            for ( nb=0; nb<mpc[ith][kd-2 -1*nxl]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd-2 -1*nxl][nb];
+                                oo++;
+                            }
+
+
+                            for ( nb=0; nb<mpc[ith][kd-2 +1*nxl]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd-2 +1*nxl][nb];
+                                oo++;
+                            }
+
+
+                            for ( nb=0; nb<mpc[ith][kd+2 -1*nxl]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd+2 -1*nxl][nb];
+                                oo++;
+                            }
+
+                            for ( nb=0; nb<mpc[ith][kd+2 +1*nxl]; nb++ ) {
+                                ind_list[ith][oo] = ipcell[ith][kd+2 +1*nxl][nb];
+                                oo++;
+                            }
 
                             // Identify closer points
                             AddPartCell2( pidx[ith], &(npart[ith]), particles, *mesh, k-2, l-2, ind_list[ith], model, neighs, topo, xg[ith], mesh->zg_coord, ic, &(nnewp[ith]), newx[ith], newz[ith], newi[ith], sed_phase, topo_ini );
@@ -2428,7 +2428,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
                 }
             }
 
-            //            printf("%d re-used particles, %d particles left out\n", inc_reuse, npreuse[ith]-inc_reuse);
+//                        printf("%d re-used particles, %d particles left out\n", inc_reuse, npreuse[ith]-inc_reuse);
         }
     }
 
@@ -2437,17 +2437,17 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
 
         // Create indices in global particle arrays for newly created particles (if not reused indices!)
         for (ith=0; ith<nthreads; ith++) {
-            num_new[ith] = 0;
-            id_new[ith]  = 0;
+            num_new[ith] = 0;     // nb of particles using new indices
+            id_new[ith]  = 0;     // new indices
             if (nnewp[ith] > npreuse[ith]) {
-                num_new[ith] = nnewp[ith] - npreuse[ith];
+                num_new[ith] = nnewp[ith] - npreuse[ith]; // nb of particles using new indices
             }
         }
         for (ith=0; ith<nthreads; ith++) {
             if (nnewp[ith] > npreuse[ith]) {
                 ip           = 0;
-                for (ic=1; ic<ith+1; ic++) {
-                    ip += num_new[ic-1];
+                for (ic=0; ic<ith; ic++) {  // removed the +1 => for (ic=1; ic<ith+1; ic++)
+                    ip += num_new[ic];      // removed the -1 => ip += num_new[ic-1]
                 }
                 id_new[ith]  = Nb_part + ip;
             }
