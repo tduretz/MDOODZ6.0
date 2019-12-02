@@ -310,7 +310,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
         fread( mesh->BCu.val,   s3,  Nx*(Nz+1), file );
         fread( mesh->BCv.val,   s3,  (Nx+1)*Nz, file );
         fread( mesh->BCg.val,      s3,  Nx *Nz ,   file );
-    MinMaxArray(mesh->BCg.val, 1.0, Nx *Nz, "mesh->BCg.val");
+//    MinMaxArray(mesh->BCg.val, 1.0, Nx *Nz, "mesh->BCg.val");
 
     
      // Phase proportions
@@ -319,9 +319,9 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
         for ( k=0; k<  model->Nb_phases; k++ ) { //model->Nb_phases
             fread( mesh->phase_perc_n[k], s3,  Ncx*Ncz,   file );
             fread( mesh->phase_perc_s[k], s3,  Nx *Nz ,   file );
-            printf("phase %02d:\n", k);
-            MinMaxArray(mesh->phase_perc_n[k], 1.0, Ncx*Ncz, "phase_perc_n");
-            MinMaxArray(mesh->phase_perc_s[k], 1.0, Nx *Nz , "phase_perc_s");
+//            printf("phase %02d:\n", k);
+//            MinMaxArray(mesh->phase_perc_n[k], 1.0, Ncx*Ncz, "phase_perc_n");
+//            MinMaxArray(mesh->phase_perc_s[k], 1.0, Nx *Nz , "phase_perc_s");
         }
         fread( mesh->nb_part_cell, s1,  Ncx*Ncz,   file );
         fread( mesh->nb_part_vert, s1,  Nx *Nz ,   file );
@@ -452,7 +452,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
     mesh->W  /= (scaling.rhoE*scaling.L*scaling.L);
     model->L0  /= (scaling.L);
     
-    MinMaxArray(particles->T, scaling.T, particles->Nb_part, "T part");
+//    MinMaxArray(particles->T, scaling.T, particles->Nb_part, "T part");
     
 }
 
@@ -735,7 +735,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     fwrite( mesh->BCv.val,   s3,  (Nx+1)*Nz, file );
     fwrite( mesh->BCg.val,      s3,  Nx *Nz ,   file );
     
-     MinMaxArray(mesh->BCg.val, 1.0, Nx *Nz, "mesh->BCg.val");
+//     MinMaxArray(mesh->BCg.val, 1.0, Nx *Nz, "mesh->BCg.val");
     
     // Phase proportions
     printf("Loading phase proportions - Nb_phases = %d:\n", model.Nb_phases);
@@ -743,9 +743,9 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     for ( k=0; k< model.Nb_phases; k++ ) {
         fwrite( mesh->phase_perc_n[k], s3,  Ncx*Ncz,   file );
         fwrite( mesh->phase_perc_s[k], s3,  Nx *Nz ,   file );
-        printf("phase %02d:\n", k);
-        MinMaxArray(mesh->phase_perc_n[k], 1.0, Ncx*Ncz, "phase_perc_n");
-        MinMaxArray(mesh->phase_perc_s[k], 1.0, Nx *Nz, "phase_perc_s");
+//        printf("phase %02d:\n", k);
+//        MinMaxArray(mesh->phase_perc_n[k], 1.0, Ncx*Ncz, "phase_perc_n");
+//        MinMaxArray(mesh->phase_perc_s[k], 1.0, Nx *Nz, "phase_perc_s");
     }
     fwrite( mesh->nb_part_cell, s1,  Ncx*Ncz,   file );
     fwrite( mesh->nb_part_vert, s1,  Nx *Nz ,   file );
@@ -944,6 +944,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->pc_type         = ReadInt2( fin, "pc_type",       0 );
     
     // Switches
+    model->initial_noise   = ReadInt2( fin, "initial_noise",   0 );
     model->ismechanical    = ReadInt2( fin, "ismechanical",    1 );
     model->dt_constant     = ReadInt2( fin, "dt_constant",     0 );
     model->RK              = ReadInt2( fin, "RK",              4 );
@@ -953,6 +954,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->iselastic       = ReadInt2( fin, "iselastic",       0 );
     model->isthermal       = ReadInt2( fin, "isthermal",       0 );
     model->line_search     = ReadInt2( fin, "line_search",     0 );
+    model->line_search_min = ReadDou2( fin, "line_search_min", 0.0 );
     model->free_surf       = ReadInt2( fin, "free_surf",       0 );
     model->free_surf_stab  = ReadDou2( fin, "free_surf_stab",  0 );
     model->eqn_state       = ReadInt2( fin, "eqn_state",       0 );

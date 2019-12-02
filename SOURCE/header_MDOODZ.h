@@ -111,9 +111,13 @@ struct _params {
     int    Nb_phases;
     int    ncont;
     double Courant, mineta, maxeta;
+    // Particles
+    int initial_noise;
     // Linear solver
     int decoupled_solve, lsolver, diag_scaling, pc_type;
     double penalty, abs_tol_div, rel_tol_div, auto_penalty, compressible, rel_tol_KSP;
+    // Non-linear solver
+    double line_search_min;
     // Deformation maps
     int nT, nE, nd, def_maps;
     double Pn, Tmin, Tmax, Emin, Emax, dmin, dmax, PrBG;
@@ -415,6 +419,7 @@ void EvaluateCourantCriterion( double*, double*, params*, scale, grid*, int);
 //void EvaluateCourantCriterionParticles( markers, params*, scale);
 void RogerGunther( markers*, params, grid, int, scale );
 void isout( markers*, params );
+void isoutPart( markers*, params*, int );
 void CountPartCell    ( markers*, grid* , params, surface, surface, int, scale );
 void CountPartCell_Old( markers*, grid* , params, surface, int, scale );
 //void CountPartVertex ( markers*, grid*, params );

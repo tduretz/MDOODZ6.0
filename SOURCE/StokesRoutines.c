@@ -364,12 +364,13 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
     int success = 0, niter=0, nitermax=1;
     double minalpha[nitermax], maxalpha[nitermax], frac = 1.0;
     int ntry[nitermax];
+    double min_step = model->line_search_min;
     
     Nmodel->stagnated = 0;
     
     ntry[0]     = 6;
     minalpha[0] = -2.5;
-    maxalpha[0] = -0.0;
+    maxalpha[0] = -min_step;
     
     if (model->Newton==1) minalpha[0] = -1.0;
     
@@ -670,7 +671,7 @@ void SolveStokesDefectDecoupled( SparseMat *StokesA, SparseMat *StokesB, SparseM
 //    ExtractSolutions( Stokes, mesh, model );
     
     //    MinMaxArray( mesh->u_in, 1, mesh->Nx*(mesh->Nz+1), "u in");
-    SumArray( mesh->u_in, 1, mesh->Nx*(mesh->Nz+1), "u in");
+//    SumArray( mesh->u_in, 1, mesh->Nx*(mesh->Nz+1), "u in");
     
     EvaluateStokesResidualDecoupled( Stokes, StokesA, StokesB, StokesC, StokesD, Nmodel, mesh, *model, scaling, 0 );
     
@@ -1161,7 +1162,7 @@ int I1, J1;
 //        StokesC->d[i] = 1.0;
 //    }
     
-    MinMaxArray(StokesA->d, 1, StokesA->neq, "diag. A" );
+//    MinMaxArray(StokesA->d, 1, StokesA->neq, "diag. A" );
     
 #pragma omp parallel for shared(StokesC,StokesD) private(I1,J1, i, j, locNNZ )
     for (i=0;i<StokesD->neq; i++) {
@@ -1174,7 +1175,7 @@ int I1, J1;
         StokesC->d[i] = StokesD->d[i];
     }
     
-    MinMaxArray(StokesD->d, 1, StokesD->neq, "diag. D" );
+//    MinMaxArray(StokesD->d, 1, StokesD->neq, "diag. D" );
 
 }
 

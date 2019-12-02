@@ -21,7 +21,7 @@ void EvaluateCourantCriterion_BEN( double* Vx, double* Vz, params *model, scale 
     
     int k, l, c;
     double minVx=0.0, minVz=0.0, maxVx=0.0, maxVz=0.0, dmin, dtc=0, vmax;
-    double C = 0.5;
+    double C = model->Courant;
     
     for (k=0; k<model->Nx; k++) {
         for (l=0; l<model->Nz+1; l++) {

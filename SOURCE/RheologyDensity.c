@@ -85,7 +85,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
         double etae;
         int el = model->iselastic;
         // Loop on cell centers
-#pragma omp parallel for shared( mesh ) private ( etae, el )
+#pragma omp parallel for shared( mesh ) private ( etae ) firstprivate ( el )
         for (k=0; k<Ncx*Ncz; k++) {
             
             if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
@@ -131,7 +131,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
         }
         
         // Loop on cell vertices
-#pragma omp parallel for shared( mesh )  private ( etae, el ) firstprivate ( Newton )
+#pragma omp parallel for shared( mesh )  private ( etae ) firstprivate ( el )
         for (k=0; k<Nx*Nz; k++) {
             
             if ( mesh->BCg.type[k] != 30 ) {
@@ -170,7 +170,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
         printf("Computing anisotropic viscosity tensor\n");
         
         // Loop on cell centers
-#pragma omp parallel for shared( mesh ) private ( etae, el )
+#pragma omp parallel for shared( mesh ) private ( nx, nz ) firstprivate (deta)
         for (k=0; k<Ncx*Ncz; k++) {
             
             // Director
@@ -202,7 +202,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
         }
         
         // Loop on cell vertices
-#pragma omp parallel for shared( mesh )  private ( etae, el ) firstprivate ( Newton )
+#pragma omp parallel for shared( mesh )  private ( nx, nz ) firstprivate (deta)
         for (k=0; k<Nx*Nz; k++) {
             
             // Director
@@ -237,7 +237,7 @@ void AccumulatedStrainII( grid* mesh, scale scaling, params model, markers* part
     int k, l, c1;
     DoodzFP *strain_inc_el, *strain_inc_pl, *strain_inc_pwl, *strain_inc_exp, *strain_inc_lin, *strain_inc_gbs;
     
-    printf("Accumulating strain\n");
+//    printf("Accumulating strain\n");
     
     // Allocate
     strain_inc      = DoodzMalloc(sizeof(double)*(mesh->Nx-1)*(mesh->Nz-1));
@@ -1187,7 +1187,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     // Parameters for deformation map calculations
     int    local_iter = model->loc_iter, it, nitmax = 100, noisy=0;
     int    constant=0, dislocation=0, peierls=0, diffusion=0, gbs=0, elastic = model->iselastic;
-    double tol = 1.0e-11, res=0.0, dfdeta=0.0, txx1=0.0, tzz1=0.0, txz1=0.0, tII1=0.0, ieta_sum=0.0, tII0 = sqrt(txx0*txx0 + txz0*txz0);
+    double tol = 1.0e-13, res=0.0, dfdeta=0.0, txx1=0.0, tzz1=0.0, txz1=0.0, tII1=0.0, ieta_sum=0.0, tII0 = sqrt(txx0*txx0 + txz0*txz0);
     double eta_up=0.0, eta_lo=0.0, eta_0=0.0, eta_p=0.0, r_eta_pl=0.0, r_eta_0=0.0, r_eta_p=0.0;
     double eta_pwl=0.0, eta_exp=0.0, eta_pl=0.0, eta_lin=0.0, eta_el=0.0, eta_gbs=0.0, eta_cst=0.0, eta_step=0.0;
     double Exx=0.0, Ezz=0.0, Exz=0.0, Eii_vis=0.0, Eii= 0.0;
@@ -1993,7 +1993,7 @@ void NonNewtonianViscosityGrid( grid* mesh, mat_prop *materials, params *model, 
             }
             
         }
-        if (mesh->eta_n[c0]<1e-8) exit;
+        //if (mesh->eta_n[c0]<1e-8) exit(1);
     }
  ;
 
@@ -2138,20 +2138,20 @@ void CohesionFrictionGrid( grid* mesh, mat_prop materials, params model, scale s
                         
                         // If we are below the lower strain limit
                         if (strain_acc < materials.pls_start[p]) {
-                            //                            printf("Allo 1 - %d!\n", p);
+                                                     //   printf("Allo 1 - %d!\n", p);
                             
                             phi = materials.phi[p];
                             C   = materials.C[p];
                         }
                         // If we are above the upper strain limit
                         if (strain_acc >= materials.pls_end[p]) {
-                            //                            printf("Allo 2 - %d!\n", p);
+                                                        // printf("Allo 2 - %d!\n", p);
                             phi = materials.phi_end[p];
                             C   = materials.C_end[p];
                         }
                         // If we are in the softening strain range
                         if (strain_acc >= materials.pls_start[p] && strain_acc < materials.pls_end[p] ) {
-                            //                            printf("Allo 3 - %d!\n", p);
+                                                     //   printf("Allo 3 - %d!\n", p);
                             phi = materials.phi[p] - (materials.phi[p] - materials.phi_end[p]) * ( strain_acc / (materials.pls_end[p] - materials.pls_start[p]) );
                             C   = materials.C[p]   + (  materials.C_end[p] -   materials.C[p]) * MINV( 1.0, strain_acc /materials.pls_end[p] );
                             

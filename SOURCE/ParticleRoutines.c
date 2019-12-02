@@ -195,8 +195,6 @@ reduction(+:npW,npE )
 void AssignMarkerProperties (markers* particles, int new_ind, int min_index, params *model ) {
 
     particles->phase[new_ind]         = particles->phase[min_index];
-    particles->sxxd[new_ind]          = particles->sxxd[min_index];
-    particles->sxz[new_ind]           = particles->sxz[min_index];
     particles->Vx[new_ind]            = particles->Vx[min_index];
     particles->Vz[new_ind]            = particles->Vz[min_index];
     particles->strain[new_ind]        = particles->strain[min_index];
@@ -215,6 +213,7 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
     //    particles->generation[new_ind]    = particles->generation[min_index];
     particles->rho[new_ind]           = particles->rho[min_index];
     particles->sxxd[new_ind]          = particles->sxxd[min_index];
+    particles->szzd[new_ind]          = particles->szzd[min_index];
     particles->sxz[new_ind]           = particles->sxz[min_index];
 
     if (model->fstrain == 1) {
@@ -671,12 +670,10 @@ void PutPartInBox( markers *particles, grid *mesh, params model, surface topo, s
     // The particles are set with regular spacing.
     int i, j, ki, kj, np;
     double dx_particles, dz_particles;
-    
-    //int add_noise, double noise, double* random_x, double* random_z
+    int add_noise=model.initial_noise;
+    double noise=0.1, random_x, random_z;
     
     // Compute the spacing between particles:
-//    dx_particles = mesh->dx/(double)(particles->Nx_part+1);
-//    dz_particles = mesh->dz/(double)(particles->Nz_part+1);
     dx_particles = mesh->dx/(double)(particles->Nx_part); // new
     dz_particles = mesh->dz/(double)(particles->Nz_part); // new
     printf("Initial particle spacing : dxm = %lf dzm = %lf m\n", dx_particles*scaling.L, dz_particles*scaling.L);
@@ -708,6 +705,23 @@ void PutPartInBox( markers *particles, grid *mesh, params model, surface topo, s
                         if ( coord_z < h ) {
                             particles->x[np]  = coord_x;
                             particles->z[np]  = coord_z;
+                            
+                            if ( add_noise == 1 ) {
+                                
+                                random_x = (double)rand()/(double)RAND_MAX;
+                                random_z = (double)rand()/(double)RAND_MAX;
+                                random_x = ((2*random_x)-1)*dx_particles*noise;
+                                random_z = ((2*random_z)-1)*dz_particles*noise;
+                                
+                                particles->x[np]+= random_x;
+                                particles->z[np]+= random_z;
+                                
+                                isoutPart( particles, &model, np );
+                    
+                                
+                            }
+                            
+                            
                             np++;
                         }
                     }
@@ -720,6 +734,23 @@ void PutPartInBox( markers *particles, grid *mesh, params model, surface topo, s
                         coord_z = mesh->zg_coord[i] + dz_particles*(ki+0.5);
                         particles->x[np]  = coord_x;
                         particles->z[np]  = coord_z;
+                        
+                        if ( add_noise == 1 ) {
+                            
+                            random_x = (double)rand()/(double)RAND_MAX;
+                            random_z = (double)rand()/(double)RAND_MAX;
+                            random_x = ((2*random_x)-1)*dx_particles*noise;
+                            random_z = ((2*random_z)-1)*dz_particles*noise;
+                            
+                            particles->x[np]+= random_x;
+                            particles->z[np]+= random_z;
+                            
+                            isoutPart( particles, &model, np );
+
+
+                            
+                        }
+                        
                         np++;
                     }
                 }
@@ -1825,7 +1856,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
     else                   sed_phase = model.surf_ised2;
 
     printf("USING NEW PART IN CELL\n");
-    printf("OLD NUMBER OF MARKERS = %02d\n", particles->Nb_part);
+    if (RESEED==1) printf("OLD NUMBER OF MARKERS = %02d\n", particles->Nb_part);
     // Split the domain in N threads in x direction
 #pragma omp parallel
     {
@@ -2035,16 +2066,16 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
                 }
             }
         }
-//
-//        // Count number of particles available for re-use (no overlapping particles)
-//        for (ip=0; ip<npartr[ith]; ip++) {
-//            k = pidxr[ith][ip];
-//            if ( particles->phase[k] == -1 ) {
-//                // -------- Check What's OUT  ----------
-//                // If particles are taged as 'out' (-1): count them for re-use
-//                (npreuse[ith])++;
-//            }
-//        }
+
+        // Count number of particles available for re-use (no overlapping particles)
+        for (ip=0; ip<npartr[ith]; ip++) {
+            k = pidxr[ith][ip];
+            if ( particles->phase[k] == -1 ) {
+                // -------- Check What's OUT  ----------
+                // If particles are taged as 'out' (-1): count them for re-use
+                (npreuse[ith])++;
+            }
+        }
 
         // Phase proportions
         for (k=0; k<model.Nb_phases; k++) {
@@ -2084,7 +2115,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
 
         }
         
-        MinMaxArrayTag( mesh->phase_perc_n[0], 1.0, Ncx*Ncz, "phase % n", mesh->BCp.type );
+//        MinMaxArrayTag( mesh->phase_perc_n[0], 1.0, Ncx*Ncz, "phase % n", mesh->BCp.type );
         
 
 
@@ -2151,11 +2182,15 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
             ic           = 0;
             for (ip=0; ip<npartr[ith]; ip++) {
                 k = pidxr[ith][ip];
-//                if ( particles->phase[k] == -1 ) {
-//                    ipreuse[ith][ic] = k;
-//                    ic++;
-//                }
+                if ( particles->phase[k] == -1 ) {
+                    ipreuse[ith][ic] = k;
+//                    printf("ic = %d;k = %d\n", ic,k);
+                    ic++;
+                }
             }
+            
+            //printf("ic = %d and npreuse[ith] = %d \n", ic, npreuse[ith]); //=> Ic and npreuse looks ok (i.e. equal and pair)
+            
 
             // Build list of particles index and particles number per cell
             for (k=0;k<4*(ncx_e[ith]+0)*ncz_e;k++) ipcell[ith][k] = DoodzCalloc( mpc[ith][k]  , sizeof(int));
@@ -2434,7 +2469,9 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
 
     // Generate particle indices
     if (RESEED==1) {
-
+        int dummy1 = 0;
+        int dummy2 = 0;
+        
         // Create indices in global particle arrays for newly created particles (if not reused indices!)
         for (ith=0; ith<nthreads; ith++) {
             num_new[ith] = 0;     // nb of particles using new indices
@@ -2452,7 +2489,14 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
                 id_new[ith]  = Nb_part + ip;
             }
         }
-
+        
+        
+//        printf("=============================================================\n");
+//        ith = 0;
+//        printf("num_new[ith] = %d;  nnewp[ith] = %d; dummy1 = %d; dummy2 = %d --- ith = %d --- nth = %d\n", num_new[ith], nnewp[ith], dummy1, dummy2, ith, nthreads);
+//        printf("=============================================================\n");
+        
+        
         // Generate new particles in global array
        #pragma omp parallel private ( ip, k, ith ) shared( particles, nb_new, newi, newx, newz, id_new, ipreuse, npreuse, nnewp ) firstprivate( model )
 //                for (ith=0; ith<nthreads; ith++)
@@ -2463,7 +2507,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
 
             // Loop on all new particles
             for (ip=0; ip<nnewp[ith]; ip++) {
-
+                
                 if ( ip<npreuse[ith]) {
                     // Reuse indices
                     k = ipreuse[ith][ip];
@@ -2472,6 +2516,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
                     // New indices
                     k = id_new[ith] + nb_new[ith];
                     nb_new[ith]++;
+                    
                 }
                 // Security check
                 if (k>particles->Nb_part_max) {
@@ -2493,6 +2538,19 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
     for (ith=0; ith<nthreads; ith++) {
         particles->Nb_part += nb_new[ith];
     }
+    
+//    //________________________________________
+//    for (k=0;k<particles->Nb_part;k++) {
+//    isoutPart( particles, &model, k );
+//    }
+//    int dum1 = 0;
+//    
+//    for (k=0;k<particles->Nb_part;k++) {
+//        if ( particles->phase[k] == -1 ) dum1++;
+//    }
+//    printf("dum1 = %d\n", dum1);
+//    //________________________________________
+    
     if (RESEED==1) printf("NEW NUMBER OF MARKERS = %02d\n", particles->Nb_part);
 
     IsNanArray2DFP(mesh->phase_perc_s[0], Nx*Nz);

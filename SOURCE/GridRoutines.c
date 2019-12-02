@@ -486,9 +486,7 @@ void ComputeLithostaticPressure( grid *mesh, params *model, double RHO_REF, scal
     nz  = mesh->Nz;
     ncx = nx-1;
     ncz = nz-1;
-    
-    printf("MODEL Gz = %2.2e\n", model->gz);
-    
+        
     Initialise1DArrayDouble( mesh->p_lith,  (mesh->Nx-1)*(mesh->Nz-1), 0.0 );
 
     // Cell center arrays

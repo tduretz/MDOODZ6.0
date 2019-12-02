@@ -756,8 +756,8 @@ int main( int nargs, char *args[] ) {
 
                     if ( Nmodel.stagnated == 1 && safe == 0 ) {
                         printf( "Non-linear solver stagnated to res_u = %2.2e res_z = %2.2e\n", Nmodel.resx_f, Nmodel.resz_f );
-                        
-                        exit(0);
+                        printf( "You may want to try setting line_search_min > 0.0\n Good luck good man!\n");
+                        //exit(0);
 
 
                         if ( model.decoupled_solve == 0 ) { FreeMat( &Stokes ); }
@@ -790,7 +790,6 @@ int main( int nargs, char *args[] ) {
                 }
 
                 if ( Nmodel.stagnated == 0 ) {
-                    printf("EXTRACT SOLS\n");
 //                    Initialise2DArray( mesh.u_in, mesh.Nx, (mesh.Nz+1), 0.0 );
 //                    Initialise2DArray( mesh.v_in, (mesh.Nx+1), mesh.Nz, 0.0 );
 //                    ExtractSolutions( &Stokes, &mesh, &model );
@@ -843,9 +842,11 @@ int main( int nargs, char *args[] ) {
         
         int i;
 
+        printf("--------------------------------------------------------------\n");
         for (i=0; i< Nmodel.nit+1; i++) {
-            printf("%02d %2.2e %2.2f\n", i, rx_array[i], log10(rx_array[i]));
+            printf("Non-Linear it. %02d --- |Fx| = %2.2e --- log10(|Fx|) = %2.2f\n", i, rx_array[i], log10(rx_array[i]));
         }
+        printf("--------------------------------------------------------------\n");
         
         
         // plot residuals
@@ -974,7 +975,7 @@ int main( int nargs, char *args[] ) {
 //                    RogerGuntherII( &topo_chain_ini, model, mesh, 1, scaling );
                     AdvectFreeSurf( &topo_chain,     model, scaling );
                     AdvectFreeSurf( &topo_chain_ini, model, scaling );
-                    MinMaxArray( topo_chain.z,      scaling.L, topo_chain.Nb_part,       "z surf." );
+                    MinMaxArray( topo_chain.z,      scaling.L, topo_chain.Nb_part,       "z surf.     " );
                     MinMaxArray( topo_chain_ini.z,  scaling.L, topo_chain_ini.Nb_part,   "z surf. ini." );
                 }
 
@@ -1039,8 +1040,8 @@ int main( int nargs, char *args[] ) {
                         WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, Mmodel, model, "Particlesx", materials, scaling );
                     }
 #endif
-                    MinMaxArray( topo_chain.z,      scaling.L, topo_chain.Nb_part,       "z surf." );
-                    MinMaxArray( topo_chain_ini.z,  scaling.L, topo_chain_ini.Nb_part,   "z surf. ini." );
+//                    MinMaxArray( topo_chain.z,      scaling.L, topo_chain.Nb_part,       "z surf." );
+//                    MinMaxArray( topo_chain_ini.z,  scaling.L, topo_chain_ini.Nb_part,   "z surf. ini." );
 
                     // Remesh free surface II
                     RemeshMarkerChain( &topo_chain,     &topo,     model, scaling, &mesh, 2 );
@@ -1049,8 +1050,8 @@ int main( int nargs, char *args[] ) {
                     MarkerChainPolyFit( &topo_ini, &topo_chain_ini, model, mesh );
 
 
-                    MinMaxArray( topo_chain.z,      scaling.L, topo_chain.Nb_part,       "z surf." );
-                    MinMaxArray( topo_chain_ini.z,  scaling.L, topo_chain_ini.Nb_part,   "z surf. ini." );
+//                    MinMaxArray( topo_chain.z,      scaling.L, topo_chain.Nb_part,       "z surf." );
+//                    MinMaxArray( topo_chain_ini.z,  scaling.L, topo_chain_ini.Nb_part,   "z surf. ini." );
 
                     // Remove particles that are above the surface
                     CleanUpSurfaceParticles( &particles, &mesh, topo, scaling );

@@ -1632,7 +1632,7 @@ void BuildStokesOperatorDecoupled( grid *mesh, params model, int lev, double *p,
         StokesB->neq = Stokes->neq_mom;
         StokesC->neq = Stokes->neq_cont; StokesC->neq_mom = Stokes->neq_mom;
         StokesD->neq = Stokes->neq_cont; StokesD->neq_mom = Stokes->neq_mom;
-        printf("Assembling  decoupled Stokes matrix...\n");
+        //printf("Assembling  decoupled Stokes matrix...\n");
         AllocMat( StokesA, nnzA );
         AllocMat( StokesB, nnzB );
         AllocMat( StokesC, nnzC );
@@ -1966,7 +1966,7 @@ void BuildStokesOperatorDecoupled( grid *mesh, params model, int lev, double *p,
         StokesD->A = bufd;
         
         
-        printf("System size: ndof = %d, nzA = %d nzB = %d nzC = %d nzD = %d\n", Stokes->neq, nnzcA, nnzcB, nnzcC, nnzcD);
+//        printf("System size: ndof = %d, nzA = %d nzB = %d nzC = %d nzD = %d\n", Stokes->neq, nnzcA, nnzcB, nnzcC, nnzcD);
         
         printf("Number of momentum equations: %d\n", StokesA->neq);
         
@@ -2690,19 +2690,10 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
                 AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[c2+ncx+1] - Stokes->neq_mom,   &(nnzc2B[ith]), pNE*celvol, mesh->BCp.type[c2+ncx+1],   mesh->BCp.val[c2+ncx+1],   StokesB->bbc);
             }
         }
-        if (c2==100) {
-            printf("Mat. ass.\n");
-            printf( "D11E = %2.2e D12E = %2.2e D13E = %2.2e\n", D11E, D12E, D13E );
-            printf( "D11W = %2.2e D12W = %2.2e D13W = %2.2e\n", D11W, D12W, D13W );
-        }
+        
     }
     else {
         
-        if (c2==100) {
-            printf("Res. eval.\n");
-        printf( "D11E = %2.2e D12E = %2.2e D13E = %2.2e\n", D11E, D12E, D13E );
-        printf( "D11W = %2.2e D12W = %2.2e D13W = %2.2e\n", D11W, D12W, D13W );
-        }
         // Residual function
         StokesA->F[eqn] = uC*u[c1];
         if ( mesh->BCp.type[c2-ncx]   != 30 && Newton==1 && l>1   )   StokesA->F[eqn] += pSW*p[c2-ncx];
@@ -4236,7 +4227,7 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
         StokesB->neq = Stokes->neq_mom;
         StokesC->neq = Stokes->neq_cont; StokesC->neq_mom = Stokes->neq_mom;
         StokesD->neq = Stokes->neq_cont; StokesD->neq_mom = Stokes->neq_mom;
-        printf("Assembling  decoupled Jacobian matrix...\n");
+        //printf("Assembling  decoupled Jacobian matrix...\n");
         AllocMat( StokesA, nnzA );
         AllocMat( StokesB, nnzB );
         AllocMat( StokesC, nnzC );
@@ -4529,7 +4520,7 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
         StokesD->J = bufi;
         StokesD->A = bufd;
     
-        printf("System size: ndof = %d, nzA = %d nzB = %d nzC = %d nzD = %d\n", Stokes->neq, nnzcA, nnzcB, nnzcC, nnzcD);
+//        printf("System size: ndof = %d, nzA = %d nzB = %d nzC = %d nzD = %d\n", Stokes->neq, nnzcA, nnzcB, nnzcC, nnzcD);
         
 //        // Extract Diagonal of A - Viscous block
 //        int i, j, locNNZ;

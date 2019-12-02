@@ -342,13 +342,13 @@ void RemeshMarkerChain( markers *topo_chain, surface *topo, params model, scale 
                     }
                     
                 }
-                if (k==0) {
-                    printf("WEST Number topo mark = %d\n",  NumMarkCell[k]);
-                }
-                
-                if (k==Ncx-1) {
-                    printf("EAST Number topo mark = %d\n",  NumMarkCell[k]);
-                }
+//                if (k==0) {
+//                    printf("WEST Number topo mark = %d\n",  NumMarkCell[k]);
+//                }
+//                
+//                if (k==Ncx-1) {
+//                    printf("EAST Number topo mark = %d\n",  NumMarkCell[k]);
+//                }
             }
         }
         
