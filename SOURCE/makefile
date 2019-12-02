@@ -49,15 +49,12 @@ FILES = Main_MDOODZ_GREAT.o Solvers.c Routines_BEN.o StokesRoutines.o StokesAsse
 
 ifeq ($(NEW_INPUT),yes)
         FILES += BC.o
+        Doodzi_$(MODEL): ${FILES}
+	$(CC) ${FILES} -o MDoodz6.0 ${LIBS}
 else
 	FILES += ./$(MODEL_PATH)/set_$(MODEL).o
-endif
-
-Doodzi_$(MODEL): ${FILES}
-ifeq ($(NEW_INPUT),no)
+        Doodzi_$(MODEL): ${FILES}
 	$(CC) ${FILES} -o Doodzi_$(MODEL) ${LIBS}
-else
-	$(CC) ${FILES} -o MDoodz6.0 ${LIBS}
 endif
 
 clean:
