@@ -459,10 +459,7 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
         for( c2=0; c2<ncx*ncz; c2++) {
             eqn = eqn_t[c2];
             if ( mesh->BCt.type[c2] != 30 ) {
-                if ( model.HsOnly == 1 ) mesh->dT[c2] = Hs[c2]/(mesh->rho_n[c2]*mesh->Cv[c2])*dt;
-                else {
-                    mesh->dT[c2] = 1.0*(x[eqn] -  mesh->T[c2]);
-                }
+                mesh->dT[c2] = 1.0*(x[eqn] -  mesh->T[c2]);
                 mesh->T[c2]  = mesh->T[c2] + mesh->dT[c2];
                 dUt         += mesh->rho_n[c2]*mesh->Cv[c2]*mesh->dT[c2];
             }

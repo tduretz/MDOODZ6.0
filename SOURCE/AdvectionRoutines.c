@@ -537,7 +537,6 @@ void PureShearALE( params *model, grid *Mmesh, markers *topo_chain, scale scalin
     
     // Re-generate homogeneous pure shear fields
     printf("Re-generate homogeneous pure shear fields\n");
-    if ( model->HomoFields == 1 ) InitialiseSolutionFields( Mmesh, model );
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/

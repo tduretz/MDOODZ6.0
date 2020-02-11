@@ -411,7 +411,7 @@ int main( int nargs, char *args[] ) {
         Initialise1DArrayInt( particles.generation,   particles.Nb_part  , 0 );
 
         // Initial solution fields (Fine mesh)
-        if ( (model.ispureshear_ale == 1 || model.isperiodic_x == 1) && model.HomoFields == 1) InitialiseSolutionFields( &mesh, &model );
+        if ( (model.ispureshear_ale == 1 || model.isperiodic_x == 1) ) InitialiseSolutionFields( &mesh, &model );
 
         //------------------------------------------------------------------------------------------------------------------------------//
 
@@ -685,59 +685,57 @@ int main( int nargs, char *args[] ) {
                 }
                 
                 // If iteration > 0 ---> Evaluate non-linear residual and test
-                if ( model.DefectCorrectionForm == 1 || (Nmodel.nit>0 && model.DefectCorrectionForm == 0 ) ) {
-
-                    printf("---- Non-linear residual ----\n");
-                    RheologicalOperators( &mesh, &model, &scaling, 0 );
-                    if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
-                    if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
-                    
-//                    model.aniso=0;
-//                    if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
-
-                    
-                    if ( model.Newton == 1 && model.aniso == 0 ) {
-                        ArrayEqualArray( JacobA.F, StokesA.F,  StokesA.neq );
-                        ArrayEqualArray( JacobC.F, StokesC.F,  StokesC.neq );
-                    }
-                    if ( model.Newton == 1 && model.diag_scaling ) ScaleMatrix( &JacobA,  &JacobB,  &JacobC,  &JacobD  );
-
-                    
-                    
-//                    exit(1);
-                    
-                    
-                    Nmodel.resx_f = Nmodel.resx;
-                    Nmodel.resz_f = Nmodel.resz;
-                    Nmodel.resp_f = Nmodel.resp;
-                    
-                    rx_array[Nmodel.nit] = Nmodel.resx;
-                    rz_array[Nmodel.nit] = Nmodel.resz;
-                    rp_array[Nmodel.nit] = Nmodel.resp;
-#ifndef _VG_
-                    if ( model.write_debug == 1 ) WriteResiduals( mesh, model, Nmodel, scaling );
-#endif
-
-                    // if pass --> clear matrix break
-                    if ( (Nmodel.resx < Nmodel.tol_u) && (Nmodel.resz < Nmodel.tol_u) && (Nmodel.resp < Nmodel.tol_p) ) {
-
-                        printf( "Non-linear solver converged to tol_u = %2.2e tol_p = %2.2e\n", Nmodel.tol_u, Nmodel.tol_p );
-                        if ( model.decoupled_solve == 0 ) { FreeMat( &Stokes ); }
-                        if ( model.decoupled_solve == 1 ) {
-                            FreeMat( &StokesA );
-                            FreeMat( &StokesB );
-                            FreeMat( &StokesC );
-                            FreeMat( &StokesD );
-                        }
-                        if ( model.Newton == 1 ) {
-                            FreeMat( &JacobA );
-                            FreeMat( &JacobB );
-                            FreeMat( &JacobC );
-                            FreeMat( &JacobD );
-                        }
-                        break;
-                    }
+                printf("---- Non-linear residual ----\n");
+                RheologicalOperators( &mesh, &model, &scaling, 0 );
+                if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
+                if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
+                
+                //                    model.aniso=0;
+                //                    if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
+                
+                
+                if ( model.Newton == 1 && model.aniso == 0 ) {
+                    ArrayEqualArray( JacobA.F, StokesA.F,  StokesA.neq );
+                    ArrayEqualArray( JacobC.F, StokesC.F,  StokesC.neq );
                 }
+                if ( model.Newton == 1 && model.diag_scaling ) ScaleMatrix( &JacobA,  &JacobB,  &JacobC,  &JacobD  );
+                
+                
+                
+                //                    exit(1);
+                
+                
+                Nmodel.resx_f = Nmodel.resx;
+                Nmodel.resz_f = Nmodel.resz;
+                Nmodel.resp_f = Nmodel.resp;
+                
+                rx_array[Nmodel.nit] = Nmodel.resx;
+                rz_array[Nmodel.nit] = Nmodel.resz;
+                rp_array[Nmodel.nit] = Nmodel.resp;
+#ifndef _VG_
+                if ( model.write_debug == 1 ) WriteResiduals( mesh, model, Nmodel, scaling );
+#endif
+                
+                // if pass --> clear matrix break
+                if ( (Nmodel.resx < Nmodel.tol_u) && (Nmodel.resz < Nmodel.tol_u) && (Nmodel.resp < Nmodel.tol_p) ) {
+                    
+                    printf( "Non-linear solver converged to tol_u = %2.2e tol_p = %2.2e\n", Nmodel.tol_u, Nmodel.tol_p );
+                    if ( model.decoupled_solve == 0 ) { FreeMat( &Stokes ); }
+                    if ( model.decoupled_solve == 1 ) {
+                        FreeMat( &StokesA );
+                        FreeMat( &StokesB );
+                        FreeMat( &StokesC );
+                        FreeMat( &StokesD );
+                    }
+                    if ( model.Newton == 1 ) {
+                        FreeMat( &JacobA );
+                        FreeMat( &JacobB );
+                        FreeMat( &JacobC );
+                        FreeMat( &JacobD );
+                    }
+                    break;
+                }
+                
 
 
                 // Direct solve
@@ -750,7 +748,7 @@ int main( int nargs, char *args[] ) {
                     if ( model.decoupled_solve == 0 ) SolveStokesDefect( &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling );
                     if ( model.decoupled_solve == 1 ) {
                         if ( model.Newton==0 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling, &StokesA, &StokesB, &StokesC );
-                        if ( model.Newton==1 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling, &JacobA, &JacobB, &JacobC );
+                        if ( model.Newton==1 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling,  &JacobA,  &JacobB,  &JacobC );
                         
 //                    }
 

@@ -937,7 +937,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->Courant         = ReadDou2( fin, "Courant",       0.5 );
     model->penalty         = ReadDou2( fin, "penalty",      1.0e10 );
     model->abs_tol_div     = ReadDou2( fin, "abs_tol_div", 1.0e-14 );
-    model->rel_tol_div     = ReadDou2( fin, "rel_tol_div", 1.0e-5 );
+    model->rel_tol_div     = ReadDou2( fin, "rel_tol_div",  1.0e-5 );
     model->auto_penalty    = ReadDou2( fin, "auto_penalty",    0.0  );
     model->decoupled_solve = ReadInt2( fin, "decoupled_solve",    1 );
     model->diag_scaling    = ReadInt2( fin, "diag_scaling",       1 );
@@ -974,9 +974,6 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->cut_noise       = ReadInt2( fin, "cut_noise",       0 );
     model->accu            = ReadDou2( fin, "accu",         1.0e13 );
     model->rheo_on_cells   = ReadInt2( fin, "rheo_on_cells",   0 );
-    model->DefectCorrectionForm = ReadInt2( fin, "DefectCorrectionForm",      0 );
-    model->HsOnly          = ReadInt2( fin, "HsOnly",          0 );
-    model->HomoFields      = ReadInt2( fin, "HomoFields",      0 );
     model->rec_T_P_x_z     = ReadInt2( fin, "rec_T_P_x_z",     0 );
     model->delete_breakpoints = ReadInt2( fin, "delete_breakpoints",        1 );
     materials->eta_VP      = ReadDou2( fin, "eta_VP",        0.0 ) / scaling->S / scaling->t;
@@ -1224,7 +1221,11 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     Nmodel->stagnated       = 0;
     
     // Direct solver parameters
-    model->lsolver          = ReadInt2( fin, "lsolver", 0 );
+    model->lsolver          = ReadInt2( fin, "lsolver", 2 );
+    if ( model->lsolver == 0) {
+        printf("WARNING!! Changing from solver type 0 to solver type 2!!! That's the new standard in MDOODZ 6.0.\n");
+        model->lsolver = 2;
+    }
     if ( model->Newton == 1 ) model->lsolver         = 2;
 
     // Close input file

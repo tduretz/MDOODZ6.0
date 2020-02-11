@@ -636,11 +636,6 @@ void SolveStokesDefectDecoupled( SparseMat *StokesA, SparseMat *StokesB, SparseM
     
     // Call direct solver
     t_omp = (double)omp_get_wtime();
-//    DirectStokesDecoupled( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes );
-//    DirectStokesDecoupledComp( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes );
-//    KSPStokesDecoupled       ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes, Stokes, JacobA, JacobB, JacobC );
-//    KillerSolver             ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes, Stokes, JacobA, JacobB, JacobC );
-    
     if ( model->lsolver == 0 ) DirectStokesDecoupled    ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes );
     if ( model->lsolver == 1 ) KSPStokesDecoupled       ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes, Stokes, JacobA, JacobB, JacobC );
     if ( model->lsolver == 2 ) KillerSolver             ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->F, StokesC->F, dx, *model, mesh, scaling, Stokes, Stokes, JacobA, JacobB, JacobC );
@@ -658,7 +653,7 @@ void SolveStokesDefectDecoupled( SparseMat *StokesA, SparseMat *StokesB, SparseM
     
     // Same solution extraction than in line search - consistent
     ExtractSolutions2( Stokes, mesh, model, dx, alpha );
-    
+        
 //    InitialiseSolutionVector( mesh, Stokes, model );
     
     
@@ -673,7 +668,7 @@ void SolveStokesDefectDecoupled( SparseMat *StokesA, SparseMat *StokesB, SparseM
     //    MinMaxArray( mesh->u_in, 1, mesh->Nx*(mesh->Nz+1), "u in");
 //    SumArray( mesh->u_in, 1, mesh->Nx*(mesh->Nz+1), "u in");
     
-    EvaluateStokesResidualDecoupled( Stokes, StokesA, StokesB, StokesC, StokesD, Nmodel, mesh, *model, scaling, 0 );
+    //EvaluateStokesResidualDecoupled( Stokes, StokesA, StokesB, StokesC, StokesD, Nmodel, mesh, *model, scaling, 0 );
     
     
 //    exit(1);
