@@ -83,37 +83,38 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
     if (Jacobian == 1  && model->aniso == 0) {
         
         double etae;
+        double yn = 1.0;
         int el = model->iselastic;
         // Loop on cell centers
-#pragma omp parallel for shared( mesh ) private ( etae ) firstprivate ( el )
+#pragma omp parallel for shared( mesh ) private ( etae ) firstprivate ( el, yn )
         for (k=0; k<Ncx*Ncz; k++) {
             
             if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
                 switch ( el ) {
                     case 0:
                         etae = model->dt*mesh->mu_n[k];
-                        mesh->D11_n[k] = 2.0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k]*mesh->exxd[k];
-                        mesh->D12_n[k] =                      2.0*mesh->detadezz_n[k]*mesh->exxd[k];
-                        mesh->D13_n[k] =                      2.0*mesh->detadgxz_n[k]*mesh->exxd[k];
-                        mesh->D14_n[k] =                      2.0*mesh->detadp_n[k]  *mesh->exxd[k];
+                        mesh->D11_n[k] = 2.0*mesh->eta_n[k] + yn*2.0*mesh->detadexx_n[k]*mesh->exxd[k];
+                        mesh->D12_n[k] =                      yn*2.0*mesh->detadezz_n[k]*mesh->exxd[k];
+                        mesh->D13_n[k] =                      yn*2.0*mesh->detadgxz_n[k]*mesh->exxd[k];
+                        mesh->D14_n[k] =                      yn* 2.0*mesh->detadp_n[k] *mesh->exxd[k];
 
-                        mesh->D21_n[k] =                      2.0*mesh->detadexx_n[k]*mesh->ezzd[k];
-                        mesh->D22_n[k] = 2.0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k]*mesh->ezzd[k];
-                        mesh->D23_n[k] =                      2.0*mesh->detadgxz_n[k]*mesh->ezzd[k];
-                        mesh->D24_n[k] =                      2.0*mesh->detadp_n[k]  *mesh->ezzd[k];
+                        mesh->D21_n[k] =                      yn*2.0*mesh->detadexx_n[k]*mesh->ezzd[k];
+                        mesh->D22_n[k] = 2.0*mesh->eta_n[k] + yn*2.0*mesh->detadezz_n[k]*mesh->ezzd[k];
+                        mesh->D23_n[k] =                      yn*2.0*mesh->detadgxz_n[k]*mesh->ezzd[k];
+                        mesh->D24_n[k] =                      yn*2.0*mesh->detadp_n[k]  *mesh->ezzd[k];
 
                         break;
                     case 1:
                         etae = model->dt*mesh->mu_n[k];
-                        mesh->D11_n[k] = 2.0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k]*mesh->exxd[k] + mesh->sxxd0[k]*mesh->detadexx_n[k] / etae;
-                        mesh->D12_n[k] =                      2.0*mesh->detadezz_n[k]*mesh->exxd[k] + mesh->sxxd0[k]*mesh->detadezz_n[k] / etae;
-                        mesh->D13_n[k] =                      2.0*mesh->detadgxz_n[k]*mesh->exxd[k] + mesh->sxxd0[k]*mesh->detadgxz_n[k] / etae;
-                        mesh->D14_n[k] =                      2.0*mesh->detadp_n[k]  *mesh->exxd[k] + mesh->sxxd0[k]*mesh->detadp_n[k]   / etae;
+                        mesh->D11_n[k] = 2.0*mesh->eta_n[k] + yn*2.0*mesh->detadexx_n[k]*mesh->exxd[k] + mesh->sxxd0[k]*mesh->detadexx_n[k] / etae;
+                        mesh->D12_n[k] =                      yn*2.0*mesh->detadezz_n[k]*mesh->exxd[k] + mesh->sxxd0[k]*mesh->detadezz_n[k] / etae;
+                        mesh->D13_n[k] =                      yn*2.0*mesh->detadgxz_n[k]*mesh->exxd[k] + mesh->sxxd0[k]*mesh->detadgxz_n[k] / etae;
+                        mesh->D14_n[k] =                      yn*2.0*mesh->detadp_n[k]  *mesh->exxd[k] + mesh->sxxd0[k]*mesh->detadp_n[k]   / etae;
                         
-                        mesh->D21_n[k] =                      2.0*mesh->detadexx_n[k]*mesh->ezzd[k] + mesh->szzd0[k]*mesh->detadexx_n[k] / etae;
-                        mesh->D22_n[k] = 2.0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k]*mesh->ezzd[k] + mesh->szzd0[k]*mesh->detadezz_n[k] / etae;
-                        mesh->D23_n[k] =                      2.0*mesh->detadgxz_n[k]*mesh->ezzd[k] + mesh->szzd0[k]*mesh->detadgxz_n[k] / etae;
-                        mesh->D24_n[k] =                      2.0*mesh->detadp_n[k]  *mesh->ezzd[k] + mesh->szzd0[k]*mesh->detadp_n[k]   / etae;
+                        mesh->D21_n[k] =                      yn*2.0*mesh->detadexx_n[k]*mesh->ezzd[k] + mesh->szzd0[k]*mesh->detadexx_n[k] / etae;
+                        mesh->D22_n[k] = 2.0*mesh->eta_n[k] + yn*2.0*mesh->detadezz_n[k]*mesh->ezzd[k] + mesh->szzd0[k]*mesh->detadezz_n[k] / etae;
+                        mesh->D23_n[k] =                      yn*2.0*mesh->detadgxz_n[k]*mesh->ezzd[k] + mesh->szzd0[k]*mesh->detadgxz_n[k] / etae;
+                        mesh->D24_n[k] =                      yn*2.0*mesh->detadp_n[k]  *mesh->ezzd[k] + mesh->szzd0[k]*mesh->detadp_n[k]   / etae;
                         break;
                 }
             }
@@ -137,17 +138,17 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
             if ( mesh->BCg.type[k] != 30 ) {
                 switch ( el ) {
                     case 0:
-                        mesh->D31_s[k] =                  mesh->detadexx_s[k]*2.0*mesh->exz[k];  // Factor 2 is important!!
-                        mesh->D32_s[k] =                  mesh->detadezz_s[k]*2.0*mesh->exz[k];
-                        mesh->D33_s[k] = mesh->eta_s[k] + mesh->detadgxz_s[k]*2.0*mesh->exz[k];
-                        mesh->D34_s[k] =                  mesh->detadp_s[k]  *2.0*mesh->exz[k];
+                        mesh->D31_s[k] =                  yn*mesh->detadexx_s[k]*2.0*mesh->exz[k];  // Factor 2 is important!!
+                        mesh->D32_s[k] =                  yn*mesh->detadezz_s[k]*2.0*mesh->exz[k];
+                        mesh->D33_s[k] = mesh->eta_s[k] + yn*mesh->detadgxz_s[k]*2.0*mesh->exz[k];
+                        mesh->D34_s[k] =                  yn*mesh->detadp_s[k]  *2.0*mesh->exz[k];
                         break;
                     case 1:
                         etae = model->dt*mesh->mu_s[k];
-                        mesh->D31_s[k] =                  mesh->detadexx_s[k]*2.0*mesh->exz[k] + mesh->sxz0[k]*mesh->detadexx_s[k] / etae;  // Factor 2 is important!!
-                        mesh->D32_s[k] =                  mesh->detadezz_s[k]*2.0*mesh->exz[k] + mesh->sxz0[k]*mesh->detadezz_s[k] / etae;
-                        mesh->D33_s[k] = mesh->eta_s[k] + mesh->detadgxz_s[k]*2.0*mesh->exz[k] + mesh->sxz0[k]*mesh->detadgxz_s[k] / etae;
-                        mesh->D34_s[k] =                  mesh->detadp_s[k]  *2.0*mesh->exz[k] + mesh->sxz0[k]*mesh->detadp_s[k]   / etae;
+                        mesh->D31_s[k] =                  yn*mesh->detadexx_s[k]*2.0*mesh->exz[k] + mesh->sxz0[k]*mesh->detadexx_s[k] / etae;  // Factor 2 is important!!
+                        mesh->D32_s[k] =                  yn*mesh->detadezz_s[k]*2.0*mesh->exz[k] + mesh->sxz0[k]*mesh->detadezz_s[k] / etae;
+                        mesh->D33_s[k] = mesh->eta_s[k] + yn*mesh->detadgxz_s[k]*2.0*mesh->exz[k] + mesh->sxz0[k]*mesh->detadgxz_s[k] / etae;
+                        mesh->D34_s[k] =                  yn*mesh->detadp_s[k]  *2.0*mesh->exz[k] + mesh->sxz0[k]*mesh->detadp_s[k]   / etae;
                         break;
                 }
                 
