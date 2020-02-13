@@ -76,20 +76,53 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         //----------------------------------
         // INCLUSIONS INCLUSIONS INCLUSIONS
         //----------------------------------
-//
+//        // Central inclusion
 //        if ( pow(particles->x[np],2) + pow(particles->z[np],2) < pow(rad,2) ) {
 //                        particles->phase[np] = 2;
 //        }
         
+        //----------------------
         
-        // Central inclusion
-        if ( pow(particles->x[np],2) + pow(particles->z[np]-0.5/scaling.L,2) < pow(rad,2) ) {
+//        // Central inclusion
+//        if ( pow(particles->x[np]-0.5/scaling.L,2) + pow(particles->z[np],2) < pow(rad,2) ) {
+//                        particles->phase[np] = 2;
+//        }
+//
+//        // Central inclusion
+//        if ( pow(particles->x[np]+0.5/scaling.L,2) + pow(particles->z[np],2) < pow(rad,2) ) {
+//                        particles->phase[np] = 2;
+//        }
+        
+        //----------------------
+
+//        if ( pow(particles->x[np],2) + pow(particles->z[np]-0.5/scaling.L,2) < pow(rad,2) ) {
+//                        particles->phase[np] = 2;
+//        }
+//
+//        if ( pow(particles->x[np],2) + pow(particles->z[np]+0.5/scaling.L,2) < pow(rad,2) ) {
+//            particles->phase[np] = 2;
+//        }
+        
+        //----------------------
+        
+        if ( pow(particles->x[np]-0.5/scaling.L,2) + pow(particles->z[np]-0.5/scaling.L,2) < pow(rad,2) ) {
                         particles->phase[np] = 2;
         }
 
-        if ( pow(particles->x[np],2) + pow(particles->z[np]+0.5/scaling.L,2) < pow(rad,2) ) {
+        if ( pow(particles->x[np]+0.5/scaling.L,2) + pow(particles->z[np]-0.5/scaling.L,2) < pow(rad,2) ) {
             particles->phase[np] = 2;
         }
+
+        if ( pow(particles->x[np]-0.5/scaling.L,2) + pow(particles->z[np]+0.5/scaling.L,2) < pow(rad,2) ) {
+                        particles->phase[np] = 2;
+        }
+
+        if ( pow(particles->x[np]+0.5/scaling.L,2) + pow(particles->z[np]+0.5/scaling.L,2) < pow(rad,2) ) {
+            particles->phase[np] = 2;
+        }
+        
+        //----------------------
+        
 //        // SE inclusion
 //        if ( pow(particles->x[np]-0.5/scaling.L,2) + pow(particles->z[np]+0.5/scaling.L,2) < pow(rad,2) ) {
 //            particles->phase[np] = 0;
@@ -241,19 +274,19 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
 				mesh->BCu.val[c]  =  0;
                 
                 // Matching BC nodes WEST
-				if (k==0 ) {
+				if (k==0 && (l>0 && l<mesh->Nz)) {
 					mesh->BCu.type[c] = -2;
 					mesh->BCu.val[c]  = 0.0*model->EpsBG*Lx;
 				}
                 
                 // Matching BC nodes EAST
-				if (k==mesh->Nx-1 ) {
+				if (k==mesh->Nx-1 && (l>0 && l<mesh->Nz) ) {
 					mesh->BCu.type[c] =  -12;
 					mesh->BCu.val[c]  = -0.0*model->EpsBG*Lx;
 				}
                 
                 // Free slip S
-				if (l==0 ) { //&& (k>0 && k<NX-1) ) {
+				if (l==0 ) { // ) {
 					mesh->BCu.type[c] =  11;
 					mesh->BCu.val[c]  = -1*model->EpsBG*Lz;
 				}
@@ -299,25 +332,25 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
 				mesh->BCv.val[c]  =  0;
                 
                 // Matching BC nodes SOUTH
-				if (l==0 ) {
+				if (l==0 && (k>0 && k<mesh->Nx)) {
 					mesh->BCv.type[c] = 0;
 					mesh->BCv.val[c]  = -0.0*model->EpsBG*Lz;
 				}
 				
 				// Matching BC nodes NORTH
-				if (l==mesh->Nz-1 ) {
+				if (l==mesh->Nz-1 && (k>0 && k<mesh->Nx)) {
 					mesh->BCv.type[c] = 0;
 					mesh->BCv.val[c]  = 0.0*model->EpsBG*Lz;
 				}
                 
                 // Non-matching boundary points
-				if ( (k==0)   ) {    //&& (l>0 && l<NZ-1)
+				if ( k==0   ) {    //
 					mesh->BCv.type[c] =  -12;
 					mesh->BCv.val[c]  =   0;
 				}
                 
                 // Non-matching boundary points
-				if ( (k==mesh->Nx)  ) { // && (l>0 && l<NZ-1)
+				if ( k==mesh->Nx   ) { //&& (l>0 && l<NZ-1)
 					mesh->BCv.type[c] =  -12;
 					mesh->BCv.val[c]  =   0;
 				}
