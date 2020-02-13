@@ -1,10 +1,10 @@
 **** RESTART ****/
-istep =00300
+istep =00001
 irestart = 0
 
 /**** OUTPUT FILES ****/
 writer = 1
-writer_step = 50
+writer_step = 1
 writer_markers = 0
 writer_debug   = 0
 
@@ -20,17 +20,17 @@ T   = 1
 /**** SPACE-TIME ****/
 Nx   = 101
 Nz   = 101
-Nt   = 300
+Nt   = 1
 xmin = -0.5000000
 zmin = -0.5000000
 xmax =  0.5000000
 zmax =  0.5000000 
 dt   = 1.2623e+11
 Courant = 0.3
-
 lsolver      = 0
 penalty      = 1e5
 diag_scaling = 1
+
 
 /**** SWITCHES ****/
 ismechanical    = 1
@@ -179,7 +179,7 @@ min_part_cell = 16
 
 /**** PICARD ITERATIONS ****/
 Newton  = 0
-nit_max = 0
+nit_max = 1
 tol_u   = 5e-8
 tol_p   = 5e-8
 mineta  = 1e-6
