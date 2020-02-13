@@ -6,7 +6,7 @@ irestart = 0
 writer = 1
 writer_step = 1
 writer_markers = 0
-writer_debug   = 0
+writer_debug   = 1
 
 /**** INPUT FILE FOR PARTICLES ****/
 input_file = setup_r201x201_F40_P20_B20.bin
@@ -181,7 +181,7 @@ min_part_cell = 16
 Newton  = 1
 nit_max = 10
 rel_tol_KSP = 5e-4
-tol_u   = 1e-11
-tol_p   = 1e-11
+tol_u   = 1e-13
+tol_p   = 1e-13
 mineta  = 1e-6
 maxeta  = 1e6
