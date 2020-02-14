@@ -942,6 +942,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->decoupled_solve = ReadInt2( fin, "decoupled_solve",    1 );
     model->diag_scaling    = ReadInt2( fin, "diag_scaling",       1 );
     model->pc_type         = ReadInt2( fin, "pc_type",       0 );
+    model->num_deriv       = ReadInt2( fin, "num_deriv",     1 );
     
     // Switches
     model->initial_noise   = ReadInt2( fin, "initial_noise",   0 );
@@ -979,6 +980,8 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->compressible    = ReadInt2( fin, "compressible",    0 );
     model->GNUplot_residuals = ReadInt2( fin, "GNUplot_residuals",    0 );
     model->no_markers      = ReadInt2( fin, "no_markers",    0 );
+    model->shear_style     = ReadInt2( fin, "shear_style",    0 );
+    if (model->shear_style==1) model->isperiodic_x  = 1;
     
     // Setup dependant
     model->EpsBG           = ReadDou2( fin, "EpsBG",           0.0 ) / scaling->E;

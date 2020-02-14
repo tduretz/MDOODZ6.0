@@ -400,8 +400,8 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
             c = k + l*ncx;
             
             // Initial pressure field
-            mesh->p_in[c]  = 0.0;//eps;
-            
+            if (model->num_deriv==0) mesh->p_in[c]  = 0.0;//eps;
+            if (model->num_deriv==1) mesh->p_in[c]  = eps;
         }
     }
     

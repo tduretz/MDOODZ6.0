@@ -2874,7 +2874,7 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
     for( l=0; l<nzvx; l++) {
         for( k=0; k<nx; k++) {
             cc = k + l*nx;
-            if ( mesh->BCu.type[cc] != 0 && mesh->BCu.type[cc] != 30 && mesh->BCu.type[cc] != 11 && mesh->BCu.type[cc] != 13 ) {
+            if ( mesh->BCu.type[cc] != 0 && mesh->BCu.type[cc] != 30 && mesh->BCu.type[cc] != 11 && mesh->BCu.type[cc] != 13  && mesh->BCu.type[cc] != -12 ) {
                 StokesA->b[inc] = mesh->roger_x[cc];
                 inc++;
             }
@@ -2883,7 +2883,7 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
     for( l=0; l<nz; l++) {
         for( k=0; k<nxvz; k++) {
             cc = k + l*nxvz;
-            if ( mesh->BCv.type[cc] != 0 && mesh->BCv.type[cc] != 30 && mesh->BCv.type[cc] != 11 && mesh->BCv.type[cc] != 13 ) {
+            if ( mesh->BCv.type[cc] != 0 && mesh->BCv.type[cc] != 30 && mesh->BCv.type[cc] != 11 && mesh->BCv.type[cc] != 13 && mesh->BCv.type[cc] != -12  ) {
                 StokesA->b[inc] = mesh->roger_z[cc];
                 inc++;
             }

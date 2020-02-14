@@ -117,7 +117,7 @@ struct _params {
     int decoupled_solve, lsolver, diag_scaling, pc_type;
     double penalty, abs_tol_div, rel_tol_div, auto_penalty, compressible, rel_tol_KSP;
     // Non-linear solver
-    double line_search_min;
+    double line_search_min, num_deriv;
     // Deformation maps
     int nT, nE, nd, def_maps;
     double Pn, Tmin, Tmax, Emin, Emax, dmin, dmax, PrBG;
@@ -134,7 +134,7 @@ struct _params {
     // Visualisation
     int rec_T_P_x_z, delete_breakpoints, GNUplot_residuals;
     // Boundary conditions type
-    int    BC_setup_type;
+    int    BC_setup_type, shear_style;
 
 };
 

@@ -405,7 +405,7 @@ int main( int nargs, char *args[] ) {
         Initialise1DArrayInt( particles.generation,   particles.Nb_part  , 0 );
 
         // Initial solution fields (Fine mesh)
-        if ( (model.ispureshear_ale == 1 || model.isperiodic_x == 1) ) InitialiseSolutionFields( &mesh, &model );
+        if ( model.ispureshear_ale == 1 ) InitialiseSolutionFields( &mesh, &model );
 
         //------------------------------------------------------------------------------------------------------------------------------//
 
@@ -633,7 +633,7 @@ int main( int nargs, char *args[] ) {
                     if ( model.decoupled_solve == 1 ) BuildStokesOperatorDecoupled  ( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, 1 );
                 
                 if (model.aniso == 0) {
-//                    if ( model.Newton          == 1 ) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling );
+                    if ( model.Newton          == 1  && model.num_deriv==1) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling );
                     if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
                     if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
                 }

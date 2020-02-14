@@ -30,16 +30,19 @@ penalty = 1e5
 lsolver = -1
 DefectCorrectionForm = 1
 diag_scaling = 0
-abs_tol_div = 1e-9
-rel_tol_div = 1e-9
-pc_type     = 1
+abs_tol_div = 1e-11
+rel_tol_div = 1e-11
+num_deriv         = 0
+GNUplot_residuals = 1
+shear_style       = 1
+pc_type           = 1
 
 /**** SWITCHES ****/
 ismechanical    = 1
 dt_constant     = 0
 RK              = 4
 isperiodic_x    = 0
-ispureshear_ALE = 1
+ispureshear_ALE = 0
 isinertial      = 0
 iselastic       = 1
 isthermal       = 0
@@ -53,8 +56,6 @@ shear_heat      = 1
 adiab_heat      = 0
 fstrain         = 1
 advection       = 0
-HomoFields      = 1
-GNUplot_residuals = 1
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = 1
@@ -135,9 +136,9 @@ min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
 Newton  = 1 
-nit_max = 10
-rel_tol_KSP = 1e-3
-tol_u   = 1e-10
-tol_p   = 1e-10
+nit_max = 20
+rel_tol_KSP = 5e-4
+tol_u   = 1e-12
+tol_p   = 1e-12
 mineta  = 1e-3
 maxeta  = 1e6
