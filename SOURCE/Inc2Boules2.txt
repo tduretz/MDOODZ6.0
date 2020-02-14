@@ -31,6 +31,7 @@ lsolver      = 0
 penalty      = 1e5
 diag_scaling = 1
 GNUplot_residuals = 1
+rheo_on_cells = 0
 
 /**** SWITCHES ****/
 ismechanical    = 1

@@ -2097,8 +2097,8 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     if (mesh->BCp.type[iPrW] == -1) inW = 1.0;
     if (mesh->BCp.type[iPrE] == -1) inE = 1.0;
 
-    if (mesh->BCg.type[c1-nx] != 30 && mesh->BCu.type[iVxS] != 13) inS = 1.0;
-    if (mesh->BCg.type[c1   ] != 30 && mesh->BCu.type[iVxN] != 13) inN = 1.0;
+    if (mesh->BCg.type[ixyS] != 30 && mesh->BCu.type[iVxS] != 13) inS = 1.0;
+    if (mesh->BCg.type[ixyN] != 30 && mesh->BCu.type[iVxN] != 13) inN = 1.0;
 
     // X-tra
     double wE=0.0, wW=0.0, wS=0.0, wN = 0.0;
@@ -2116,11 +2116,13 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         if (mesh->BCp.type[iPrNE] == -1) inNEc = 1.0;
     }
 
-    if ( (k>0)  || (k==0 && mesh->BCv.type[iVzSW] == -1) ) {
+    if ( (k>0)  || (k==0 && (mesh->BCv.type[iVzSW] == -1 || mesh->BCv.type[iVzSW] == 0)) ) {
+        
+//        if (l ==1 &&k==0 && mesh->BCv.type[iVzSW] == 0) printf("DDDD\n");
         if (mesh->BCg.type[ixySW] != 30) inSWv = 1.0;   // modify for periodic
         if (mesh->BCg.type[ixyNW] != 30) inNWv = 1.0;  // modify for periodic
     }
-    if ( (k<nx-1) || (k==nx-1 && mesh->BCv.type[iVzSE] == -1) ) {
+    if ( (k<nx-1) || (k==nx-1 && (mesh->BCv.type[iVzSE] == -1 || mesh->BCv.type[iVzSE] == 0) ) ) {
         if (mesh->BCg.type[ixySE] != 30) inSEv = 1.0;   // modify for periodic
         if (mesh->BCg.type[ixyNE] != 30) inNEv = 1.0;   // modify for periodic
     }
@@ -2129,6 +2131,10 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     wW = inN + inS + inNWv + inSWv;
     wS = inW + inE + inSWc + inSEc;
     wN = inW + inE + inNWc + inNEc;
+    
+//    if (l==nzvx-2) {
+//        printf("%f %f %f %f %d %f %f %f %f\n", wW,wE,wS,wN, k, inN, inS, inNWv, inSWv);
+//    }
     
 //    if(k==0) printf("%2.2e %2.2e %2.2e %2.2e type %d\n", wW, wE, wS, wN, mesh->BCv.type[iVzSW]);
 //    if (k==1)  printf("%d %d\n", mesh->BCv.type[iVzSWW],mesh->BCv.type[iVzNWW]);
@@ -2377,9 +2383,12 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
 
     int Newton = 1;
 
-    int iVzW   = c3-1, iVzE = c3+1;
-//    int iVzSW  = c3-1-nxvz, iVzSE = c3+1-nxvz;
-//    int iVzNW  = c3-1+nxvz, iVzNE = c3+1+nxvz;
+    int iVzC   = c3;
+    int iVzW   = iVzC-1,  iVzE   = iVzC+1;
+    int iVzS   = c3-nxvz, iVzN   = c3+nxvz;
+    int iVzSW  = iVzS-1,  iVzSE  = iVzS+1;
+    int iVzNW  = iVzN-1,  iVzNE  = iVzN+1;
+
     int iVxNW  = c1+nx-1;
     int iVxNE  = c1+nx;
     int iVxSW  = c1-1;
@@ -2388,43 +2397,43 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     int iVxNEE = iVxNE+1;
     int iVxSWW = iVxSW-1;
     int iVxSEE = iVxSE+1;
-
-    int iVzS   = c3-nxvz;
-    int iVzN   = c3+nxvz;
-    int iVzSW  = iVzS-1;
-    int iVzSE  = iVzS+1;
-    int iVzNW  = iVzN-1;
-    int iVzNE  = iVzN+1;
-    int iVxNNW = c1+2*nx-1;
-    int iVxNNE = c1+2*nx;
-    int iVxSSW = c1-1-nx;
-    int iVxSSE = c1-nx;
+    int iVxNNW = iVxNW+nx;
+    int iVxNNE = iVxNE+nx;
+    int iVxSSW = iVxSW-nx;
+    int iVxSSE = iVxSE-nx;
     
     int iPrS  = c2;
     int iPrSW = iPrS-1;
     int iPrSE = iPrS+1;
-    
     int iPrN  = c2+ncx;
     int iPrNW = iPrN-1;
     int iPrNE = iPrN+1;
     
+    int ixyW  = c1-1;
+    int ixySW = ixyW-nx;
+    int ixyNW = ixyW+nx;
+    int ixyE  = c1;
+    int ixySE = ixyE-nx;
+    int ixyNE = ixyE+nx;
+    
     if (k==1    && mesh->BCv.type[iVzW]==-12) {
-        iVxNWW = c1+nx-1 + (nx-2);
-        iVxSWW = c1-1    + (nx-2);
+        iVxNWW = iVxNW   + (nx-2);
+        iVxSWW = iVxSW   + (nx-2);
         iPrNW  = iPrN    + (ncx-1);
         iPrSW  = iPrS    + (ncx-1);
-        iVzW   = c3+nxvz-3;
-        iVzSW  = iVzW-nxvz;
-        iVzNW  = iVzW+nxvz;
+        iVzW   = iVzC    + (nx-2);
+        iVzSW  = iVzW    - nxvz;
+        iVzNW  = iVzW    + nxvz;
     }
     if (k==nx-1 && mesh->BCv.type[iVzE]==-12) {
-        iVxNEE = c1+nx - (nx-2);
-        iVxSEE = c1    - (nx-2);
+        iVxNEE = iVxNE - (nx-2);
+        iVxSEE = iVxSE - (nx-2);
         iPrNE  = iPrN  - (ncx-1);
         iPrSE  = iPrS  - (ncx-1);
-        iVzE   = c3-nxvz+3;
-        iVzNE  = iVzE+nxvz;
-        iVzSE  = iVzE-nxvz;
+        iVzE   = iVzC  - (nx-2);
+        iVzNE  = iVzE  + nxvz;
+        iVzSE  = iVzE  - nxvz;
+        ixyE   = ixyE  - (nx-1);
     }
     
     double  vC=0.0;
@@ -2433,15 +2442,15 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     double uSWW=0.0, uSEE=0.0, uNWW=0.0, uNEE=0.0;
     double pSW=0.0, pSE=0.0, pNW=0.0, pNE=0.0;
 
-    double D31W  = mesh->D31_s[c1-1];
-    double D32W  = mesh->D32_s[c1-1];
-    double D33W  = mesh->D33_s[c1-1];
-    double D34W  = mesh->D34_s[c1-1];
+    double D31W  = mesh->D31_s[ixyW];
+    double D32W  = mesh->D32_s[ixyW];
+    double D33W  = mesh->D33_s[ixyW];
+    double D34W  = mesh->D34_s[ixyW];
 
-    double D31E  = mesh->D31_s[c1];
-    double D32E  = mesh->D32_s[c1];
-    double D33E  = mesh->D33_s[c1];
-    double D34E  = mesh->D34_s[c1];
+    double D31E  = mesh->D31_s[ixyE];
+    double D32E  = mesh->D32_s[ixyE];
+    double D33E  = mesh->D33_s[ixyE];
+    double D34E  = mesh->D34_s[ixyE];
 
     double D21S  = mesh->D21_n[iPrS];
     double D22S  = mesh->D22_n[iPrS];
@@ -2453,16 +2462,16 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     double D23N  = mesh->D23_n[iPrN];
     double D24N  = mesh->D24_n[iPrN];
 
-    if ( mesh->BCv.type[c3+1] == 13 ) {D31E = 0.0; D32E = 0.0; D33E = 0.0; D34E = 0.0;}
-    if ( mesh->BCv.type[c3-1] == 13 ) {D31W = 0.0; D32W = 0.0; D33W = 0.0; D34W = 0.0;}
+    if ( mesh->BCv.type[iVzE] == 13 ) {D31E = 0.0; D32E = 0.0; D33E = 0.0; D34E = 0.0;}
+    if ( mesh->BCv.type[iVzW] == 13 ) {D31W = 0.0; D32W = 0.0; D33W = 0.0; D34W = 0.0;}
 
     double inS=0.0,inN=0.0,inW=0.0, inE = 0.0;
 
-    if (mesh->BCp.type[c2    ] == -1) inS = 1.0;
-    if (mesh->BCp.type[c2+ncx] == -1) inN = 1.0;
+    if (mesh->BCp.type[iPrS] == -1) inS = 1.0;
+    if (mesh->BCp.type[iPrN] == -1) inN = 1.0;
 
-    if (mesh->BCg.type[c1-1] != 30 && mesh->BCv.type[c3-1] != 13 ) inW = 1.0;
-    if (mesh->BCg.type[c1  ] != 30 && mesh->BCv.type[c3+1] != 13 ) inE = 1.0;
+    if (mesh->BCg.type[ixyW] != 30 && mesh->BCv.type[iVzW] != 13 ) inW = 1.0;
+    if (mesh->BCg.type[ixyE] != 30 && mesh->BCv.type[iVzE] != 13 ) inE = 1.0;
 
     // XTRA
     double wS=0.0, wN=0.0, wE=0.0, wW=0.0;
@@ -2476,35 +2485,39 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
 
 
     if ( (k>1) || (k==1 && mesh->BCv.type[iVzW]==-1) ) {
-        if (mesh->BCp.type[c2-1    ] == -1) inSWc = 1.0; // modify for periodic ?
-        if (mesh->BCp.type[c2-1+ncx] == -1) inNWc = 1.0; // modify for periodic ?
+        if (mesh->BCp.type[iPrSW] == -1) inSWc = 1.0; // modify for periodic ?
+        if (mesh->BCp.type[iPrNW] == -1) inNWc = 1.0; // modify for periodic ?
     }
 
     if ( (k<nxvz-2) || (k==nxvz-2 && mesh->BCv.type[iVzE]==-1) ) {
-        if (mesh->BCp.type[c2+1    ] == -1) inSEc = 1.0; // modify for periodic ?
-        if (mesh->BCp.type[c2+1+ncx] == -1) inNEc = 1.0; // modify for periodic ?
+        if (mesh->BCp.type[iPrSE] == -1) inSEc = 1.0; // modify for periodic ?
+        if (mesh->BCp.type[iPrNE] == -1) inNEc = 1.0; // modify for periodic ?
     }
 
     if (l>0) {
-        if( mesh->BCg.type[c1-1-nx] != 30) inSWv = 1.0;
-        if( mesh->BCg.type[c1  -nx] != 30) inSEv = 1.0;
+        if( mesh->BCg.type[ixySW] != 30) inSWv = 1.0;
+        if( mesh->BCg.type[ixySE] != 30) inSEv = 1.0;
     }
 
     if (l<nz-1) {
-        if( mesh->BCg.type[c1-1+nx] != 30) inNWv = 1.0;
-        if( mesh->BCg.type[c1  +nx] != 30) inNEv = 1.0;
+        if( mesh->BCg.type[ixyNW] != 30) inNWv = 1.0;
+        if( mesh->BCg.type[ixyNE] != 30) inNEv = 1.0;
     }
 
     wE = inN + inS + inNEc + inSEc;
     wW = inN + inS + inNWc + inSWc;
     wS = inW + inE + inSWv + inSEv;
     wN = inW + inE + inNWv + inNEv;
+    
+//    if (l==nz-2) {
+//        printf("%f %f %f %f %d %f %f\n", wW,wE,wS,wN, l, inNWc, inSWc);
+//    }
 
     if (wW>1.0) wW = 1.0/wW;
     if (wE>1.0) wE = 1.0/wE;
     if (wS>1.0) wS = 1.0/wS;
     if (wN>1.0) wN = 1.0/wN;
-
+    
     double dx = mesh->dx;
     double dz = mesh->dz;
 
@@ -2556,13 +2569,13 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         //--------------------
 
         // uSSW (Newton)
-        if ( mesh->BCu.type[c1-1-nx] != 30  ) {
-            AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[c1-1-nx],   &(nnzc2A[ith]), uSSW*celvol, mesh->BCu.type[c1-1-nx],    mesh->BCu.val[c1-1-nx],    StokesA->bbc );
+        if ( mesh->BCu.type[iVxSSW] != 30  ) {
+            AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[iVxSSW],   &(nnzc2A[ith]), uSSW*celvol, mesh->BCu.type[iVxSSW],    mesh->BCu.val[iVxSSW],    StokesA->bbc );
         }
 
         // uSSE (Newton)
-        if ( mesh->BCu.type[c1-nx] != 30 ) {
-            AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[c1-nx],     &(nnzc2A[ith]), uSSE*celvol, mesh->BCu.type[c1-nx],    mesh->BCu.val[c1-nx],    StokesA->bbc );
+        if ( mesh->BCu.type[iVxSSE] != 30 ) {
+            AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[iVxSSE],     &(nnzc2A[ith]), uSSE*celvol, mesh->BCu.type[iVxSSE],    mesh->BCu.val[iVxSSE],    StokesA->bbc );
         }
 
         // uSWW
@@ -2571,23 +2584,22 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         }
 
         // uSW && uSE
-        if ( mesh->BCu.type[c1-1] != 30 ) AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[c1-1],     &(nnzc2A[ith]), uSW*celvol, mesh->BCu.type[c1-1],    mesh->BCu.val[c1-1],    StokesA->bbc );
-        if ( mesh->BCu.type[c1]   != 30 ) AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[c1],       &(nnzc2A[ith]), uSE*celvol, mesh->BCu.type[c1],      mesh->BCu.val[c1],      StokesA->bbc );
+        if ( mesh->BCu.type[iVxSW] != 30 ) AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[iVxSW], &(nnzc2A[ith]), uSW*celvol, mesh->BCu.type[iVxSW], mesh->BCu.val[iVxSW], StokesA->bbc );
+        if ( mesh->BCu.type[iVxSE] != 30 ) AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[iVxSE], &(nnzc2A[ith]), uSE*celvol, mesh->BCu.type[iVxSE], mesh->BCu.val[iVxSE], StokesA->bbc );
 
         // uSEE
         if ( (k<nx-1 ) || (k==nx-1 && mesh->BCv.type[iVxSEE]==-1) ) {
             if( mesh->BCu.type[c1+1] != 30) AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[iVxSEE],     &(nnzc2A[ith]), uSEE*celvol, mesh->BCu.type[iVxSEE],    mesh->BCu.val[iVxSEE],    StokesA->bbc );
         }
 
-//        if (k==1   && mesh->BCv.type[iVzW]==-1) printf("GOO GOO\n");
         // uNWW
         if ( (k>1    ) || (k==1   && mesh->BCv.type[iVxNWW]==-1) ) {
             if( mesh->BCu.type[c1+nx-2] != 30)  AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[iVxNWW],     &(nnzc2A[ith]), uNWW*celvol, mesh->BCu.type[iVxNWW],    mesh->BCu.val[iVxNWW],    StokesA->bbc );
         }
 
         // uNW && uNE
-        if ( mesh->BCu.type[c1+nx-1] != 30 ) AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[c1+nx-1],  &(nnzc2A[ith]), uNW*celvol, mesh->BCu.type[c1+nx-1], mesh->BCu.val[c1+nx-1], StokesA->bbc );
-        if ( mesh->BCu.type[c1+nx]   != 30 ) AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[c1+nx],    &(nnzc2A[ith]), uNE*celvol, mesh->BCu.type[c1+nx],   mesh->BCu.val[c1+nx],   StokesA->bbc );
+        if ( mesh->BCu.type[iVxNW] != 30 ) AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[iVxNW], &(nnzc2A[ith]), uNW*celvol, mesh->BCu.type[iVxNW], mesh->BCu.val[iVxNW], StokesA->bbc );
+        if ( mesh->BCu.type[iVxNE] != 30 ) AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[iVxNE], &(nnzc2A[ith]), uNE*celvol, mesh->BCu.type[iVxNE], mesh->BCu.val[iVxNE], StokesA->bbc );
 
         // uNEE
         if ( (k<nx-1 ) || (k==nx-1 && mesh->BCv.type[iVxNEE]==-1) ) {
@@ -2595,13 +2607,13 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         }
 
         // uNNW (Newton)
-        if ( mesh->BCu.type[c1+2*nx-1] != 30 ) {
-            AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[c1+2*nx-1],  &(nnzc2A[ith]), uNNW*celvol, mesh->BCu.type[c1+2*nx-1], mesh->BCu.val[c1+2*nx-1], StokesA->bbc );
+        if ( mesh->BCu.type[iVxNNW] != 30 ) {
+            AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[iVxNNW],  &(nnzc2A[ith]), uNNW*celvol, mesh->BCu.type[iVxNNW], mesh->BCu.val[iVxNNW], StokesA->bbc );
         }
 
         // uNNE (Newton)
-        if ( mesh->BCu.type[c1+2*nx] != 30 ) {
-            AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[c1+2*nx],  &(nnzc2A[ith]), uNNE*celvol, mesh->BCu.type[c1+2*nx], mesh->BCu.val[c1+2*nx], StokesA->bbc );
+        if ( mesh->BCu.type[iVxNNE] != 30 ) {
+            AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[iVxNNE],  &(nnzc2A[ith]), uNNE*celvol, mesh->BCu.type[iVxNNE], mesh->BCu.val[iVxNNE], StokesA->bbc );
         }
 
         //--------------------
@@ -2613,7 +2625,7 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         }
 
         // vS
-        if ( mesh->BCv.type[c3-nxvz] != 30  ) AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_v[c3-nxvz],  &(nnzc2A[ith]), vS*celvol, mesh->BCv.type[c3-nxvz], mesh->BCv.val[c3-nxvz], StokesA->bbc );
+        if ( mesh->BCv.type[iVzS] != 30  ) AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_v[iVzS],  &(nnzc2A[ith]), vS*celvol, mesh->BCv.type[iVzS], mesh->BCv.val[iVzS], StokesA->bbc );
 
         // vSE (Newton)
         if ( mesh->BCv.type[iVzSE] != 30  ) {
@@ -2628,7 +2640,7 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         }
 
         // vC
-        AddCoeff2( JtempA[ith], AtempA[ith], eqn, eqn,                     &(nnzc2A[ith]), vC*celvol, mesh->BCv.type[c3],      mesh->BCv.val[c3],      StokesA->bbc );
+        AddCoeff2( JtempA[ith], AtempA[ith], eqn, eqn,                     &(nnzc2A[ith]), vC*celvol, mesh->BCv.type[iVzC],      mesh->BCv.val[iVzC],      StokesA->bbc );
 
         // vE
         if ( mesh->BCv.type[iVzE] != 30 ) {
@@ -2643,7 +2655,7 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         }
 
         // vN
-        if ( mesh->BCv.type[c3+nxvz] != 30  ) AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_v[c3+nxvz],  &(nnzc2A[ith]), vN*celvol, mesh->BCv.type[c3+nxvz], mesh->BCv.val[c3+nxvz], StokesA->bbc );
+        if ( mesh->BCv.type[iVzN] != 30  ) AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_v[iVzN],  &(nnzc2A[ith]), vN*celvol, mesh->BCv.type[iVzN], mesh->BCv.val[iVzN], StokesA->bbc );
 
         // vNE (Newton)
         if ( mesh->BCv.type[iVzNE] != 30  ) {

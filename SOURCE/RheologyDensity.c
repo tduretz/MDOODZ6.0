@@ -226,6 +226,32 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
         
     }
     
+    
+//    double D31_per, D32_per, D33_per, D34_per;
+//    for ( int l=0; l<Nz; l++ ) {
+//
+//        int c0 = 0 + l*(Nx);
+//        int c1 = (Nx-1) + l*(Nx);
+//
+//        D31_per     = 0.5*( mesh->D31_s[c0] + mesh->D31_s[c1] );
+//        D32_per     = 0.5*( mesh->D32_s[c0] + mesh->D32_s[c1] );
+//        D33_per     = 0.5*( mesh->D33_s[c0] + mesh->D33_s[c1] );
+//        D34_per     = 0.5*( mesh->D34_s[c0] + mesh->D34_s[c1] );
+//
+//        if ( mesh->BCg.type[c1] != 30 ) {
+//
+//            mesh->D31_s[c0] = D31_per;
+//            mesh->D31_s[c1] = D31_per;
+//            mesh->D32_s[c0] = D32_per;
+//            mesh->D32_s[c1] = D32_per;
+//            mesh->D33_s[c0] = D33_per;
+//            mesh->D33_s[c1] = D33_per;
+//            mesh->D34_s[c0] = D34_per;
+//            mesh->D34_s[c1] = D34_per;
+//
+//        }
+//    }
+    
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -2090,6 +2116,28 @@ void NonNewtonianViscosityGrid( grid* mesh, mat_prop *materials, params *model, 
         }
     }
     
+//    double eta_per, eta_VE_per, VE_per;
+//    for ( l=0; l<Nz; l++ ) {
+//
+//        c0 = 0 + l*(Nx);
+//        c1 = (Nx-1) + l*(Nx);
+//
+//        eta_per    = 0.5*( mesh->eta_phys_s[c0] + mesh->eta_phys_s[c1] );
+//        eta_VE_per = 0.5*( mesh->eta_s[c0] + mesh->eta_s[c1] );
+//        VE_per     = 0.5*( mesh->VE_s[c0] + mesh->VE_s[c1] );
+//
+//        if ( mesh->BCg.type[c1] != 30 ) {
+//
+//            mesh->eta_phys_s[c0] = eta_per;
+//            mesh->eta_phys_s[c1] = eta_per;
+//            mesh->eta_s[c0]   = eta_VE_per;
+//            mesh->eta_s[c1]   = eta_VE_per;
+//            mesh->VE_s[c0]       = VE_per;
+//            mesh->VE_s[c1]       = VE_per;
+//
+//        }
+//    }
+    
     //    printf("** Rheology cell centers/vertices ---> %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
 }
 
@@ -2500,7 +2548,7 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 // Strain rate
-void StrainRateComponents( grid* mesh, scale scaling, params* model ) {
+void  ( grid* mesh, scale scaling, params* model ) {
     
     int k, l, c0, c1, c2, Nx, Nz, Ncx, Ncz, k1;
     double dx, dz;
