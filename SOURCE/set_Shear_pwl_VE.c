@@ -114,11 +114,9 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     double Lxinit = 1400e3/scaling.L, ShortSwitchV0 = 0.40;
     double Vfix = (50.0/(1000.0*365.25*24.0*3600.0))/(scaling.L/scaling.t); // [50.0 == 5 cm/yr]
     
-    if (model->step >= 1){
-        materials->k[4] = materials->k[3];
-        printf("Running with normal conductivity in the asthenosphere!\n");
-    }
-    
+    // Define dimensions;
+    Lx = (double) (model->xmax - model->xmin) ;
+    Lz = (double) (model->zmax - model->zmin) ;
     
     // ---- T-Dependent marker types
     // -------------------- SPECIFIC TO YOANN's SETUP -------------------- //
@@ -177,6 +175,8 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                     mesh->BCu.type[c] = -1;
                     mesh->BCu.val[c]  =  0;
                     
+                    if (model->shear_style== 0 ) {
+                    
                     // Matching BC nodes WEST
                     if (k==0 ) {
                         mesh->BCu.type[c] = 0;
@@ -199,6 +199,35 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                     if ( l==mesh->Nz ) {
                         mesh->BCu.type[c] = 13;
                         mesh->BCu.val[c]  =  0;
+                    }
+                        
+                    }
+                    if (model->shear_style== 1 ) {
+                        
+                        // Matching BC nodes WEST
+                        if (k==0 ) {
+                            mesh->BCu.type[c] = -2;
+                            mesh->BCu.val[c]  = 0.0*model->EpsBG*Lx;
+                        }
+                        
+                        // Matching BC nodes EAST
+                        if (k==mesh->Nx-1 ) {
+                            mesh->BCu.type[c] =  -12;
+                            mesh->BCu.val[c]  = -0.0*model->EpsBG*Lx;
+                        }
+                        
+                        // Free slip S
+                        if (l==0 ) { //&& (k>0 && k<NX-1) ) {
+                            mesh->BCu.type[c] =  11;
+                            mesh->BCu.val[c]  = -1*model->EpsBG*Lz;
+                        }
+                        
+                        // Free slip N
+                        if ( l==mesh->Nz) {// && (k>0 && k<NX-1)) {
+                            mesh->BCu.type[c] =  11;
+                            mesh->BCu.val[c]  =  1*model->EpsBG*Lz;
+                        }
+                        
                     }
                 }
                 
@@ -236,6 +265,8 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                     mesh->BCv.type[c] = -1;
                     mesh->BCv.val[c]  =  0;
                     
+                    if (model->shear_style== 0 ) {
+                    
                     // Matching BC nodes SOUTH
                     if (l==0 ) {
                         mesh->BCv.type[c] = 0;
@@ -259,6 +290,35 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                         mesh->BCv.type[c] =   13;
                         mesh->BCv.val[c]  =   0;
                     }
+                    }
+                    
+                    
+                    if (model->shear_style== 1 ) {
+                        // Matching BC nodes SOUTH
+                        if (l==0 ) {
+                            mesh->BCv.type[c] = 0;
+                            mesh->BCv.val[c]  = -0.0*model->EpsBG*Lz;
+                        }
+                        
+                        // Matching BC nodes NORTH
+                        if (l==mesh->Nz-1 ) {
+                            mesh->BCv.type[c] = 0;
+                            mesh->BCv.val[c]  = 0.0*model->EpsBG*Lz;
+                        }
+                        
+                        // Non-matching boundary points
+                        if ( (k==0)   ) {    //&& (l>0 && l<NZ-1)
+                            mesh->BCv.type[c] =  -12;
+                            mesh->BCv.val[c]  =   0;
+                        }
+                        
+                        // Non-matching boundary points
+                        if ( (k==mesh->Nx)  ) { // && (l>0 && l<NZ-1)
+                            mesh->BCv.type[c] =  -12;
+                            mesh->BCv.val[c]  =   0;
+                        }
+                    }
+                    
                 }
 				
 			}

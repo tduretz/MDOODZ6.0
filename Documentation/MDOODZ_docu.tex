@@ -292,10 +292,19 @@ M2Di2_PowerLaw_Newton_PureShear_MDOODZ.m
 
 setup file:
 \begin{verbatim} 
-PureShear_pwl_VE.txt
+Shear_pwl_VE.txt
 \end{verbatim}
 
-Time dependence, therefore stress builds up to eventually yield a comparable result than in the viscus end-member (section above).
+Time dependence, therefore stress builds up to eventually yield a comparable result than in the viscous end-member (section above).
+The model can be run in either pure shear if 
+\begin{verbatim} 
+shear_style = 0
+\end{verbatim}
+
+or periodic simple shear if 
+\begin{verbatim} 
+shear_style = 1
+\end{verbatim}
 
 \begin{figure}[ht!]
 \centerline{\includegraphics[height=3.0in]{./Figures/PureShear_pwl_VE_evol}}
@@ -305,10 +314,17 @@ Time dependence, therefore stress builds up to eventually yield a comparable res
 
 \begin{figure}[ht!]
 \centerline{\includegraphics[height=3.0in]{./Figures/PureShear_pwl_VE_cmaps}}
-\caption{Color maps of strain rate ($\log_{10}$) and stress.}
+\caption{Color maps of strain rate ($\log_{10}$) and stress for pure shear.}
 \label{PureShear_pwl_VE_cmaps}
 \end{figure}
-The results can also be reproduced using the M2Di example:
+
+\begin{figure}[ht!]
+\centerline{\includegraphics[height=3.0in]{./Figures/SimpleShear_pwl_VE_cmaps}}
+\caption{Color maps of strain rate ($\log_{10}$) and stress for periodic simple shear.}
+\label{PureShear_pwl_VE_cmaps}
+\end{figure}
+
+Pure shear model results can also be reproduced using the M2Di example:
 \begin{verbatim} 
 M2Di2_PowerLawVE_Newton_PureShear_LocIt_MDOODZ.m
 \end{verbatim}
