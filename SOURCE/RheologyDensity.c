@@ -1538,14 +1538,18 @@ void NonNewtonianViscosityGrid( grid* mesh, mat_prop *materials, params *model, 
                 
                 // ARITHMETIC AVERAGE
                 if (average == 0) {
-                    if ( cond == 1 ) mesh->eta_n[c0]   += mesh->phase_perc_n[p][c0] * etaVE;
+                    if ( cond == 1 ) mesh->eta_n[c0]      += mesh->phase_perc_n[p][c0] * etaVE;
                     if ( cond == 1 ) mesh->eta_phys_n[c0] += mesh->phase_perc_n[p][c0] * eta;
+                    if ( cond == 1 ) mesh->detadexx_n[c0] += mesh->phase_perc_n[p][c0] * detadexx;
+                    if ( cond == 1 ) mesh->detadezz_n[c0] += mesh->phase_perc_n[p][c0] * detadezz;
+                    if ( cond == 1 ) mesh->detadgxz_n[c0] += mesh->phase_perc_n[p][c0] * detadexz/2.0;
+                    if ( cond == 1 ) mesh->detadp_n[c0]   += mesh->phase_perc_n[p][c0] * detadp;
                 }
-                if ( cond == 1 ) mesh->VE_n[c0]       += mesh->phase_perc_n[p][c0] * VEcoeff;
-                if (average == 0 || average == 2) {
+                if (average == 0 || average == 2 ) {
                     if ( cond == 1 ) mesh->sxxd[c0]   += mesh->phase_perc_n[p][c0] * txx1;
                     if ( cond == 1 ) mesh->szzd[c0]   += mesh->phase_perc_n[p][c0] * tzz1;
                 }
+                if ( cond == 1 ) mesh->VE_n[c0]       += mesh->phase_perc_n[p][c0] * VEcoeff;
                 if ( cond == 1 ) mesh->eII_el[c0]     += mesh->phase_perc_n[p][c0] * eII_el;
                 if ( cond == 1 ) mesh->eII_pl[c0]     += mesh->phase_perc_n[p][c0] * eII_pl;
                 if ( cond == 1 ) mesh->eII_pwl[c0]    += mesh->phase_perc_n[p][c0] * eII_pwl;
@@ -1563,11 +1567,7 @@ void NonNewtonianViscosityGrid( grid* mesh, mat_prop *materials, params *model, 
                 if ( cond == 1 ) mesh->ezz_diss[c0]   += mesh->phase_perc_n[p][c0] * ezz_diss;
                 if ( cond == 1 ) mesh->exx_pl[c0]     += mesh->phase_perc_n[p][c0] * exx_pl;
                 
-                if ( cond == 1 ) mesh->detadexx_n[c0] += mesh->phase_perc_n[p][c0] * detadexx;
-                if ( cond == 1 ) mesh->detadezz_n[c0] += mesh->phase_perc_n[p][c0] * detadezz;
-                if ( cond == 1 ) mesh->detadgxz_n[c0] += mesh->phase_perc_n[p][c0] * detadexz/2.0;
-                if ( cond == 1 ) mesh->detadp_n[c0]   += mesh->phase_perc_n[p][c0] * detadp;
-                
+
                 
                 // HARMONIC AVERAGE
                 if (average == 1) {
@@ -1575,12 +1575,23 @@ void NonNewtonianViscosityGrid( grid* mesh, mat_prop *materials, params *model, 
                     if ( cond == 1 ) mesh->szzd[c0]       += mesh->phase_perc_n[p][c0] * 1.0/tzz1;
                     if ( cond == 1 ) mesh->eta_n[c0]      += mesh->phase_perc_n[p][c0] * 1.0/etaVE;
                     if ( cond == 1 ) mesh->eta_phys_n[c0] += mesh->phase_perc_n[p][c0] * 1.0/eta;
+                    if ( cond == 1 ) mesh->detadexx_n[c0] += mesh->phase_perc_n[p][c0] * detadexx     / pow(etaVE,2.0);
+                    if ( cond == 1 ) mesh->detadezz_n[c0] += mesh->phase_perc_n[p][c0] * detadezz     / pow(etaVE,2.0);
+                    if ( cond == 1 ) mesh->detadgxz_n[c0] += mesh->phase_perc_n[p][c0] * detadexz/2.0 / pow(etaVE,2.0);
+                    if ( cond == 1 ) mesh->detadp_n[c0]   += mesh->phase_perc_n[p][c0] * detadp       / pow(etaVE,2.0);
+                    
                 }
                 
                 // GEOMETRIC AVERAGE
                 if (average == 2) {
-                    if ( cond == 1 ) mesh->eta_n[c0]   += mesh->phase_perc_n[p][c0] * log(etaVE);
+                    if ( cond == 1 ) mesh->eta_n[c0]      += mesh->phase_perc_n[p][c0] * log(etaVE);
                     if ( cond == 1 ) mesh->eta_phys_n[c0] += mesh->phase_perc_n[p][c0] * log(eta);
+                    if ( cond == 1 ) mesh->detadexx_n[c0] += mesh->phase_perc_n[p][c0] * detadexx     / etaVE;
+                    if ( cond == 1 ) mesh->detadezz_n[c0] += mesh->phase_perc_n[p][c0] * detadezz     / etaVE;
+                    if ( cond == 1 ) mesh->detadgxz_n[c0] += mesh->phase_perc_n[p][c0] * detadexz/2.0 / etaVE;
+                    if ( cond == 1 ) mesh->detadp_n[c0]   += mesh->phase_perc_n[p][c0] * detadp       / etaVE;
+//                    if ( cond == 1 ) mesh->sxxd[c0]       += mesh->phase_perc_n[p][c0] * log(txx1);
+//                    if ( cond == 1 ) mesh->szzd[c0]       += mesh->phase_perc_n[p][c0] * log(tzz1);
                 }
             }
             
@@ -1592,6 +1603,10 @@ void NonNewtonianViscosityGrid( grid* mesh, mat_prop *materials, params *model, 
                 mesh->szzd[c0]       = 1.0/mesh->szzd[c0];
                 mesh->eta_n[c0]      = 1.0/mesh->eta_n[c0];
                 mesh->eta_phys_n[c0] = 1.0/mesh->eta_phys_n[c0];
+                mesh->detadexx_n[c0] *= pow(mesh->eta_n[c0],2.0);
+                mesh->detadezz_n[c0] *= pow(mesh->eta_n[c0],2.0);
+                mesh->detadgxz_n[c0] *= pow(mesh->eta_n[c0],2.0);
+                mesh->detadp_n[c0]   *= pow(mesh->eta_n[c0],2.0);
                 if (isinf (mesh->eta_phys_n[c0]) ) {
                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_n[p][c0]);
                     printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e\n", mesh->mu_n[c0], Tn, Pn, mesh->d0[c0], mesh->phi[c0],  mesh->eii_n[c0],  mesh->tii0_n[c0], mesh->exxd[c0], mesh->exz_n[c0], mesh->sxxd0[c0], mesh->sxz0_n[c0]);
@@ -1609,8 +1624,12 @@ void NonNewtonianViscosityGrid( grid* mesh, mat_prop *materials, params *model, 
             }
             // GEOMETRIC AVERAGE
             if (average == 2) {
-                mesh->eta_n[c0]   = exp(mesh->eta_n[c0]);
+                mesh->eta_n[c0]      = exp(mesh->eta_n[c0]);
                 mesh->eta_phys_n[c0] = exp(mesh->eta_phys_n[c0]);
+                mesh->detadexx_n[c0] *= mesh->eta_n[c0];
+                mesh->detadezz_n[c0] *= mesh->eta_n[c0];
+                mesh->detadgxz_n[c0] *= mesh->eta_n[c0];
+                mesh->detadp_n[c0]   *= mesh->eta_n[c0];
             }
             
         }
@@ -1661,11 +1680,15 @@ void NonNewtonianViscosityGrid( grid* mesh, mat_prop *materials, params *model, 
                 if (average ==0) {
                     if ( cond == 1 ) mesh->eta_s[c1]   += mesh->phase_perc_s[p][c1] * etaVE;
                     if ( cond == 1 ) mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] * eta;
+                    if ( cond == 1 ) mesh->detadexx_s[c1] += mesh->phase_perc_s[p][c1] * detadexx;
+                    if ( cond == 1 ) mesh->detadezz_s[c1] += mesh->phase_perc_s[p][c1] * detadezz;
+                    if ( cond == 1 ) mesh->detadgxz_s[c1] += mesh->phase_perc_s[p][c1] * detadexz/2.0;
+                    if ( cond == 1 ) mesh->detadp_s[c1]   += mesh->phase_perc_s[p][c1] * detadp;
                 }
-                if ( cond == 1 ) mesh->VE_s[c1]       += mesh->phase_perc_s[p][c1] * VEcoeff;
-                if (average ==0 || average==2 ) {
+                if (average ==0 || average==2) {
                     if ( cond == 1 ) mesh->sxz[c1]    += mesh->phase_perc_s[p][c1] * txz1;
                 }
+                if ( cond == 1 ) mesh->VE_s[c1]       += mesh->phase_perc_s[p][c1] * VEcoeff;
                 if ( cond == 1 ) mesh->eII_pl_s[c1]   += mesh->phase_perc_s[p][c1] * eII_pl;
                 if ( cond == 1 ) mesh->eII_pwl_s[c1]  += mesh->phase_perc_s[p][c1] * eII_pwl;
                 if ( cond == 1 ) mesh->exx_pwl_s[c1]  += mesh->phase_perc_s[p][c1] * exx_pwl;
@@ -1673,21 +1696,24 @@ void NonNewtonianViscosityGrid( grid* mesh, mat_prop *materials, params *model, 
                 if ( cond == 1 ) mesh->exz_el[c1]     += mesh->phase_perc_s[p][c1] * exz_el;
                 if ( cond == 1 ) mesh->exz_diss[c1]   += mesh->phase_perc_s[p][c1] * exz_diss;
                 if ( cond == 1 ) mesh->exz_pl[c1]     += mesh->phase_perc_s[p][c1] * exz_pl;
-                
-                if ( cond == 1 ) mesh->detadexx_s[c1] += mesh->phase_perc_s[p][c1] * detadexx;
-                if ( cond == 1 ) mesh->detadezz_s[c1] += mesh->phase_perc_s[p][c1] * detadezz;
-                if ( cond == 1 ) mesh->detadgxz_s[c1] += mesh->phase_perc_s[p][c1] * detadexz/2.0;
-                if ( cond == 1 ) mesh->detadp_s[c1]   += mesh->phase_perc_s[p][c1] * detadp;
-                
-                
+            
                 if (average == 1) {
-                    if ( cond == 1  ) mesh->sxz[c1]        += mesh->phase_perc_s[p][c1] *  1.0/txz1;
-                    if ( cond == 1  ) mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] *  1.0/etaVE;
-                    if ( cond == 1  ) mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] *  1.0/eta;
+                    if ( cond == 1 ) mesh->sxz[c1]        += mesh->phase_perc_s[p][c1] * 1.0/txz1;
+                    if ( cond == 1 ) mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] * 1.0/etaVE;
+                    if ( cond == 1 ) mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] * 1.0/eta;
+                    if ( cond == 1 ) mesh->detadexx_s[c1] += mesh->phase_perc_s[p][c1] * detadexx      / pow(etaVE,2.0);
+                    if ( cond == 1 ) mesh->detadezz_s[c1] += mesh->phase_perc_s[p][c1] * detadezz      / pow(etaVE,2.0);
+                    if ( cond == 1 ) mesh->detadgxz_s[c1] += mesh->phase_perc_s[p][c1] * detadexz/2.0  / pow(etaVE,2.0);
+                    if ( cond == 1 ) mesh->detadp_s[c1]   += mesh->phase_perc_s[p][c1] * detadp        / pow(etaVE,2.0);
                 }
                 if (average == 2) {
-                    if ( cond == 1  ) mesh->eta_s[c1  ] += mesh->phase_perc_s[p][c1] *  log(etaVE);
-                    if ( cond == 1  ) mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] *  log(eta);
+                    if ( cond == 1 ) mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] * log(etaVE);
+                    if ( cond == 1 ) mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] * log(eta);
+                    if ( cond == 1 ) mesh->detadexx_s[c1] += mesh->phase_perc_s[p][c1] * detadexx      / etaVE;
+                    if ( cond == 1 ) mesh->detadezz_s[c1] += mesh->phase_perc_s[p][c1] * detadezz      / etaVE;
+                    if ( cond == 1 ) mesh->detadgxz_s[c1] += mesh->phase_perc_s[p][c1] * detadexz/2.0  / etaVE;
+                    if ( cond == 1 ) mesh->detadp_s[c1]   += mesh->phase_perc_s[p][c1] * detadp        / etaVE;
+//                    if ( cond == 1  ) mesh->sxz[c1] += mesh->phase_perc_s[p][c1]        *  log(txz1);
                 }
             }
             // HARMONIC AVERAGE
@@ -1695,6 +1721,10 @@ void NonNewtonianViscosityGrid( grid* mesh, mat_prop *materials, params *model, 
                 mesh->sxz[c1]        = 1.0/mesh->sxz[c1];
                 mesh->eta_s[c1]      = 1.0/mesh->eta_s[c1];
                 mesh->eta_phys_s[c1] = 1.0/mesh->eta_phys_s[c1];
+                mesh->detadexx_s[c1] *= pow(mesh->eta_s[c1],2.0);
+                mesh->detadezz_s[c1] *= pow(mesh->eta_s[c1],2.0);
+                mesh->detadgxz_s[c1] *= pow(mesh->eta_s[c1],2.0);
+                mesh->detadp_s[c1]   *= pow(mesh->eta_s[c1],2.0);
                 if (isinf (mesh->eta_phys_s[c1]) ) {
                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_s[p][c1]);
                     printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e \n", mesh->mu_s[c1],  mesh->eii_s[c1],  mesh->tii0_s[c1], mesh->exxd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->sxz0[c1]);
@@ -1714,6 +1744,10 @@ void NonNewtonianViscosityGrid( grid* mesh, mat_prop *materials, params *model, 
             if (average == 2) {
                 mesh->eta_s[c1]   = exp(mesh->eta_s[c1]);
                 mesh->eta_phys_s[c1] = exp(mesh->eta_phys_s[c1]);
+                mesh->detadexx_s[c1] *= mesh->eta_s[c1];
+                mesh->detadezz_s[c1] *= mesh->eta_s[c1];
+                mesh->detadgxz_s[c1] *= mesh->eta_s[c1];
+                mesh->detadp_s[c1]   *= mesh->eta_s[c1];
             }
         }
     }
