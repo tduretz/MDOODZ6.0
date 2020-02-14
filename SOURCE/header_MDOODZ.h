@@ -123,9 +123,6 @@ struct _params {
     double Pn, Tmin, Tmax, Emin, Emax, dmin, dmax, PrBG;
     // Surface processes
     double surf_diff, surf_sedirate, surf_baselev;
-    // Stuff related Pips periodic aggregate deformation
-    int cut_noise, rheo_on_cells;
-    double accu;
     // Initial thermal perturbation
     double therm_pert_x0, therm_pert_z0, therm_pert_dT, therm_pert_rad, cooling_time;
     // For rheological database...
@@ -406,11 +403,10 @@ double LineSearch( SparseMat*, double*, grid*, params*, Nparams*, markers*, mark
 //void StressStrainRateInvariantsMarkers( markers*, grid*, scale );
 //void StressStrainRateInvariantsGrid( grid*, scale );
 ////void NonNewtonianViscosityMarkers( markers*, mat_prop, paramsOutputSparseMatrix , scale, int );
-void NonNewtonianViscosityCells( grid*, mat_prop*, params*, Nparams, scale*, int );
-void NonNewtonianViscosityGrid( grid*, mat_prop*, params*, Nparams, scale*, int );
+void NonNewtonianViscosityGrid( grid*, mat_prop*, params*, Nparams, scale* );
 //void NonNewtonianViscosityGridPart( grid*, markers*, mat_prop*, params*OutputSparseMatrix , scale*, int );
 void StrainRateComponents( grid*, scale, params* );
-void GenerateDeformationMaps( grid*, mat_prop*, params*, Nparams, scale*, int );
+void GenerateDeformationMaps( grid*, mat_prop*, params*, Nparams, scale*);
 void UpdateParticleGrainSize( grid*, scale, params, markers*, mat_prop* );
 //
 // Advection
@@ -571,7 +567,5 @@ void ExtractDiagonalScale(SparseMat *, SparseMat *, SparseMat *, SparseMat * );
 void ScaleMatrix(SparseMat *, SparseMat *, SparseMat *, SparseMat * ) ;
 
 void RheologicalOperators( grid*, params*, scale*, int );
-void ComputeViscosityDerivatives_FD( grid*, mat_prop*, params*, Nparams, scale*, int );
-void ComputeViscosityDerivatives_anal( grid*, mat_prop*, params*, Nparams, scale*, int );
-void Interp_TPdphi_centroid2vertices ( grid*, params* );
+void ComputeViscosityDerivatives_FD( grid*, mat_prop*, params*, Nparams, scale* );
 void SetUpModel_NoMarkers ( grid*, params*, scale* );

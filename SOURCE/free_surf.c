@@ -1131,6 +1131,8 @@ void SurfaceVelocity( grid *mesh, params model, surface *topo, markers* topo_cha
     //        }
     //    }
     
+    ncell  = 0;
+    ncellx = 0;
     // Vz on topography vertices
     for( j=0; j<nz; j++ ) {
         for( i=0; i<nxvz; i++ ) {
@@ -1156,6 +1158,7 @@ void SurfaceVelocity( grid *mesh, params model, surface *topo, markers* topo_cha
     
     sumvel = 0.0;
     ncell  = 0;
+    ncellx = 0;
     //    // correct sides
     //    topo->vx[0]      = topo->vx[1];
     //    topo->vx[nx  -2] = topo->vx[nx  -1];

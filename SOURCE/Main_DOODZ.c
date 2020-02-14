@@ -291,9 +291,7 @@ int main( int nargs, char *args[] ) {
         
         Interp_Grid2P( particles, particles.P,    &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
         Interp_Grid2P( particles, particles.T,    &mesh, mesh.T,    mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type );
-        if ( model.rheo_on_cells == 0 ) NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling, 1 );
-        if ( model.rheo_on_cells == 1 ) NonNewtonianViscosityCells(     &mesh, &materials, &model, Nmodel, &scaling, 1 );
-            
+        NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
             
         } // end of no_markers --- debug
         else {
@@ -311,7 +309,7 @@ int main( int nargs, char *args[] ) {
 
             ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 0 );
             
-            if ( model.rheo_on_cells == 0 ) NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling, 1 );
+            NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
             
             MinMaxArrayTag( mesh.phase_perc_n[0],          1.0,   (mesh.Nx-1)*(mesh.Nz-1), "ph 0         ", mesh.BCp.type );
             MinMaxArrayTag( mesh.phase_perc_n[1],          1.0,   (mesh.Nx-1)*(mesh.Nz-1), "ph 1         ", mesh.BCp.type );
@@ -366,7 +364,7 @@ int main( int nargs, char *args[] ) {
         Initialise1DArrayDouble( mesh.szzd,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
         Initialise1DArrayDouble( mesh.sxz,   (mesh.Nx)  *(mesh.Nz)  , 0.0 );
         // Generate deformation maps
-        if ( model.def_maps == 1 ) GenerateDeformationMaps( &mesh, &materials, &model, Nmodel, &scaling, 1 );
+        if ( model.def_maps == 1 ) GenerateDeformationMaps( &mesh, &materials, &model, Nmodel, &scaling );
     }
     else {
         // Which step do we restart from (BreakpointXXXX.dat)
@@ -635,7 +633,7 @@ int main( int nargs, char *args[] ) {
                     if ( model.decoupled_solve == 1 ) BuildStokesOperatorDecoupled  ( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, 1 );
                 
                 if (model.aniso == 0) {
-                    if ( model.Newton          == 1 ) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling, 1 );
+//                    if ( model.Newton          == 1 ) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling );
                     if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
                     if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
                 }

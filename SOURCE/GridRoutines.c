@@ -118,78 +118,13 @@ void ApplyBC( grid* mesh, params* model ) {
 
 void UpdateNonLinearity( grid* mesh, markers* particles, markers* topo_chain, surface *topo, mat_prop materials, params *model, Nparams *Nmodel, scale scaling, int mode, double h_contin ) {
         
-    int strain_rate_formulation = 1;
-    if ( model->iselastic == 1 ) strain_rate_formulation = 0;
-    
     // Strain rate component evaluation
     StrainRateComponents( mesh, scaling, model );
     
     //-----------------------------------------------//
     
-    if ( model->rheo_on_cells == 0 ) NonNewtonianViscosityGrid ( mesh, &materials, model, *Nmodel, &scaling, strain_rate_formulation );
-    if ( model->rheo_on_cells == 1 ) NonNewtonianViscosityCells( mesh, &materials, model, *Nmodel, &scaling, strain_rate_formulation );
-    //    NonNewtonianViscosityMarkers(  particles, mesh, &materials, model, Emodel, Mmodel, *Nmodel, &scaling, strain_rate_formulation );
+    NonNewtonianViscosityGrid ( mesh, &materials, model, *Nmodel, &scaling );
     
-    //-----------------------------------------------//
-    
-//    // Force upper cells to be weak
-//    int Nx = mesh->Nx;
-//    int Nz = mesh->Nz;
-//
-//
-//
-//    for (int i=0;i<Nx-1;i++) {
-//        for (int j=0;j<Nz-1;j++) {
-//
-//            int ii = i + j*(Nx-1);
-//
-//            if (j<Nz-2) {
-//                if (mesh->BCp.type[ii] == 31 && mesh->BCp.type[ii+(Nx-1)] == 30  ) {
-//                    //                if (mesh->BCp.type[ii] == 0 && mesh->BCp.type[ii+(Nx-1)] == 30  ) {
-////                    printf("Upper cells\n");
-//                    mesh->eta_n[ii] = model->mineta;
-////                    mesh->eta_phys_n[ii] = 32/scaling.eta;
-//                    //                                            printf("Upper cells\n");
-//                }
-//            }
-//
-//                        if (j<Nz-3) {
-//                            if (mesh->BCp.type[ii] == -1 && mesh->BCp.type[ii+2*(Nx-1)] == 30  ) {
-//                                mesh->eta_n[ii] = model->mineta;
-//                                mesh->eta_phys_n[ii] = model->mineta;
-////                                                   printf("Upper cells\n");
-//                            }
-//                        }
-//
-//        }
-//    }
-//
-//    for (int i=0;i<Nx;i++) {
-//        for (int j=0;j<Nz;j++) {
-//
-//            int ii = i + j*(Nx);
-//
-//            if (j<Nz-1) {
-//                if (mesh->BCg.type[ii] == -1 && mesh->BCg.type[ii+Nx] == 30 ) {
-//                    mesh->eta_s[ii] = model->mineta;
-//                    mesh->eta_phys_s[ii] = model->mineta;
-//                    //                                            printf("Upper vertices\n");
-//                }
-//            }
-//
-//
-//                        if (j<Nz-2) {
-//                            if (mesh->BCg.type[ii] == -1 && mesh->BCg.type[ii+2*Nx] == 30 ) {
-//                                mesh->eta_s[ii] = model->mineta;
-//                                mesh->eta_phys_s[ii] = model->mineta;
-////                                                     printf("Upper vertices\n");
-//                            }
-//                        }
-//
-//        }
-//    }
-
-
     //-----------------------------------------------//
     
     // Evaluate right hand side
@@ -205,99 +140,10 @@ void UpdateNonLinearity( grid* mesh, markers* particles, markers* topo_chain, su
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-//void InterpCentroidsToVerticesDouble( double* CentroidArray, double* VertexArray, grid* mesh, params *model, scale *scaling ) {
-//
-//    int k, l, Nx, Nz, Ncx, Ncz, c0, c1;
-//    double *temp;
-//    double accu = model->accu;
-//
-//    Nx = mesh->Nx;
-//    Nz = mesh->Nz;
-//    Ncx = Nx-1;
-//    Ncz = Nz-1;
-//
-//    // Allocate temporary swelled centroid of size = (ncx+2) * (ncz+2)
-//    temp = DoodzCalloc(sizeof(DoodzFP), (Ncx+2)*(Ncz+2));
-//
-//    // Fill interior points
-//    for (k=0; k<Ncx; k++) {
-//        for (l=0; l<Ncz; l++) {
-//            c0 = k + l*(Ncx);
-//            c1 = k + (l+1)*(Ncx+2) + 1;
-//            temp[c1] = CentroidArray[c0];
-//        }
-//    }
-//
-//    // Fill sides - avoid corners - assume zero flux
-//    for (k=1; k<Ncx+1; k++) {
-//        c0 = k + (0)*(Ncx+2);       // South
-//        c1 = k + (1)*(Ncx+2);       // up neighbour
-//        temp[c0] = temp[c1];
-//    }
-//    for (k=1; k<Ncx+1; k++) {
-//        c0 = k + (Ncz+1)*(Ncx+2);   // North
-//        c1 = k + (Ncz  )*(Ncx+2);   // down neighbour
-//        temp[c0] = temp[c1];
-//    }
-//    for (l=1; l<Ncz+1; l++) {
-//        c0 = 0 + (l)*(Ncx+2);       // West
-//        c1 = 1 + (l)*(Ncx+2);       // right neighbour
-//        temp[c0] = temp[c1];
-//    }
-//    for (l=1; l<Ncz+1; l++) {
-//        c0 = (Ncx+1) + (l)*(Ncx+2); // East
-//        c1 = (Ncx  ) + (l)*(Ncx+2); // left neighbour
-//        temp[c0] = temp[c1];
-//    }
-//
-//    // Corners - assume zero flux
-//    c0 = (0) + (0)*(Ncx+2);         // South-West
-//    c1 = (1) + (1)*(Ncx+2);         // up-right neighbour
-//    temp[c0] = temp[c1];
-//    c0 = (Ncx+1) + (0)*(Ncx+2);     // South-East
-//    c1 = (Ncx  ) + (1)*(Ncx+2);     // up-left neighbour
-//    temp[c0] = temp[c1];
-//    c0 = (0) + (Ncz+1)*(Ncx+2);     // North-West
-//    c1 = (1) + (Ncz  )*(Ncx+2);     // down-right neighbour
-//    temp[c0] = temp[c1];
-//    c0 = (Ncx+1) + (Ncz+1)*(Ncx+2); // North-West
-//    c1 = (Ncx  ) + (Ncz  )*(Ncx+2); // down-left neighbour
-//    temp[c0] = temp[c1];
-//
-//    // interpolate from temp array to actual vertices array
-//    for (k=0; k<Nx; k++) {
-//        for (l=0; l<Nz; l++) {
-//
-//            c1 = k + (l)*(Nx);
-//            c0 = k + (l+1)*(Ncx+2) + 1;
-//
-//            // Default 0 - above free surface
-//            VertexArray[c1] = 0.0;
-//
-//            // Else interpolate
-//            if ( mesh->BCg.type[c1] != 30 ) {
-//                VertexArray[c1] = 0.25*( temp[c0-1-(Ncx+2)] + temp[c0-0-(Ncx+2)] + temp[c0-1] + temp[c0] );
-//                if ( model->cut_noise==1 ){
-//                    VertexArray[c1] = round(VertexArray[c1]*accu)/accu;
-//                }
-//
-//            }
-//        }
-//    }
-//
-//    // Free temporary array
-//    DoodzFree(temp);
-//}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------*/
-
 void InterpCentroidsToVerticesDouble( double* CentroidArray, double* VertexArray, grid* mesh, params *model, scale *scaling ) {
     
     int k, l, Nx, Nz, Ncx, Ncz, c0, c1;
     double *temp;
-    double accu = model->accu;
     
     int per = model->isperiodic_x;
     
@@ -360,6 +206,7 @@ void InterpCentroidsToVerticesDouble( double* CentroidArray, double* VertexArray
     if (per==1) c1 = (Ncx+1) + (Ncz  )*(Ncx+2); // down      neighbour
     temp[c0] = temp[c1];
     
+#pragma omp parallel for shared( temp, VertexArray, mesh ) private( k,l,c1, c0 )  firstprivate( Ncx,Ncz, Nx, Nz )
     // interpolate from temp array to actual vertices array
     for (k=0; k<Nx; k++) {
         for (l=0; l<Nz; l++) {
@@ -390,13 +237,13 @@ void InterpVerticesToCentroidsDouble( double* CentroidArray, double* VertexArray
     
     int k, l, Nx, Nz, Ncx, Ncz, c0, c1;
     double *temp;
-    double accu = model->accu;
     
     Nx = mesh->Nx;
     Nz = mesh->Nz;
     Ncx = Nx-1;
     Ncz = Nz-1;
     
+#pragma omp parallel for shared( CentroidArray, VertexArray, mesh ) private( k,l,c1, c0 )  firstprivate( Ncx,Ncz, Nx )
     // Fill interior points
     for (k=0; k<Ncx; k++) {
         for (l=0; l<Ncz; l++) {
@@ -553,7 +400,7 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
             c = k + l*ncx;
             
             // Initial pressure field
-            mesh->p_in[c]  = eps;
+            mesh->p_in[c]  = 0.0;//eps;
             
         }
     }

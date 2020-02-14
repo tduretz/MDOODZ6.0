@@ -971,9 +971,6 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->loc_iter        = ReadInt2( fin, "loc_iter",        1 );
     model->therm_pert      = ReadInt2( fin, "therm_pert",      0 );
     model->fstrain         = ReadInt2( fin, "fstrain",         0 );
-    model->cut_noise       = ReadInt2( fin, "cut_noise",       0 );
-    model->accu            = ReadDou2( fin, "accu",         1.0e13 );
-    model->rheo_on_cells   = ReadInt2( fin, "rheo_on_cells",   0 );
     model->rec_T_P_x_z     = ReadInt2( fin, "rec_T_P_x_z",     0 );
     model->delete_breakpoints = ReadInt2( fin, "delete_breakpoints",        1 );
     materials->eta_VP      = ReadDou2( fin, "eta_VP",        0.0 ) / scaling->S / scaling->t;

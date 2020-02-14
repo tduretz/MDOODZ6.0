@@ -1,12 +1,12 @@
 **** RESTART ****/
-istep =00050
+istep =00001
 irestart = 0
 
 /**** OUTPUT FILES ****/
 writer = 1
 writer_step = 1
 writer_markers = 0
-writer_debug   = 1
+writer_debug   = 0
 
 /**** INPUT FILE FOR PARTICLES ****/
 input_file = setup_r201x201_F40_P20_B20.bin
@@ -20,7 +20,7 @@ T   = 1
 /**** SPACE-TIME ****/
 Nx   = 101
 Nz   = 101
-Nt   = 50
+Nt   = 1
 xmin = -0.5000000
 zmin = -0.5000000
 xmax =  0.5000000

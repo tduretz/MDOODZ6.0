@@ -1393,13 +1393,13 @@ void SetBCs_BEN( grid *mesh, params *model, scale scaling, markers* particles, m
                     //                mesh->BCv.val[c]  =  0;
                     
                     // Non-matching boundary points
-                    if ( (k==0) ) {
+                    if ( k==0 ) {
                         mesh->BCv.type[c] =   3;
                         mesh->BCv.val[c]  =   0;
                     }
                     
                     // Non-matching boundary points
-                    if ( (k==mesh->Nx) ) {
+                    if ( k==mesh->Nx ) {
                         mesh->BCv.type[c] =   3;
                         mesh->BCv.val[c]  =   0;
                     }

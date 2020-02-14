@@ -170,36 +170,26 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
                         dexz_el  = 0.0;
                         dexz_th  = 0.0;
                         dexz_tot = 0.0;
-
-                        // Contribution from shear dissipation
-                        if ( model.rheo_on_cells == 0 ) {
-
-                            // Average shear dissipation
-                            dexz_th   =  0.0;
-                            dexz_th  +=  0.25*mesh->sxz[c1]*(mesh->exz_diss[c1]);
-                            dexz_th  +=  0.25*mesh->sxz[c1+1]*(mesh->exz_diss[c1+1]);
-                            dexz_th  +=  0.25*mesh->sxz[c1+nx]*(mesh->exz_diss[c1+nx]);
-                            dexz_th  +=  0.25*mesh->sxz[c1+nx+1]*(mesh->exz_diss[c1+nx+1]);
-
-                            dexz_el   =  0.0;
-                            dexz_el  +=  0.25*mesh->sxz[c1]*(mesh->exz_el[c1]);
-                            dexz_el  +=  0.25*mesh->sxz[c1+1]*(mesh->exz_el[c1+1]);
-                            dexz_el  +=  0.25*mesh->sxz[c1+nx]*(mesh->exz_el[c1+nx]);
-                            dexz_el  +=  0.25*mesh->sxz[c1+nx+1]*( mesh->exz_el[c1+nx+1]);
-
-                            dexz_tot  =  0.0;
-                            dexz_tot +=  0.25*mesh->sxz[c1]*(mesh->exz[c1]);
-                            dexz_tot +=  0.25*mesh->sxz[c1+1]*(mesh->exz[c1+1]);
-                            dexz_tot +=  0.25*mesh->sxz[c1+nx]*(mesh->exz[c1+nx]);
-                            dexz_tot +=  0.25*mesh->sxz[c1+nx+1]*( mesh->exz[c1+nx+1]);
-                        }
-                        else {
-                            // Shear dissipation on cell centers
-                            dexz_tot  =  mesh->sxz_n[c2]*mesh->exz_n[c2];
-                            dexz_el   =  mesh->sxz_n[c2]*mesh->exz_n_el[c2];
-                            dexz_th   =  mesh->sxz_n[c2]*(mesh->exz_n_diss[c2]);
-                        }
-
+                        
+                        // Average shear dissipation
+                        dexz_th   =  0.0;
+                        dexz_th  +=  0.25*mesh->sxz[c1]*(mesh->exz_diss[c1]);
+                        dexz_th  +=  0.25*mesh->sxz[c1+1]*(mesh->exz_diss[c1+1]);
+                        dexz_th  +=  0.25*mesh->sxz[c1+nx]*(mesh->exz_diss[c1+nx]);
+                        dexz_th  +=  0.25*mesh->sxz[c1+nx+1]*(mesh->exz_diss[c1+nx+1]);
+                        
+                        dexz_el   =  0.0;
+                        dexz_el  +=  0.25*mesh->sxz[c1]*(mesh->exz_el[c1]);
+                        dexz_el  +=  0.25*mesh->sxz[c1+1]*(mesh->exz_el[c1+1]);
+                        dexz_el  +=  0.25*mesh->sxz[c1+nx]*(mesh->exz_el[c1+nx]);
+                        dexz_el  +=  0.25*mesh->sxz[c1+nx+1]*( mesh->exz_el[c1+nx+1]);
+                        
+                        dexz_tot  =  0.0;
+                        dexz_tot +=  0.25*mesh->sxz[c1]*(mesh->exz[c1]);
+                        dexz_tot +=  0.25*mesh->sxz[c1+1]*(mesh->exz[c1+1]);
+                        dexz_tot +=  0.25*mesh->sxz[c1+nx]*(mesh->exz[c1+nx]);
+                        dexz_tot +=  0.25*mesh->sxz[c1+nx+1]*( mesh->exz[c1+nx+1]);
+                        
                         // Contribution from normal dissipation
                         dexx_tot  =  mesh->sxxd[c2]*mesh->exxd[c2];
                         dexx_el   =  mesh->sxxd[c2]*mesh->exx_el[c2];
