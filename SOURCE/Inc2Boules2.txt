@@ -1,5 +1,5 @@
 **** RESTART ****/
-istep =00001
+istep =00050
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -20,7 +20,7 @@ T   = 1
 /**** SPACE-TIME ****/
 Nx   = 101
 Nz   = 101
-Nt   = 1
+Nt   = 50
 xmin = -0.5000000
 zmin = -0.5000000
 xmax =  0.5000000

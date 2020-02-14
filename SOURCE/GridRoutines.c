@@ -205,11 +205,101 @@ void UpdateNonLinearity( grid* mesh, markers* particles, markers* topo_chain, su
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+//void InterpCentroidsToVerticesDouble( double* CentroidArray, double* VertexArray, grid* mesh, params *model, scale *scaling ) {
+//
+//    int k, l, Nx, Nz, Ncx, Ncz, c0, c1;
+//    double *temp;
+//    double accu = model->accu;
+//
+//    Nx = mesh->Nx;
+//    Nz = mesh->Nz;
+//    Ncx = Nx-1;
+//    Ncz = Nz-1;
+//
+//    // Allocate temporary swelled centroid of size = (ncx+2) * (ncz+2)
+//    temp = DoodzCalloc(sizeof(DoodzFP), (Ncx+2)*(Ncz+2));
+//
+//    // Fill interior points
+//    for (k=0; k<Ncx; k++) {
+//        for (l=0; l<Ncz; l++) {
+//            c0 = k + l*(Ncx);
+//            c1 = k + (l+1)*(Ncx+2) + 1;
+//            temp[c1] = CentroidArray[c0];
+//        }
+//    }
+//
+//    // Fill sides - avoid corners - assume zero flux
+//    for (k=1; k<Ncx+1; k++) {
+//        c0 = k + (0)*(Ncx+2);       // South
+//        c1 = k + (1)*(Ncx+2);       // up neighbour
+//        temp[c0] = temp[c1];
+//    }
+//    for (k=1; k<Ncx+1; k++) {
+//        c0 = k + (Ncz+1)*(Ncx+2);   // North
+//        c1 = k + (Ncz  )*(Ncx+2);   // down neighbour
+//        temp[c0] = temp[c1];
+//    }
+//    for (l=1; l<Ncz+1; l++) {
+//        c0 = 0 + (l)*(Ncx+2);       // West
+//        c1 = 1 + (l)*(Ncx+2);       // right neighbour
+//        temp[c0] = temp[c1];
+//    }
+//    for (l=1; l<Ncz+1; l++) {
+//        c0 = (Ncx+1) + (l)*(Ncx+2); // East
+//        c1 = (Ncx  ) + (l)*(Ncx+2); // left neighbour
+//        temp[c0] = temp[c1];
+//    }
+//
+//    // Corners - assume zero flux
+//    c0 = (0) + (0)*(Ncx+2);         // South-West
+//    c1 = (1) + (1)*(Ncx+2);         // up-right neighbour
+//    temp[c0] = temp[c1];
+//    c0 = (Ncx+1) + (0)*(Ncx+2);     // South-East
+//    c1 = (Ncx  ) + (1)*(Ncx+2);     // up-left neighbour
+//    temp[c0] = temp[c1];
+//    c0 = (0) + (Ncz+1)*(Ncx+2);     // North-West
+//    c1 = (1) + (Ncz  )*(Ncx+2);     // down-right neighbour
+//    temp[c0] = temp[c1];
+//    c0 = (Ncx+1) + (Ncz+1)*(Ncx+2); // North-West
+//    c1 = (Ncx  ) + (Ncz  )*(Ncx+2); // down-left neighbour
+//    temp[c0] = temp[c1];
+//
+//    // interpolate from temp array to actual vertices array
+//    for (k=0; k<Nx; k++) {
+//        for (l=0; l<Nz; l++) {
+//
+//            c1 = k + (l)*(Nx);
+//            c0 = k + (l+1)*(Ncx+2) + 1;
+//
+//            // Default 0 - above free surface
+//            VertexArray[c1] = 0.0;
+//
+//            // Else interpolate
+//            if ( mesh->BCg.type[c1] != 30 ) {
+//                VertexArray[c1] = 0.25*( temp[c0-1-(Ncx+2)] + temp[c0-0-(Ncx+2)] + temp[c0-1] + temp[c0] );
+//                if ( model->cut_noise==1 ){
+//                    VertexArray[c1] = round(VertexArray[c1]*accu)/accu;
+//                }
+//
+//            }
+//        }
+//    }
+//
+//    // Free temporary array
+//    DoodzFree(temp);
+//}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 void InterpCentroidsToVerticesDouble( double* CentroidArray, double* VertexArray, grid* mesh, params *model, scale *scaling ) {
     
     int k, l, Nx, Nz, Ncx, Ncz, c0, c1;
     double *temp;
     double accu = model->accu;
+    
+    int per = model->isperiodic_x;
     
     Nx = mesh->Nx;
     Nz = mesh->Nz;
@@ -241,27 +331,33 @@ void InterpCentroidsToVerticesDouble( double* CentroidArray, double* VertexArray
     }
     for (l=1; l<Ncz+1; l++) {
         c0 = 0 + (l)*(Ncx+2);       // West
-        c1 = 1 + (l)*(Ncx+2);       // right neighbour
+        if (per == 0) c1 = 1           + (l)*(Ncx+2);       // right neighbour
+        if (per == 1) c1 = (Ncx+2-1-1) + (l)*(Ncx+2);       // right neighbour
         temp[c0] = temp[c1];
     }
     for (l=1; l<Ncz+1; l++) {
         c0 = (Ncx+1) + (l)*(Ncx+2); // East
-        c1 = (Ncx  ) + (l)*(Ncx+2); // left neighbour
+        if (per==0) c1 = (Ncx  ) + (l)*(Ncx+2); // left neighbour
+        if (per==1) c1 = 1       + (l)*(Ncx+2); // left neighbour
         temp[c0] = temp[c1];
     }
     
     // Corners - assume zero flux
     c0 = (0) + (0)*(Ncx+2);         // South-West
-    c1 = (1) + (1)*(Ncx+2);         // up-right neighbour
+    if (per==0) c1 = (1) + (1)*(Ncx+2);         // up-right neighbour
+    if (per==1) c1 = (0) + (1)*(Ncx+2);         // up       neighbour
     temp[c0] = temp[c1];
     c0 = (Ncx+1) + (0)*(Ncx+2);     // South-East
-    c1 = (Ncx  ) + (1)*(Ncx+2);     // up-left neighbour
+    if (per==0) c1 = (Ncx  ) + (1)*(Ncx+2);     // up-left neighbour
+    if (per==1) c1 = (Ncx+1) + (1)*(Ncx+2);     // up      neighbour
     temp[c0] = temp[c1];
     c0 = (0) + (Ncz+1)*(Ncx+2);     // North-West
-    c1 = (1) + (Ncz  )*(Ncx+2);     // down-right neighbour
+    if (per==0) c1 = (1) + (Ncz  )*(Ncx+2);     // down-right neighbour
+    if (per==1) c1 = (0) + (Ncz  )*(Ncx+2);     // down       neighbour
     temp[c0] = temp[c1];
     c0 = (Ncx+1) + (Ncz+1)*(Ncx+2); // North-West
-    c1 = (Ncx  ) + (Ncz  )*(Ncx+2); // down-left neighbour
+    if (per==0) c1 = (Ncx  ) + (Ncz  )*(Ncx+2); // down-left neighbour
+    if (per==1) c1 = (Ncx+1) + (Ncz  )*(Ncx+2); // down      neighbour
     temp[c0] = temp[c1];
     
     // interpolate from temp array to actual vertices array
@@ -277,10 +373,7 @@ void InterpCentroidsToVerticesDouble( double* CentroidArray, double* VertexArray
             // Else interpolate
             if ( mesh->BCg.type[c1] != 30 ) {
                 VertexArray[c1] = 0.25*( temp[c0-1-(Ncx+2)] + temp[c0-0-(Ncx+2)] + temp[c0-1] + temp[c0] );
-                if ( model->cut_noise==1 ){
-                    VertexArray[c1] = round(VertexArray[c1]*accu)/accu;
-                }
-                
+  
             }
         }
     }
@@ -576,151 +669,152 @@ void GridIndices( grid* mesh) {
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void Interp_TPdphi_centroid2vertices ( grid* mesh, params *model ) {
-    
-    int k, l, Nx, Nz, Ncx, Ncz, k1, c0, c1;
-    
-    Nx = mesh->Nx;
-    Nz = mesh->Nz;
-    Ncx = Nx-1;
-    Ncz = Nz-1;
-    
-#pragma omp parallel for shared( mesh ) private( k, l, k1, c1, c0 )  firstprivate(  model, Ncx, Ncz, Nx, Nz )
-    for ( k1=0; k1<Nx*Nz; k1++ ) {
-        
-        k  = mesh->kn[k1];
-        l  = mesh->ln[k1];
-        
-        c0 = k + l*(Ncx);
-        c1 = k + l*Nx;
-        
-        mesh->T_s[c1]   = 0.0;
-        mesh->P_s[c1]   = 0.0;
-        mesh->d0_s[c1]  = 0.0;
-        mesh->phi1_s[c1] = 0.0;
-        
-        // INNER average T and P
-        if (k>0 && k<Ncx && l>0 && l<Ncz) {
-             mesh->T_s[c1]  = 0.25*( mesh->T[c0] +  mesh->T[c0-Ncx] +  mesh->T[c0-Ncx-1] +  mesh->T[c0-1] );
-             mesh->P_s[c1]  = 0.25*( mesh->p_in[c0] +  mesh->p_in[c0-Ncx] +  mesh->p_in[c0-Ncx-1] +  mesh->p_in[c0-1]);
-             mesh->d0_s[c1]  = 0.25*( mesh->d0[c0] +  mesh->d0[c0-Ncx] +  mesh->d0[c0-Ncx-1] +  mesh->d0[c0-1]);
-             mesh->phi1_s[c1] = 0.25*( mesh->phi[c0] +  mesh->phi[c0-Ncx] +  mesh->phi[c0-Ncx-1] +  mesh->phi[c0-1]);
-        }
-
-        // WEST
-        if (k==0 && (l>0 && l<Ncz) && model->isperiodic_x==0) {
-             mesh->T_s[c1]  = 0.5*( mesh->T[c0] + mesh->T[c0-Ncx] );
-             mesh->P_s[c1]  = 0.5*( mesh->p_in[c0] + mesh->p_in[c0-Ncx] );
-             mesh->d0_s[c1]  = 0.5*( mesh->d0[c0] + mesh->d0[c0-Ncx] );
-             mesh->phi1_s[c1] = 0.5*( mesh->phi[c0] + mesh->phi[c0-Ncx] );
-        }
-
-        // WEST - periodic
-        if (k==0 && (l>0 && l<Ncz) && model->isperiodic_x==1) {
-             mesh->T_s[c1]  = 0.25*( mesh->T[c0] + mesh->T[c0-Ncx] + mesh->T[c0+Ncx-1] + mesh->T[c0-1] );
-             mesh->P_s[c1]  = 0.25*( mesh->p_in[c0] + mesh->p_in[c0-Ncx] + mesh->p_in[c0+Ncx-1] + mesh->p_in[c0-1] );
-             mesh->d0_s[c1]  = 0.25*( mesh->d0[c0] + mesh->d0[c0-Ncx] + mesh->d0[c0+Ncx-1] + mesh->d0[c0-1] );
-             mesh->phi1_s[c1] = 0.25*( mesh->phi[c0] + mesh->phi[c0-Ncx] + mesh->phi[c0+Ncx-1] + mesh->phi[c0-1] );
-        }
-
-        // EAST
-        if (k==Ncx && (l>0 && l<Ncz) && model->isperiodic_x==0) {
-             mesh->T_s[c1]  = 0.5*( mesh->T[c0-1] + mesh->T[c0-Ncx-1]);
-             mesh->P_s[c1]  = 0.5*( mesh->p_in[c0-1] + mesh->p_in[c0-Ncx-1] );
-             mesh->d0_s[c1]  = 0.5*( mesh->d0[c0-1] + mesh->d0[c0-Ncx-1]);
-             mesh->phi1_s[c1] = 0.5*( mesh->phi[c0-1] + mesh->phi[c0-Ncx-1] );
-        }
-
-        // EAST - periodic
-        if (k==Ncx && (l>0 && l<Ncz) && model->isperiodic_x==1) {
-             mesh->T_s[c1]  = 0.25*( mesh->T[c0-1] + mesh->T[c0-Ncx-1] + mesh->T[c0-Ncx-Ncx] + mesh->T[c0-Ncx]);
-             mesh->P_s[c1]  = 0.25*( mesh->p_in[c0-1] + mesh->p_in[c0-Ncx-1] + mesh->p_in[c0-Ncx-Ncx] + mesh->p_in[c0-Ncx] );
-             mesh->d0_s[c1]  = 0.25*( mesh->d0[c0-1] + mesh->d0[c0-Ncx-1] + mesh->d0[c0-Ncx-Ncx] + mesh->d0[c0-Ncx]);
-             mesh->phi1_s[c1] = 0.25*( mesh->phi[c0-1] + mesh->phi[c0-Ncx-1] + mesh->phi[c0-Ncx-Ncx] + mesh->phi[c0-Ncx] );
-        }
-
-
-        // SOUTH
-        if (l==0 && (k>0 && k<Ncx)) {
-             mesh->T_s[c1]  = 0.5*( mesh->T[c0]+ mesh->T[c0-1] );
-             mesh->P_s[c1]  = 0.5*( mesh->p_in[c0] + mesh->p_in[c0-1] );
-             mesh->d0_s[c1]  = 0.5*( mesh->d0[c0]+ mesh->d0[c0-1] );
-             mesh->phi1_s[c1] = 0.5*( mesh->phi[c0] + mesh->phi[c0-1] );
-        }
-
-        // NORTH
-        if (l==Ncz && (k>0 && k<Ncx)) {
-             mesh->T_s[c1]  = 0.5*( mesh->T[c0-Ncx] + mesh->T[c0-Ncx-1] );
-             mesh->P_s[c1]  = 0.5*( mesh->p_in[c0-Ncx] + mesh->p_in[c0-Ncx-1] );
-             mesh->d0_s[c1]  = 0.5*( mesh->d0[c0-Ncx] + mesh->d0[c0-Ncx-1] );
-             mesh->phi1_s[c1] = 0.5*( mesh->phi[c0-Ncx] + mesh->phi[c0-Ncx-1] );
-        }
-
-        // SOUTH-WEST
-        if (l==0 && k==0 && model->isperiodic_x==0) {
-             mesh->T_s[c1]  = mesh->T[c0];
-             mesh->P_s[c1]  = mesh->p_in[c0];
-             mesh->d0_s[c1]  = mesh->d0[c0];
-             mesh->phi1_s[c1] = mesh->phi[c0];
-        }
-
-        // SOUTH-WEST - periodic
-        if (l==0 && k==0 && model->isperiodic_x==1) {
-             mesh->T_s[c1]  = 0.5*(mesh->T[c0] + mesh->T[c0+Ncx-1]);
-             mesh->P_s[c1]  = 0.5*(mesh->p_in[c0] + mesh->p_in[c0+Ncx-1]);
-             mesh->d0_s[c1]  = 0.5*(mesh->d0[c0] + mesh->d0[c0+Ncx-1]);
-             mesh->phi1_s[c1] = 0.5*(mesh->phi[c0] + mesh->phi[c0+Ncx-1]);
-        }
-
-        // NORTH-WEST
-        if (l==Ncz && k==0 && model->isperiodic_x==0) {
-             mesh->T_s[c1]  = mesh->T[c0-Ncx];
-             mesh->P_s[c1]  = mesh->p_in[c0-Ncx];
-             mesh->d0_s[c1]  = mesh->d0[c0-Ncx];
-             mesh->phi1_s[c1] = mesh->phi[c0-Ncx];
-        }
-
-        // NORTH-WEST - periodic
-        if (l==Ncz && k==0 && model->isperiodic_x==1) {
-             mesh->T_s[c1]  = 0.5*(mesh->T[c0-Ncx] + mesh->T[c0-1]);
-             mesh->P_s[c1]  = 0.5*(mesh->p_in[c0-Ncx] + mesh->p_in[c0-1]);
-             mesh->d0_s[c1]  = 0.5*(mesh->d0[c0-Ncx] + mesh->d0[c0-1]);
-             mesh->phi1_s[c1] = 0.5*(mesh->phi[c0-Ncx] + mesh->phi[c0-1]);
-        }
-
-        // SOUTH-EAST
-        if (l==0 && k==Ncx && model->isperiodic_x==0) {
-             mesh->T_s[c1]  = mesh->T[c0-1];
-             mesh->P_s[c1]  = mesh->p_in[c0-1];
-             mesh->d0_s[c1]  = mesh->d0[c0-1];
-             mesh->phi1_s[c1] = mesh->phi[c0-1];
-        }
-
-        // SOUTH-EAST - periodic
-        if (l==0 && k==Ncx && model->isperiodic_x==1) {
-             mesh->T_s[c1]  = 0.5*(mesh->T[c0-1] + mesh->T[c0-Ncx]);
-             mesh->P_s[c1]  = 0.5*(mesh->p_in[c0-1]+ mesh->p_in[c0-Ncx]);
-             mesh->d0_s[c1]  = 0.5*(mesh->d0[c0-1] + mesh->d0[c0-Ncx]);
-             mesh->phi1_s[c1] = 0.5*(mesh->phi[c0-1]+ mesh->phi[c0-Ncx]);
-        }
-
-        // NORTH-EAST
-        if (l==Ncz && k==Ncx && model->isperiodic_x==0) {
-             mesh->T_s[c1]  = mesh->T[c0-Ncx-1];
-             mesh->P_s[c1]  = mesh->p_in[c0-Ncx-1];
-             mesh->d0_s[c1]  = mesh->d0[c0-Ncx-1];
-             mesh->phi1_s[c1] = mesh->phi[c0-Ncx-1];
-        }
-
-        // NORTH-EAST - periodic
-        if (l==Ncz && k==Ncx && model->isperiodic_x==1) {
-             mesh->T_s[c1]  = 0.5*(mesh->T[c0-Ncx-1] + mesh->T[c0-Ncx-Ncx]);
-             mesh->P_s[c1]  = 0.5*(mesh->p_in[c0-Ncx-1] + mesh->p_in[c0-Ncx-Ncx]);
-             mesh->d0_s[c1]  = 0.5*(mesh->d0[c0-Ncx-1] + mesh->d0[c0-Ncx-Ncx]);
-             mesh->phi1_s[c1] = 0.5*(mesh->phi[c0-Ncx-1] + mesh->phi[c0-Ncx-Ncx]);
-        }
-    }
-}
+//void Interp_TPdphi_centroid2vertices ( grid* mesh, params *model ) {
+//    
+//    int k, l, Nx, Nz, Ncx, Ncz, k1, c0, c1;
+//    
+//    Nx = mesh->Nx;
+//    Nz = mesh->Nz;
+//    Ncx = Nx-1;
+//    Ncz = Nz-1;
+//    
+//    
+//#pragma omp parallel for shared( mesh ) private( k, l, k1, c1, c0 )  firstprivate(  model, Ncx, Ncz, Nx, Nz )
+//    for ( k1=0; k1<Nx*Nz; k1++ ) {
+//        
+//        k  = mesh->kn[k1];
+//        l  = mesh->ln[k1];
+//        
+//        c0 = k + l*(Ncx);
+//        c1 = k + l*Nx;
+//        
+//        mesh->T_s[c1]   = 0.0;
+//        mesh->P_s[c1]   = 0.0;
+//        mesh->d0_s[c1]  = 0.0;
+//        mesh->phi1_s[c1] = 0.0;
+//        
+//        // INNER average T and P
+//        if (k>0 && k<Ncx && l>0 && l<Ncz) {
+//             mesh->T_s[c1]  = 0.25*( mesh->T[c0] +  mesh->T[c0-Ncx] +  mesh->T[c0-Ncx-1] +  mesh->T[c0-1] );
+//             mesh->P_s[c1]  = 0.25*( mesh->p_in[c0] +  mesh->p_in[c0-Ncx] +  mesh->p_in[c0-Ncx-1] +  mesh->p_in[c0-1]);
+//             mesh->d0_s[c1]  = 0.25*( mesh->d0[c0] +  mesh->d0[c0-Ncx] +  mesh->d0[c0-Ncx-1] +  mesh->d0[c0-1]);
+//             mesh->phi1_s[c1] = 0.25*( mesh->phi[c0] +  mesh->phi[c0-Ncx] +  mesh->phi[c0-Ncx-1] +  mesh->phi[c0-1]);
+//        }
+//
+//        // WEST
+//        if (k==0 && (l>0 && l<Ncz) && model->isperiodic_x==0) {
+//             mesh->T_s[c1]  = 0.5*( mesh->T[c0] + mesh->T[c0-Ncx] );
+//             mesh->P_s[c1]  = 0.5*( mesh->p_in[c0] + mesh->p_in[c0-Ncx] );
+//             mesh->d0_s[c1]  = 0.5*( mesh->d0[c0] + mesh->d0[c0-Ncx] );
+//             mesh->phi1_s[c1] = 0.5*( mesh->phi[c0] + mesh->phi[c0-Ncx] );
+//        }
+//
+//        // WEST - periodic
+//        if (k==0 && (l>0 && l<Ncz) && model->isperiodic_x==1) {
+//             mesh->T_s[c1]  = 0.25*( mesh->T[c0] + mesh->T[c0-Ncx] + mesh->T[c0+Ncx-1] + mesh->T[c0-1] );
+//             mesh->P_s[c1]  = 0.25*( mesh->p_in[c0] + mesh->p_in[c0-Ncx] + mesh->p_in[c0+Ncx-1] + mesh->p_in[c0-1] );
+//             mesh->d0_s[c1]  = 0.25*( mesh->d0[c0] + mesh->d0[c0-Ncx] + mesh->d0[c0+Ncx-1] + mesh->d0[c0-1] );
+//             mesh->phi1_s[c1] = 0.25*( mesh->phi[c0] + mesh->phi[c0-Ncx] + mesh->phi[c0+Ncx-1] + mesh->phi[c0-1] );
+//        }
+//
+//        // EAST
+//        if (k==Ncx && (l>0 && l<Ncz) && model->isperiodic_x==0) {
+//             mesh->T_s[c1]  = 0.5*( mesh->T[c0-1] + mesh->T[c0-Ncx-1]);
+//             mesh->P_s[c1]  = 0.5*( mesh->p_in[c0-1] + mesh->p_in[c0-Ncx-1] );
+//             mesh->d0_s[c1]  = 0.5*( mesh->d0[c0-1] + mesh->d0[c0-Ncx-1]);
+//             mesh->phi1_s[c1] = 0.5*( mesh->phi[c0-1] + mesh->phi[c0-Ncx-1] );
+//        }
+//
+//        // EAST - periodic
+//        if (k==Ncx && (l>0 && l<Ncz) && model->isperiodic_x==1) {
+//             mesh->T_s[c1]  = 0.25*( mesh->T[c0-1] + mesh->T[c0-Ncx-1] + mesh->T[c0-Ncx-Ncx] + mesh->T[c0-Ncx]);
+//             mesh->P_s[c1]  = 0.25*( mesh->p_in[c0-1] + mesh->p_in[c0-Ncx-1] + mesh->p_in[c0-Ncx-Ncx] + mesh->p_in[c0-Ncx] );
+//             mesh->d0_s[c1]  = 0.25*( mesh->d0[c0-1] + mesh->d0[c0-Ncx-1] + mesh->d0[c0-Ncx-Ncx] + mesh->d0[c0-Ncx]);
+//             mesh->phi1_s[c1] = 0.25*( mesh->phi[c0-1] + mesh->phi[c0-Ncx-1] + mesh->phi[c0-Ncx-Ncx] + mesh->phi[c0-Ncx] );
+//        }
+//
+//
+//        // SOUTH
+//        if (l==0 && (k>0 && k<Ncx)) {
+//             mesh->T_s[c1]  = 0.5*( mesh->T[c0]+ mesh->T[c0-1] );
+//             mesh->P_s[c1]  = 0.5*( mesh->p_in[c0] + mesh->p_in[c0-1] );
+//             mesh->d0_s[c1]  = 0.5*( mesh->d0[c0]+ mesh->d0[c0-1] );
+//             mesh->phi1_s[c1] = 0.5*( mesh->phi[c0] + mesh->phi[c0-1] );
+//        }
+//
+//        // NORTH
+//        if (l==Ncz && (k>0 && k<Ncx)) {
+//             mesh->T_s[c1]  = 0.5*( mesh->T[c0-Ncx] + mesh->T[c0-Ncx-1] );
+//             mesh->P_s[c1]  = 0.5*( mesh->p_in[c0-Ncx] + mesh->p_in[c0-Ncx-1] );
+//             mesh->d0_s[c1]  = 0.5*( mesh->d0[c0-Ncx] + mesh->d0[c0-Ncx-1] );
+//             mesh->phi1_s[c1] = 0.5*( mesh->phi[c0-Ncx] + mesh->phi[c0-Ncx-1] );
+//        }
+//
+//        // SOUTH-WEST
+//        if (l==0 && k==0 && model->isperiodic_x==0) {
+//             mesh->T_s[c1]  = mesh->T[c0];
+//             mesh->P_s[c1]  = mesh->p_in[c0];
+//             mesh->d0_s[c1]  = mesh->d0[c0];
+//             mesh->phi1_s[c1] = mesh->phi[c0];
+//        }
+//
+//        // SOUTH-WEST - periodic
+//        if (l==0 && k==0 && model->isperiodic_x==1) {
+//             mesh->T_s[c1]  = 0.5*(mesh->T[c0] + mesh->T[c0+Ncx-1]);
+//             mesh->P_s[c1]  = 0.5*(mesh->p_in[c0] + mesh->p_in[c0+Ncx-1]);
+//             mesh->d0_s[c1]  = 0.5*(mesh->d0[c0] + mesh->d0[c0+Ncx-1]);
+//             mesh->phi1_s[c1] = 0.5*(mesh->phi[c0] + mesh->phi[c0+Ncx-1]);
+//        }
+//
+//        // NORTH-WEST
+//        if (l==Ncz && k==0 && model->isperiodic_x==0) {
+//             mesh->T_s[c1]  = mesh->T[c0-Ncx];
+//             mesh->P_s[c1]  = mesh->p_in[c0-Ncx];
+//             mesh->d0_s[c1]  = mesh->d0[c0-Ncx];
+//             mesh->phi1_s[c1] = mesh->phi[c0-Ncx];
+//        }
+//
+//        // NORTH-WEST - periodic
+//        if (l==Ncz && k==0 && model->isperiodic_x==1) {
+//             mesh->T_s[c1]  = 0.5*(mesh->T[c0-Ncx] + mesh->T[c0-1]);
+//             mesh->P_s[c1]  = 0.5*(mesh->p_in[c0-Ncx] + mesh->p_in[c0-1]);
+//             mesh->d0_s[c1]  = 0.5*(mesh->d0[c0-Ncx] + mesh->d0[c0-1]);
+//             mesh->phi1_s[c1] = 0.5*(mesh->phi[c0-Ncx] + mesh->phi[c0-1]);
+//        }
+//
+//        // SOUTH-EAST
+//        if (l==0 && k==Ncx && model->isperiodic_x==0) {
+//             mesh->T_s[c1]  = mesh->T[c0-1];
+//             mesh->P_s[c1]  = mesh->p_in[c0-1];
+//             mesh->d0_s[c1]  = mesh->d0[c0-1];
+//             mesh->phi1_s[c1] = mesh->phi[c0-1];
+//        }
+//
+//        // SOUTH-EAST - periodic
+//        if (l==0 && k==Ncx && model->isperiodic_x==1) {
+//             mesh->T_s[c1]  = 0.5*(mesh->T[c0-1] + mesh->T[c0-Ncx]);
+//             mesh->P_s[c1]  = 0.5*(mesh->p_in[c0-1]+ mesh->p_in[c0-Ncx]);
+//             mesh->d0_s[c1]  = 0.5*(mesh->d0[c0-1] + mesh->d0[c0-Ncx]);
+//             mesh->phi1_s[c1] = 0.5*(mesh->phi[c0-1]+ mesh->phi[c0-Ncx]);
+//        }
+//
+//        // NORTH-EAST
+//        if (l==Ncz && k==Ncx && model->isperiodic_x==0) {
+//             mesh->T_s[c1]  = mesh->T[c0-Ncx-1];
+//             mesh->P_s[c1]  = mesh->p_in[c0-Ncx-1];
+//             mesh->d0_s[c1]  = mesh->d0[c0-Ncx-1];
+//             mesh->phi1_s[c1] = mesh->phi[c0-Ncx-1];
+//        }
+//
+//        // NORTH-EAST - periodic
+//        if (l==Ncz && k==Ncx && model->isperiodic_x==1) {
+//             mesh->T_s[c1]  = 0.5*(mesh->T[c0-Ncx-1] + mesh->T[c0-Ncx-Ncx]);
+//             mesh->P_s[c1]  = 0.5*(mesh->p_in[c0-Ncx-1] + mesh->p_in[c0-Ncx-Ncx]);
+//             mesh->d0_s[c1]  = 0.5*(mesh->d0[c0-Ncx-1] + mesh->d0[c0-Ncx-Ncx]);
+//             mesh->phi1_s[c1] = 0.5*(mesh->phi[c0-Ncx-1] + mesh->phi[c0-Ncx-Ncx]);
+//        }
+//    }
+//}
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/

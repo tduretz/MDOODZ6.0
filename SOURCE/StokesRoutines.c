@@ -67,87 +67,6 @@ void DetectCompressibleCells ( grid* mesh, params *model ) {
     printf("---> %04d compressibles cells detected\n", kk);
 }
 
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-
-void ExtractSolutions( SparseMat *Stokes, grid* mesh, params* model ) {
-    
-    int cc, nx=model->Nx, nz=model->Nz, nzvx=nz+1, nxvz=nx+1, ncx=nx-1, ncz=nz-1, kk;
-    
-    double eps = 1e-13;
-    
-    // -------- Get U -------- //
-#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( nzvx, nx )
-    for( cc=0; cc<nzvx*nx; cc++) {
-        
-        mesh->u_in[cc] = 0.0;
-        
-        if ( mesh->BCu.type[cc] != 30 ) {
-            if ( mesh->BCu.type[cc] == 0 ) {
-                mesh->u_in[cc] = mesh->BCu.val[cc];
-            }
-            
-            if ( mesh->BCu.type[cc] < 30 && mesh->BCu.type[cc] != 0 && mesh->BCu.type[cc] != 11 && mesh->BCu.type[cc] != 13  && mesh->BCu.type[cc] != -12 ) {
-                mesh->u_in[cc] = Stokes->x[Stokes->eqn_u[cc]];
-            }
-        }
-    }
-    
-    // Periodic
-    for( cc=0; cc<nzvx; cc++) {
-        kk = cc*nx + nx-1;
-        if ( mesh->BCu.type[kk] ==-12) {
-            mesh->u_in[kk] = mesh->u_in[kk-mesh->Nx+1];
-        }
-    }
-    
-    // -------- Get V -------- //
-#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( nz, nxvz )
-    for( cc=0; cc<nz*nxvz; cc++) {
-        
-        mesh->v_in[cc] = 0.0;
-        
-        if ( mesh->BCv.type[cc] != 30 ) {
-            if ( mesh->BCv.type[cc] == 0 ) {
-                mesh->v_in[cc] = mesh->BCv.val[cc];
-            }
-            
-            if ( mesh->BCv.type[cc] < 30 && mesh->BCv.type[cc] != 0 && mesh->BCv.type[cc] != 11 && mesh->BCv.type[cc] != 13 && mesh->BCv.type[cc] != -12 ) {
-                mesh->v_in[cc] = Stokes->x[Stokes->eqn_v[cc]];
-                
-            }
-        }
-    }
-    
-    // -------- Get P -------- //
-#pragma omp parallel for shared( mesh, Stokes ) private( cc ) firstprivate( nz, nxvz ) //reduction(+:num_p)
-    
-    for( cc=0; cc<ncz*ncx; cc++) {
-        
-        mesh->p_in[cc] = 0.0;
-        if ( mesh->BCp.type[cc] != 30 ) {
-            if ( mesh->BCp.type[cc] == 0 || mesh->BCp.type[cc] == 31 ) {
-                mesh->dp[cc]   = 0.0;
-                mesh->p_in[cc] = mesh->BCp.val[cc];
-            }
-            else {
-                mesh->dp[cc]   = Stokes->x[Stokes->eqn_p[cc]] * Stokes->d[Stokes->eqn_p[cc]] - mesh->p_start[cc];
-                mesh->p_in[cc] = Stokes->x[Stokes->eqn_p[cc]];
-//                if (Stokes->eqn_p[cc]==870) printf("Surface pressure %d  %2.2e\n", 870, Stokes->x[Stokes->eqn_p[cc]]);
-            }
-            // This is important for FD Jacobian of pressure --- it fixes a minimum values where the solution exactly zero
-            if (fabs(mesh->p_in[cc])<eps ) mesh->p_in[cc] = eps;
-        }
-    }
-    
-    // Apply Bc to Vx and Vz
-    ApplyBC( mesh, model );
-    
-}
-
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -159,7 +78,6 @@ void ExtractSolutions2( SparseMat *Stokes, grid* mesh, params* model, double* dx
     
     double eps = 1e-13;
 
-
 // Test relaxed u-v-p solutions
 #pragma omp parallel for shared( mesh, dx, Stokes ) private( cc ) firstprivate( alpha, nzvx, nx )
 for( cc=0; cc<nzvx*nx; cc++) {
@@ -167,6 +85,14 @@ for( cc=0; cc<nzvx*nx; cc++) {
         mesh->u_in[cc] += alpha*dx[Stokes->eqn_u[cc]];
     }
 }
+    
+    // Periodic
+    for( cc=0; cc<nzvx; cc++) {
+        kk = cc*nx + nx-1;
+        if ( mesh->BCu.type[kk] ==-12) {
+            mesh->u_in[kk] = mesh->u_in[kk-mesh->Nx+1];
+        }
+    }
 
 #pragma omp parallel for shared( mesh, dx, Stokes ) private( cc ) firstprivate( alpha, nz, nxvz )
 for( cc=0; cc<nz*nxvz; cc++) {
@@ -452,7 +378,10 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
             //------------------------------------------------------------------------------------------------------
             
             // Some stuff to be put on vertices                       < ---------------------- get P from centroids to vertices
-            Interp_TPdphi_centroid2vertices (mesh, model );
+            InterpCentroidsToVerticesDouble( mesh->T,    mesh->T_s,   mesh, model, &scaling );
+            InterpCentroidsToVerticesDouble( mesh->p_in, mesh->P_s,   mesh, model, &scaling );
+            InterpCentroidsToVerticesDouble( mesh->d0,   mesh->d0_s,  mesh, model, &scaling );
+            InterpCentroidsToVerticesDouble( mesh->phi,  mesh->phi_s, mesh, model, &scaling );
             
             // Update non-linearity
             UpdateNonLinearity( mesh, particles, topo_chain, topo, materials, model, Nmodel, scaling, 0, 1.0 );

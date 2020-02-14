@@ -124,7 +124,7 @@ struct _params {
     // Surface processes
     double surf_diff, surf_sedirate, surf_baselev;
     // Stuff related Pips periodic aggregate deformation
-    int cut_noise, rheo_on_cells, DefectCorrectionForm, HsOnly, HomoFields;
+    int cut_noise, rheo_on_cells;
     double accu;
     // Initial thermal perturbation
     double therm_pert_x0, therm_pert_z0, therm_pert_dT, therm_pert_rad, cooling_time;

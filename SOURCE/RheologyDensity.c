@@ -1898,6 +1898,11 @@ void NonNewtonianViscosityGrid( grid* mesh, mat_prop *materials, params *model, 
     Ncx = Nx-1;
     Ncz = Nz-1;
     
+    InterpCentroidsToVerticesDouble( mesh->T,    mesh->T_s,   mesh, model, &scaling );
+    InterpCentroidsToVerticesDouble( mesh->p_in, mesh->P_s,   mesh, model, &scaling );
+    InterpCentroidsToVerticesDouble( mesh->d0,   mesh->d0_s,  mesh, model, &scaling );
+    InterpCentroidsToVerticesDouble( mesh->phi,  mesh->phi_s, mesh, model, &scaling );
+    
     // Evaluate cell center viscosities
 #pragma omp parallel for shared( mesh  ) private( cond, k, l, k1, p, eta, c1, c0, Pn, Tn, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, d1, exx_pwl, exz_pwl, A2_pwl, exx_el, exz_el, exx_diss, exz_diss, exx_pl, exz_pl ) firstprivate( materials, scaling, flag, average, model, Ncx, Ncz )
     for ( k1=0; k1<Ncx*Ncz; k1++ ) {
@@ -2548,7 +2553,7 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 // Strain rate
-void  ( grid* mesh, scale scaling, params* model ) {
+void  StrainRateComponents( grid* mesh, scale scaling, params* model ) {
     
     int k, l, c0, c1, c2, Nx, Nz, Ncx, Ncz, k1;
     double dx, dz;
@@ -2584,7 +2589,7 @@ void  ( grid* mesh, scale scaling, params* model ) {
         }
     }
     
-    // Shear components : we only calculate sxz because sxz = szx (stress tensor symmetry)
+    // Shear components we only calculate sxz because sxz = szx (stress tensor symmetry)
 #pragma omp parallel for shared( mesh ) private( k, k1, l, c1, c2  ) firstprivate( dx, dz, Nx, Nz )
     for ( k1=0; k1<Nx*Nz; k1++ ) {
         k  = mesh->kn[k1];
@@ -2626,129 +2631,133 @@ void  ( grid* mesh, scale scaling, params* model ) {
     }
     
     // Interpolate normal strain rate on vertices
-#pragma omp parallel for shared( mesh ) private( k, k1, l, c1, c0, sum  ) firstprivate( dx, dz, Nx, Nz, Ncx, Ncz, model )
-    for ( k1=0; k1<Nx*Nz; k1++ ) {
-        k  = mesh->kn[k1];
-        l  = mesh->ln[k1];
-        c1 = k  + l*(Nx);
-        c0 = k  + l*(Nx-1);
-        
-        mesh->exxd_s[c1] = 0.0;
-        mesh->ezzd_s[c1] = 0.0;
-        sum = 0.0;
-        
-        if ( mesh->BCg.type[c1] != 30 ) {
-            
-            // INNER
-            if ( k > 0 && k < Ncx && l > 0 && l < Ncz ) {
-                if ( mesh->BCp.type[c0]       != 30 && mesh->BCp.type[c0]       != 31) { mesh->exxd_s[c1] += mesh->exxd[c0];       sum++;}
-                if ( mesh->BCp.type[c0-1]     != 30 && mesh->BCp.type[c0-1]     != 31) { mesh->exxd_s[c1] += mesh->exxd[c0-1];     sum++;}
-                if ( mesh->BCp.type[c0-Ncx]   != 30 && mesh->BCp.type[c0-Ncx]   != 31) { mesh->exxd_s[c1] += mesh->exxd[c0-Ncx];   sum++;}
-                if ( mesh->BCp.type[c0-Ncx-1] != 30 && mesh->BCp.type[c0-Ncx-1] != 31) { mesh->exxd_s[c1] += mesh->exxd[c0-Ncx-1]; sum++;}
-                if ( mesh->BCp.type[c0]       != 30 && mesh->BCp.type[c0]       != 31) { mesh->ezzd_s[c1] += mesh->ezzd[c0];       }
-                if ( mesh->BCp.type[c0-1]     != 30 && mesh->BCp.type[c0-1]     != 31) { mesh->ezzd_s[c1] += mesh->ezzd[c0-1];     }
-                if ( mesh->BCp.type[c0-Ncx]   != 30 && mesh->BCp.type[c0-Ncx]   != 31) { mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx];   }
-                if ( mesh->BCp.type[c0-Ncx-1] != 30 && mesh->BCp.type[c0-Ncx-1] != 31) { mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx-1]; }
-            }
-            
-            // WEST
-            if ( k == 0 && l > 0 && l < Ncz && model->isperiodic_x==0  ) {
-                if ( mesh->BCp.type[c0]     != 30 && mesh->BCp.type[c0]     != 31) {mesh->exxd_s[c1] += mesh->exxd[c0    ]; mesh->ezzd_s[c1] += mesh->ezzd[c0    ]; sum++;};
-                if ( mesh->BCp.type[c0-Ncx] != 30 && mesh->BCp.type[c0-Ncx] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx]; mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx]; sum++;};
-            }
-            
-            // Periodic
-            if ( k == 0 && l > 0 && l < Ncz && model->isperiodic_x==1 ) {
-                if ( mesh->BCp.type[c0]       != 30 && mesh->BCp.type[c0]       != 31) {mesh->exxd_s[c1] += mesh->exxd[c0];       sum++;};
-                if ( mesh->BCp.type[c0-Ncx]   != 30 && mesh->BCp.type[c0-Ncx]   != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx];   sum++;};
-                if ( mesh->BCp.type[c0-1]     != 30 && mesh->BCp.type[c0-1]     != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-1];     sum++;};
-                if ( mesh->BCp.type[c0+Ncx-1] != 30 && mesh->BCp.type[c0+Ncx-1] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0+Ncx-1]; sum++;};
-                if ( mesh->BCp.type[c0]       != 30 && mesh->BCp.type[c0]       != 31) {mesh->ezzd_s[c1] += mesh->ezzd[c0];       };
-                if ( mesh->BCp.type[c0-Ncx]   != 30 && mesh->BCp.type[c0-Ncx]   != 31) {mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx];   };
-                if ( mesh->BCp.type[c0-1]     != 30 && mesh->BCp.type[c0-1]     != 31) {mesh->ezzd_s[c1] += mesh->ezzd[c0-1];     };
-                if ( mesh->BCp.type[c0+Ncx-1] != 30 && mesh->BCp.type[c0+Ncx-1] != 31) {mesh->ezzd_s[c1] += mesh->ezzd[c0+Ncx-1]; };
-            }
-            
-            // EAST
-            if ( k == Ncx && l > 0 && l< Ncz && model->isperiodic_x==0  ) {
-                if ( mesh->BCp.type[c0-1]     != 30 && mesh->BCp.type[c0-1]     != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-1    ]; mesh->ezzd_s[c1] += mesh->ezzd[c0-1    ]; sum++;};
-                if ( mesh->BCp.type[c0-Ncx-1] != 30 && mesh->BCp.type[c0-Ncx-1] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx-1]; mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx-1]; sum++;};
-            }
-            
-            // Periodic
-            if ( k == Ncx && l > 0 && l< Ncz && model->isperiodic_x==1 ) {
-                if ( mesh->BCp.type[c0-1]       != 30 && mesh->BCp.type[c0-1]       != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-1];       sum++;};
-                if ( mesh->BCp.type[c0-Ncx-1]   != 30 && mesh->BCp.type[c0-Ncx-1]   != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx-1];   sum++;};
-                if ( mesh->BCp.type[c0-Ncx-Ncx] != 30 && mesh->BCp.type[c0-Ncx-Ncx] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx-Ncx]; sum++;};
-                if ( mesh->BCp.type[c0-Ncx  ]   != 30 && mesh->BCp.type[c0-Ncx  ]   != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx];     sum++;};
-                if ( mesh->BCp.type[c0-1]       != 30 && mesh->BCp.type[c0-1]       != 31) {mesh->ezzd_s[c1] += mesh->ezzd[c0-1];       };
-                if ( mesh->BCp.type[c0-Ncx-1]   != 30 && mesh->BCp.type[c0-Ncx-1]   != 31) {mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx-1];   };
-                if ( mesh->BCp.type[c0-Ncx-Ncx] != 30 && mesh->BCp.type[c0-Ncx-Ncx] != 31) {mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx-Ncx]; };
-                if ( mesh->BCp.type[c0-Ncx  ]   != 30 && mesh->BCp.type[c0-Ncx  ]   != 31) {mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx];     };
-            }
-            
-            // NORTH
-            if ( l == Ncz && k> 0 && k < Ncx ) {
-                if ( mesh->BCp.type[c0-Ncx-1] != 30 && mesh->BCp.type[c0-Ncx-1] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx-1]; mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx-1]; sum++;};
-                if ( mesh->BCp.type[c0-Ncx]   != 30 && mesh->BCp.type[c0-Ncx]   != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx]  ; mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx]  ; sum++;};
-            }
-            
-            // SOUTH
-            if ( l == 0 && k > 0 && k< Ncx ) {
-                if ( mesh->BCp.type[c0]   != 30 && mesh->BCp.type[c0]   != 31) {mesh->exxd_s[c1] += mesh->exxd[c0  ]; mesh->ezzd_s[c1] += mesh->ezzd[c0  ]; sum++;};
-                if ( mesh->BCp.type[c0-1] != 30 && mesh->BCp.type[c0-1] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-1]; mesh->ezzd_s[c1] += mesh->ezzd[c0-1]; sum++;};
-            }
-            
-            // NORTH-EAST
-            if ( k == Ncx && l == Ncz && model->isperiodic_x==0  ) {
-                if ( mesh->BCp.type[c0-Ncx-1] != 30 && mesh->BCp.type[c0-Ncx-1] != 31) {mesh->exxd_s[c1] = mesh->exxd[c0-Ncx-1]; mesh->ezzd_s[c1] = mesh->ezzd[c0-Ncx-1]; sum++;};
-            }
-            
-            if ( k == Ncx && l == Ncz && model->isperiodic_x==1 ) {
-                if ( mesh->BCp.type[c0-Ncx-1]   != 30 && mesh->BCp.type[c0-Ncx-1  ] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx-1  ]; mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx-1  ];   sum++;};
-                if ( mesh->BCp.type[c0-Ncx-Ncx] != 30 && mesh->BCp.type[c0-Ncx-Ncx] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx-Ncx]; mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx-Ncx]; sum++;};
-            }
-            
-            // NORTH-WEST
-            if ( k == 0 && l== Ncz && model->isperiodic_x==0 ) {
-                if ( mesh->BCp.type[c0-Ncx] != 30 && mesh->BCp.type[c0-Ncx] != 31) {mesh->exxd_s[c1] = mesh->exxd[c0-Ncx]; mesh->ezzd_s[c1] = mesh->ezzd[c0-Ncx]; sum++;};
-            }
-            
-            if ( k == 0 && l== Ncz && model->isperiodic_x==1  ) {
-                if ( mesh->BCp.type[c0-Ncx] != 30 && mesh->BCp.type[c0-Ncx] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx]; mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx]; sum++;};
-                if ( mesh->BCp.type[c0-1  ] != 30 && mesh->BCp.type[c0-1  ] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-1  ]; mesh->ezzd_s[c1] += mesh->ezzd[c0-1  ]; sum++;};
-            }
-            
-            // SOUTH-EAST
-            if ( k == Ncx && l == 0 && model->isperiodic_x==0  ) {
-                if ( mesh->BCp.type[c0-1] != 30 && mesh->BCp.type[c0-1] != 31) {mesh->exxd_s[c1] = mesh->exxd[c0-1]; mesh->ezzd_s[c1] = mesh->ezzd[c0-1]; sum++;};
-            }
-            
-            if ( k == Ncx && l == 0 && model->isperiodic_x==1  ) {
-                if ( mesh->BCp.type[c0-1]   != 30 && mesh->BCp.type[c0-1]   != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-1  ]; mesh->ezzd_s[c1] += mesh->ezzd[c0-1  ]; sum++;};
-                if ( mesh->BCp.type[c0-Ncx] != 30 && mesh->BCp.type[c0-Ncx] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx]; mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx]; sum++;};
-                
-            }
-            
-            // SOUTH-WEST
-            if ( k == 0 && l== 0 && model->isperiodic_x==0  ) {
-                if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {mesh->exxd_s[c1] = mesh->exxd[c0]; mesh->ezzd_s[c1] = mesh->ezzd[c0]; sum++;};
-            }
-            
-            if ( k == 0 && l== 0 && model->isperiodic_x==1  ) {
-                if ( mesh->BCp.type[c0]       != 30 && mesh->BCp.type[c0      ] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0      ]; mesh->ezzd_s[c1] += mesh->ezzd[c0      ]; sum++;};
-                if ( mesh->BCp.type[c0+Ncx-1] != 30 && mesh->BCp.type[c0+Ncx-1] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0+Ncx-1]; mesh->ezzd_s[c1] += mesh->ezzd[c0+Ncx-1]; sum++;};
-                
-            }
-            
-            if (sum>0) mesh->exxd_s[c1] /= sum;
-            if (sum>0) mesh->ezzd_s[c1] /= sum;
-        }
-        else {
-            mesh->exxd_s[c1] = 0.0;
-            mesh->ezzd_s[c1] = 0.0;
-        }
-    }
+    InterpCentroidsToVerticesDouble( mesh->exxd, mesh->exxd_s, mesh, model, &scaling );
+    InterpCentroidsToVerticesDouble( mesh->ezzd, mesh->ezzd_s, mesh, model, &scaling );
+    
+    
+//#pragma omp parallel for shared( mesh ) private( k, k1, l, c1, c0, sum  ) firstprivate( dx, dz, Nx, Nz, Ncx, Ncz, model )
+//    for ( k1=0; k1<Nx*Nz; k1++ ) {
+//        k  = mesh->kn[k1];
+//        l  = mesh->ln[k1];
+//        c1 = k  + l*(Nx);
+//        c0 = k  + l*(Nx-1);
+//
+//        mesh->exxd_s[c1] = 0.0;
+//        mesh->ezzd_s[c1] = 0.0;
+//        sum = 0.0;
+//
+//        if ( mesh->BCg.type[c1] != 30 ) {
+//
+//            // INNER
+//            if ( k > 0 && k < Ncx && l > 0 && l < Ncz ) {
+//                if ( mesh->BCp.type[c0]       != 30 && mesh->BCp.type[c0]       != 31) { mesh->exxd_s[c1] += mesh->exxd[c0];       sum++;}
+//                if ( mesh->BCp.type[c0-1]     != 30 && mesh->BCp.type[c0-1]     != 31) { mesh->exxd_s[c1] += mesh->exxd[c0-1];     sum++;}
+//                if ( mesh->BCp.type[c0-Ncx]   != 30 && mesh->BCp.type[c0-Ncx]   != 31) { mesh->exxd_s[c1] += mesh->exxd[c0-Ncx];   sum++;}
+//                if ( mesh->BCp.type[c0-Ncx-1] != 30 && mesh->BCp.type[c0-Ncx-1] != 31) { mesh->exxd_s[c1] += mesh->exxd[c0-Ncx-1]; sum++;}
+//                if ( mesh->BCp.type[c0]       != 30 && mesh->BCp.type[c0]       != 31) { mesh->ezzd_s[c1] += mesh->ezzd[c0];       }
+//                if ( mesh->BCp.type[c0-1]     != 30 && mesh->BCp.type[c0-1]     != 31) { mesh->ezzd_s[c1] += mesh->ezzd[c0-1];     }
+//                if ( mesh->BCp.type[c0-Ncx]   != 30 && mesh->BCp.type[c0-Ncx]   != 31) { mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx];   }
+//                if ( mesh->BCp.type[c0-Ncx-1] != 30 && mesh->BCp.type[c0-Ncx-1] != 31) { mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx-1]; }
+//            }
+//
+//            // WEST
+//            if ( k == 0 && l > 0 && l < Ncz && model->isperiodic_x==0  ) {
+//                if ( mesh->BCp.type[c0]     != 30 && mesh->BCp.type[c0]     != 31) {mesh->exxd_s[c1] += mesh->exxd[c0    ]; mesh->ezzd_s[c1] += mesh->ezzd[c0    ]; sum++;};
+//                if ( mesh->BCp.type[c0-Ncx] != 30 && mesh->BCp.type[c0-Ncx] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx]; mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx]; sum++;};
+//            }
+//
+//            // Periodic
+//            if ( k == 0 && l > 0 && l < Ncz && model->isperiodic_x==1 ) {
+//                if ( mesh->BCp.type[c0]       != 30 && mesh->BCp.type[c0]       != 31) {mesh->exxd_s[c1] += mesh->exxd[c0];       sum++;};
+//                if ( mesh->BCp.type[c0-Ncx]   != 30 && mesh->BCp.type[c0-Ncx]   != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx];   sum++;};
+//                if ( mesh->BCp.type[c0-1]     != 30 && mesh->BCp.type[c0-1]     != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-1];     sum++;};
+//                if ( mesh->BCp.type[c0+Ncx-1] != 30 && mesh->BCp.type[c0+Ncx-1] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0+Ncx-1]; sum++;};
+//                if ( mesh->BCp.type[c0]       != 30 && mesh->BCp.type[c0]       != 31) {mesh->ezzd_s[c1] += mesh->ezzd[c0];       };
+//                if ( mesh->BCp.type[c0-Ncx]   != 30 && mesh->BCp.type[c0-Ncx]   != 31) {mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx];   };
+//                if ( mesh->BCp.type[c0-1]     != 30 && mesh->BCp.type[c0-1]     != 31) {mesh->ezzd_s[c1] += mesh->ezzd[c0-1];     };
+//                if ( mesh->BCp.type[c0+Ncx-1] != 30 && mesh->BCp.type[c0+Ncx-1] != 31) {mesh->ezzd_s[c1] += mesh->ezzd[c0+Ncx-1]; };
+//            }
+//
+//            // EAST
+//            if ( k == Ncx && l > 0 && l< Ncz && model->isperiodic_x==0  ) {
+//                if ( mesh->BCp.type[c0-1]     != 30 && mesh->BCp.type[c0-1]     != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-1    ]; mesh->ezzd_s[c1] += mesh->ezzd[c0-1    ]; sum++;};
+//                if ( mesh->BCp.type[c0-Ncx-1] != 30 && mesh->BCp.type[c0-Ncx-1] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx-1]; mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx-1]; sum++;};
+//            }
+//
+//            // Periodic
+//            if ( k == Ncx && l > 0 && l< Ncz && model->isperiodic_x==1 ) {
+//                if ( mesh->BCp.type[c0-1]       != 30 && mesh->BCp.type[c0-1]       != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-1];       sum++;};
+//                if ( mesh->BCp.type[c0-Ncx-1]   != 30 && mesh->BCp.type[c0-Ncx-1]   != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx-1];   sum++;};
+//                if ( mesh->BCp.type[c0-Ncx-Ncx] != 30 && mesh->BCp.type[c0-Ncx-Ncx] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx-Ncx]; sum++;};
+//                if ( mesh->BCp.type[c0-Ncx  ]   != 30 && mesh->BCp.type[c0-Ncx  ]   != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx];     sum++;};
+//                if ( mesh->BCp.type[c0-1]       != 30 && mesh->BCp.type[c0-1]       != 31) {mesh->ezzd_s[c1] += mesh->ezzd[c0-1];       };
+//                if ( mesh->BCp.type[c0-Ncx-1]   != 30 && mesh->BCp.type[c0-Ncx-1]   != 31) {mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx-1];   };
+//                if ( mesh->BCp.type[c0-Ncx-Ncx] != 30 && mesh->BCp.type[c0-Ncx-Ncx] != 31) {mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx-Ncx]; };
+//                if ( mesh->BCp.type[c0-Ncx  ]   != 30 && mesh->BCp.type[c0-Ncx  ]   != 31) {mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx];     };
+//            }
+//
+//            // NORTH
+//            if ( l == Ncz && k> 0 && k < Ncx ) {
+//                if ( mesh->BCp.type[c0-Ncx-1] != 30 && mesh->BCp.type[c0-Ncx-1] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx-1]; mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx-1]; sum++;};
+//                if ( mesh->BCp.type[c0-Ncx]   != 30 && mesh->BCp.type[c0-Ncx]   != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx]  ; mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx]  ; sum++;};
+//            }
+//
+//            // SOUTH
+//            if ( l == 0 && k > 0 && k< Ncx ) {
+//                if ( mesh->BCp.type[c0]   != 30 && mesh->BCp.type[c0]   != 31) {mesh->exxd_s[c1] += mesh->exxd[c0  ]; mesh->ezzd_s[c1] += mesh->ezzd[c0  ]; sum++;};
+//                if ( mesh->BCp.type[c0-1] != 30 && mesh->BCp.type[c0-1] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-1]; mesh->ezzd_s[c1] += mesh->ezzd[c0-1]; sum++;};
+//            }
+//
+//            // NORTH-EAST
+//            if ( k == Ncx && l == Ncz && model->isperiodic_x==0  ) {
+//                if ( mesh->BCp.type[c0-Ncx-1] != 30 && mesh->BCp.type[c0-Ncx-1] != 31) {mesh->exxd_s[c1] = mesh->exxd[c0-Ncx-1]; mesh->ezzd_s[c1] = mesh->ezzd[c0-Ncx-1]; sum++;};
+//            }
+//
+//            if ( k == Ncx && l == Ncz && model->isperiodic_x==1 ) {
+//                if ( mesh->BCp.type[c0-Ncx-1]   != 30 && mesh->BCp.type[c0-Ncx-1  ] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx-1  ]; mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx-1  ];   sum++;};
+//                if ( mesh->BCp.type[c0-Ncx-Ncx] != 30 && mesh->BCp.type[c0-Ncx-Ncx] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx-Ncx]; mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx-Ncx]; sum++;};
+//            }
+//
+//            // NORTH-WEST
+//            if ( k == 0 && l== Ncz && model->isperiodic_x==0 ) {
+//                if ( mesh->BCp.type[c0-Ncx] != 30 && mesh->BCp.type[c0-Ncx] != 31) {mesh->exxd_s[c1] = mesh->exxd[c0-Ncx]; mesh->ezzd_s[c1] = mesh->ezzd[c0-Ncx]; sum++;};
+//            }
+//
+//            if ( k == 0 && l== Ncz && model->isperiodic_x==1  ) {
+//                if ( mesh->BCp.type[c0-Ncx] != 30 && mesh->BCp.type[c0-Ncx] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx]; mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx]; sum++;};
+//                if ( mesh->BCp.type[c0-1  ] != 30 && mesh->BCp.type[c0-1  ] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-1  ]; mesh->ezzd_s[c1] += mesh->ezzd[c0-1  ]; sum++;};
+//            }
+//
+//            // SOUTH-EAST
+//            if ( k == Ncx && l == 0 && model->isperiodic_x==0  ) {
+//                if ( mesh->BCp.type[c0-1] != 30 && mesh->BCp.type[c0-1] != 31) {mesh->exxd_s[c1] = mesh->exxd[c0-1]; mesh->ezzd_s[c1] = mesh->ezzd[c0-1]; sum++;};
+//            }
+//
+//            if ( k == Ncx && l == 0 && model->isperiodic_x==1  ) {
+//                if ( mesh->BCp.type[c0-1]   != 30 && mesh->BCp.type[c0-1]   != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-1  ]; mesh->ezzd_s[c1] += mesh->ezzd[c0-1  ]; sum++;};
+//                if ( mesh->BCp.type[c0-Ncx] != 30 && mesh->BCp.type[c0-Ncx] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0-Ncx]; mesh->ezzd_s[c1] += mesh->ezzd[c0-Ncx]; sum++;};
+//
+//            }
+//
+//            // SOUTH-WEST
+//            if ( k == 0 && l== 0 && model->isperiodic_x==0  ) {
+//                if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {mesh->exxd_s[c1] = mesh->exxd[c0]; mesh->ezzd_s[c1] = mesh->ezzd[c0]; sum++;};
+//            }
+//
+//            if ( k == 0 && l== 0 && model->isperiodic_x==1  ) {
+//                if ( mesh->BCp.type[c0]       != 30 && mesh->BCp.type[c0      ] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0      ]; mesh->ezzd_s[c1] += mesh->ezzd[c0      ]; sum++;};
+//                if ( mesh->BCp.type[c0+Ncx-1] != 30 && mesh->BCp.type[c0+Ncx-1] != 31) {mesh->exxd_s[c1] += mesh->exxd[c0+Ncx-1]; mesh->ezzd_s[c1] += mesh->ezzd[c0+Ncx-1]; sum++;};
+//
+//            }
+//
+//            if (sum>0) mesh->exxd_s[c1] /= sum;
+//            if (sum>0) mesh->ezzd_s[c1] /= sum;
+//        }
+//        else {
+//            mesh->exxd_s[c1] = 0.0;
+//            mesh->ezzd_s[c1] = 0.0;
+//        }
+//    }
     
 }
 

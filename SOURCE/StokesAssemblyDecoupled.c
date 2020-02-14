@@ -2132,10 +2132,7 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     wS = inW + inE + inSWc + inSEc;
     wN = inW + inE + inNWc + inNEc;
     
-//    if (l==nzvx-2) {
-//        printf("%f %f %f %f %d %f %f %f %f\n", wW,wE,wS,wN, k, inN, inS, inNWv, inSWv);
-//    }
-    
+
 //    if(k==0) printf("%2.2e %2.2e %2.2e %2.2e type %d\n", wW, wE, wS, wN, mesh->BCv.type[iVzSW]);
 //    if (k==1)  printf("%d %d\n", mesh->BCv.type[iVzSWW],mesh->BCv.type[iVzNWW]);
 //    if ((k==0) &&  mesh->BCv.type[iVzNWW] == -1) printf("East in\n");
@@ -2145,6 +2142,32 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     if (wE>1.0) wE = 1.0/wE;
     if (wS>1.0) wS = 1.0/wS;
     if (wN>1.0) wN = 1.0/wN;
+    
+//    if (l==nzvx-2) ;
+    
+//    if (l==nzvx-2) {
+//        printf("%f %f %f %f %d %f %f %f %f\n", wW,wE,wS,wN, k, inN, inS, inNWv, inSWv);
+//    }
+    
+//    if (l==nzvx-2) {
+//        printf("N %f %f \n", wW,wE);
+//
+//    }
+//
+//    if (l==1) {
+//        printf("S %f %f \n", wW,wE);
+//
+//    }
+//
+//    if (k==0) {
+//        printf("W %f %f \n", wW,wE);
+//
+//    }
+//
+//    if (k==nx-2) {
+//        printf("E %f %f \n", wW,wE);
+//
+//    }
 
     double dx = mesh->dx;
     double dz = mesh->dz;
@@ -2517,6 +2540,26 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     if (wE>1.0) wE = 1.0/wE;
     if (wS>1.0) wS = 1.0/wS;
     if (wN>1.0) wN = 1.0/wN;
+    
+//    if (l==1) {
+//        printf("N %f %f \n", wS,wN);
+//
+//    }
+//    
+//    if (l==nz-2) {
+//        printf("S %f %f \n", wS,wN);
+//
+//    }
+//    
+//    if (k==1) {
+//        printf("W %f %f \n", wS,wN);
+//
+//    }
+//    
+//    if (k==nxvz-2) {
+//        printf("E %f %f \n", wS,wN);
+//
+//    }
     
     double dx = mesh->dx;
     double dz = mesh->dz;
