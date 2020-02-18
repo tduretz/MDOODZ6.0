@@ -277,6 +277,7 @@ int main( int nargs, char *args[] ) {
         if ( model.eqn_state > 0 ) {
             UpdateDensity( &mesh, &particles, &materials, &model, &scaling );
         }
+        ArrayEqualArray( mesh.rho0_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
         ArrayEqualArray( mesh.rho_app_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
         ArrayEqualArray( mesh.rho_app_s, mesh.rho_s, (mesh.Nx)*(mesh.Nz) );
         
@@ -446,6 +447,9 @@ int main( int nargs, char *args[] ) {
 
         Interp_P2C ( particles, materials.alp, &mesh, mesh.alp,      mesh.xg_coord, mesh.zg_coord, 0, 0 );
         Interp_P2C ( particles, materials.bet, &mesh, mesh.bet,      mesh.xg_coord, mesh.zg_coord, 0, 0 );
+        // Get X on the cell centers
+        Interp_P2C ( particles, particles.X, &mesh, mesh.X, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+            
 
         // Free surface - subgrid density correction
         if ( model.free_surf == 1 ) {
@@ -508,12 +512,19 @@ int main( int nargs, char *args[] ) {
         // Detect compressible cells
         if (model.compressible == 1) DetectCompressibleCells ( &mesh, &model );
             
+//        if (model.compressible > 0) {
+            MinMaxArray(particles.rho, scaling.rho, particles.Nb_part, "rho part  ");
+
+            Interp_P2C ( particles,   particles.rho, &mesh, mesh.rho0_n,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
+//        }
+            
+            
         }
         else {
             
             ArrayEqualArray(  mesh.sxxd0,  mesh.sxxd, Ncx*Ncz );
             ArrayEqualArray(  mesh.szzd0,  mesh.szzd, Ncx*Ncz );
-            ArrayEqualArray(  mesh.sxz0,  mesh.sxz, Nx*Nz );
+            ArrayEqualArray(   mesh.sxz0,   mesh.sxz,   Nx*Nz );
             
             InterpCentroidsToVerticesDouble( mesh.sxxd0, mesh.sxxd0_s, &mesh, &model, &scaling );
             InterpCentroidsToVerticesDouble( mesh.szzd0, mesh.szzd0_s, &mesh, &model, &scaling );
@@ -527,6 +538,7 @@ int main( int nargs, char *args[] ) {
         }
         
         // Min/Max interpolated fields
+        MinMaxArrayTag( mesh.rho0_n,   scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho0_n  ", mesh.BCp.type );
         MinMaxArrayTag( mesh.rho_s,    scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s   ", mesh.BCg.type );
         MinMaxArrayTag( mesh.rho_n,    scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n   ", mesh.BCp.type );
         MinMaxArrayTag( mesh.sxz0,     scaling.S,   (mesh.Nx)*(mesh.Nz),     "sxz0    ", mesh.BCg.type );
@@ -541,6 +553,7 @@ int main( int nargs, char *args[] ) {
         MinMaxArrayTag( mesh.strain_s,   1.0,       (mesh.Nx)*(mesh.Nz),     "strain_s", mesh.BCg.type );
         MinMaxArrayTag( mesh.strain_n,   1.0,       (mesh.Nx-1)*(mesh.Nz-1), "strain_n", mesh.BCp.type );
         MinMaxArrayTag( mesh.T,      scaling.T,     (mesh.Nx-1)*(mesh.Nz-1), "T       ", mesh.BCt.type );
+        MinMaxArrayTag( mesh.p_in,   scaling.S,     (mesh.Nx-1)*(mesh.Nz-1), "P       ", mesh.BCt.type );
         MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part  ");
         if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nx_n,     1.0,   (mesh.Nx-1)*(mesh.Nz-1), "nx_n    ", mesh.BCp.type );
         if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nz_n,     1.0,   (mesh.Nx-1)*(mesh.Nz-1), "nz_n    ", mesh.BCp.type );
@@ -590,8 +603,6 @@ int main( int nargs, char *args[] ) {
         ArrayEqualArray( mesh.p_start,    mesh.p_in,      (mesh.Nx-1)*(mesh.Nz-1) );
         ArrayEqualArray( mesh.u_start,    mesh.u_in,      (mesh.Nx)  *(mesh.Nz+1) );
         ArrayEqualArray( mesh.v_start,    mesh.v_in,      (mesh.Nx+1)*(mesh.Nz)   );
-        ArrayEqualArray( mesh.rho_app_n0, mesh.rho_app_n, (mesh.Nx-1)*(mesh.Nz-1) );
-        ArrayEqualArray( mesh.rho_app_s0, mesh.rho_app_s, (mesh.Nx)  *(mesh.Nz)   );
 
         // Set up solver context
         if ( model.decoupled_solve == 1 ) {
@@ -614,6 +625,11 @@ int main( int nargs, char *args[] ) {
                 aniso = 1;
                 model.aniso=0;
             }
+            
+            if ( model.compressible > 0 ) {
+                UpdateDensity( &mesh, &particles, &materials, &model, &scaling );
+            }
+            
             UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
             if  (aniso==1) {
                 model.aniso=1;
@@ -624,6 +640,9 @@ int main( int nargs, char *args[] ) {
             MinMaxArrayTag( mesh.eta_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_n     ", mesh.BCp.type );
             MinMaxArrayTag( mesh.eta_phys_s, scaling.eta, (mesh.Nx)*(mesh.Nz),     "eta_phys_s", mesh.BCg.type );
             MinMaxArrayTag( mesh.eta_phys_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_phys_n", mesh.BCp.type );
+            MinMaxArrayTag( mesh.rho_s,      scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s     ", mesh.BCg.type );
+            MinMaxArrayTag( mesh.rho_n,      scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n     ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.rho0_n,      scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho0_n     ", mesh.BCp.type );
             
             // Stokes solver
             if ( model.ismechanical == 1 ) {
@@ -824,6 +843,7 @@ int main( int nargs, char *args[] ) {
         MinMaxArray( mesh.v_in,  scaling.V, (mesh.Nx+1)*(mesh.Nz),   "Vz. grid" );
         MinMaxArray( mesh.p_in,  scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "       P" );
         MinMaxArray( mesh.div_u, scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "  div(V)" );
+        MinMaxArray( mesh.Qrho,  scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "  Qrho  " );
         
         
         int i;
@@ -917,6 +937,9 @@ int main( int nargs, char *args[] ) {
         MinMaxArrayTag( mesh.d0    , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d0", mesh.BCp.type );
         MinMaxArrayTag( mesh.d     , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d ", mesh.BCp.type );
         MinMaxArrayPart( particles.d, scaling.L, particles.Nb_part, "d on markers", particles.phase ) ;
+        
+        // Update density on the particles
+        UpdateParticleDensity( &mesh, scaling, model, &particles, &materials );
         
         // Update pressure on the particles
         Interp_Grid2P( particles, particles.P, &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );

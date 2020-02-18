@@ -915,6 +915,36 @@ void UpdateMaxPT ( scale scaling, params model, markers *particles ) {
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+void UpdateParticleDensity( grid* mesh, scale scaling, params model, markers* particles, mat_prop* materials ) {
+    
+    DoodzFP *rho_inc_mark, *rho_inc_grid;
+    int Nx, Nz, Ncx, Ncz, k;
+    Nx = mesh->Nx; Ncx = Nx-1;
+    Nz = mesh->Nz; Ncz = Nz-1;
+    
+    rho_inc_mark = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
+    rho_inc_grid = DoodzCalloc(sizeof(DoodzFP), Ncx*Ncz);
+    
+    for (k=0;k<Ncx*Ncz;k++) {
+        rho_inc_grid[k] = 0.0;
+        if (mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) rho_inc_grid[k] = mesh->rho_n[k] - mesh->rho0_n[k];
+    }
+    
+    // Interp increments to particles
+    Interp_Grid2P( *particles, rho_inc_mark, mesh, rho_inc_grid, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
+    
+    // Increment temperature on particles
+    ArrayPlusArray( particles->rho, rho_inc_mark, particles->Nb_part );
+    
+    DoodzFree(rho_inc_grid);
+    DoodzFree(rho_inc_mark);
+    
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 void UpdateParticleGrainSize( grid* mesh, scale scaling, params model, markers* particles, mat_prop* materials ) {
     
     DoodzFP *d_inc_mark, *d_inc_grid;
@@ -2028,9 +2058,7 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
     
-    // Get X on the cell centers
-    Interp_P2C ( *particles, particles->X, mesh, mesh->X, mesh->xg_coord, mesh->zg_coord, 1, 0 );
-    
+
 #pragma omp parallel for shared(mesh,materials) private( NT, NP, iT, iP, TW, PW, iSW, iSE, iNW, iNE, phase_diag, dT, dP, Tgrid, Pgrid, c0, p, rhonew, rho0, alpha, beta, T0, P0, rhop, drho, percT, percP) firstprivate(Ncx, Ncz, model, epsi)
     for ( c0=0; c0<Ncx*Ncz; c0++ ) {
         rhonew = 0.0;
@@ -2040,8 +2068,16 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
             if ( fabs(mesh->phase_perc_n[p][c0])>epsi) {
                 
                 // Constant density
-                if ( materials->density_model[p] == 0 ) {
-                    rhop = materials->rho[p];
+                if ( materials->density_model[p] == 3 ) {
+                    rho0   = materials->rho[p];
+                    P0     = 0;//materials->P0 [p];
+                    beta   = materials->bet[p];
+                    rhop   = rho0 * (1.0 +  beta * (mesh->p_in[c0] - P0) );
+                    rhop   = rho0*exp(beta * mesh->p_in[c0] );
+//                    rhop   = rho0*(1 + beta * mesh->p_in[c0] );
+//                    rhop   = rho0;
+//                    rhop   = rho0*(1.0 +  beta * (mesh->p_in[c0] - P0));
+//                    printf("DOING %2.2e  %2.2e %2.2e %2.2e %2.2e\n",  rhop, mesh->p_in[c0], beta, rhop, P0);
                 }
                 
                 // T and P dependent density based on EOS
@@ -2104,56 +2140,58 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
         mesh->rho_n[c0]   = rhonew;
     }
     
-    // Interpolate center values to vertices
-    int l, c1;
-#pragma omp parallel for shared( mesh ) private( c1, k, l, c0) firstprivate( Nx, Nz, Ncx, Ncz )
-    for (c1=0; c1<Nx*Nz; c1++) {
-        
-        k = mesh->kn[c1];
-        l = mesh->ln[c1];
-        c1 = k + l*Nx;
-        c0 = k + l*(Ncx);
-        mesh->rho_s[c1]   = 0.0;
-        
-        if ( mesh->BCg.type[c1] != 30 ) {
-            
-            // Inner grid
-            if ( k>0 && l>0 && k<Ncx && l<Ncz ) {
-                mesh->rho_s[c1] = 0.25*( mesh->rho_n[c0] + mesh->rho_n[c0-1] + mesh->rho_n[c0-Ncx] + mesh->rho_n[c0-Ncx-1]  );
-            }
-            // Sides
-            if (k==0 && (l>0 && l<Ncz)) {
-                mesh->rho_s[c1] = 0.5*( mesh->rho_n[c0] + mesh->rho_n[c0-Ncx] );
-            }
-            if (k==Ncx && (l>0 && l<Ncz)) {
-                mesh->rho_s[c1] = 0.5*( mesh->rho_n[c0-1] + mesh->rho_n[c0-Ncx-1] );
-            }
-            if (l==0 && (k>0 && k<Ncx)) {
-                mesh->rho_s[c1] = 0.5*( mesh->rho_n[c0] + mesh->rho_n[c0-1] );
-            }
-            if (l==Ncz && (k>0 && k<Ncx)) {
-                mesh->rho_s[c1] = 0.5*( mesh->rho_n[c0-Ncx] + mesh->rho_n[c0-Ncx-1] );
-            }
-            // Corners
-            if (l==0 && k==0) {
-                mesh->rho_s[c1] = mesh->rho_n[c0];
-            }
-            if (l==Ncz && k==0) {
-                mesh->rho_s[c1] = mesh->rho_n[c0-Ncx];
-            }
-            if (l==0 && k==Ncx) {
-                mesh->rho_s[c1] = mesh->rho_n[c0-1];
-            }
-            if (l==Ncz && k==Ncx) {
-                mesh->rho_s[c1] = mesh->rho_n[c0-Ncx-1];
-            }
-        }
-    }
+    InterpCentroidsToVerticesDouble( mesh->rho_n, mesh->rho_s, mesh, model, scaling );
+    
+//    // Interpolate center values to vertices
+//    int l, c1;
+//#pragma omp parallel for shared( mesh ) private( c1, k, l, c0) firstprivate( Nx, Nz, Ncx, Ncz )
+//    for (c1=0; c1<Nx*Nz; c1++) {
+//
+//        k = mesh->kn[c1];
+//        l = mesh->ln[c1];
+//        c1 = k + l*Nx;
+//        c0 = k + l*(Ncx);
+//        mesh->rho_s[c1]   = 0.0;
+//
+//        if ( mesh->BCg.type[c1] != 30 ) {
+//
+//            // Inner grid
+//            if ( k>0 && l>0 && k<Ncx && l<Ncz ) {
+//                mesh->rho_s[c1] = 0.25*( mesh->rho_n[c0] + mesh->rho_n[c0-1] + mesh->rho_n[c0-Ncx] + mesh->rho_n[c0-Ncx-1]  );
+//            }
+//            // Sides
+//            if (k==0 && (l>0 && l<Ncz)) {
+//                mesh->rho_s[c1] = 0.5*( mesh->rho_n[c0] + mesh->rho_n[c0-Ncx] );
+//            }
+//            if (k==Ncx && (l>0 && l<Ncz)) {
+//                mesh->rho_s[c1] = 0.5*( mesh->rho_n[c0-1] + mesh->rho_n[c0-Ncx-1] );
+//            }
+//            if (l==0 && (k>0 && k<Ncx)) {
+//                mesh->rho_s[c1] = 0.5*( mesh->rho_n[c0] + mesh->rho_n[c0-1] );
+//            }
+//            if (l==Ncz && (k>0 && k<Ncx)) {
+//                mesh->rho_s[c1] = 0.5*( mesh->rho_n[c0-Ncx] + mesh->rho_n[c0-Ncx-1] );
+//            }
+//            // Corners
+//            if (l==0 && k==0) {
+//                mesh->rho_s[c1] = mesh->rho_n[c0];
+//            }
+//            if (l==Ncz && k==0) {
+//                mesh->rho_s[c1] = mesh->rho_n[c0-Ncx];
+//            }
+//            if (l==0 && k==Ncx) {
+//                mesh->rho_s[c1] = mesh->rho_n[c0-1];
+//            }
+//            if (l==Ncz && k==Ncx) {
+//                mesh->rho_s[c1] = mesh->rho_n[c0-Ncx-1];
+//            }
+//        }
+//    }
     
     printf("Updated density fields:\n");
-    MinMaxArrayTag(        mesh->X,            1, Ncx*Ncz,     "X", mesh->BCp.type );
-    MinMaxArrayTag( mesh->rho_n, scaling->rho, Ncx*Ncz, "rho_n", mesh->BCp.type );
-    MinMaxArrayTag( mesh->rho_s, scaling->rho, Nx*Nz,   "rho_s", mesh->BCg.type    );
+//    MinMaxArrayTag(        mesh->X,            1, Ncx*Ncz,     "X", mesh->BCp.type );
+//    MinMaxArrayTag( mesh->rho_n, scaling->rho, Ncx*Ncz, "rho_n", mesh->BCp.type );
+//    MinMaxArrayTag( mesh->rho_s, scaling->rho, Nx*Nz,   "rho_s", mesh->BCg.type    );
     
 }
 

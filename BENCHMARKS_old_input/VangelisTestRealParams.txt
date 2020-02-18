@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00009
+istep = 00025
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -7,61 +7,61 @@ writer          = 1
 writer_step     = 1
 writer_markers  = 0
 writer_debug    = 0
-writer_energies = 0
+writer_energies = 1
+
+/**** INPUT FILE FOR PARTICLES ****/
+input_file = setup_r501x501_fsp40.bin
+
+/**** MULTIGRID SWITCH ****/
+MMG = 0
 
 /**** SCALES ****/
-eta = 1
-L   = 1
-V   = 1
-T   = 20
+eta = 1e20
+L   = 1e4
+V   = 1e-12
+T   = 1
 
 /**** SPACE-TIME ****/
 Nx      = 101
 Nz      = 101
-Nt      = 15
-xmin    = -5.000000e-1
-zmin    = -5.000000e-1
-xmax    =  5.000000e-1
-zmax    =  5.000000e-1
-dt      = 0.5
-dt_constant = 1
+Nt      = 25
+xmin    = -0.500000e4
+zmin    = -0.500000e4
+xmax    =  0.500000e4
+zmax    =  0.500000e4
+dt      = 1e11
 Courant = 0.3
-penalty = 1e5
-lsolver = -1
-DefectCorrectionForm = 1
+penalty = 1e2
+lsolver =  2
+rel_tol_div = 1e-9
+abs_tol_div = 1e-9
 diag_scaling = 0
-abs_tol_div = 1e-10
-rel_tol_div = 1e-10
-num_deriv         = 0
-GNUplot_residuals = 1
-shear_style       = 1
-pc_type           = 1
-eta_avg           = 0
 
 /**** SWITCHES ****/
 ismechanical    = 1
-dt_constant     = 0
+dt_constant     = 1
 RK              = 4
 isperiodic_x    = 0
-ispureshear_ALE = 0
+ispureshear_ALE = 1
 isinertial      = 0
-iselastic       = 1
+iselastic       = 0
 isthermal       = 0
 line_search     = 1
 free_surf       = 0
 free_surf_stab  = 0
-eqn_state       = 0
+eqn_state       = 1
 thermal_eq      = 0
-subgrid_diff    = 1
-shear_heat      = 1
+subgrid_diff    = 0
+shear_heat      = 0
 adiab_heat      = 0
-fstrain         = 1
+fstrain         = 0
+compressible    = 1
 advection       = 0
 
 /**** SETUP DEPENDANT ****/
-EpsBG           = 1
-user0           = 1     / temperature [°C]
-user1           = 0.05  / inclusion radius [m]
+EpsBG           = 1e-15
+user0           = 1 / layer
+user1           = 0.13333333e4   / inclusion radius [m]
 user2           = 0
 user3           = 0
 
@@ -73,50 +73,36 @@ gz = 0.000
 Nb_phases = 2
 
 /**** PHASE 1 ****/
-ID   = 0
-rho  = 2700.00 / matrix
-mu   = 1
-Cv   = 1050
-k    = 2.5
-Qr   = 0
-C    = 1e90
-phi  = 30
-Slim = 500e9
-alp  = 10.0e-6
-bet  = 1e-11
-drho = 0
-cstv = 0             / constant visc law
-pwlv = 1            / disloc. creep
+ID   = 0             / matrix
+rho  = 2800
+bet  = 1e-10
+cstv = 1             / constant visc law
+pwlv = 0             / disloc. creep
 linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
 gsel = 0             / grain size evo.
-eta0 = 1
-npwl = 30
+eta0 = 1e20
+npwl = 1
 Qpwl = 0
+P0   = 1
+density_model = 3
 
 /**** PHASE 2 ****/
-ID   = 1
-rho  = 2700.00 / inclusion
-mu   = 1
-Cv   = 1050
-k    = 2.5
-Qr   = 0
-C    = 1e90
-phi  = 30
-Slim = 500e9
-alp  = 10.0e-6
-bet  = 1e-11
-drho = 0
-cstv = 0             / constant visc law
-pwlv = 1             / disloc. creep
+ID   = 1             / layer
+rho  = 2800
+bet  = 1e-10
+cstv = 1             / constant visc law
+pwlv = 0             / disloc. creep
 linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
 gsel = 0             / grain size evo.
-eta0 = 1e1
-npwl = 3
+eta0 = 1e21
+npwl = 1
 Qpwl = 0
+P0   = 1
+density_model = 3
 
 /**** DEFMAPS ****/
 nT    =    51      / Temperature resolutin []
@@ -135,11 +121,11 @@ Nx_part  = 4
 Nz_part  = 4
 min_part_cell = 16
 
-/**** NON-LINEAR ITERATIONS ****/
-Newton  = 1 
+/**** PICARD ITERATIONS ****/
+Newton  = 0 
 nit_max = 20
-rel_tol_KSP = 5e-4
-tol_u   = 1e-12
-tol_p   = 1e-12
-mineta  = 1e-3
-maxeta  = 1e6
+tol_u   = 5e-10
+tol_p   = 5e-10
+mineta  = 1e18
+maxeta  = 1e25
+

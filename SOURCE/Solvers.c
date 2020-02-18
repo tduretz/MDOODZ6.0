@@ -2223,6 +2223,7 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
             // Here Dcm0 is the inverse of the pressure block - THis relates to numerics in this incompressible case (penalty) or physics in the compressible case (dt/Beta)
             if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i] *= penalty;
             if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k];
+//            if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k];
         }
     }
 

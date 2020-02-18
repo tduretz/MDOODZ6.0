@@ -165,13 +165,13 @@ struct _grid {
 	double *ru, *rv, *rp;
 	double *rhs_u, *rhs_v, *rhs_p, *rhs_t;
 	double p_scale;
-    double *alp, *bet, *p_lith, *dp;
+    double *alp, *bet, *p_lith, *dp, *Qrho;
     double *VxVz, *VzVx;
     int    *P2N, *P2C;
     int    *kvx, *lvx, *kvz, *lvz, *kp, *lp, *kn, *ln;
     double **phase_perc_n, **phase_perc_s;
     double *sxxd0_s, *szzd0_s, *sxz0_n, *exxd_s, *ezzd_s, *exz_n, *sxz_n;
-    double *rho_app_s0, *rho_app_n0;
+    double *rho0_n;
     double Ut, Ue, W, *Work, *Uelastic, *Uthermal, *Time, *Short;
     double *T, *dT, *d, *d0, *phi, *X;
     double *eII_el, *eII_pl, *eII_pl_s, *eII_pwl, *eII_exp, *eII_lin, *eII_gbs, *eII_cst, *A2_pwl_n, *eii_n, *eii_s, *tii0_n, *tii0_s;
@@ -408,6 +408,7 @@ void NonNewtonianViscosityGrid( grid*, mat_prop*, params*, Nparams, scale* );
 void StrainRateComponents( grid*, scale, params* );
 void GenerateDeformationMaps( grid*, mat_prop*, params*, Nparams, scale*);
 void UpdateParticleGrainSize( grid*, scale, params, markers*, mat_prop* );
+void UpdateParticleDensity( grid*, scale, params, markers*, mat_prop* );
 //
 // Advection
 void DefineInitialTimestep( params*, grid*, markers, mat_prop, scale );

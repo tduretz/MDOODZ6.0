@@ -329,6 +329,7 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->eta_n     = (double*) DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1) ,sizeof(double));
     mesh->rho_s     = (double*) DoodzCalloc(  mesh->Nx   * mesh->Nz    ,sizeof(double));
     mesh->rho_n     = (double*) DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1) ,sizeof(double));
+    mesh->rho0_n    = (double*) DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1) ,sizeof(double));
     
     mesh->u     = (double*) DoodzCalloc( (mesh->Nx)  *(mesh->Nz+1) ,sizeof(double));
     mesh->ru    = (double*) DoodzCalloc( (mesh->Nx)  *(mesh->Nz+1) ,sizeof(double));
@@ -367,6 +368,7 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->roger_x    = DoodzCalloc (Nx*(Nz+1),sizeof(double));
     mesh->roger_z    = DoodzCalloc ((Nx+1)*Nz,sizeof(double));
     mesh->div_u      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->Qrho       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     
     // Solution arrays
     mesh->u_in       = DoodzCalloc (Nx*NzVx,sizeof(double));
@@ -461,8 +463,6 @@ void GridAlloc ( grid* mesh, params* model ) {
     
     mesh->rho_app_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->rho_app_s  = DoodzCalloc ((Nx)*(Nz),sizeof(double));
-    mesh->rho_app_n0 = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    mesh->rho_app_s0 = DoodzCalloc ((Nx)*(Nz),sizeof(double));
     
     mesh->Uthermal   = DoodzCalloc (model->Nt,sizeof(double));
     mesh->Uelastic   = DoodzCalloc (model->Nt,sizeof(double));
@@ -581,6 +581,7 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->roger_x);
     DoodzFree(mesh->roger_z);
     DoodzFree(mesh->div_u);
+    DoodzFree(mesh->Qrho);
 	
 	// Solution arrays
     DoodzFree(mesh->u_in);
@@ -615,6 +616,7 @@ void GridFree( grid* mesh, params* model ) {
 
     DoodzFree(mesh->rho_s);
     DoodzFree(mesh->rho_n);
+    DoodzFree(mesh->rho0_n);
     DoodzFree(mesh->u);
     DoodzFree(mesh->ru);
     DoodzFree(mesh->v);
@@ -715,8 +717,6 @@ void GridFree( grid* mesh, params* model ) {
     
     DoodzFree( mesh->rho_app_n  );
     DoodzFree( mesh->rho_app_s  );
-    DoodzFree( mesh->rho_app_n0 );
-    DoodzFree( mesh->rho_app_s0 );
     
     // Array containing the number of particles in each cell
     DoodzFree(mesh->nb_part_cell);

@@ -946,13 +946,19 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                 // Heat equation
                 mesh->rhs_t[c] = mesh->T[c];
                 mesh->rhs_p[c] = 0.0;
+                mesh->Qrho[c] = 0.0;
                 
                 // Continuity equation
                 mesh->rhs_p[c] = 0.0;
                 
-                if (mesh->comp_cells[c] == 1) {
-                    mesh->rhs_p[c] += mesh->p_start[c]*mesh->bet[c]/model.dt;
+                if (model.compressible ==1 ) {
+                    if (mesh->comp_cells[c] == 1) {
+                        mesh->rhs_p[c] += mesh->p_start[c]*mesh->bet[c]/model.dt;
+                    }
                 }
+                
+//                mesh->Qrho[c]   = ( mesh->p_in[c] - mesh->p_start[c])*mesh->bet[c]/model.dt;
+
                 
             }
         }

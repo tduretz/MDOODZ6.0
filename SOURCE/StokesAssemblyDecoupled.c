@@ -77,12 +77,7 @@ void Continuity_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesC, Spar
     if ( mesh->BCu.type[c1+1   ] != 13 ) uE =  one_dx;
     if ( mesh->BCv.type[c3     ] != 13 ) vS = -one_dz;
     if ( mesh->BCv.type[c3+nxvz] != 13 ) vN =  one_dz;
-    
-//    if ( mesh->BCu.type[c1     ] != 13 ) uW =  one_dx;
-//    if ( mesh->BCu.type[c1+1   ] != 13 ) uE = -one_dx;
-//    if ( mesh->BCv.type[c3     ] != 13 ) vS =  one_dz;
-//    if ( mesh->BCv.type[c3+nxvz] != 13 ) vN = -one_dz;
-//
+
     // Stencil assembly / residual
     if ( Assemble == 1 ) {
         StokesC->b[eqn] *= celvol;
@@ -92,8 +87,8 @@ void Continuity_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesC, Spar
         if ( mesh->BCv.type[c3     ] != 13 )    AddCoeff2( JtempC[ith], AtempC[ith], eqn, Stokes->eqn_v[c3],      &(nnzc2C[ith]), vS*celvol, mesh->BCv.type[c3],      mesh->BCv.val[c3],      StokesC->bbc );
         if ( mesh->BCv.type[c3+nxvz] != 13 )    AddCoeff2( JtempC[ith], AtempC[ith], eqn, Stokes->eqn_v[c3+nxvz], &(nnzc2C[ith]), vN*celvol, mesh->BCv.type[c3+nxvz], mesh->BCv.val[c3+nxvz], StokesC->bbc );
 
-        if (comp == 0)  AddCoeff2( JtempD[ith], AtempD[ith], eqn, eqn, &(nnzc2D[ith]), 1.0, mesh->BCp.type[c2],      mesh->BCp.val[c2],      StokesC->bbc );
-        if (comp == 1)  AddCoeff2( JtempD[ith], AtempD[ith], eqn, eqn, &(nnzc2D[ith]), pc*celvol, mesh->BCp.type[c2],      mesh->BCp.val[c2],      StokesC->bbc );
+//        if (comp == 0)  AddCoeff2( JtempD[ith], AtempD[ith], eqn, eqn, &(nnzc2D[ith]), 1.0, mesh->BCp.type[c2],      mesh->BCp.val[c2],      StokesC->bbc );
+//        if (comp == 1)  AddCoeff2( JtempD[ith], AtempD[ith], eqn, eqn, &(nnzc2D[ith]), pc*celvol, mesh->BCp.type[c2],      mesh->BCp.val[c2],      StokesC->bbc );
         
 //        AddCoeff2( JtempD[ith], AtempD[ith], eqn, eqn                   , &(nnzc2D[ith]), 1.0/celvol, mesh->BCp.type[c2],      mesh->BCp.val[c2],      StokesC->bbc );
     }
@@ -1152,8 +1147,9 @@ void BuildStokesOperatorDecoupled( grid *mesh, params model, int lev, double *p,
     double one_dx_dz = 1.0/mesh->dx/mesh->dz;
     
     // Switches
-    int eqn,  sign = 1, comp = model.compressible, stab = 0;
+    int eqn,  sign = 1, comp = 0, stab = 0;
     if (model.free_surf_stab>0) stab = 1;
+    if (model.compressible==1  ) comp = 1;
     double theta = model.free_surf_stab;
     
     //    if ( stab==1 ) printf("It tastes like Bo'\n");
@@ -2823,8 +2819,9 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
     double one_dx_dz = 1.0/mesh->dx/mesh->dz;
     
     // Switches
-    int eqn,  sign = 1, comp = model.compressible, stab = 0;
+    int eqn,  sign = 1, comp = 0, stab = 0;
     if (model.free_surf_stab>0) stab = 1;
+    if (model.compressible==1  ) comp = 1;
     double theta = model.free_surf_stab;
     
     // Decompose domain
