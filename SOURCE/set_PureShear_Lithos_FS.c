@@ -33,10 +33,11 @@
 void BuildInitialTopography( surface *topo, markers *topo_chain, params model, grid mesh, scale scaling ) {
     
     int k;
-    double TopoLevel = 0.0e3/scaling.L; // sets zero initial topography
-
+    double TopoLevel = 2.e-1/scaling.L; // sets zero initial topography
+    double sig = 0.5/scaling.L;
+    
     for ( k=0; k<topo_chain->Nb_part; k++ ) {
-        topo_chain->z[k]     = TopoLevel;
+        topo_chain->z[k]     = 0;//TopoLevel * exp(-topo_chain->x[k]*topo_chain->x[k]/sig/sig) ;
         topo_chain->phase[k] = 0;
     }
     
@@ -53,9 +54,11 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     // Define dimensions;
     double Lx = (double) (model.xmax - model.xmin) ;
     double Lz = (double) (model.zmax - model.zmin) ;
-    double T_init = (model.user0 + zeroC)/scaling.T;
+    double T_init = (model.user2 + zeroC)/scaling.T;
     double radius = model.user1/scaling.L;
-    double X, Z, xc = 0.0, zc = 0.0;
+    double X, Z, xc = 0.0, zc = model.user0/scaling.L;
+    double Tgrad = model.user3/(scaling.T/scaling.L);
+    double Tsurf = 293.0/(scaling.T);
 
     // Loop on particles
     for( np=0; np<particles->Nb_part; np++ ) {
@@ -67,12 +70,18 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         particles->d[np]     = 0;                                            // same grain size everywhere
         particles->phi[np]   = 0.0;                                             // zero porosity everywhere
         particles->rho[np]   = 0;
-        particles->T[np]     = T_init;
+//        particles->T[np]     = T_init;
+        particles->T[np]     = Tsurf + Tgrad*particles->z[np];
         X = particles->x[np]-xc;
         Z = particles->z[np]-zc;
     
         // ------------------------- //
-        // DRAW INCLUSION 
+        
+//        if (particles->z[np] < zc) {
+//            particles->phase[np] = 2;
+//        }
+//
+        // DRAW INCLUSION
         if (X*X + Z*Z < radius*radius) {
             particles->phase[np] = 1;
         }
@@ -114,9 +123,11 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     double Lxinit = 1400e3/scaling.L, ShortSwitchV0 = 0.40;
     double Vfix = (50.0/(1000.0*365.25*24.0*3600.0))/(scaling.L/scaling.t); // [50.0 == 5 cm/yr]
     
-    // Define dimensions;
-    Lx = (double) (model->xmax - model->xmin) ;
-    Lz = (double) (model->zmax - model->zmin) ;
+    if (model->step >= 1){
+        materials->k[4] = materials->k[3];
+        printf("Running with normal conductivity in the asthenosphere!\n");
+    }
+    
     
     // ---- T-Dependent marker types
     // -------------------- SPECIFIC TO YOANN's SETUP -------------------- //
@@ -175,8 +186,6 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                     mesh->BCu.type[c] = -1;
                     mesh->BCu.val[c]  =  0;
                     
-                    if (model->shear_style== 0 ) {
-                    
                     // Matching BC nodes WEST
                     if (k==0 ) {
                         mesh->BCu.type[c] = 0;
@@ -199,35 +208,6 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                     if ( l==mesh->Nz ) {
                         mesh->BCu.type[c] = 13;
                         mesh->BCu.val[c]  =  0;
-                    }
-                        
-                    }
-                    if (model->shear_style== 1 ) {
-                        
-                        // Matching BC nodes WEST
-                        if (k==0 ) {
-                            mesh->BCu.type[c] = -2;
-                            mesh->BCu.val[c]  = 0.0*model->EpsBG*Lx;
-                        }
-                        
-                        // Matching BC nodes EAST
-                        if (k==mesh->Nx-1 ) {
-                            mesh->BCu.type[c] =  -12;
-                            mesh->BCu.val[c]  = -0.0*model->EpsBG*Lx;
-                        }
-                        
-                        // Free slip S
-                        if (l==0 ) { //&& (k>0 && k<NX-1) ) {
-                            mesh->BCu.type[c] =  11;
-                            mesh->BCu.val[c]  = -1*model->EpsBG*Lz;
-                        }
-                        
-                        // Free slip N
-                        if ( l==mesh->Nz) {// && (k>0 && k<NX-1)) {
-                            mesh->BCu.type[c] =  11;
-                            mesh->BCu.val[c]  =  1*model->EpsBG*Lz;
-                        }
-                        
                     }
                 }
                 
@@ -265,8 +245,6 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                     mesh->BCv.type[c] = -1;
                     mesh->BCv.val[c]  =  0;
                     
-                    if (model->shear_style== 0 ) {
-                    
                     // Matching BC nodes SOUTH
                     if (l==0 ) {
                         mesh->BCv.type[c] = 0;
@@ -280,45 +258,16 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                     }
                     
                     // Non-matching boundary WEST
-                    if ( k==0 ) {
+                    if ( (k==0) ) {
                         mesh->BCv.type[c] =   13;
                         mesh->BCv.val[c]  =   0;
                     }
                     
                     // Non-matching boundary EAST
-                    if ( k==mesh->Nx ) {
+                    if ( (k==mesh->Nx) ) {
                         mesh->BCv.type[c] =   13;
                         mesh->BCv.val[c]  =   0;
                     }
-                    }
-                    
-                    
-                    if (model->shear_style== 1 ) {
-                        // Matching BC nodes SOUTH
-                        if (l==0 ) {
-                            mesh->BCv.type[c] = 0;
-                            mesh->BCv.val[c]  = -0.0*model->EpsBG*Lz;
-                        }
-                        
-                        // Matching BC nodes NORTH
-                        if (l==mesh->Nz-1 ) {
-                            mesh->BCv.type[c] = 0;
-                            mesh->BCv.val[c]  = 0.0*model->EpsBG*Lz;
-                        }
-                        
-                        // Non-matching boundary points
-                        if ( k==0   ) {    //&& (l>0 && l<NZ-1)
-                            mesh->BCv.type[c] =  -12;
-                            mesh->BCv.val[c]  =   0;
-                        }
-                        
-                        // Non-matching boundary points
-                        if ( k==mesh->Nx  ) { // && (l>0 && l<NZ-1)
-                            mesh->BCv.type[c] =  -12;
-                            mesh->BCv.val[c]  =   0;
-                        }
-                    }
-                    
                 }
 				
 			}
@@ -351,6 +300,11 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                     // Internal points:  -1
                     mesh->BCp.type[c] = -1;
                     mesh->BCp.val[c]  =  0;
+                    
+//                    if (l==NCZ-1 && k==NCX-1) {
+//                        mesh->BCp.type[c] =  31;
+//                        mesh->BCp.val[c]  =  0;
+//                    }
                 }
             }
         }
@@ -365,7 +319,9 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
 	/* -------------------------------------------------------------------------------------------------------*/
     
     double Ttop = 273.15/scaling.T;
-    double Tbot, Tleft, Tright;
+    double Tbot= (model->user2 + zeroC)/scaling.T, Tleft, Tright;
+    
+    printf("Ttop=%2.2e Tbot=%2.2e\n", Ttop*scaling.T, Tbot*scaling.T);
     
 	
 		NX  = mesh->Nx;
@@ -382,29 +338,34 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                 
                 if ( mesh->BCt.type[c] != 30 ) {
                     
-                    // LEFT
+                    // WEST
                     if ( k==0 ) {
                         mesh->BCt.type[c] = 0;
-                        mesh->BCt.val[c]  = mesh->T[c];
+                        mesh->BCt.typW[l] = 0;
+                        mesh->BCt.valW[l] = 0;
                     }
                     
-                    // RIGHT
+                    // EAST
                     if ( k==NCX-1 ) {
                         mesh->BCt.type[c] = 0;
-                        mesh->BCt.val[c]  = mesh->T[c];
+                        mesh->BCt.typE[l] = 0;
+                        mesh->BCt.valE[l] = 0;
                     }
                     
-                    // BOT
+                    // SOUTH
                     if ( l==0 ) {
                         mesh->BCt.type[c] = 0;
-                        mesh->BCt.val[c]  = mesh->T[c];
+                        mesh->BCt.typS[k] = 1;
+                        mesh->BCt.valS[k] = Tbot;
                     }
                     
-                    // TOP
+                    // NORTH
                     if ( l==NCZ-1 ) {
                         mesh->BCt.type[c] = 0;
-                        mesh->BCt.val[c]  = mesh->T[c];
+                        mesh->BCt.typN[k] = 1;
+                        mesh->BCt.valN[k] = Ttop;
                     }
+                    
                     // FREE SURFACE
                     else {
                         if ((mesh->BCt.type[c] == -1 || mesh->BCt.type[c] == 1 || mesh->BCt.type[c] == 0) && mesh->BCt.type[c+NCX] == 30) {

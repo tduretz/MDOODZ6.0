@@ -46,15 +46,16 @@ struct _OutputSparseMatrix  {
 typedef struct _mat_prop mat_prop;
 struct _mat_prop {
 	int    Nb_phases;
-    DoodzFP R, eta_VP;
+    DoodzFP R;
     DoodzFP eta0[20], rho[20], mu[20], Cv[20], k[20], Qr[20], C[20], phi[20], Slim[20], n[20], A[20], Ea[20], Va[20], alp[20], bet[20], Qm[20], T0[20], P0[20], drho[20], k_eff[20];
     DoodzFP tpwl[20], Qpwl[20], Vpwl[20], npwl[20], mpwl[20], Apwl[20], apwl[20], fpwl[20], rpwl[20], Fpwl[20], pref_pwl[20];
     DoodzFP texp[20], Qexp[20], Vexp[20], Sexp[20], Eexp[20], Gexp[20], aexp[20], fexp[20], rexp[20], qexp[20], nexp[20];
     DoodzFP tlin[20], Qlin[20], Vlin[20], nlin[20], mlin[20], Alin[20], alin[20], flin[20], rlin[20], Flin[20];
     DoodzFP tgbs[20], Qgbs[20], Vgbs[20], ngbs[20], mgbs[20], Agbs[20], agbs[20], fgbs[20], rgbs[20], Fgbs[20];
     DoodzFP ppzm[20], Kpzm[20], Qpzm[20], Gpzm[20], cpzm[20], Lpzm[20], gs_ref[20];
-    int     gs[20], cstv[20], pwlv[20], linv[20], expv[20], gbsv[20], phase_diagram[20], density_model[20];
+    int       gs[20], cstv[20], pwlv[20], linv[20], expv[20], gbsv[20], phase_diagram[20], density_model[20];
     DoodzFP C_end[20], phi_end[20], pls_start[20], pls_end[20];
+    DoodzFP eta_vp[20];
 };
 
 // markers is the particles structure

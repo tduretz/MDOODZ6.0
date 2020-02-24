@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00009
+istep = 00015
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -73,50 +73,53 @@ gz = 0.000
 Nb_phases = 2
 
 /**** PHASE 1 ****/
-ID   = 0
-rho  = 2700.00 / matrix
-mu   = 1
-Cv   = 1050
-k    = 2.5
-Qr   = 0
-C    = 1e90
-phi  = 30
-Slim = 500e9
-alp  = 10.0e-6
-bet  = 1e-11
-drho = 0
-cstv = 0             / constant visc law
-pwlv = 1            / disloc. creep
-linv = 0             / diff. creep
-gbsv = 0             / grain boundary sliding
-expv = 0             / peierls creep
-gsel = 0             / grain size evo.
-eta0 = 1
-npwl = 30
-Qpwl = 0
+ID     = 0
+rho    = 2700.00 / matrix
+mu     = 10
+Cv     = 1050
+k      = 2.5
+Qr     = 0
+C      = 20
+phi    = 30
+eta_vp = 5e-3
+Slim   = 500e9
+alp    = 10.0e-6
+bet    = 1e-11
+drho   = 0
+cstv   = 0             / constant visc law
+pwlv   = 1            / disloc. creep
+linv   = 0             / diff. creep
+gbsv   = 0             / grain boundary sliding
+expv   = 0             / peierls creep
+gsel   = 0             / grain size evo.
+eta0   = 1
+npwl   = 30
+Qpwl   = 0
 
 /**** PHASE 2 ****/
-ID   = 1
-rho  = 2700.00 / inclusion
-mu   = 1
-Cv   = 1050
-k    = 2.5
-Qr   = 0
-C    = 1e90
-phi  = 30
-Slim = 500e9
-alp  = 10.0e-6
-bet  = 1e-11
-drho = 0
-cstv = 0             / constant visc law
-pwlv = 1             / disloc. creep
-linv = 0             / diff. creep
-gbsv = 0             / grain boundary sliding
-expv = 0             / peierls creep
-gsel = 0             / grain size evo.
-eta0 = 1e1
-npwl = 3
-Qpwl = 0
+ID     = 1
+rho    = 2700.00 / inclusion
+mu     = 10
+Cv     = 1050
+k      = 2.5
+Qr     = 0
+C      = 1e90
+phi    = 30
+eta_vp = 5e-3
+Slim   = 500e9
+alp    = 10.0e-6
+bet    = 1e-11
+drho   = 0
+cstv   = 0             / constant visc law
+pwlv   = 1             / disloc. creep
+linv   = 0             / diff. creep
+gbsv   = 0             / grain boundary sliding
+expv   = 0             / peierls creep
+gsel   = 0             / grain size evo.
+eta0   = 1e1
+npwl   = 3
+Qpwl   = 0
+
 
 /**** DEFMAPS ****/
 nT    =    51      / Temperature resolutin []
