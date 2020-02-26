@@ -974,7 +974,6 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->fstrain         = ReadInt2( fin, "fstrain",         0 );
     model->rec_T_P_x_z     = ReadInt2( fin, "rec_T_P_x_z",     0 );
     model->delete_breakpoints = ReadInt2( fin, "delete_breakpoints",        1 );
-//    materials->eta_VP      = ReadDou2( fin, "eta_VP",        0.0 ) / scaling->S / scaling->t;
     model->topografix      = ReadInt2( fin, "topografix",      0 );
     model->aniso           = ReadInt2( fin, "aniso",           0 );
     model->compressible    = ReadInt2( fin, "compressible",    0 );
@@ -1065,7 +1064,8 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         // Density models
         materials->density_model[k]     = (int)ReadMatProps( fin, "density_model",     k,    1  );
         materials->phase_diagram[k]     = (int)ReadMatProps( fin, "phase_diagram",     k,   -1  );
-        
+        // Viscoplasticity
+        materials->eta_vp[k]            = ReadMatProps( fin, "eta_vp", k,    0.0 ) / scaling->S / scaling->t;
         // Check if any flow law is active
         int sum = abs(materials->cstv[k]) + abs(materials->pwlv[k]) + abs(materials->linv[k]) + abs(materials->gbsv[k]) + abs(materials->expv[k]);
         if ( sum == 0 ) {

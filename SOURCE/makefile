@@ -28,7 +28,7 @@ ifeq ($(NEW_INPUT),yes)
 	CFLAGS += -D _NEW_INPUT_
 endif
 
-CFLAGS += -Wno-unused-variable -Wno-unused-but-set-variable -Wno-comment
+CFLAGS += -Wno-unused-variable  -Wno-comment
 #---------------------------------------------------#
 # Libraries
 LIBS = -lz -lhdf5
