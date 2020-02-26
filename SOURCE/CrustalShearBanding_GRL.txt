@@ -1,12 +1,11 @@
 /**** RESTART ****/
-istep = 00090
+istep = 00100
 irestart = 0
-Nt       = 100
 
 /**** OUTPUT FILES ****/
 writer          = 1
 writer_step     = 10
-writer_markers  = 1
+writer_markers  = 0
 writer_debug    = 0
 writer_energies = 0
 
@@ -17,27 +16,27 @@ V   = 1e-9
 T   = 100
 
 /**** SPACE-TIME ****/
-Nx      = 100
-Nz      = 80
+Nx      = 202
+Nz      = 62
+Nt      = 100
 xmin    = -5.000000e4
 zmin    = -3.000000e4
 xmax    =  5.000000e4
-zmax    =  5.000000e3
-dt      = 5e11
+zmax    =  1.000000e3
+dt      = 4e11
 dt_constant = 1
 Courant = 0.3
-penalty = 1e5
+penalty = 1e6
 lsolver = 0
 DefectCorrectionForm = 1
 diag_scaling = 1
-abs_tol_div = 1e-11
-rel_tol_div = 1e-11
+abs_tol_div = 1e-9
+rel_tol_div = 1e-9
 pc_type     = 1
-
+num_deriv   = 0
 
 /**** SWITCHES ****/
 ismechanical    = 1
-dt_constant     = 0
 RK              = 4
 isperiodic_x    = 0
 ispureshear_ALE = 0
@@ -55,15 +54,14 @@ adiab_heat      = 0
 fstrain         = 0
 HomoFields      = 0
 delete_breakpoints = 0
-eta_VP          = 1e21
 GNUplot_residuals = 0
 no_markers      = 0
 eta_avg         = 1
-advection       = 1
-cpc             = 1
+advection       = 0
+cpc             = -1
 
 /**** SETUP DEPENDANT ****/
-EpsBG           = -1e-15
+EpsBG           = 1e-15
 user0           =-15e3   / inclusion depth [m]
 user1           = 2e3  / inclusion radius [m]
 user2           = 500    / background T [C]
@@ -85,6 +83,7 @@ k    = 2.5
 Qr   = 0
 C    = 20e6
 phi  = 30
+eta_vp = 1e21
 Slim = 500e9
 alp  = 10.0e-6
 bet  = 1e-11
@@ -108,6 +107,7 @@ k    = 2.5
 Qr   = 0
 C    = 2e90
 phi  = 30
+eta_vp = 1e21
 Slim = 500e9
 alp  = 10.0e-6
 bet  = 1e-11
@@ -135,8 +135,8 @@ dmax  =    -2       / Grain size maximum log_10 [m]
 Pn    =  1e9        / Pressure [Pa]
 
 /**** PARTICLES ****/
-Nx_part  = 8
-Nz_part  = 8
+Nx_part  = 4
+Nz_part  = 4
 min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/

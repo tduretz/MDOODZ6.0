@@ -570,7 +570,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     
     if (model.isPl_soft == 1) {
         Cfriction  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
-        DoubleToFloat( mesh->phi_n, Cfriction, (model.Nx-1)*(model.Nz-1) );
+        DoubleToFloat( mesh->fric_n, Cfriction, (model.Nx-1)*(model.Nz-1) );
         Ccohesion  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
         DoubleToFloat( mesh->C_n, Ccohesion, (model.Nx-1)*(model.Nz-1) );
         ScaleBack( Ccohesion, scaling.S, (model.Nx-1)*(model.Nz-1) );

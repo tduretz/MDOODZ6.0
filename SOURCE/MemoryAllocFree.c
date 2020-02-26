@@ -520,9 +520,9 @@ void GridAlloc ( grid* mesh, params* model ) {
     
     // New arrays for plastic strain softening
     mesh->C_s        = DoodzCalloc ((Nx)*(Nz),sizeof(double));
-    mesh->phi_s      = DoodzCalloc ((Nx)*(Nz),sizeof(double));
+    mesh->fric_s     = DoodzCalloc ((Nx)*(Nz),sizeof(double));
     mesh->C_n        = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    mesh->phi_n      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->fric_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     
     mesh->rhoUe0     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     
@@ -553,7 +553,7 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->detadp_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     
     mesh->d0_s   = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
-    mesh->phi1_s = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+    mesh->phi_s  = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->T_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->P_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     
@@ -779,9 +779,9 @@ void GridFree( grid* mesh, params* model ) {
     
     // New arrays for plastic strain softening
     DoodzFree(mesh->C_s);
-    DoodzFree(mesh->phi_s);
+    DoodzFree(mesh->fric_s);
     DoodzFree(mesh->C_n);
-    DoodzFree(mesh->phi_n);
+    DoodzFree(mesh->fric_n);
     
     DoodzFree(mesh->rhoUe0);
     
@@ -812,7 +812,7 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->detadp_s);
 
     DoodzFree(mesh->d0_s);
-    DoodzFree(mesh->phi1_s);
+    DoodzFree(mesh->phi_s);
     DoodzFree(mesh->T_s);
     DoodzFree(mesh->P_s);
     

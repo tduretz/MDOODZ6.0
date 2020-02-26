@@ -1,12 +1,12 @@
 /**** RESTART ****/
-istep = 00001
+istep = 00010
 irestart = 0
 
 /**** OUTPUT FILES ****/
 writer          = 1
 writer_step     = 1
 writer_markers  = 0
-writer_debug    = 1
+writer_debug    = 0
 writer_energies = 0
 
 /**** SCALES ****/
@@ -18,29 +18,33 @@ T   = 20
 /**** SPACE-TIME ****/
 Nx      = 101
 Nz      = 101
-Nt      = 1
+Nt      = 10
 xmin    = -5.000000e-1
 zmin    = -5.000000e-1
 xmax    =  5.000000e-1
 zmax    =  5.000000e-1
-dt      = 0.5
-dt_constant = 1
-Courant = 0.3
-penalty = 1e5
-lsolver = -1
-DefectCorrectionForm = 1
-diag_scaling = 0
-abs_tol_div = 1e-8
-rel_tol_div = 1e-8
+dt                = 0.5
+dt_constant       = 1
+Courant           = 0.3
+penalty           = 1e5
+lsolver           = 2
+diag_scaling      = 0
+abs_tol_div       = 1e-10
+rel_tol_div       = 1e-10
+GNUplot_residuals = 1
+shear_style       = 1
+pc_type           = 0
+eta_avg           = 1
+num_deriv         = 0
 
 /**** SWITCHES ****/
 ismechanical    = 1
 dt_constant     = 0
 RK              = 4
 isperiodic_x    = 0
-ispureshear_ALE = 1
+ispureshear_ALE = 0
 isinertial      = 0
-iselastic       = 0
+iselastic       = 1
 isthermal       = 0
 line_search     = 1
 free_surf       = 0
@@ -52,7 +56,6 @@ shear_heat      = 1
 adiab_heat      = 0
 fstrain         = 1
 advection       = 0
-GNUplot_residuals = 1
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = 1
@@ -63,7 +66,7 @@ user3           = 0
 
 /**** GRAVITY ****/
 gx = 0.0000
-gz = 0.000
+gz = 0.0000
 
 /**** MAT PROPERTIES ****/
 Nb_phases = 2
@@ -75,8 +78,9 @@ mu   = 1
 Cv   = 1050
 k    = 2.5
 Qr   = 0
-C    = 1e90
+C    = 2.35e0
 phi  = 30
+eta_vp = 1e-1
 Slim = 500e9
 alp  = 10.0e-6
 bet  = 1e-11
@@ -100,6 +104,7 @@ k    = 2.5
 Qr   = 0
 C    = 1e90
 phi  = 30
+eta_vp = 1e-1
 Slim = 500e9
 alp  = 10.0e-6
 bet  = 1e-11
@@ -132,10 +137,10 @@ Nz_part  = 4
 min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
-Newton  = 1 
+Newton  = 1
 nit_max = 10
-rel_tol_KSP = 1e-4
-tol_u   = 1e-9
-tol_p   = 1e-9
+rel_tol_KSP = 5e-4
+tol_u   = 1e-12
+tol_p   = 1e-12
 mineta  = 1e-3
 maxeta  = 1e6
