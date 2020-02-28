@@ -45,14 +45,16 @@
 
 double Grid2P( markers* particles, double* NodeField, double* X_vect, double* Z_vect, int Nx, int Nz, char *tag, double dx, double dz, int k ) {
     
-    double val = 0.0;
+    double val  = 0.0;
+    double sumW = 0.0;
     double dxm, dzm, dst;
     int    i_part,j_part, iSW, iNW, iSE, iNE;
     
     // Filter out particles that are inactive (out of the box)
     if (particles->phase[k] != -1) {
         
-        dst    = fabs(particles->x[k]-X_vect[0]);
+        //dst    = fabs(particles->x[k]-X_vect[0]);
+        dst    = (particles->x[k]-X_vect[0]);
         j_part = ceil((dst/dx)) - 1;
         if (j_part<0) {
             j_part = 0;
@@ -62,6 +64,7 @@ double Grid2P( markers* particles, double* NodeField, double* X_vect, double* Z_
         }
         
         // Get the line:
+        //dst    = fabs(particles->z[k]-Z_vect[0]);
         dst    = fabs(particles->z[k]-Z_vect[0]);
         i_part = ceil((dst/dz)) - 1;
         if (i_part<0) {
@@ -79,10 +82,17 @@ double Grid2P( markers* particles, double* NodeField, double* X_vect, double* Z_
         iNW = j_part+(i_part+1)*Nx;
         iNE = j_part+(i_part+1)*Nx+1;
         
-        val =  (1-dxm/dx)* (1-dzm/dz) * NodeField[iSW];
-        val += (dxm/dx)  * (1-dzm/dz) * NodeField[iSE];
-        val += (1-dxm/dx)* (dzm/dz)   * NodeField[iNW];
-        val += (dxm/dx)  * (dzm/dz)   * NodeField[iNE];
+        val =  (1.0-dxm/dx)* (1.0-dzm/dz) * NodeField[iSW];
+        val += (dxm/dx)    * (1.0-dzm/dz) * NodeField[iSE];
+        val += (1.0-dxm/dx)* (dzm/dz)     * NodeField[iNW];
+        val += (dxm/dx)    * (dzm/dz)     * NodeField[iNE];
+        
+        sumW += (1.0-dxm/dx)* (1.0-dzm/dz);
+        sumW += (dxm/dx)* (1.0-dzm/dz);
+        sumW += (1.0-dxm/dx)* (dzm/dz);
+        sumW += (dxm/dx)* (dzm/dz);
+        
+        if(sumW>1e-13) val /= sumW;
         
     }
     return val;
@@ -215,6 +225,7 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
     particles->sxxd[new_ind]          = particles->sxxd[min_index];
     particles->szzd[new_ind]          = particles->szzd[min_index];
     particles->sxz[new_ind]           = particles->sxz[min_index];
+    particles->om_p[new_ind]          = particles->om_p[min_index];
 
     if (model->fstrain == 1) {
         // do not set default to 0 beause then it can not accumulate, better to identify which markers are new and start to accumulate as we do for the general case (fxx=fyy=1, fxz=fzx=0).
