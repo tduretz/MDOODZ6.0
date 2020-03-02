@@ -777,6 +777,9 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
     dx   = mesh->dx;
     dz   = mesh->dz;
     
+    int iPrW, iPrE, ixyN, ixyS, iVxS, iVxN;
+    int iPrS, iPrN, ixyE, ixyW, iVyW, iVyE;
+    
     /* --------------------------------------------------------------------*/
     /* Here we calculate the forcing term -rho*gx on the finest grid level */
     /* --------------------------------------------------------------------*/
@@ -784,152 +787,131 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
     // U POINTS
     for (l=0; l<NZVX; l++) {
         for (k=0; k<NX; k++) {
-            
+
             c  = k + l*NX;
             c2 = k + (l-1)*NCX;
-            
+
             mesh->roger_x[c] = 0.0;
-            
+
             if (l>0 && l<NZVX-1) {
-                
+
                 if ( mesh->BCu.type[c] == -1 || mesh->BCu.type[c] == 2 || mesh->BCu.type[c] == -2 ) {
-                    
+
+                    iPrW   = c2-1;
+                    iPrE   = c2;
+                    ixyN   = c;
+                    ixyS   = c-NX;
+                    iVxS   = c-NX;
+                    iVxN   = c+NX;
+                    // Periodic BC !!!!!!!!!!!
+                    if ( mesh->BCu.type[c] == -2 ) iPrW  = c2+NCX-1;
+
                     // Free surface
                     inW=0.0, inE = 0.0, inS=0.0, inN = 0.0;
-                    if (mesh->BCp.type[c2-1 ] == -1) inW = 1.0;
-                    if (mesh->BCp.type[c2   ] == -1) inE = 1.0;
-                    if (mesh->BCg.type[c -NX] != 30 && mesh->BCu.type[c -NX] != 13) inS = 1.0;
-                    if (mesh->BCg.type[c    ] != 30 && mesh->BCu.type[c +NX] != 13) inN = 1.0;
-                    
+                    if (mesh->BCp.type[iPrW] == -1) inW = 1.0;
+                    if (mesh->BCp.type[iPrE] == -1) inE = 1.0;
+                    if (mesh->BCg.type[ixyS] != 30 && mesh->BCu.type[iVxS] != 13) inS = 1.0;
+                    if (mesh->BCg.type[ixyN] != 30 && mesh->BCu.type[iVxN] != 13) inN = 1.0;
+
                     // Gravity force: take apparent viscosity (free surface correction)
-                    rhoVx = 0.5*(mesh->rho_app_s[c] + mesh->rho_app_s[c-NX]);
+                    rhoVx             = 0.5*(mesh->rho_app_s[ixyS] + mesh->rho_app_s[ixyN]);
                     mesh->roger_x[c]  = - model.gx * rhoVx;
-                    
+
                     // Elastic force
                     if ( model.iselastic == 1 ) {
-                        
-                        // Elasticity in periodic
-                        if (   l>0 && l<NZVX-1 && k==0 && k==0 && mesh->BCu.type[c] == -2 ) {
-//                            mesh->roger_x[c]  -= 1.0/dx * ( mesh->VE_n[c2] * mesh->sxxd0[c2] - mesh->VE_n[c2+NCX-1]  * mesh->sxxd0[c2+NCX-1] );
-//                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->VE_s[c]  * mesh->sxz0[c]   - mesh->VE_s[c-NX]  * mesh->sxz0[c-NX]  );
-                            
-                            if ( inE ) mesh->roger_x[c]  -= 1.0/dx * ( mesh->eta_n[c2      ] / (mesh->mu_n[c2      ]*model.dt)  * mesh->sxxd0[c2      ] );
-                            if ( inW ) mesh->roger_x[c]  -= 1.0/dx * (-mesh->eta_n[c2+NCX-1] / (mesh->mu_n[c2+NCX-1]*model.dt)  * mesh->sxxd0[c2+NCX-1] );
-                            if ( inN ) mesh->roger_x[c]  -= 1.0/dz * ( mesh->eta_s[c       ] / (mesh->mu_s[c       ]*model.dt)  * mesh->sxz0[c        ] );
-                            if ( inS ) mesh->roger_x[c]  -= 1.0/dz * (-mesh->eta_s[c-NX    ] / (mesh->mu_s[c-NX    ]*model.dt)  * mesh->sxz0[c-NX     ] );
-                        }
-                        
+
                         // Inner nodes
-                        if (  l>0 && l<NZVX-1 && k>0 && k<NX-1 && model.subgrid_diff != 4 ) {
-//                            // Elasticity
-//                            mesh->roger_x[c]  -= 1.0/dx * ( mesh->VE_n[c2] * mesh->sxxd0[c2] - mesh->VE_n[c2-1]  * mesh->sxxd0[c2-1] );
+                        if (k<NX-1) {
+                            if ( inE ) mesh->roger_x[c]  -= 1.0/dx * ( mesh->eta_n[iPrE] / (mesh->mu_n[iPrE]*model.dt)  * mesh->sxxd0[iPrE] );
+                            if ( inW ) mesh->roger_x[c]  -= 1.0/dx * (-mesh->eta_n[iPrW] / (mesh->mu_n[iPrW]*model.dt)  * mesh->sxxd0[iPrW] );
+                            if ( inN ) mesh->roger_x[c]  -= 1.0/dz * ( mesh->eta_s[ixyN] / (mesh->mu_s[ixyN]*model.dt)  * mesh->sxz0[ixyN] );
+                            if ( inS ) mesh->roger_x[c]  -= 1.0/dz * (-mesh->eta_s[ixyS] / (mesh->mu_s[ixyS]*model.dt)  * mesh->sxz0[ixyS] );
+                        }
+
+//                        // WEST OPEN  --- TO BE MODIFIED AS ABOVE
+//                        if (  l>0 && l<NZVX-1 && k==0 && mesh->BCu.type[c] == 2) {
+//                            mesh->roger_x[c]  -= 1.0/dx * ( mesh->VE_n[c2] * mesh->sxxd0[c2] );
 //                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->VE_s[c]  * mesh->sxz0[c]   - mesh->VE_s[c-NX]  * mesh->sxz0[c-NX]  );
-                            
-                            // Elasticity - important fix here !!
-//                            mesh->roger_x[c]  -= 1.0/dx * ( mesh->eta_n[c2]/(mesh->mu_n[c2]*model.dt) * mesh->sxxd0[c2] - mesh->eta_n[c2-1]/(mesh->mu_n[c2-1]*model.dt) * mesh->sxxd0[c2-1] );
-//                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->eta_s[c] /(mesh->mu_s[c]*model.dt)  * mesh->sxz0[c]   - mesh->eta_s[c-NX]/(mesh->mu_s[c-NX]*model.dt) * mesh->sxz0[c-NX]  );
-                            
-                            if ( inE ) mesh->roger_x[c]  -= 1.0/dx * ( mesh->eta_n[c2      ] / (mesh->mu_n[c2      ]*model.dt)  * mesh->sxxd0[c2      ] );
-                            if ( inW ) mesh->roger_x[c]  -= 1.0/dx * (-mesh->eta_n[c2-1    ] / (mesh->mu_n[c2-1    ]*model.dt)  * mesh->sxxd0[c2-1    ] );
-                            if ( inN ) mesh->roger_x[c]  -= 1.0/dz * ( mesh->eta_s[c       ] / (mesh->mu_s[c       ]*model.dt)  * mesh->sxz0[c        ] );
-                            if ( inS ) mesh->roger_x[c]  -= 1.0/dz * (-mesh->eta_s[c-NX    ] / (mesh->mu_s[c-NX    ]*model.dt)  * mesh->sxz0[c-NX     ] );
-                            
-//                            if (isnan( mesh->roger_x[c])) {
-//                            printf("%2.2e %2.2e %2.2e %2.2e %2.2e\n", mesh->roger_x[c], mesh->eta_n[c2], mesh->eta_n[c2-1], mesh->eta_s[c], mesh->eta_s[c-NX]);
-//                            printf("%2.2e %2.2e %2.2e %2.2e %2.2e\n", mesh->roger_x[c], mesh->mu_n[c2], mesh->mu_n[c2-1], mesh->mu_s[c], mesh->mu_s[c-NX]);
-//                            printf("         %2.2e %2.2e %2.2e %2.2e\n", inE, inW, inN, inS );
-//                            }
-                        }
-                        
-                        // WEST OPEN  --- TO BE MODIFIED AS ABOVE
-                        if (  l>0 && l<NZVX-1 && k==0 && mesh->BCu.type[c] == 2) {
-                            mesh->roger_x[c]  -= 1.0/dx * ( mesh->VE_n[c2] * mesh->sxxd0[c2] );
-                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->VE_s[c]  * mesh->sxz0[c]   - mesh->VE_s[c-NX]  * mesh->sxz0[c-NX]  );
-                        }
-                        
-                        // EAST OPEN  --- TO BE MODIFIED AS ABOVE
-                        if (  l>0 && l<NZVX-1 && k==NX-1 && mesh->BCu.type[c] == 2) {
-                            mesh->roger_x[c]  -= 1.0/dx * ( - mesh->VE_n[c2-1]  * mesh->sxxd0[c2-1] );
-                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->VE_s[c]  * mesh->sxz0[c]   - mesh->VE_s[c-NX]  * mesh->sxz0[c-NX]  );
-                        }
-                        
+//                        }
+//
+//                        // EAST OPEN  --- TO BE MODIFIED AS ABOVE
+//                        if (  l>0 && l<NZVX-1 && k==NX-1 && mesh->BCu.type[c] == 2) {
+//                            mesh->roger_x[c]  -= 1.0/dx * ( - mesh->VE_n[c2-1]  * mesh->sxxd0[c2-1] );
+//                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->VE_s[c]  * mesh->sxz0[c]   - mesh->VE_s[c-NX]  * mesh->sxz0[c-NX]  );
+//                        }
+
                     }
                 }
             }
             mesh->roger_x[c] = -mesh->roger_x[c];
         }
     }
-    
+
     
     /* --------------------------------------------------------------------*/
     /* Here we calculate the forcing term -rho*gz on the finest grid level */
     /* --------------------------------------------------------------------*/
-    
+
     // V POINTS
     for (l=0; l<NZ; l++) {
         for (k=0; k<NXVZ; k++) {
-            
+
             c  = k + l*(NXVZ);
             c1 = k + l*(NX)-1;
             c2 = k-1 + (l-1)*(NX-1);
-            
+
             mesh->roger_z[c]  = 0.0;
-            
+
             if (k>0 && k<NXVZ-1) {
-                
+
                 if ( mesh->BCv.type[c] == -1  ) {
-                    
-                    // Free surface
-                    inW=0.0, inE = 0.0, inS=0.0, inN = 0.0;
-                    if (mesh->BCp.type[c2    ] == -1) inS = 1.0;
-                    if (mesh->BCp.type[c2+NCX] == -1) inN = 1.0;
-                    if (mesh->BCg.type[c1]    != 30 && mesh->BCv.type[c -1] != 13 ) inW = 1.0;
-                    if (mesh->BCg.type[c1+1 ] != 30 && mesh->BCv.type[c +1] != 13 ) inE = 1.0;
-                    
+
+                    iPrS   = c2;
+                    iPrN   = c2+NCX;
+                    ixyE   = c1+1;
+                    ixyW   = c1;
+                    iVyW   = c-1;
+                    iVyE   = c+1;
+
+                    if (mesh->BCp.type[iPrS] == -1) inS = 1.0;
+                    if (mesh->BCp.type[iPrN] == -1) inN = 1.0;
+                    if (mesh->BCg.type[ixyW] != 30 && mesh->BCv.type[iVyW] != 13 ) inW = 1.0;
+                    if (mesh->BCg.type[ixyE] != 30 && mesh->BCv.type[iVyE] != 13 ) inE = 1.0;
+
                     // Gravity force: use apparent density (free surface correction)
-                    rhoVz = 0.5 * (mesh->rho_app_s[c1] + mesh->rho_app_s[c1+1]);  // USE THIS ALWAYS
-//                    rhoVz = 0.5 * (mesh->rho_app_n[c2] + mesh->rho_app_n[c2+(NX-1)]); // DO NOT USE THIS
-                    
-                    // Remove background pressure
+                    rhoVz             = 0.5 * (mesh->rho_app_s[ixyW] + mesh->rho_app_s[ixyE]);  // USE THIS ALWAYS
                     mesh->roger_z[c]  = - model.gz * rhoVz;
-                    
+
                     // Elastic force
                     if  (model.iselastic == 1 ) {
-                        
+
                         // Backward Euler
-                        if ( l>0 && l<NZ-1 && k>0 && k<NXVZ-1 && model.subgrid_diff!=4  ) {
-////                            // Elasticity
-//                            mesh->roger_z[c]  -= 1.0/dz * ( mesh->VE_n[c2+(NCX)] *   mesh->szzd0[c2+(NCX)] - mesh->VE_n[c2] *  mesh->szzd0[c2] );
-//                            mesh->roger_z[c]  -= 1.0/dx * ( mesh->VE_s[c1+1]     *   mesh->sxz0[c1+1]      - mesh->VE_s[c1] *   mesh->sxz0[c1]  );
-//
-//                            // Elasticity - important fix here !!
-//                            mesh->roger_z[c]  -= 1.0/dz * ( mesh->eta_n[c2+(NCX)] / (mesh->mu_n[c2+(NCX)] *model.dt ) * (mesh->szzd0[c2+(NCX)]) - mesh->eta_n[c2] / (mesh->mu_n[c2] *model.dt ) * (mesh->szzd0[c2]) );
-//                            mesh->roger_z[c]  -= 1.0/dx * ( mesh->eta_s[c1+1] / (mesh->mu_s[c1+1]*model.dt)    *   mesh->sxz0[c1+1]      - mesh->eta_s[c1]  / (mesh->mu_s[c1]*model.dt) *   mesh->sxz0[c1]  );
-                            
-                            
-                            if ( inN ) mesh->roger_z[c]  -= 1.0/dz * (  mesh->eta_n[c2+(NCX)] / (mesh->mu_n[c2+(NCX)] *model.dt ) * (mesh->szzd0[c2+(NCX)]) );
-                            if ( inS ) mesh->roger_z[c]  -= 1.0/dz * ( -mesh->eta_n[c2      ] / (mesh->mu_n[c2      ] *model.dt ) * (mesh->szzd0[c2      ]) );
-                            if ( inE ) mesh->roger_z[c]  -= 1.0/dx * (  mesh->eta_s[c1+1    ] / (mesh->mu_s[c1+1    ] *model.dt ) *  mesh->sxz0[c1+1     ]) ;
-                            if ( inW ) mesh->roger_z[c]  -= 1.0/dx * ( -mesh->eta_s[c1      ] / (mesh->mu_s[c1      ] *model.dt ) *  mesh->sxz0[c1       ]) ;
+                        if ( l>0 && l<NZ-1 ) {
+
+                            if ( inN ) mesh->roger_z[c]  -= 1.0/dz * (  mesh->eta_n[iPrN] / (mesh->mu_n[iPrN] *model.dt ) * (mesh->szzd0[iPrN]) );
+                            if ( inS ) mesh->roger_z[c]  -= 1.0/dz * ( -mesh->eta_n[iPrS] / (mesh->mu_n[iPrS] *model.dt ) * (mesh->szzd0[iPrS]) );
+                            if ( inE ) mesh->roger_z[c]  -= 1.0/dx * (  mesh->eta_s[ixyE] / (mesh->mu_s[ixyE] *model.dt ) *  mesh->sxz0[ixyE]) ;
+                            if ( inW ) mesh->roger_z[c]  -= 1.0/dx * ( -mesh->eta_s[ixyW] / (mesh->mu_s[ixyW] *model.dt ) *  mesh->sxz0[ixyW]) ;
 
                         }
-                        // SOUTH OPEN  --- TO BE MODIFIED AS ABOVE
-                        if ( l==0 && k>0 && k<NXVZ-1 ) {
-                            mesh->roger_z[c]  -= 1.0/dz * ( mesh->VE_n[c2+(NCX)] * -(mesh->sxxd0[c2+(NCX)]) );
-                            mesh->roger_z[c]  -= 1.0/dx * ( mesh->VE_s[c1+1]     *   mesh->sxz0[c1+1]      - mesh->VE_s[c1] *   mesh->sxz0[c1]  );
-                        }
-                        
-                        // NORTH OPEN  --- TO BE MODIFIED AS ABOVE
-                        if ( l==NZ-1 && k>0 && k<NXVZ-1 ) {
-                            mesh->roger_z[c]  -= 1.0/dz * ( - mesh->VE_n[c2] * -(mesh->sxxd0[c2]) );
-                            mesh->roger_z[c]  -= 1.0/dx * ( mesh->VE_s[c1+1]     *   mesh->sxz0[c1+1]      - mesh->VE_s[c1] *   mesh->sxz0[c1]  );
-                        }
+//                        // SOUTH OPEN  --- TO BE MODIFIED AS ABOVE
+//                        if ( l==0 && k>0 && k<NXVZ-1 ) {
+//                            mesh->roger_z[c]  -= 1.0/dz * ( mesh->VE_n[c2+(NCX)] * -(mesh->sxxd0[c2+(NCX)]) );
+//                            mesh->roger_z[c]  -= 1.0/dx * ( mesh->VE_s[c1+1]     *   mesh->sxz0[c1+1]      - mesh->VE_s[c1] *   mesh->sxz0[c1]  );
+//                        }
+//
+//                        // NORTH OPEN  --- TO BE MODIFIED AS ABOVE
+//                        if ( l==NZ-1 && k>0 && k<NXVZ-1 ) {
+//                            mesh->roger_z[c]  -= 1.0/dz * ( - mesh->VE_n[c2] * -(mesh->sxxd0[c2]) );
+//                            mesh->roger_z[c]  -= 1.0/dx * ( mesh->VE_s[c1+1]     *   mesh->sxz0[c1+1]      - mesh->VE_s[c1] *   mesh->sxz0[c1]  );
+//                        }
                     }
                 }
             }
             mesh->roger_z[c] = -mesh->roger_z[c];
         }
     }
+    
     
     /* ------------------------------------------------------------------------*/
     /* Here we calculate the forcing term of the continuity and heat equation  */

@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00010
+istep = 00015
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -18,11 +18,12 @@ T   = 20
 /**** SPACE-TIME ****/
 Nx      = 101
 Nz      = 101
-Nt      = 10
+Nt      = 15
 xmin    = -5.000000e-1
 zmin    = -5.000000e-1
 xmax    =  5.000000e-1
 zmax    =  5.000000e-1
+advection         = 0
 dt                = 0.5
 dt_constant       = 1
 Courant           = 0.3
@@ -39,7 +40,6 @@ num_deriv         = 0
 
 /**** SWITCHES ****/
 ismechanical    = 1
-dt_constant     = 0
 RK              = 4
 isperiodic_x    = 0
 ispureshear_ALE = 0
@@ -55,7 +55,6 @@ subgrid_diff    = 1
 shear_heat      = 1
 adiab_heat      = 0
 fstrain         = 1
-advection       = 0
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = 1
