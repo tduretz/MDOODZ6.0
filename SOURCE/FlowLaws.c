@@ -466,7 +466,35 @@ void ReadDataPowerLaw( mat_prop* mat, params* model, int k, int number, scale* s
             mat->apwl[k] = 0.0;
             success      = 1;
             break;
-
+            
+            // Granulite Eclogite Setups:
+        case 50:
+            printf("Anorthite dry - Rybacki and Dresen (2000):\n" );
+            mat->tpwl[k] = 1;
+            mat->npwl[k] = 3.0;
+            mat->mpwl[k] = 0.0;
+            mat->rpwl[k] = 0.0;
+            mat->Qpwl[k] = 648.0e3;
+            mat->Vpwl[k] = 0.0e-6;
+            mat->Apwl[k] = 5.0119e-06;
+            mat->fpwl[k] = 0.0;
+            mat->apwl[k] = 0.0;
+            success      = 1;
+            break;
+            
+        case 55:
+            printf("DRY CPX - Bystricky & Mackwell, 2001:\n" );
+            mat->tpwl[k] = 1;
+            mat->npwl[k] = 4.7;
+            mat->mpwl[k] = 0.0;
+            mat->rpwl[k] = 0.0;
+            mat->Qpwl[k] = 760.0e3;
+            mat->Vpwl[k] = 0.0e-6;
+            mat->Apwl[k] = 3.9811e-19;
+            mat->fpwl[k] = 0.0;
+            mat->apwl[k] = 0.0;
+            success      = 1;
+            break;
 
     }
     
