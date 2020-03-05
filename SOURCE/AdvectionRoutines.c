@@ -630,14 +630,14 @@ printf("Initial timestep = %2.2e s\n", model->dt*scaling.t);
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scaling, grid *Mmesh, int quiet ) {
+void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scaling, grid *mesh, int quiet ) {
     
     int k, l, c;
     double minVx=0.0, minVz=0.0, maxVx=0.0, maxVz=0.0, dmin, dtc=0.0, vmax, vmin;
     double C = model->Courant;
-    
+    double time_reaction = 3.1558e11;
+    int reaction_in_progress;
 
-    
     for (k=0; k<model->Nx; k++) {
         for (l=0; l<model->Nz+1; l++) {
             c = k + l*model->Nx;
@@ -687,6 +687,30 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
             model->dt = dtc;
         }
         
+        
+        // REACTION DT:
+        // is there a reaction somewhere?
+        reaction_in_progress = 0;
+        for (k=0; k<model->Nx; k++) {
+            for (l=0; l<model->Nz; l++) {
+                c = k + l*(model->Nx);
+                if (mesh->ttrans0_s[c] > 0.0 && mesh->ttrans0_s[c]< time_reaction) reaction_in_progress += 1;
+            }
+        }
+        
+        if (reaction_in_progress > 0){
+        printf("Reaction in progress in %d mesh(es)\n", reaction_in_progress);
+        if (model->dt>=0.2*time_reaction/scaling.t){
+            model->dt = 0.2*time_reaction/scaling.t;
+            printf("!!! => Timestep potentially limited by Chemical Reaction Time\n");
+            printf("!! model dt = 0.2 x Reaction Time = %2.2e\n", model->dt*scaling.t);
+            }
+        }
+        else{
+            printf("No Reaction in progress \n");
+            printf("No timestep limitation due to Chemical Reaction \n");
+        }
+
         // If there is no motion, then the timestep becomes huge: cut off the motion.
         if( model->dt>1.0e30 || vmax<1.0e-30) {
             dtc = 0.0;
@@ -706,105 +730,105 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void EvaluateCourantCriterionParticles( markers particles, params *model, scale scaling ) {
-    
-    int k;
-    double minVx=0.0, minVz=0.0, maxVx=0.0, maxVz=0.0, dmin, dtc=0.0, vmax;
-    double C = 0.5;
-    
-    model->dt0 = model->dt;
-    
-    if (model->dt_constant == 0) {
-    
-        #pragma omp parallel
-        {
-            double pminVx=0.0, pminVz=0.0, pmaxVx=0.0, pmaxVz=0.0;
-            #pragma omp for schedule( static )
-            for (k=0; k<particles.Nb_part; k++) {
-                if (particles.Vx[k]>pmaxVx) pmaxVx = particles.Vx[k];
-                if (particles.Vx[k]<pminVx) pminVx = particles.Vx[k];
-                if (particles.Vz[k]>pmaxVz) pmaxVz = particles.Vz[k];
-                if (particles.Vz[k]<pminVz) pminVz = particles.Vz[k];
-            }
-            #pragma omp flush (maxVx)
-            if (pmaxVx>maxVx) {
-                #pragma omp critical
-                {
-                    if (pmaxVx>maxVx) maxVx = pmaxVx;
-                }
-            }
-            
-            #pragma omp flush (maxVz)
-            if (pmaxVz>maxVz) {
-                #pragma omp critical
-                {
-                    if (pmaxVz>maxVz) maxVz = pmaxVz;
-                }
-            }
-            
-            #pragma omp flush (minVx)
-            if (pminVx<minVx) {
-                #pragma omp critical
-                {
-                    if (pminVx<minVx) minVx = pminVx;
-                }
-            }
-            
-            #pragma omp flush (minVz)
-            if (pminVz<minVz) {
-                #pragma omp critical
-                {
-                    if (pminVz<minVz) minVz = pminVz;
-                }
-            }
-        }
-        
-        printf("Min( Vx ) = %2.2e m/s / Min( Vz ) = %2.2e m/s\n", minVx * scaling.V, minVz * scaling.V);
-        printf("Max( Vx ) = %2.2e m/s / Max( Vz ) = %2.2e m/s\n", maxVx * scaling.V, maxVz * scaling.V);
-        
-        dmin = MINV(model->dx, model->dz);
-        vmax = MAXV(maxVx, maxVz);
-        
-        double fact;
-        
-        // Timestep increase factor
-        if ( model->iselastic == 1 ) {
-            fact = 1.05;
-        }
-        else {
-            fact = 2.0;
-        }
-        
-        // Courant dt
-        dtc = C * dmin / fabs(vmax);
-        
-        // Timestep cutoff : Do not allow for very large timestep increase
-        if (dtc > fact*model->dt0 ) {
-            dtc = fact*model->dt0;
-        }
-        
-        // If timestep is adaptive
-        if ( model->dt_constant != 1 ) {
-            model->dt = dtc;
-        }
-        
-        // If there is no motion, then the timestep becomes huge: cut off the motion.
-        if( model->dt>1.0e30 ) {
-            dtc = 0;
-            model->dt = 0.0;
-        }
-        
-        // Cutoff infinitely slow motion
-        if (vmax<1.0e-30) {
-            dtc = 0.0;
-            model->dt = 0.0;
-        }
-    }
-    
-    printf("Running with Courant dt = %2.2e s / previous dt = %2.2e s\n", model->dt * scaling.t, model->dt0 * scaling.t );
-    //printf("Current dt = %2.2e s / Courant dt = %2.2e s\n", model->dt * scaling.t, dtc * scaling.t );
-
-}
+//void EvaluateCourantCriterionParticles( markers particles, params *model, scale scaling ) {
+//    
+//    int k;
+//    double minVx=0.0, minVz=0.0, maxVx=0.0, maxVz=0.0, dmin, dtc=0.0, vmax;
+//    double C = 0.5;
+//    
+//    model->dt0 = model->dt;
+//    
+//    if (model->dt_constant == 0) {
+//    
+//        #pragma omp parallel
+//        {
+//            double pminVx=0.0, pminVz=0.0, pmaxVx=0.0, pmaxVz=0.0;
+//            #pragma omp for schedule( static )
+//            for (k=0; k<particles.Nb_part; k++) {
+//                if (particles.Vx[k]>pmaxVx) pmaxVx = particles.Vx[k];
+//                if (particles.Vx[k]<pminVx) pminVx = particles.Vx[k];
+//                if (particles.Vz[k]>pmaxVz) pmaxVz = particles.Vz[k];
+//                if (particles.Vz[k]<pminVz) pminVz = particles.Vz[k];
+//            }
+//            #pragma omp flush (maxVx)
+//            if (pmaxVx>maxVx) {
+//                #pragma omp critical
+//                {
+//                    if (pmaxVx>maxVx) maxVx = pmaxVx;
+//                }
+//            }
+//            
+//            #pragma omp flush (maxVz)
+//            if (pmaxVz>maxVz) {
+//                #pragma omp critical
+//                {
+//                    if (pmaxVz>maxVz) maxVz = pmaxVz;
+//                }
+//            }
+//            
+//            #pragma omp flush (minVx)
+//            if (pminVx<minVx) {
+//                #pragma omp critical
+//                {
+//                    if (pminVx<minVx) minVx = pminVx;
+//                }
+//            }
+//            
+//            #pragma omp flush (minVz)
+//            if (pminVz<minVz) {
+//                #pragma omp critical
+//                {
+//                    if (pminVz<minVz) minVz = pminVz;
+//                }
+//            }
+//        }
+//        
+//        printf("Min( Vx ) = %2.2e m/s / Min( Vz ) = %2.2e m/s\n", minVx * scaling.V, minVz * scaling.V);
+//        printf("Max( Vx ) = %2.2e m/s / Max( Vz ) = %2.2e m/s\n", maxVx * scaling.V, maxVz * scaling.V);
+//        
+//        dmin = MINV(model->dx, model->dz);
+//        vmax = MAXV(maxVx, maxVz);
+//        
+//        double fact;
+//        
+//        // Timestep increase factor
+//        if ( model->iselastic == 1 ) {
+//            fact = 1.05;
+//        }
+//        else {
+//            fact = 2.0;
+//        }
+//        
+//        // Courant dt
+//        dtc = C * dmin / fabs(vmax);
+//        
+//        // Timestep cutoff : Do not allow for very large timestep increase
+//        if (dtc > fact*model->dt0 ) {
+//            dtc = fact*model->dt0;
+//        }
+//        
+//        // If timestep is adaptive
+//        if ( model->dt_constant != 1 ) {
+//            model->dt = dtc;
+//        }
+//        
+//        // If there is no motion, then the timestep becomes huge: cut off the motion.
+//        if( model->dt>1.0e30 ) {
+//            dtc = 0;
+//            model->dt = 0.0;
+//        }
+//        
+//        // Cutoff infinitely slow motion
+//        if (vmax<1.0e-30) {
+//            dtc = 0.0;
+//            model->dt = 0.0;
+//        }
+//    }
+//    
+//    printf("Running with Courant dt = %2.2e s / previous dt = %2.2e s\n", model->dt * scaling.t, model->dt0 * scaling.t );
+//    //printf("Current dt = %2.2e s / Courant dt = %2.2e s\n", model->dt * scaling.t, dtc * scaling.t );
+//
+//}
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/

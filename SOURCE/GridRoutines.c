@@ -153,7 +153,7 @@ void InterpCentroidsToVerticesDouble( double* CentroidArray, double* VertexArray
     Ncz = Nz-1;
     
     // Allocate temporary swelled centroid of size = (ncx+2) * (ncz+2)
-    temp = DoodzCalloc(sizeof(DoodzFP), (Ncx+2)*(Ncz+2));
+    temp = DoodzCalloc((Ncx+2)*(Ncz+2),sizeof(DoodzFP));
     
     // Fill interior points
     for (k=0; k<Ncx; k++) {

@@ -1511,8 +1511,8 @@ void AllocateDecomposition( int n_th, int **estart, int **eend, int **DD, int **
     *DD       = DoodzMalloc( sizeof(int) * n_th );
     *estart   = DoodzMalloc( sizeof(int) * n_th );
     *eend     = DoodzMalloc( sizeof(int) * n_th );
-    *nnzc2    = DoodzCalloc( sizeof(int), n_th );
-    *last_eqn = DoodzCalloc( sizeof(int), n_th );
+    *nnzc2    = DoodzCalloc( n_th, sizeof(int) );
+    *last_eqn = DoodzCalloc( n_th, sizeof(int) );
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -1555,7 +1555,7 @@ void AllocateTempMatArrays(double ***Atemp, int ***Itemp, int ***Jtemp, int n_th
     
     for (ith=0; ith<n_th; ith++) {
         (*Atemp)[ith] = DoodzMalloc( sizeof(double) * (int)(nnz/n_th) );
-        (*Itemp)[ith] = DoodzCalloc( sizeof(int), (neq+1) );
+        (*Itemp)[ith] = DoodzCalloc( (neq+1), sizeof(int) );
         (*Jtemp)[ith] = DoodzMalloc( sizeof(int) * (int)(nnz/n_th) );
     }
 }

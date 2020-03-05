@@ -398,7 +398,8 @@ int main( int nargs, char *args[] ) {
         t_omp_step = (double)omp_get_wtime();
         
         // Define new time step
-        EvaluateCourantCriterion_BEN( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
+        //EvaluateCourantCriterion_BEN( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
+        EvaluateCourantCriterion( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
         
         // Save initial dt
         model.dt0 = model.dt;
@@ -500,6 +501,25 @@ int main( int nargs, char *args[] ) {
             
             // Interpolate pressure
             Interp_P2C ( particles, particles.P, &mesh, mesh.p_in,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
+            
+            //-----------------------------------------------------------------------------------------------------------
+            // Interp P --> p0_n , p0_s
+            Interp_P2C ( particles, particles.P, &mesh, mesh.p0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+            Interp_P2N ( particles, particles.P, &mesh, mesh.p0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+            
+            // Interp ttrans --> ttrans0_n , ttrans0_s
+            Interp_P2C ( particles, particles.ttrans, &mesh, mesh.ttrans0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+            Interp_P2N ( particles, particles.ttrans, &mesh, mesh.ttrans0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+            
+            MinMaxArray( particles.ttrans,  scaling.t, particles.Nb_part,   "ttrans. part" );
+            
+            
+            MinMaxArrayTag( mesh.ttrans0_s,   scaling.t,    (mesh.Nx)*(mesh.Nz),       "ttrans0_s",   mesh.BCg.type    );
+            MinMaxArrayTag( mesh.ttrans0_n,   scaling.t,    (mesh.Nx-1)*(mesh.Nz-1),   "ttrans0_n",   mesh.BCp.type );
+            
+            MinMaxArrayTag( mesh.p0_s,   scaling.S,    (mesh.Nx)*(mesh.Nz),       "p0_s",   mesh.BCg.type    );
+            MinMaxArrayTag( mesh.p0_n,   scaling.S,    (mesh.Nx-1)*(mesh.Nz-1),   "p0_n",   mesh.BCp.type );
+            //-------------------------------------------------------------------------------------------------------------
             
             if (model.isPl_soft == 1) {
                 Interp_P2C ( particles, particles.strain_pl, &mesh, mesh.strain_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
@@ -906,6 +926,34 @@ int main( int nargs, char *args[] ) {
             Interp_Grid2P( particles, particles.sxz,  &mesh, mesh.sxz , mesh.xg_coord,  mesh.zg_coord,  mesh.Nx  , mesh.Nz, mesh.BCg.type   );
         }
         
+        
+        
+        //--------------------------------------------------------------------------------------------------------------------------------//
+//        // Update pressure
+//        ArrayEqualArray( mesh.p_0, mesh.p_in,  (mesh.Nx-1)*(mesh.Nz-1) );
+        
+        
+//        // P lith on particles
+//        ComputeLithostaticPressure( &Mmesh, &model, materials.rho, scaling );
+        Interp_Grid2P( particles, particles.P,      &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+
+        
+        MinMaxArray( particles.ttrans,  scaling.t, particles.Nb_part,   "AVANT UPDATE : ttrans. part" );
+
+        MinMaxArrayTag( mesh.ttrans0_s,   scaling.t,    (mesh.Nx)*(mesh.Nz),       "ttrans0_s",   mesh.BCg.type    );
+        MinMaxArrayTag( mesh.ttrans0_n,   scaling.t,    (mesh.Nx-1)*(mesh.Nz-1),   "ttrans0_n",   mesh.BCp.type );
+        //        MinMaxArrayTag( mesh.ttrans_s,   scaling.t,    (mesh.Nx)*(mesh.Nz),       "ttrans_s",   mesh.BCg.type    );
+        MinMaxArrayTag( mesh.ttrans_n,   scaling.t,    (mesh.Nx-1)*(mesh.Nz-1),   "ttrans_n",   mesh.BCp.type );
+
+        
+        UpdateParticlettrans( &mesh, &scaling, model, &particles, &materials );
+//        Interp_Grid2P( particles, particles.Plith,  &mesh, mesh.p_lith, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+        MinMaxArray( particles.ttrans,  scaling.t, particles.Nb_part,   "APRES UPDATE : ttrans. part" );
+        
+        MinMaxArray( particles.P,  scaling.S, particles.Nb_part,   "P part" );
+        MinMaxArray( particles.ttrans,  scaling.t, particles.Nb_part,   "ttrans. part" );
+
+        
         //------------------------------------------------------------------------------------------------------------------------------//
         
         if (model.isthermal == 1 ) {
@@ -959,7 +1007,8 @@ int main( int nargs, char *args[] ) {
             printf("*************************************\n");
             
             t_omp = (double)omp_get_wtime();
-            EvaluateCourantCriterion_BEN( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
+            //EvaluateCourantCriterion_BEN( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
+            EvaluateCourantCriterion( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
             
             //            double whole_dt = model.dt;
             //            int nsub, isub;

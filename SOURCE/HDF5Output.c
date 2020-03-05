@@ -248,6 +248,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     float *CFxx, *CFxz, *CFzx, *CFzz, *Cnx, *Cnz;
     double *T0, *P0, *x0, *z0, *Tmax, *Pmax;
     float *CT0, *CP0, *Cx0, *Cz0, *CTmax, *CPmax;
+    float *CXreac;
     
     int    res_fact = 1;
     int    nxviz, nzviz, nxviz_hr, nzviz_hr;
@@ -256,7 +257,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     double *P_total;
     float  *Ccohesion, *Cfriction;
 
-    P_total  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+    P_total  = DoodzCalloc((model.Nx-1)*(model.Nz-1), sizeof(double));
 
     // Build total pressure
     for (k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
@@ -378,6 +379,9 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     DoubleToFloat( mesh->d, Cd, (model.Nx-1)*(model.Nz-1) );
     ScaleBack( Cd, scaling.L, (model.Nx-1)*(model.Nz-1) );
     
+    CXreac        = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->Xreac_n, CXreac, (model.Nx-1)*(model.Nz-1) );
+    
     //---------------------------------------------------
     CT  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( mesh->T, CT, (model.Nx-1)*(model.Nz-1) );
@@ -425,68 +429,68 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     ScaleBack( Czviz_hr, scaling.L, nzviz_hr );
     
     // Total strain
-    strain  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+    strain  = DoodzCalloc((model.Nx-1)*(model.Nz-1), sizeof(double));
     Interp_P2C ( *particles,  particles->strain, mesh, strain, mesh->xg_coord, mesh->zg_coord, 1, 0 );
     Cstrain  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( strain, Cstrain, (model.Nx-1)*(model.Nz-1) );
     
     // Elastic strain
-    strain_el  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+    strain_el  = DoodzCalloc((model.Nx-1)*(model.Nz-1),sizeof(double));
     Interp_P2C ( *particles,  particles->strain_el, mesh, strain_el, mesh->xg_coord, mesh->zg_coord, 1, 0 );
     Cstrain_el  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( strain_el, Cstrain_el, (model.Nx-1)*(model.Nz-1) );
     
     // Plastic strain
-    strain_pl  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+    strain_pl  = DoodzCalloc((model.Nx-1)*(model.Nz-1), sizeof(double));
     Interp_P2C ( *particles,  particles->strain_pl, mesh, strain_pl, mesh->xg_coord, mesh->zg_coord, 1, 0 );
     Cstrain_pl  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( strain_pl, Cstrain_pl, (model.Nx-1)*(model.Nz-1) );
     
     // Power-law strain
-    strain_pwl  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+    strain_pwl  = DoodzCalloc((model.Nx-1)*(model.Nz-1), sizeof(double));
     Interp_P2C ( *particles,  particles->strain_pwl, mesh, strain_pwl, mesh->xg_coord, mesh->zg_coord, 1, 0 );
     Cstrain_pwl  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( strain_pwl, Cstrain_pwl, (model.Nx-1)*(model.Nz-1) );
     
     // Exponential flow strain
-    strain_exp  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+    strain_exp  = DoodzCalloc((model.Nx-1)*(model.Nz-1), sizeof(double));
     Interp_P2C ( *particles,  particles->strain_exp, mesh, strain_exp, mesh->xg_coord, mesh->zg_coord, 1, 0 );
     Cstrain_exp  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( strain_exp, Cstrain_exp, (model.Nx-1)*(model.Nz-1) );
     
     // Linear flow strain
-    strain_lin  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+    strain_lin  = DoodzCalloc((model.Nx-1)*(model.Nz-1), sizeof(double));
     Interp_P2C ( *particles,  particles->strain_lin, mesh, strain_lin, mesh->xg_coord, mesh->zg_coord, 1, 0 );
     Cstrain_lin  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( strain_lin, Cstrain_lin, (model.Nx-1)*(model.Nz-1) );
     
     // GBS flow strain
-    strain_gbs  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+    strain_gbs  = DoodzCalloc((model.Nx-1)*(model.Nz-1), sizeof(double));
     Interp_P2C ( *particles,  particles->strain_gbs, mesh, strain_gbs, mesh->xg_coord, mesh->zg_coord, 1, 0 );
     Cstrain_gbs  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( strain_gbs, Cstrain_gbs, (model.Nx-1)*(model.Nz-1) );
     
     if ( model.fstrain == 1 ) {
         // Fxx
-        Fxx  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+        Fxx  = DoodzCalloc((model.Nx-1)*(model.Nz-1), sizeof(double));
         Interp_P2C ( *particles,  particles->Fxx, mesh, Fxx, mesh->xg_coord, mesh->zg_coord, 1, 0 );
         CFxx  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
         DoubleToFloat( Fxx, CFxx, (model.Nx-1)*(model.Nz-1) );
         
         // Fxz
-        Fxz  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+        Fxz  = DoodzCalloc((model.Nx-1)*(model.Nz-1),sizeof(double));
         Interp_P2C ( *particles,  particles->Fxz, mesh, Fxz, mesh->xg_coord, mesh->zg_coord, 1, 0 );
         CFxz  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
         DoubleToFloat( Fxz, CFxz, (model.Nx-1)*(model.Nz-1) );
         
         // Fzx
-        Fzx  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+        Fzx  = DoodzCalloc((model.Nx-1)*(model.Nz-1), sizeof(double));
         Interp_P2C ( *particles,  particles->Fzx, mesh, Fzx, mesh->xg_coord, mesh->zg_coord, 1, 0 );
         CFzx  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
         DoubleToFloat( Fzx, CFzx, (model.Nx-1)*(model.Nz-1) );
         
         // Fzz
-        Fzz  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+        Fzz  = DoodzCalloc((model.Nx-1)*(model.Nz-1),sizeof(double));
         Interp_P2C ( *particles,  particles->Fzz, mesh, Fzz, mesh->xg_coord, mesh->zg_coord, 1, 0 );
         CFzz = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
         DoubleToFloat( Fzz, CFzz, (model.Nx-1)*(model.Nz-1) );
@@ -495,13 +499,13 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     if ( model.aniso == 1 ) {
         
         // nx
-        nx  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+        nx  = DoodzCalloc((model.Nx-1)*(model.Nz-1),sizeof(double));
         Interp_P2C ( *particles,  particles->nx, mesh, nx, mesh->xg_coord, mesh->zg_coord, 1, 0 );
         Cnx = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
         DoubleToFloat( nx, Cnx, (model.Nx-1)*(model.Nz-1) );
         
         // nz
-        nz  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+        nz  = DoodzCalloc((model.Nx-1)*(model.Nz-1), sizeof(double));
         Interp_P2C ( *particles,  particles->nz, mesh, nz, mesh->xg_coord, mesh->zg_coord, 1, 0 );
         Cnz = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
         DoubleToFloat( nz, Cnz, (model.Nx-1)*(model.Nz-1) );
@@ -510,7 +514,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     
     if ( model.rec_T_P_x_z == 1 ) {
         // T0
-        T0  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+        T0  = DoodzCalloc((model.Nx-1)*(model.Nz-1), sizeof(double));
         Interp_P2C ( *particles,  particles->T0, mesh, T0, mesh->xg_coord, mesh->zg_coord, 1, 0 );
         for (k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
             if ( mesh->BCt.type[k] == 30 ) T0[k]   = zeroC/scaling.T;
@@ -521,7 +525,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
         
 
         // P0
-        P0  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+        P0  = DoodzCalloc((model.Nx-1)*(model.Nz-1), sizeof(double));
         Interp_P2C ( *particles,  particles->P0, mesh, P0, mesh->xg_coord, mesh->zg_coord, 1, 0 );
         for (k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
             if ( mesh->BCt.type[k] == 30 ) P0[k]   = 0.0;
@@ -531,7 +535,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
         ScaleBack( CP0, scaling.S, (model.Nx-1)*(model.Nz-1) );
         
         // Tmax
-        Tmax  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+        Tmax  = DoodzCalloc((model.Nx-1)*(model.Nz-1), sizeof(double));
         Interp_P2C ( *particles,  particles->Tmax, mesh, Tmax, mesh->xg_coord, mesh->zg_coord, 1, 0 );
         for (k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
             if ( mesh->BCt.type[k] == 30 ) Tmax[k] = zeroC/scaling.T;
@@ -542,7 +546,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
         
         
         // Pmax
-        Pmax  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+        Pmax  = DoodzCalloc((model.Nx-1)*(model.Nz-1),sizeof(double));
         Interp_P2C ( *particles,  particles->Pmax, mesh, Pmax, mesh->xg_coord, mesh->zg_coord, 1, 0 );
         for (k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
             if ( mesh->BCt.type[k] == 30 ) Pmax[k] = 0.0;
@@ -553,14 +557,14 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
 
         
         // x0
-        x0  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+        x0  = DoodzCalloc((model.Nx-1)*(model.Nz-1), sizeof(double));
         Interp_P2C ( *particles,  particles->x0, mesh, x0, mesh->xg_coord, mesh->zg_coord, 1, 0 );
         Cx0  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
         DoubleToFloat( x0, Cx0, (model.Nx-1)*(model.Nz-1) );
         ScaleBack( Cx0, scaling.L, (model.Nx-1)*(model.Nz-1) );
         
         // z0
-        z0  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+        z0  = DoodzCalloc((model.Nx-1)*(model.Nz-1), sizeof(double));
         Interp_P2C ( *particles,  particles->z0, mesh, z0, mesh->xg_coord, mesh->zg_coord, 1, 0 );
         Cz0 = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
         DoubleToFloat( z0, Cz0, (model.Nx-1)*(model.Nz-1) );
@@ -577,7 +581,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     }
     
     // Get X from particles
-    X  = DoodzCalloc( sizeof(double),(model.Nx-1)*(model.Nz-1));
+    X  = DoodzCalloc((model.Nx-1)*(model.Nz-1),sizeof(double));
     Interp_P2C ( *particles,  particles->X, mesh, X, mesh->xg_coord, mesh->zg_coord, 1, 0 );
     CX  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( X, CX, (model.Nx-1)*(model.Nz-1) );
@@ -691,6 +695,8 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "eII_gbs" , 'f', (model.Nx-1)*(model.Nz-1), CeII_gbs, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "d" , 'f', (model.Nx-1)*(model.Nz-1), Cd, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "X" , 'f', (model.Nx-1)*(model.Nz-1), CX, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "Xreac",'f', (model.Nx-1)*(model.Nz-1), CXreac, 1 );
+    
     if ( model.free_surf == 1 ) {
         AddFieldToGroup_generic( _TRUE_, name, "Topo", "height" , 'f', (model.Nx), Cheight, 1 );
         AddFieldToGroup_generic( _TRUE_, name, "Topo", "vx" , 'f', (model.Nx), Ctopovx, 1 );
@@ -785,6 +791,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     DoodzFree( CX );
     DoodzFree( CT );
     DoodzFree( Cd );
+    DoodzFree( CXreac );
     
     if ( model.free_surf == 1 ) {
         DoodzFree( Cxtopo );

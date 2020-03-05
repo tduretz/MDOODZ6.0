@@ -203,6 +203,8 @@ void PartAlloc( markers *particles, params* model  ) {
     particles->phi        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->X          = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     
+    particles->ttrans     = DoodzMalloc( particles->Nb_part_max*sizeof(DoodzFP));
+    
     particles->strain     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->strain_el  = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->strain_pl  = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
@@ -262,6 +264,8 @@ void PartFree( markers *particles, params* model ) {
     DoodzFree(particles->d);
     DoodzFree(particles->phi);
     DoodzFree(particles->X);
+    
+    DoodzFree(particles->ttrans);
     
     DoodzFree(particles->strain);
     DoodzFree(particles->strain_el);
@@ -563,6 +567,15 @@ void GridAlloc ( grid* mesh, params* model ) {
     if ( model->aniso == 1 ) mesh->nz_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     
     
+    // reaction
+    mesh->p0_s       = DoodzCalloc ((Nx)*(Nz),sizeof(double));
+    mesh->Xreac_s    = DoodzCalloc ((Nx)*(Nz),sizeof(double));
+    mesh->ttrans0_s  = DoodzCalloc ((Nx)*(Nz),sizeof(double));
+    mesh->p0_n       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->ttrans0_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->Xreac_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->ttrans_n   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    
     printf("Memory succesfully allocated : \nDiantre, que c'est bon!\n");
 
 }
@@ -821,6 +834,14 @@ void GridFree( grid* mesh, params* model ) {
     if ( model->aniso == 1 ) DoodzFree(mesh->nz_n);
     if ( model->aniso == 1 ) DoodzFree(mesh->nz_s);
     
+    // reac
+    DoodzFree(mesh->Xreac_n);
+    DoodzFree(mesh->Xreac_s);
+    DoodzFree(mesh->ttrans_n);
+    DoodzFree(mesh->ttrans0_n);
+    DoodzFree(mesh->ttrans0_s);
+    DoodzFree(mesh->p0_n);
+    DoodzFree(mesh->p0_s);
     
 }
 

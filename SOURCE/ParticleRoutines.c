@@ -226,7 +226,8 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
     particles->szzd[new_ind]          = particles->szzd[min_index];
     particles->sxz[new_ind]           = particles->sxz[min_index];
     particles->om_p[new_ind]          = particles->om_p[min_index];
-
+    particles->ttrans[new_ind]        = particles->ttrans[min_index];
+    
     if (model->fstrain == 1) {
         // do not set default to 0 beause then it can not accumulate, better to identify which markers are new and start to accumulate as we do for the general case (fxx=fyy=1, fxz=fzx=0).
         particles->Fxx[new_ind]           = particles->Fxx[min_index];

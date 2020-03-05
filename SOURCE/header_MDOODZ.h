@@ -55,13 +55,15 @@ struct _mat_prop {
     DoodzFP ppzm[20], Kpzm[20], Qpzm[20], Gpzm[20], cpzm[20], Lpzm[20], gs_ref[20];
     int     gs[20], cstv[20], pwlv[20], linv[20], expv[20], gbsv[20], phase_diagram[20], density_model[20];
     DoodzFP C_end[20], phi_end[20], pls_start[20], pls_end[20], eta_vp[20];
+    DoodzFP Preac[20], treac[20];
+    int     Reac[20];
 };
 
 // markers is the particles structure
 typedef struct _p_markers markers;
 struct _p_markers {
 	int    Nx_part, Nz_part, Nb_part, Nb_part_max, min_part_cell;
-	DoodzFP *x, *z, *Vx, *Vz, *P, *sxxd, *szzd, *sxz, *progress, *rho, *om_p, *T, *d, *phi, *X;
+	DoodzFP *x, *z, *Vx, *Vz, *P, *sxxd, *szzd, *sxz, *progress, *rho, *om_p, *T, *d, *phi, *X, *ttrans;
     DoodzFP *strain, *strain_el, *strain_pl, *strain_pwl, *strain_exp, *strain_lin, *strain_gbs;
 	int    *phase, *generation;
     markers* marker_chain;
@@ -160,6 +162,7 @@ struct _grid {
 	BCT    BCt, BCg;
 	double *xg_coord, *zg_coord, *xc_coord, *zc_coord, *xvz_coord, *zvx_coord, *xg_coord0, *zg_coord0, *xg_coord_ext, *zg_coord_ext;
 	double *eta_s, *eta_n, *rho_s, *rho_n, *rho_app_s, *rho_app_n;
+    double *ttrans0_s, *ttrans0_n, *Xreac_s, *Xreac_n, *p0_n, *p0_s, *ttrans_n;
     double *strain_n, *strain_s;
 	double *u, *v, *p;
 	double *ru, *rv, *rp;

@@ -238,6 +238,8 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
     fread( particles->strain_gbs, s3, particles->Nb_part, file);
     fread( particles->d         , s3, particles->Nb_part, file);
     
+    fread( particles->ttrans    , s3, particles->Nb_part, file);
+    
     if (model->fstrain == 1) {
         fread( particles->Fxx         , s3, particles->Nb_part, file);
         fread( particles->Fxz         , s3, particles->Nb_part, file);
@@ -372,6 +374,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
             particles->Pmax[k]/= scaling.S;
         }
         particles->d[k]  /=scaling.L;
+        particles->ttrans[k] /=scaling.t;
     }
     
     // Grid data
@@ -487,17 +490,18 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
         particles->phi[k]    *= 1.0;
         particles->X[k]      *= 1.0;
         if (model.iselastic == 1) {
-            particles->sxxd[k]   *= scaling.S;
-            particles->szzd[k]   *= scaling.S;
-            particles->sxz[k]    *= scaling.S;
+            particles->sxxd[k] *= scaling.S;
+            particles->szzd[k] *= scaling.S;
+            particles->sxz[k]  *= scaling.S;
         }
         if (model.isthermal == 1) {
-            particles->T[k]  *= scaling.T;
+            particles->T[k]    *= scaling.T;
         }
         if (model.eqn_state > 0) {
             particles->rho[k]  *= scaling.rho;
         }
-        particles->d[k]  *= scaling.L;
+        particles->d[k]        *= scaling.L;
+        particles->ttrans[k]   *= scaling.t;
         
         if ( model.rec_T_P_x_z == 1) {
             particles->T0[k]  *= scaling.T;
@@ -665,6 +669,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     fwrite( particles->strain_lin, s3, particles->Nb_part, file);
     fwrite( particles->strain_gbs, s3, particles->Nb_part, file);
     fwrite( particles->d         , s3, particles->Nb_part, file);
+    fwrite( particles->ttrans    , s3, particles->Nb_part, file);
     
     if (model.fstrain == 1) {
         fwrite( particles->Fxx         , s3, particles->Nb_part, file);
@@ -788,6 +793,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             particles->rho[k]  /= scaling.rho;
         }
         particles->d[k]  /= scaling.L;
+        particles->ttrans[k] /= scaling.t;
         
         if (model.rec_T_P_x_z == 1) {
             particles->T0[k]  /= scaling.T;
@@ -1061,6 +1067,11 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         materials->pls_start[k] = ReadMatProps( fin, "plss",   k,    1.0e6  );
         materials->pls_end[k]   = ReadMatProps( fin, "plse",   k,    1.0e6  );
         materials->eta_vp[k]    = ReadMatProps( fin, "eta_vp", k,       0.0 ) / scaling->S / scaling->t;
+        // reaction stuff
+        materials->Reac[k]      = ReadMatProps( fin, "Reac",   k,    0.0  );
+        materials->Preac[k]     = ReadMatProps( fin, "Preac",  k,    0.0  ) / scaling->S;
+        materials->treac[k]     = ReadMatProps( fin, "treac",  k,    0.0  ) / scaling->t;
+        
         // Density models
         materials->density_model[k]     = (int)ReadMatProps( fin, "density_model",     k,    1  );
         materials->phase_diagram[k]     = (int)ReadMatProps( fin, "phase_diagram",     k,   -1  );
@@ -1105,6 +1116,9 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
             printf("eta0 = %2.2e Pa.s\n", materials->eta0[k]*scaling->eta);
         }
     }
+    
+    for ( k=0; k<materials->Nb_phases; k++)  printf("%02d %2.2e %2.2e\n", materials->Reac[k], materials->Preac[k]*scaling->S, materials->treac[k]*scaling->t );
+    
     materials->R = Rg / (scaling->J/scaling->T);
     
     //------------------------------------------------------------------------------------------------------------------------------//
