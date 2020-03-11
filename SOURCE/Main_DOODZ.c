@@ -865,12 +865,15 @@ int main( int nargs, char *args[] ) {
         MinMaxArray( mesh.div_u, scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "  div(V)" );
         MinMaxArray( mesh.Qrho,  scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "  Qrho  " );
         
-        
         int i;
         
         printf("--------------------------------------------------------------\n");
         for (i=0; i< Nmodel.nit+1; i++) {
             printf("Non-Linear it. %02d --- |Fx| = %2.2e --- log10(|Fx|) = %2.2f\n", i, rx_array[i], log10(rx_array[i]));
+            if (i == Nmodel.nit_max) {
+             printf("Exit: Max iteration reached: Nmodel.nit_max = %02d! Check what you wanna do now...\n",Nmodel.nit_max);
+             exit(1);
+            }
         }
         printf("--------------------------------------------------------------\n");
         
@@ -1094,8 +1097,8 @@ int main( int nargs, char *args[] ) {
                 
 #ifdef _HDF5_
                 if ( model.write_debug == 1 ) {
-                    WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, Mmodel, model, "Outputx", materials, scaling );
-                    WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, Mmodel, model, "Particlesx", materials, scaling );
+                    WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, model, "Outputx", materials, scaling );
+                    WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particlesx", materials, scaling );
                 }
 #endif
                 //                    MinMaxArray( topo_chain.z,      scaling.L, topo_chain.Nb_part,       "z surf." );
@@ -1121,8 +1124,8 @@ int main( int nargs, char *args[] ) {
             printf("** Time for advection solver = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
             
 #ifdef _HDF5_
-            if ( model.write_debug == 1 ) {WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, Mmodel, model, "Outputxx", materials, scaling );
-                WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, Mmodel, model, "Particlesxx", materials, scaling );
+            if ( model.write_debug == 1 ) {WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, model, "Outputxx", materials, scaling );
+                WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particlesxx", materials, scaling );
             }
 #endif
             

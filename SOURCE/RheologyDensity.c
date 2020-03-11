@@ -710,6 +710,18 @@ void DeformationGradient ( grid mesh, scale scaling, params model, markers *part
         particles->Fzz[k] = fzx*fxz_o + fzz*fzz_o;
     }
     
+    
+    // Free
+    DoodzFree( dudx );
+    DoodzFree( dvdz );
+    DoodzFree( dudz );
+    DoodzFree( dvdx );
+    DoodzFree( pdudx );
+    DoodzFree( pdudz );
+    DoodzFree( pdvdx );
+    DoodzFree( pdvdz );
+    
+    
     printf("Updated deformation gradient tensor\n");
 }
 
@@ -738,7 +750,7 @@ void AccumulatedStrain( grid* mesh, scale scaling, params model, markers* partic
     strain_inc_exp  = DoodzMalloc(sizeof(double)*(Nx-1)*(Nz-1));
     strain_inc_lin  = DoodzMalloc(sizeof(double)*(Nx-1)*(Nz-1));
     strain_inc_gbs  = DoodzMalloc(sizeof(double)*(Nx-1)*(Nz-1));
-    strain_inc_mark = DoodzCalloc(sizeof(DoodzFP),particles->Nb_part);
+    strain_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
     
     // Interpolate exz to cell centers
     for (k=0; k<Nx-1; k++) {
@@ -949,8 +961,8 @@ void UpdateParticleDensity( grid* mesh, scale scaling, params model, markers* pa
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
     
-    rho_inc_mark = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
-    rho_inc_grid = DoodzCalloc(sizeof(DoodzFP), Ncx*Ncz);
+    rho_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+    rho_inc_grid = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
     
     for (k=0;k<Ncx*Ncz;k++) {
         rho_inc_grid[k] = 0.0;
@@ -979,8 +991,8 @@ void UpdateParticleGrainSize( grid* mesh, scale scaling, params model, markers* 
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
     
-    d_inc_mark = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
-    d_inc_grid = DoodzCalloc(sizeof(DoodzFP), Ncx*Ncz);
+    d_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+    d_inc_grid = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
     
     for (k=0;k<Ncx*Ncz;k++) {
         d_inc_grid[k] =0.0;
@@ -1014,12 +1026,12 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
     if ( model.subgrid_diff >= 1 ) {
         
         printf("Subgrid diffusion for temperature update\n");
-        Tg0  = DoodzCalloc(sizeof(DoodzFP), Ncx*Ncz);
-        dTgs = DoodzCalloc(sizeof(DoodzFP), Ncx*Ncz);
-        dTgr = DoodzCalloc(sizeof(DoodzFP), Ncx*Ncz);
-        Tm0  = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
-        dTms = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
-        dTmr = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
+        Tg0  = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+        dTgs = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+        dTgr = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+        Tm0  = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        dTms = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        dTmr = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
         
         // Old temperature grid
 #pragma omp parallel for shared(mesh, Tg0) private(c0) firstprivate(Ncx,Ncz)
@@ -1066,7 +1078,7 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
     }
     else {
         
-        T_inc_mark = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
+        T_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
         
         // Interp increments to particles
         Interp_Grid2P( *particles, T_inc_mark, mesh, mesh->dT, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
@@ -1089,7 +1101,7 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
     
-    P_inc_mark = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
+    P_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
     
     // Interp increments to particles
     Interp_Grid2P( *particles, P_inc_mark, mesh, mesh->dp, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
@@ -1117,22 +1129,22 @@ void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_pr
     if ( model->subgrid_diff > -1 ) {
         
         // Alloc
-        dtxxgs = DoodzCalloc(sizeof(DoodzFP), Ncx*Ncz           );
-        dtzzgs = DoodzCalloc(sizeof(DoodzFP), Ncx*Ncz           );
-        dtxzgs = DoodzCalloc(sizeof(DoodzFP), Nx*Nz             );
-        dtxxgr = DoodzCalloc(sizeof(DoodzFP), Ncx*Ncz           );
-        dtzzgr = DoodzCalloc(sizeof(DoodzFP), Ncx*Ncz           );
-        dtxzgr = DoodzCalloc(sizeof(DoodzFP), Nx*Nz             );
-        txxm0  = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
-        tzzm0  = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
-        txzm0  = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
-        dtxxms = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
-        dtzzms = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
-        dtxzms = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
-        dtxxmr = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
-        dtzzmr = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
-        dtxzmr = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
-        etam   = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
+        dtxxgs = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+        dtzzgs = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+        dtxzgs = DoodzCalloc(Nx*Nz,   sizeof(DoodzFP));
+        dtxxgr = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+        dtzzgr = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+        dtxzgr = DoodzCalloc(Nx*Nz,   sizeof(DoodzFP));
+        txxm0  = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        tzzm0  = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        txzm0  = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        dtxxms = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        dtzzms = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        dtxzms = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        dtxxmr = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        dtzzmr = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        dtxzmr = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        etam   = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
         
         // Old stresses grid --> markers
         Interp_Grid2P( *particles, txxm0, mesh, mesh->sxxd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type );
@@ -1281,7 +1293,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     double Ezz_pl=0.0, Ezz_pwl=0.0;
     int gs = materials->gs[phase];
     double pg = materials->ppzm[phase], Kg = materials->Kpzm[phase], Qg = materials->Qpzm[phase], gam = materials->Gpzm[phase], cg = materials->cpzm[phase], lambda = materials->Lpzm[phase];
-    double eta_vp = materials->eta_vp[phase];
+    double eta_vp = materials->eta_vp[phase];    
     double  detadTxx=0.0, detadTzz=0.0, detadTxz=0.0, deta_ve_dExx=0.0, deta_ve_dEzz=0.0, deta_ve_dExz=0.0, deta_ve_dP=0.0;
     double  dFdExx=0.0, dFdEzz=0.0, dFdExz=0.0, dFdP=0.0, g=0.0, dlamdExx=0.0, dlamdEzz=0.0, dlamdExz=0.0, dlamdP=0.0, a=0.0, deta_vep_dExx=0.0, deta_vep_dEzz=0.0, deta_vep_dExz=0.0, deta_vep_dP=0.0;
 

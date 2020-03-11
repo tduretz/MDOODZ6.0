@@ -700,8 +700,8 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
         
         if (reaction_in_progress > 0){
         printf("Reaction in progress in %d mesh(es)\n", reaction_in_progress);
-        if (model->dt>=0.2*time_reaction/scaling.t){
-            model->dt = 0.2*time_reaction/scaling.t;
+        if (model->dt>=0.1*time_reaction/scaling.t){
+            model->dt = 0.1*time_reaction/scaling.t;
             printf("!!! => Timestep potentially limited by Chemical Reaction Time\n");
             printf("!! model dt = 0.2 x Reaction Time = %2.2e\n", model->dt*scaling.t);
             }

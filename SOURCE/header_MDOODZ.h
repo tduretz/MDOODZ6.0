@@ -511,6 +511,9 @@ void cholmod_dense_plus_cholmod_dense( cholmod_dense*, cholmod_dense* );
 void ApplyBC( grid*, params* );
 void AssignMarkerProperties (markers*, int, int, params* );
 
+// Phase changes
+void UpdateParticlettrans( grid*, scale*, params, markers*, mat_prop*);
+
 // GLOBAL
 //void Interp_P2G( markers, DoodzFP*, grid*, double*, double*, double*, int, int, double, double, int, int, params*, char*  );
 
