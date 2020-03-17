@@ -709,8 +709,7 @@ void DeformationGradient ( grid mesh, scale scaling, params model, markers *part
         particles->Fzx[k] = fzx*fxx_o + fzz*fzx_o;
         particles->Fzz[k] = fzx*fxz_o + fzz*fzz_o;
     }
-    
-    
+   
     // Free
     DoodzFree( dudx );
     DoodzFree( dvdz );
@@ -720,8 +719,7 @@ void DeformationGradient ( grid mesh, scale scaling, params model, markers *part
     DoodzFree( pdudz );
     DoodzFree( pdvdx );
     DoodzFree( pdvdz );
-    
-    
+ 
     printf("Updated deformation gradient tensor\n");
 }
 
@@ -1149,8 +1147,9 @@ void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_pr
         // Old stresses grid --> markers
         Interp_Grid2P( *particles, txxm0, mesh, mesh->sxxd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type );
         Interp_Grid2P( *particles, tzzm0, mesh, mesh->szzd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type );
-        Interp_Grid2P( *particles, txzm0, mesh, mesh->sxz0 , mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type    );
-        
+        Interp_Grid2P( *particles, txzm0, mesh, mesh->sxz0 , mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type     );
+        Interp_Grid2P( *particles, etam,  mesh, mesh->eta_phys_s, mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type);      
+ 
         if ( model->subgrid_diff == 2 ) {
             
             printf("Subgrid diffusion for stress tensor component update\n");

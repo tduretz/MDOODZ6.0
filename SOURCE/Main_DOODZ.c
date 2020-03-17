@@ -938,8 +938,8 @@ int main( int nargs, char *args[] ) {
         
 //        // P lith on particles
 //        ComputeLithostaticPressure( &Mmesh, &model, materials.rho, scaling );
-        Interp_Grid2P( particles, particles.P,      &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-
+//        Interp_Grid2P( particles, particles.P,      &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+        UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
         
         MinMaxArray( particles.ttrans,  scaling.t, particles.Nb_part,   "AVANT UPDATE : ttrans. part" );
 
@@ -993,7 +993,7 @@ int main( int nargs, char *args[] ) {
         UpdateParticleDensity( &mesh, scaling, model, &particles, &materials );
         
         // Update pressure on the particles
-        Interp_Grid2P( particles, particles.P, &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+        //Interp_Grid2P( particles, particles.P, &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
         //UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
         
         //------------------------------------------------------------------------------------------------------------------------------//
@@ -1128,7 +1128,10 @@ int main( int nargs, char *args[] ) {
                 WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particlesxx", materials, scaling );
             }
 #endif
-            
+           
+            // pips adds   
+            MinMaxArray(particles.T, scaling.T, particles.Nb_part, "Tr1 part  ");
+ 
             // Count the number of particle per cell
             printf("Before re-seeding : number of particles = %d\n", particles.Nb_part);
             t_omp = (double)omp_get_wtime();
@@ -1148,6 +1151,9 @@ int main( int nargs, char *args[] ) {
             printf("After re-seeding : number of particles = %d\n", particles.Nb_part);
             printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
             
+
+            MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T2 part  ");
+
             // Remove particles that would be above the surface
             if ( model.free_surf == 1 ) {
                 CleanUpSurfaceParticles( &particles, &mesh, topo, scaling );
