@@ -872,7 +872,8 @@ int main( int nargs, char *args[] ) {
             printf("Non-Linear it. %02d --- |Fx| = %2.2e --- log10(|Fx|) = %2.2f\n", i, rx_array[i], log10(rx_array[i]));
             if (i == Nmodel.nit_max) {
              printf("Exit: Max iteration reached: Nmodel.nit_max = %02d! Check what you wanna do now...\n",Nmodel.nit_max);
-             exit(1);
+                if ( (Nmodel.resx < Nmodel.tol_u) && (Nmodel.resz < Nmodel.tol_u) && (Nmodel.resp < Nmodel.tol_p) ) {}
+                else {exit(1);}
             }
         }
         printf("--------------------------------------------------------------\n");

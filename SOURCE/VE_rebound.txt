@@ -1,6 +1,6 @@
 /**** RESTART ****/
-istep = 000060
-irestart = 0
+istep = 000130
+irestart = 1
 
 /**** OUTPUT FILES ****/
 writer = 1
@@ -8,14 +8,8 @@ writer_step = 10
 writer_markers = 0
 writer_debug = 0
 
-/**** INPUT FILE FOR PARTICLES ****/
-input_file = setup_r501x501_fsp40.bin
-
-/**** MULTIGRID SWITCH ****/ 
-MMG = 0
-
 /**** SCALES ****/
-eta = 1e21
+eta = 1e24
 L   = 1e3
 V   = 1e-8
 T   = 400
@@ -23,14 +17,16 @@ T   = 400
 /**** SPACE-TIME ****/
 Nx   = 51
 Nz   = 51
-Nt   = 1
+Nt   = 130
 xmin = -00.000000e3
 zmin = -00.0000000e3
 xmax =  1000.000000e3
 zmax =  1000.0000000e3 
 dt   = 5.0e+9
 Courant = 0.25
-penalty = 1e4
+penalty = 1e0
+eta_avg = 0
+rel_tol_div = 1e-11
 
 /**** SWITCHES ****/
 ismechanical    = 1
@@ -41,12 +37,12 @@ ispureshear_ALE = 0
 isinertial      = 0
 iselastic       = 1
 isthermal       = 0
-line_search     = 0
+line_search     = 1
 free_surf       = 0
 free_surf_stab  = 0
 eqn_state       = 0
 thermal_eq      = 0
-subgrid_diff    = 4
+subgrid_diff    = 2
 shear_heat      = 0
 adiab_heat      = 0
 
@@ -99,7 +95,7 @@ Slim = 500e9
 alp  = 10.0e-6
 bet  = 1e-11
 drho = 0
-cstv = 0             / constant visc law
+cstv = 1             / constant visc law
 pwlv = 1             / disloc. creep
 linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
@@ -115,40 +111,8 @@ Nz_part  = 4
 min_part_cell = 16
 
 /**** PICARD ITERATIONS ****/
-nit_max = 0
+nit_max = 1
 tol_u   = 5e-6
 tol_p   = 5e-6
 mineta  = 1e19
 maxeta  = 1e27
-
-
-/**** DIRECT SOLVER SETTINGS ****/
-direct_iter = 31
-pivot_pert  = 9
-
-/**** MULTIGRID SETTINGS ****/
-n_level     = 1
-nit_out_max = 100
-tol_u       = 2e-6
-tol_p       = 2e-6
-coarsen     = 0               0/coarsen homogeneously                       1/control the coarser resolution (semi-coarsening)
-Nx_min      = 10
-Nz_min      = 10
-
-/**** Smoothers ****/
-urlx  = 0.9
-vrlx  = 0.9
-prlx  = 0.35
-ucoef = 1.0
-vcoef = 1.0
-pcoef = 1.0
-smoother = 0             0/smooth proportionally to resolution            1/fixed number of smoothing cycles           
-SmoothElse     = 10               /smoothing cycles per level
-SmoothCoarse  = 1000        /smoothing cycles on corser level
-
-/**** Viscosity continuation ****/
-eta_min   = 1.0e4
-eta_max   = 1.0e11
-eta_n_stp = 5
-eta_cyc   = 3
-eta_nnn   = 0

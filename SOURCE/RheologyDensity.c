@@ -811,9 +811,10 @@ void AccumulatedStrain( grid* mesh, scale scaling, params model, markers* partic
 
 void RotateStresses( grid mesh, markers* particles, params model, scale *scaling ) {
     
-    int k, l, cp, cu, cv, Nx, Nz,type=0;
+    int k, l, cp, cu, cv, Nx, Nz,type=1;
     double dx, dz;
     double angle, txx, tzz, txz;
+    double sxxr, sxzr;
     
     Nx = mesh.Nx;
     Nz = mesh.Nz;
@@ -841,92 +842,93 @@ void RotateStresses( grid mesh, markers* particles, params model, scale *scaling
                 particles->szzd[k] = (txx*sin(angle) + txz*cos(angle))*sin(angle) + (txz*sin(angle) + tzz*cos(angle))*cos(angle);
                 particles->sxz[k]  = (txx*cos(angle) - txz*sin(angle))*sin(angle) + (txz*cos(angle) - tzz*sin(angle))*cos(angle);
                 
-                //                // Re-belotte:
-                //                sxxr =   ( cos(angle)*particles->sxxd[k] - sin(angle)*particles->sxz[k] ) * cos(angle) + ( particles->sxz[k]*cos(angle) +  sin(angle)*particles->sxxd[k])*sin(angle) ;
-                //                sxzr = - ( cos(angle)*particles->sxxd[k] - sin(angle)*particles->sxz[k] ) * sin(angle) + ( particles->sxz[k]*cos(angle) +  sin(angle)*particles->sxxd[k])*cos(angle) ;
-                //
-                //                particles->sxxd[k] = sxxr;
-                //                particles->szzd[k] = szzr;
-                //                particles->sxz[k]  = sxzr;
+//                                // Re-belotte:
+//                                double sxxr =   ( cos(angle)*particles->sxxd[k] - sin(angle)*particles->sxz[k] ) * cos(angle) + ( particles->sxz[k]*cos(angle) +  sin(angle)*particles->sxxd[k])*sin(angle) ;
+//                                double sxzr = - ( cos(angle)*particles->sxxd[k] - sin(angle)*particles->sxz[k] ) * sin(angle) + ( particles->sxz[k]*cos(angle) +  sin(angle)*particles->sxxd[k])*cos(angle) ;
+//
+//                                particles->sxxd[k] = sxxr;
+//                                particles->szzd[k] =-sxxr;
+//                                particles->sxz[k]  = sxzr;
             }
         }
     }
-    //    else {
-    //
-    //        // UPPER CONVECTED
-    //
-    //        double *dudx, *dudz, *dvdx, *dvdz;
-    //        DoodzFP *pdudx, *pdudz, *pdvdx, *pdvdz, *VEm;
-    //
-    //        dudx   = DoodzMalloc ((Nx-1)*(Nz-1)*sizeof(double));
-    //        dvdz   = DoodzMalloc ((Nx-1)*(Nz-1)*sizeof(double));
-    //        dudz   = DoodzMalloc ((Nx)*(Nz)*sizeof(double));
-    //        dvdx   = DoodzMalloc ((Nx)*(Nz)*sizeof(double));
-    //        pdudx  = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
-    //        pdudz  = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
-    //        pdvdx  = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
-    //        pdvdz  = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
-    //        VEm    = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
-    //
-    //        // Compute dudx and dvdz (cell centers)
-    //        for (k=0; k<Nx-1; k++) {
-    //            for (l=0; l<Nz-1; l++) {
-    //                cp = k  + l*(Nx-1);
-    //                cu = k  + l*(Nx) + Nx;
-    //                cv = k  + l*(Nx+1) + 1;
-    //                dudx[cp] = 1.0/dx * ( mesh.u_in[cu+1]      - mesh.u_in[cu] );
-    //                dvdz[cp] = 1.0/dz * ( mesh.v_in[cv+(Nx+1)] - mesh.v_in[cv] );
-    //            }
-    //        }
-    //
-    //        // Compute dudx and dvdz (cell vertices)
-    //        for (k=0; k<Nx; k++) {
-    //            for (l=0; l<Nz; l++) {
-    //                cp = k  + l*(Nx-1);
-    //                cu = k  + l*(Nx);
-    //                cv = k  + l*(Nx+1);
-    //                dudz[cu] = 1.0/dz * ( mesh.u_in[cu+Nx] - mesh.u_in[cu] );
-    //                dvdx[cu] = 1.0/dx * ( mesh.v_in[cv+1]  - mesh.v_in[cv] );
-    //            }
-    //        }
-    //
-    //        // Interpolate from grid to particles
-    //        Interp_Grid2P( *(particles), pdudx, &mesh, dudx, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type  );
-    //        Interp_Grid2P( *(particles), pdvdz, &mesh, dvdz, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-    //        Interp_Grid2P( *(particles), pdvdx, &mesh, dvdx, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type   );
-    //        Interp_Grid2P( *(particles), pdudz, &mesh, dudz, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type   );
-    //        Interp_Grid2P( *(particles), VEm, &mesh, mesh.VE_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type  );
-    //
-    //
-    //        // Stress correction
-    //#pragma omp parallel for shared ( particles, model, VEm, pdudx, pdudz, pdvdx, pdvdz, sxxr, sxzr ) private ( k ) schedule( static )
-    //        for(k=0; k<particles->Nb_part; k++) {
-    //            sxxr = model.dt * VEm[k] * ( -2.0*particles->sxxd[k]*pdudx[k] - 2.0*particles->sxz[k]*pdudz[k]);
-    //            sxzr = model.dt * VEm[k] * (    particles->sxxd[k]*pdudz[k] -   particles->sxxd[k]*pdvdx[k]);
-    //
-    //            particles->sxxd[k] -= sxxr;
-    //            particles->sxz[k]  -= sxzr;
-    //
-    //            // Only if explicity
-    //            if (model.subgrid_diff==4) particles->sxxd[k] *= VEm[k];
-    //            if (model.subgrid_diff==4) particles->sxz[k]  *= VEm[k];
-    //        }
-    //        MinMaxArray( pdudx,  scaling->E, particles->Nb_part, "dudx p." );
-    //        MinMaxArray( pdvdx,  scaling->E, particles->Nb_part, "dvdx p." );
-    //        MinMaxArray( pdudz,  scaling->E, particles->Nb_part, "dudz p." );
-    //
-    //
-    //        // clean memory
-    //        DoodzFree(dudx);
-    //        DoodzFree(dudz);
-    //        DoodzFree(dvdx);
-    //        DoodzFree(dvdz);
-    //        DoodzFree(pdudx);
-    //        DoodzFree(pdudz);
-    //        DoodzFree(pdvdx);
-    //        DoodzFree(pdvdz);
-    //        DoodzFree(VEm);
-    //    }
+        else {
+    
+            // UPPER CONVECTED
+    
+            double *dudx, *dudz, *dvdx, *dvdz;
+            DoodzFP *pdudx, *pdudz, *pdvdx, *pdvdz, *VEm;
+    
+            dudx   = DoodzMalloc ((Nx-1)*(Nz-1)*sizeof(double));
+            dvdz   = DoodzMalloc ((Nx-1)*(Nz-1)*sizeof(double));
+            dudz   = DoodzMalloc ((Nx)*(Nz)*sizeof(double));
+            dvdx   = DoodzMalloc ((Nx)*(Nz)*sizeof(double));
+            pdudx  = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
+            pdudz  = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
+            pdvdx  = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
+            pdvdz  = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
+            VEm    = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
+    
+            // Compute dudx and dvdz (cell centers)
+            for (k=0; k<Nx-1; k++) {
+                for (l=0; l<Nz-1; l++) {
+                    cp = k  + l*(Nx-1);
+                    cu = k  + l*(Nx) + Nx;
+                    cv = k  + l*(Nx+1) + 1;
+                    dudx[cp] = 1.0/dx * ( mesh.u_in[cu+1]      - mesh.u_in[cu] );
+                    dvdz[cp] = 1.0/dz * ( mesh.v_in[cv+(Nx+1)] - mesh.v_in[cv] );
+                }
+            }
+    
+            // Compute dudx and dvdz (cell vertices)
+            for (k=0; k<Nx; k++) {
+                for (l=0; l<Nz; l++) {
+                    cp = k  + l*(Nx-1);
+                    cu = k  + l*(Nx);
+                    cv = k  + l*(Nx+1);
+                    dudz[cu] = 1.0/dz * ( mesh.u_in[cu+Nx] - mesh.u_in[cu] );
+                    dvdx[cu] = 1.0/dx * ( mesh.v_in[cv+1]  - mesh.v_in[cv] );
+                }
+            }
+    
+            // Interpolate from grid to particles
+            Interp_Grid2P( *(particles), pdudx, &mesh, dudx, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type  );
+            Interp_Grid2P( *(particles), pdvdz, &mesh, dvdz, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+            Interp_Grid2P( *(particles), pdvdx, &mesh, dvdx, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type   );
+            Interp_Grid2P( *(particles), pdudz, &mesh, dudz, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type   );
+            Interp_Grid2P( *(particles), VEm, &mesh, mesh.VE_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type  );
+    
+    
+            // Stress correction
+    #pragma omp parallel for shared ( particles, model, VEm, pdudx, pdudz, pdvdx, pdvdz, sxxr, sxzr ) private ( k ) schedule( static )
+            for(k=0; k<particles->Nb_part; k++) {
+                sxxr = model.dt * VEm[k] * ( -2.0*particles->sxxd[k]*pdudx[k] - 2.0*particles->sxz[k]*pdudz[k]);
+                sxzr = model.dt * VEm[k] * (      particles->sxxd[k]*pdudz[k] -     particles->sxxd[k]*pdvdx[k]);
+    
+                particles->sxxd[k] -= sxxr;
+                particles->szzd[k]  =-sxxr;
+                particles->sxz[k]  -= sxzr;
+    
+//                // Only if explicity
+//                if (model.subgrid_diff==4) particles->sxxd[k] *= VEm[k];
+//                if (model.subgrid_diff==4) particles->sxz[k]  *= VEm[k];
+            }
+            MinMaxArray( pdudx,  scaling->E, particles->Nb_part, "dudx p." );
+            MinMaxArray( pdvdx,  scaling->E, particles->Nb_part, "dvdx p." );
+            MinMaxArray( pdudz,  scaling->E, particles->Nb_part, "dudz p." );
+    
+    
+            // clean memory
+            DoodzFree(dudx);
+            DoodzFree(dudz);
+            DoodzFree(dvdx);
+            DoodzFree(dvdz);
+            DoodzFree(pdudx);
+            DoodzFree(pdudz);
+            DoodzFree(pdvdx);
+            DoodzFree(pdvdz);
+            DoodzFree(VEm);
+        }
 }
 
 
@@ -1863,7 +1865,8 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 mesh->detadgxz_n[c0] *= mesh->eta_n[c0];
                 mesh->detadp_n[c0]   *= mesh->eta_n[c0];
             }
-            
+//            printf("eta_n = %2.2e\n", mesh->eta_n[c0]*scaling->eta);
+
         }
         //if (mesh->eta_n[c0]<1e-8) exit(1);
     }
@@ -1909,10 +1912,13 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 if ( cond == 1 ) {
                     
                     eta =  Viscosity( p, mesh->mu_s[c1], mesh->T_s[c1], mesh->P_s[c1], mesh->d0_s[c1], mesh->phi_s[c1], mesh->exxd_s[c1], mesh->ezzd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->szzd0_s[c1], mesh->sxz0[c1], materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_pwl, &exz_pwl, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &exx_pl, &exz_pl, &d1s, mesh->strain_s[c1], mesh->fric_s[c1], mesh->C_s[c1], &detadexx, &detadezz, &detadexz, &detadp,mesh->p0_s[c1], mesh->ttrans0_s[c1], &Xreac, &ttrans);
+                    
+//                    if (c1==546) printf("eta_s = %2.2e index = %d\n", etaVE*scaling->eta, c1);
+
                 }
                 
                 if (average ==0) {
-                    if ( cond == 1 ) mesh->eta_s[c1]   += mesh->phase_perc_s[p][c1] * etaVE;
+                    if ( cond == 1 ) mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] * etaVE;
                     if ( cond == 1 ) mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] * eta;
                     if ( cond == 1 ) mesh->detadexx_s[c1] += mesh->phase_perc_s[p][c1] * detadexx;
                     if ( cond == 1 ) mesh->detadezz_s[c1] += mesh->phase_perc_s[p][c1] * detadezz;
@@ -1979,13 +1985,14 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
             }
             // GEOMETRIC AVERAGE
             if (average == 2) {
-                mesh->eta_s[c1]   = exp(mesh->eta_s[c1]);
-                mesh->eta_phys_s[c1] = exp(mesh->eta_phys_s[c1]);
+                mesh->eta_s[c1]       = exp(mesh->eta_s[c1]);
+                mesh->eta_phys_s[c1]  = exp(mesh->eta_phys_s[c1]);
                 mesh->detadexx_s[c1] *= mesh->eta_s[c1];
                 mesh->detadezz_s[c1] *= mesh->eta_s[c1];
                 mesh->detadgxz_s[c1] *= mesh->eta_s[c1];
                 mesh->detadp_s[c1]   *= mesh->eta_s[c1];
             }
+//            if (c1==546) printf("eta_s = %2.2e index = %d\n", etaVE*scaling->eta, c1);
         }
     }
     
@@ -2171,7 +2178,7 @@ void CohesionFrictionGrid( grid* mesh, mat_prop materials, params model, scale s
 void ShearModulusGrid( grid* mesh, mat_prop materials, params model, scale scaling ) {
     
     int p, k, l, Nx, Nz, Ncx, Ncz, c0, c1;
-    int average = model.eta_avg;
+    int average = 1;//%model.eta_avg; // SHOULD NOT BE ALLOWED TO BE ELSE THAN 1
     
     Nx = mesh->Nx;
     Nz = mesh->Nz;
