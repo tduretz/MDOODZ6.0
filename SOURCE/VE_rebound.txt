@@ -1,6 +1,6 @@
 /**** RESTART ****/
 istep = 000130
-irestart = 1
+irestart = 0
 
 /**** OUTPUT FILES ****/
 writer = 1
@@ -24,9 +24,9 @@ xmax =  1000.000000e3
 zmax =  1000.0000000e3 
 dt   = 5.0e+9
 Courant = 0.25
-penalty = 1e0
+penalty = 5e0
 eta_avg = 0
-rel_tol_div = 1e-11
+rel_tol_div = 1e-10
 
 /**** SWITCHES ****/
 ismechanical    = 1
@@ -45,6 +45,7 @@ thermal_eq      = 0
 subgrid_diff    = 2
 shear_heat      = 0
 adiab_heat      = 0
+StressRotation  = 1
 
 /**** SETUP DEPENDANT ****/
 EpsBG           =-5e-140

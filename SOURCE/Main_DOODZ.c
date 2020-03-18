@@ -1051,8 +1051,8 @@ int main( int nargs, char *args[] ) {
             if (model.ispureshear_ale == -1 && model.isperiodic_x == 0) ParticleInflowCheck( &particles, &mesh, model, topo, 1 );
             
             // Roration of stresses (visco-elastic flow)
-            if ( model.iselastic == 1 ) RotateStresses( mesh, &particles, model, &scaling );
-            if ( model.aniso     == 1 ) RotateDirectorVector( mesh, &particles, model, &scaling  );
+//            if ( model.iselastic == 1 ) RotateStresses( mesh, &particles, model, &scaling );
+//            if ( model.aniso     == 1 ) RotateDirectorVector( mesh, &particles, model, &scaling  );
             
             // Update accumulated strain
             //                AccumulatedStrain( &mesh, scaling, model, &particles );

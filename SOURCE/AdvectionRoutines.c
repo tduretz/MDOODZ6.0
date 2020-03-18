@@ -308,7 +308,6 @@ firstprivate( Nb_part, model ) //schedule ( static )
         if (particles->phase[k] != -1) {
             particles->x[k]    = xA[k] + model.dt * VxA[k];
             particles->z[k]    = zA[k] + model.dt * VzA[k];
-            if ( model.iselastic == 1 ) particles->om_p[k] = OmA[k];
         }
     }
     //    }
@@ -344,50 +343,74 @@ firstprivate( Nb_part, model ) //schedule ( static )
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-
 void RogerGuntherII( markers *particles, params model, grid mesh, int precise, scale scaling ) {
     
     DoodzFP VxA, VxB, VxC, VxD;
     DoodzFP VzA, VzB, VzC, VzD;
-    DoodzFP OmA, OmB, OmC, OmD, *om_n;
+    DoodzFP OmA, OmB, OmC, OmD, *om_s;
     DoodzFP xA, zA;
-    int k, k1, l, c1, c3, Nb_part = particles->Nb_part;
+    int k, k1, l, c0, c1, c2, c3, Nb_part = particles->Nb_part;
     clock_t t_omp = (double)omp_get_wtime();
+    double dx, dz;
+    double txx, tzz, txz, angle;
+    double *dudx_n, *dvdz_n, *dudz_s, *dvdx_s;
+    double dudxA, dvdzA, dudzA, dvdxA, dudxB, dvdzB, dudzB, dvdxB, dudxC, dvdzC, dudzC, dvdxC, dudxD, dvdzD, dudzD, dvdxD, VEA,VEB,VEC,VED;
     
-    double dx,dz,dxm,dzm;
     dx = mesh.dx;
     dz = mesh.dz;
     
     // Caculate rotation rate of the stress tensor
     if ( model.iselastic == 1 || model.aniso == 1 ) {
         
-        om_n = DoodzMalloc ((model.Nx)*(model.Nz)*sizeof(double));
+        om_s   = DoodzMalloc ((model.Nx)*(model.Nz)*sizeof(double));
+        dudx_n = DoodzMalloc ((model.Nx-1)*(model.Nz-1)*sizeof(double));
+        dvdz_n = DoodzMalloc ((model.Nx-1)*(model.Nz-1)*sizeof(double));
+        dudz_s = DoodzMalloc ((model.Nx)*(model.Nz)*sizeof(double));
+        dvdx_s = DoodzMalloc ((model.Nx)*(model.Nz)*sizeof(double));
         
-#pragma omp parallel for shared ( mesh, om_n ) \
-private ( k, l, k1, c1, c3 )                            \
-firstprivate( model ) // schedule( static )
+#pragma omp parallel for shared ( mesh, om_s, dudz_s, dvdx_s ) \
+private ( k, l, k1, c1, c3 )                                   \
+firstprivate( model )
         for ( k1=0; k1<model.Nx*model.Nz; k1++ ) {
             k  = mesh.kn[k1];
             l  = mesh.ln[k1];
-
             c1 = k + l*model.Nx;
             c3 = k + l*(model.Nx+1);
-            om_n[c1] = -(mesh.v_in[c3+1] - mesh.v_in[c3])/model.dx + (mesh.u_in[c1+model.Nx] - mesh.u_in[c1])/model.dz;
-            om_n[c1] = 0.5*om_n[c1];
-            
+            if ( mesh.BCg.type[c1] != 30 ) {
+                om_s[c1] = 0.5*( (mesh.v_in[c3+1] - mesh.v_in[c3])/model.dx - (mesh.u_in[c1+model.Nx] - mesh.u_in[c1])/model.dz);
+                dudz_s[c1] = (mesh.u_in[c1+model.Nx] - mesh.u_in[c1])/model.dz;
+                dvdx_s[c1] = (mesh.v_in[c3+1       ] - mesh.v_in[c3])/model.dx;
+            }
         }
-//        Interp_Grid2P( *particles, OmA, &mesh, om_n, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type   );
-        
-//        Interp_Grid2P_BEN( *particles, VxB, &mesh, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type );
-//        Interp_Grid2P_BEN( *particles, VzB, &mesh, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz, mesh.BCv.type   );
     }
+    
+#pragma omp parallel for shared ( mesh, dudx_n, dvdz_n ) \
+private ( k, l, k1, c0, c1, c2 )                         \
+firstprivate( model )
+        for ( k1=0; k1<(model.Nx-1)*(model.Nz-1); k1++ ) {
+            k  = mesh.kp[k1];
+            l  = mesh.lp[k1];
+            c0 = k  + l*(model.Nx-1);
+            c1 = k  + l*(model.Nx);
+            c2 = k  + l*(model.Nx+1);
+            if ( mesh.BCp.type[c0] != 30 && mesh.BCp.type[c0] != 31) {
+                dudx_n[c0]  = (mesh.u_in[c1+1+model.Nx]     - mesh.u_in[c1+model.Nx] )/model.dx;
+                dvdz_n[c0]  = (mesh.v_in[c2+1+(model.Nx+1)] - mesh.v_in[c2+1]        )/model.dz;
+            }
+        }
 
-#pragma omp parallel for shared ( particles, mesh, om_n ) \
-private ( k, xA, zA, VxA, VzA, VxB, VzB, VxC, VzC, VxD, VzD, OmA, OmB, OmC, OmD  ) \
+#pragma omp parallel for shared ( particles, mesh, om_s ) \
+private ( k, xA, zA, VxA, VzA, VxB, VzB, VxC, VzC, VxD, VzD, OmA, OmB, OmC, OmD, txx, tzz, txz, angle, dudxA, dvdzA, dudzA, dvdxA, dudxB, dvdzB, dudzB, dvdxB, dudxC, dvdzC, dudzC, dvdxC, dudxD, dvdzD, dudzD, dvdxD, VEA,VEB,VEC,VED ) \
 firstprivate( model, dx, dz )
     for (k=0;k<Nb_part;k++) {
         
-        if ( model.iselastic == 1 || model.aniso == 1 ) OmA = Grid2P( particles, om_n, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) OmA = Grid2P( particles, om_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) dudzA = Grid2P( particles, dudz_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) dvdxA = Grid2P( particles, dvdx_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) dudxA = Grid2P( particles, dudx_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) dvdzA = Grid2P( particles, dvdz_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) VEA = Grid2P( particles, mesh.VE_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+
         xA           = particles->x[k];
         zA           = particles->z[k];
         VxA          = particles->Vx[k];
@@ -397,7 +420,12 @@ firstprivate( model, dx, dz )
             particles->z[k] = zA + 0.5 * model.dt * VzA;
         }
         isoutPart( particles, &model, k );
-        if ( model.iselastic == 1 || model.aniso == 1 ) OmB = Grid2P( particles, om_n, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) OmB = Grid2P( particles, om_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) dudzB = Grid2P( particles, dudz_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) dvdxB = Grid2P( particles, dvdx_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) dudxB = Grid2P( particles, dudx_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) dvdzB = Grid2P( particles, dvdz_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) VEB = Grid2P( particles, mesh.VE_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         VxB = Grid2P( particles, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type, dx, dz, k );
         VzB = Grid2P( particles, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz, mesh.BCv.type, dx, dz, k );
         if (particles->phase[k] != -1) {
@@ -405,7 +433,12 @@ firstprivate( model, dx, dz )
             particles->z[k] = zA + 0.5 * model.dt * VzB;
         }
         isoutPart( particles, &model, k );
-        if ( model.iselastic == 1 || model.aniso == 1 ) OmC = Grid2P( particles, om_n, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) OmC = Grid2P( particles, om_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) dudzC = Grid2P( particles, dudz_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) dvdxC = Grid2P( particles, dvdx_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) dudxC = Grid2P( particles, dudx_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) dvdzC = Grid2P( particles, dvdz_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) VEC = Grid2P( particles, mesh.VE_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         VxC = Grid2P( particles, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type, dx, dz, k );
         VzC = Grid2P( particles, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz, mesh.BCv.type, dx, dz, k );
         if (particles->phase[k] != -1) {
@@ -413,22 +446,53 @@ firstprivate( model, dx, dz )
             particles->z[k] = zA + 1.0 * model.dt * VzC;
         }
         isoutPart( particles, &model, k );
-        if ( model.iselastic == 1 || model.aniso == 1 ) OmD = Grid2P( particles, om_n, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) OmD = Grid2P( particles, om_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) dudzD = Grid2P( particles, dudz_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) dvdxD = Grid2P( particles, dvdx_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) dudxD = Grid2P( particles, dudx_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) dvdzD = Grid2P( particles, dvdz_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) VED = Grid2P( particles, mesh.VE_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         VxD = Grid2P( particles, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type, dx, dz, k );
-        VzD = Grid2P( particles, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz, mesh.BCv.type, dx, dz, k );
+        VzD = Grid2P( particles, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz,   mesh.BCv.type, dx, dz, k );
         VxA = (1.0/6.0) * ( VxA + 2.0 * VxB + 2.0 * VxC + VxD);
         VzA = (1.0/6.0) * ( VzA + 2.0 * VzB + 2.0 * VzC + VzD);
-        if ( model.iselastic == 1 || model.aniso == 1 ) OmA = (1.0/6.0) * ( OmA + 2.0 * OmB + 2.0 * OmC + OmD);
+        if ( model.iselastic == 1 || model.aniso == 1 ) OmA   = (1.0/6.0) * ( OmA   + 2.0 * OmB   + 2.0 * OmC   + OmD);
+        if ( model.iselastic == 1 || model.aniso == 1 ) dudzA = (1.0/6.0) * ( dudzA + 2.0 * dudzB + 2.0 * dudzC + dudzD);
+        if ( model.iselastic == 1 || model.aniso == 1 ) dvdxA = (1.0/6.0) * ( dvdxA + 2.0 * dvdxB + 2.0 * dvdxC + dvdxD);
+        if ( model.iselastic == 1 || model.aniso == 1 ) dudxA = (1.0/6.0) * ( dudxA + 2.0 * dudxB + 2.0 * dudxC + dudxD);
+        if ( model.iselastic == 1 || model.aniso == 1 ) dvdzA = (1.0/6.0) * ( dvdzA + 2.0 * dvdzB + 2.0 * dvdzC + dvdzD);
+        if ( model.iselastic == 1 || model.aniso == 1 ) VEA   = (1.0/6.0) * ( VEA   + 2.0 * VEB   + 2.0 * VEC   + VED);
         if (particles->phase[k] != -1) {
             particles->x[k]    = xA + model.dt * VxA;
             particles->z[k]    = zA + model.dt * VzA;
-            if ( model.iselastic == 1 || model.aniso == 1 ) particles->om_p[k] = OmA;
+            
+            // Stress rotation
+            if ( model.iselastic == 1 || model.aniso == 1 ) {
+                txx   = particles->sxxd[k];
+                tzz   = particles->szzd[k];
+                txz   = particles->sxz[k];
+                if (model.StressRotation==1) {
+                    angle = model.dt*OmA;
+                    particles->sxxd[k] = (txx*cos(angle) - txz*sin(angle))*cos(angle) - (txz*cos(angle) - tzz*sin(angle))*sin(angle);
+                    particles->szzd[k] = (txx*sin(angle) + txz*cos(angle))*sin(angle) + (txz*sin(angle) + tzz*cos(angle))*cos(angle);
+                    particles->sxz[k]  = (txx*cos(angle) - txz*sin(angle))*sin(angle) + (txz*cos(angle) - tzz*sin(angle))*cos(angle);
+                }
+                if (model.StressRotation==2) {
+                    particles->sxxd[k] -= model.dt * VEA * ( -2.0*txx*dudxA - 2.0*txz*dudzA);
+                    particles->szzd[k]  = -particles->sxxd[k];
+                    particles->sxz[k]  -= model.dt * VEA * (      txx*dudzA -     txx*dvdxA - txz*(dudxA + dvdzA) );
+                }
+            }
         }
         isoutPart( particles, &model, k );
     }
     
     if ( model.iselastic == 1 || model.aniso == 1 ) {
-        DoodzFree(om_n);
+        DoodzFree(om_s);
+        DoodzFree(dudx_n);
+        DoodzFree(dvdz_n);
+        DoodzFree(dvdx_s);
+        DoodzFree(dudz_s);
     }
     printf("** Time for Roger Gunther = %lf sec\n",  (double)((double)omp_get_wtime() - t_omp) );
 

@@ -495,7 +495,6 @@ void AllocateMarkerChain( surface *topo, markers* topo_chain, params model ) {
     topo_chain->Vx          = DoodzCalloc( topo_chain->Nb_part_max, sizeof(DoodzFP) );
     topo_chain->Vz          = DoodzCalloc( topo_chain->Nb_part_max, sizeof(DoodzFP) );
     topo_chain->phase       = DoodzCalloc( topo_chain->Nb_part_max, sizeof(int) );
-    topo_chain->om_p        = DoodzCalloc( topo_chain->Nb_part_max, sizeof(DoodzFP) );
     
     topo->height            = DoodzCalloc( (model.Nx),sizeof(DoodzFP) );
     topo->height0           = DoodzCalloc( (model.Nx),sizeof(DoodzFP) );
@@ -523,7 +522,6 @@ void FreeMarkerChain( surface *topo, markers* topo_chain ) {
     //    DoodzFree( topo_chain->Vx0 );
     //    DoodzFree( topo_chain->Vz0 );
     DoodzFree( topo_chain->phase );
-    DoodzFree( topo_chain->om_p );
     
     DoodzFree( topo->height );
     DoodzFree( topo->height0 );

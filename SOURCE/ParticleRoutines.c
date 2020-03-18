@@ -225,7 +225,6 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
     particles->sxxd[new_ind]          = particles->sxxd[min_index];
     particles->szzd[new_ind]          = particles->szzd[min_index];
     particles->sxz[new_ind]           = particles->sxz[min_index];
-    particles->om_p[new_ind]          = particles->om_p[min_index];
     particles->ttrans[new_ind]        = particles->ttrans[min_index];
     
     if (model->fstrain == 1) {
@@ -298,7 +297,6 @@ void PartInit( markers *particles, params* model ) {
         // Viscoelasticity
         particles->sxxd[k]    = 0.0;
         particles->sxz[k]     = 0.0;
-        particles->om_p[k]    = 0.0;
 
         // phase structure
         particles->phase[k]      = 0.0;

@@ -986,6 +986,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->GNUplot_residuals = ReadInt2( fin, "GNUplot_residuals",    0 );
     model->no_markers      = ReadInt2( fin, "no_markers",    0 );
     model->shear_style     = ReadInt2( fin, "shear_style",    0 );
+    model->StressRotation  = ReadInt2( fin, "StressRotation", 1 );
     if (model->shear_style==1) model->isperiodic_x  = 1;
     
     // Setup dependant
