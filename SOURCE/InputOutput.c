@@ -1068,6 +1068,8 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         materials->pls_start[k] = ReadMatProps( fin, "plss",   k,    1.0e6  );
         materials->pls_end[k]   = ReadMatProps( fin, "plse",   k,    1.0e6  );
         materials->eta_vp[k]    = ReadMatProps( fin, "eta_vp", k,       0.0 ) / scaling->S / scaling->t;
+        materials->n_vp[k]      = ReadMatProps( fin, "n_vp",   k,       1.0 ) ;
+
         // reaction stuff
         materials->Reac[k]      = ReadMatProps( fin, "Reac",   k,    0.0  );
         materials->Preac[k]     = ReadMatProps( fin, "Preac",  k,    0.0  ) / scaling->S;

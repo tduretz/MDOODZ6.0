@@ -1277,7 +1277,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     double TmaxPeierls = (1200.0+zeroC)/scaling->T;      // max. T for Peierls
 
     // Parameters for deformation map calculations
-    int    local_iter = model->loc_iter, it, nitmax = 100, noisy=0;
+    int    local_iter = model->loc_iter, it, nitmax = 20, noisy=0;
     int    constant=0, dislocation=0, peierls=0, diffusion=0, gbs=0, elastic = model->iselastic;
     double tol = 1.0e-13, res=0.0, res0=0.0, dfdeta=0.0, Txx=0.0, Tzz=0.0, Txz=0.0, Tii=0.0, ieta_sum=0.0, Tii0 = sqrt(Txx0*Txx0 + Txz0*Txz0);
     double eta_up=0.0, eta_lo=0.0, eta_ve=0.0, eta_p=0.0, r_eta_pl=0.0, r_eta_ve=0.0, r_eta_p=0.0;
@@ -1297,9 +1297,9 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     double Ezz_pl=0.0, Ezz_pwl=0.0;
     int gs = materials->gs[phase];
     double pg = materials->ppzm[phase], Kg = materials->Kpzm[phase], Qg = materials->Qpzm[phase], gam = materials->Gpzm[phase], cg = materials->cpzm[phase], lambda = materials->Lpzm[phase];
-    double eta_vp = materials->eta_vp[phase];    
+    double eta_vp0 = materials->eta_vp[phase], n_vp = materials->n_vp[phase], eta_vp;
     double  detadTxx=0.0, detadTzz=0.0, detadTxz=0.0, deta_ve_dExx=0.0, deta_ve_dEzz=0.0, deta_ve_dExz=0.0, deta_ve_dP=0.0;
-    double  dFdExx=0.0, dFdEzz=0.0, dFdExz=0.0, dFdP=0.0, g=0.0, dlamdExx=0.0, dlamdEzz=0.0, dlamdExz=0.0, dlamdP=0.0, a=0.0, deta_vep_dExx=0.0, deta_vep_dEzz=0.0, deta_vep_dExz=0.0, deta_vep_dP=0.0;
+    double  dFdExx=0.0, dFdEzz=0.0, dFdExz=0.0, dFdP=0.0, g=0.0, dlamdExx=0.0, dlamdEzz=0.0, dlamdExz=0.0, dlamdP=0.0, a=0.0, deta_vep_dExx=0.0, deta_vep_dEzz=0.0, deta_vep_dExz=0.0, deta_vep_dP=0.0, deta_vp_dExx, deta_vp_dEzz, deta_vp_dExz, deta_vp_dP;
 
     //------------------------------------------------------------------------//
 
@@ -1366,23 +1366,13 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
 
     //------------------------------------------------------------------------//
     // Reaction stuff:
-    
-        //printf("isreac = %d\n",materials->Reac[phase]);
-        if ( materials->Reac[phase] > 0 && model->step > 0) {
-        
-        //printf("ttrans0 = %2.2e\n",ttrans0*scaling->t);
-        //printf("dt      = %2.2e\n",dt*scaling->t);
+    if ( materials->Reac[phase] > 0 && model->step > 0) {
+            
         *ttrans = UpdateReactionProgress ( ttrans0, (P0+model->PrBG), (P+model->PrBG), materials->treac[phase], materials->Preac[phase], dt , scaling);
-        //printf("*ttrans = %2.2e\n",*ttrans*scaling->t);
-        
-        //*Xreac  = 0.0; // f(ttrans)
-        //*Xreac = 0.5*(1.0 + erf((*ttrans - materials->treac[phase]/2.0) / (1./6.* materials->treac[phase]) /sqrt(2)));
-        
-        double time_reaction, moy, sig;
-        
-        time_reaction = materials->treac[phase];
-        moy  = time_reaction/2.0;
-        sig = 1.0/6.0*time_reaction;
+ 
+        double time_reaction = materials->treac[phase];
+        double moy  = time_reaction/2.0;
+        double sig  = 1.0/6.0*time_reaction;
         *Xreac=0.5*(1.0 + erf((*ttrans-moy)/sig/sqrt(2.0)));
         
         double npwlreac  = materials->npwl[phase];
@@ -1396,49 +1386,33 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         double Eapwlprod = materials->Qpwl[materials->Reac[phase]];
         double Fpwlprod  = 1.0/6.0*pow(2.0,1.0/npwlprod) * pow(3.0,(npwlprod-1.0)/2.0/npwlprod); // axial compression
         
-        
-        //        npwl_mix   = npwlreac;
-        //        Apwl_mix   = Apwlreac;
-        //        Eapwl_mix  = Eapwlreac;
-
         // Huet et al 2014 ---------------
         double npwl_mix, Apwl_mix,Eapwl_mix, Fpwl_mix;
-        
         double f1 = 1.0-*Xreac;
         double f2 = *Xreac;
         
         // (1) Calcul des ai
-        
         double a1 = npwlprod + 1.0;
         double a2 = npwlreac + 1.0;
         
         // (2) Calcul de n bulk:
-        
         double sum_up   = f1*a1*npwlreac + f2*a2*npwlprod;
         double sum_down = f1*a1+f2*a2;
         npwl_mix = sum_up/sum_down;
         
         // (3) Calcul de Q bulk:
-        
         sum_up   = f1*a1*Eapwlreac + f2*a2*Eapwlprod;
         sum_down = f1*a1+f2*a2;
         Eapwl_mix = sum_up/sum_down;
         
         // (4) Calcul de A bulk:
-        
         sum_down = f1*a1 + f2*a2;
         double Prod1 = pow(Apwlreac,(f1*a1/sum_down)) * pow(Apwlprod,(f2*a2/sum_down));
         double sum_n = f1*npwlreac/(npwlreac + 1.0) + f2*npwlprod/(npwlprod + 1.0);
-        //double Prod2 = (npwlreac/(npwlreac + 1.0))^(f1*a1*npwlreac/sum_down) * (npwlprod/(npwlprod+1.0))^(f2*a2*npwlprod/sum_down);
-        
         double Prod2 = pow(npwlreac/(npwlreac + 1.0),f1*a1*npwlreac/sum_down) * pow(npwlprod/(npwlprod+1.0),f2*a2*npwlprod/sum_down);
-        
         Apwl_mix = Prod1 * pow(sum_n,-npwl_mix) * Prod2;
-        
-        // -------------------------------
-        
-        Fpwl_mix   = 1.0/6.0*pow(2.0,1.0/npwl_mix) * pow(3.0,(npwl_mix-1.0)/2.0/npwl_mix);
-        
+        Fpwl_mix = 1.0/6.0*pow(2.0,1.0/npwl_mix) * pow(3.0,(npwl_mix-1.0)/2.0/npwl_mix);
+            
         if ( dislocation == 1 ) {
             B_pwl  = pre_factor * Fpwl_mix * pow(Apwl_mix,-1.0/npwl_mix) * exp( (Eapwl_mix)/R/npwl_mix/T );
             C_pwl  = pow(2.0*B_pwl, -npwl_mix);
@@ -1446,8 +1420,6 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
             Ea_pwl = Apwl_mix;
             A_pwl  = Apwl_mix;
         }
-        
-        
     }
     
     //------------------------------------------------------------------------//
@@ -1573,13 +1545,56 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     F_trial = Tii - Tyield;
 //    if (F>0.0){ exit(1); }
 
+//    if (F_trial > 1e-17) {
+//        is_pl   = 1;
+////        eta_vp  = 0.0;
+//        gdot    = F_trial / ( eta_ve + eta_vp );
+//        dQdtxx  = Txx/2.0/Tii;
+//        dQdtzz  = Tzz/2.0/Tii;
+//        dQdtxz  = Txz/1.0/Tii;
+//        Txx     = 2.0*eta_ve*(Exx - gdot*dQdtxx    );
+//        Tzz     = 2.0*eta_ve*(Ezz - gdot*dQdtzz    );
+//        Txz     = 2.0*eta_ve*(Exz - gdot*dQdtxz/2.0);
+//        Tii     = sqrt( 0.5*( pow(Txx,2.0) + pow(Tzz,2.0) ) + pow(Txz,2.0)  );
+//        Tyield += gdot*eta_vp;
+//        eta_vep = Tii / (2.0*Eii);
+//        F_corr  = Tii - Tyield;
+//        *Eii_pl = gdot/2.0;
+//        Tii     = 2.0*eta_vep*Eii;
+//        F_corr  = Tii - Tyield;
+////        printf("%2.2e %2.2e %2.2e %2.2e %2.2e\n", Tii, Tyield, F_trial, F_corr, eta_vp*gdot*scaling->S);
+//    }
+    
     if (F_trial > 1e-17) {
         is_pl   = 1;
-//        eta_vp  = 0.0;
+        double dFdgdot;
+        // Initial guess - eta_vp = 0
+        eta_vp  = eta_vp0;
         gdot    = F_trial / ( eta_ve + eta_vp );
+//        eta_vp  = eta_vp0 * pow(gdot, 1.0/n_vp - 1);
         dQdtxx  = Txx/2.0/Tii;
         dQdtzz  = Tzz/2.0/Tii;
         dQdtxz  = Txz/1.0/Tii;
+        res0    = F_trial;
+                
+        for (it=0; it<nitmax; it++) {
+            
+            Txx     = 2.0*eta_ve*(Exx - gdot*dQdtxx    );
+            Tzz     = 2.0*eta_ve*(Ezz - gdot*dQdtzz    );
+            Txz     = 2.0*eta_ve*(Exz - gdot*dQdtxz/2.0);
+            Tii     = sqrt( 0.5*( pow(Txx,2.0) + pow(Tzz,2.0) ) + pow(Txz,2.0)  );
+            eta_vp  = eta_vp0 * pow(fabs(gdot), 1.0/n_vp - 1);
+            F_trial = Tii - Tyield - gdot*eta_vp;
+            
+            // Residual check
+            res = fabs(F_trial);
+//            if (it==0) res0 = res;
+            if (noisy==1) printf("Visco-Plastic iterations It. %02d, r = %2.2e\n", it, res);
+            if (res < tol) break;
+            dFdgdot  = - eta_ve - eta_vp/n_vp;
+            gdot    -= F_trial / dFdgdot;
+        }
+ 
         Txx     = 2.0*eta_ve*(Exx - gdot*dQdtxx    );
         Tzz     = 2.0*eta_ve*(Ezz - gdot*dQdtzz    );
         Txz     = 2.0*eta_ve*(Exz - gdot*dQdtxz/2.0);
@@ -1590,7 +1605,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         *Eii_pl = gdot/2.0;
         Tii     = 2.0*eta_vep*Eii;
         F_corr  = Tii - Tyield;
-//        printf("%2.2e %2.2e %2.2e %2.2e %2.2e\n", Tii, Tyield, F_trial, F_corr, eta_vp*gdot*scaling->S);
+        //        printf("%2.2e %2.2e %2.2e %2.2e %2.2e\n", Tii, Tyield, F_trial, F_corr, eta_vp*gdot*scaling->S);
     }
 
     //------------------------------------------------------------------------//
@@ -1601,16 +1616,20 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         dFdEzz        =     Ezz*eta_ve/Eii + 2.0*Eii*deta_ve_dEzz;
         dFdExz        = 2.0*Exz*eta_ve/Eii + 2.0*Eii*deta_ve_dExz;
         dFdP          = -sin(Phi);
-        g             = 1.0 / ( eta_ve + eta_vp );
+        g             = n_vp / ( n_vp*eta_ve + eta_vp );
         dlamdExx      = g * (dFdExx - gdot *deta_ve_dExx);
         dlamdEzz      = g * (dFdEzz - gdot *deta_ve_dEzz);
         dlamdExz      = g * (dFdExz - gdot *deta_ve_dExz);
         dlamdP        = g * (dFdP);
+        deta_vp_dExx  = eta_vp/gdot*dlamdExx*(1.0/n_vp - 1.0);
+        deta_vp_dEzz  = eta_vp/gdot*dlamdEzz*(1.0/n_vp - 1.0);
+        deta_vp_dExz  = eta_vp/gdot*dlamdExz*(1.0/n_vp - 1.0);
+        deta_vp_dP    = eta_vp/gdot*dlamdP  *(1.0/n_vp - 1.0);
         a             =  eta_vp;
-        deta_vep_dExx = -0.5*Exx*Tyield/(2.0*pow(Eii,3.0)) + (a*dlamdExx)/(2.0*Eii);
-        deta_vep_dEzz = -0.5*Ezz*Tyield/(2.0*pow(Eii,3.0)) + (a*dlamdEzz)/(2.0*Eii);
-        deta_vep_dExz =     -Exz*Tyield/(2.0*pow(Eii,3.0)) + (a*dlamdExz)/(2.0*Eii);
-        deta_vep_dP   =                           (sin(Phi) +  a*dlamdP )/(2.0*Eii);
+        deta_vep_dExx = -0.5*Exx*Tyield/(2.0*pow(Eii,3.0)) + (a*dlamdExx + gdot*deta_vp_dExx)/(2.0*Eii);
+        deta_vep_dEzz = -0.5*Ezz*Tyield/(2.0*pow(Eii,3.0)) + (a*dlamdEzz + gdot*deta_vp_dEzz)/(2.0*Eii);
+        deta_vep_dExz =     -Exz*Tyield/(2.0*pow(Eii,3.0)) + (a*dlamdExz + gdot*deta_vp_dExz)/(2.0*Eii);
+        deta_vep_dP   =                           (sin(Phi) +  a*dlamdP  + gdot*deta_vp_dP  )/(2.0*Eii);
     }
 
     double inv_eta_diss = 1.0/eta_pwl;

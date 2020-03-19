@@ -54,7 +54,7 @@ struct _mat_prop {
     DoodzFP tgbs[20], Qgbs[20], Vgbs[20], ngbs[20], mgbs[20], Agbs[20], agbs[20], fgbs[20], rgbs[20], Fgbs[20];
     DoodzFP ppzm[20], Kpzm[20], Qpzm[20], Gpzm[20], cpzm[20], Lpzm[20], gs_ref[20];
     int     gs[20], cstv[20], pwlv[20], linv[20], expv[20], gbsv[20], phase_diagram[20], density_model[20];
-    DoodzFP C_end[20], phi_end[20], pls_start[20], pls_end[20], eta_vp[20];
+    DoodzFP C_end[20], phi_end[20], pls_start[20], pls_end[20], eta_vp[20], n_vp[20];
     DoodzFP Preac[20], treac[20];
     int     Reac[20];
 };
