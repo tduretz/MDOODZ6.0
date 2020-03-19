@@ -1,24 +1,24 @@
 /**** RESTART ****/
-istep = 00100
+istep = 00200
 irestart = 0
 
 /**** OUTPUT FILES ****/
 writer          = 1
-writer_step     = 1
+writer_step     = 10
 writer_markers  = 0
 writer_debug    = 0
 writer_energies = 0
 
 /**** SCALES ****/
-eta = 1e23
-L   = 1.0
-V   = 1.0e-14
+eta = 1e24
+L   = 2.0
+V   = 1.0e-13
 T   = 700
 
 /**** SPACE-TIME ****/
 Nx      = 101
 Nz      = 101
-Nt      = 50
+Nt      = 200
 xmin    = -1.000000
 zmin    = -1.000000
 xmax    =  1.000000
@@ -26,17 +26,18 @@ zmax    =  1.000000
 advection         = 1
 dt                = 1e11
 dt_constant       = 0
-Courant           = 0.3
-penalty           = 1e5
+Courant           = 0.2
+penalty           = 1e3
 lsolver           = 2
 diag_scaling      = 0
-abs_tol_div       = 1e-10
-rel_tol_div       = 1e-10
+abs_tol_div       = 1e-12
+rel_tol_div       = 1e-12
 GNUplot_residuals = 0
 shear_style       = 1
-pc_type           = 1
+pc_type           = 0
 eta_avg           = 1
 num_deriv         = 0
+StressRotation    = 1
 
 /**** SWITCHES ****/
 ismechanical    = 1
@@ -80,7 +81,8 @@ k    = 2.3
 Qr   = 0.0
 C    = 50.0e6
 phi  = 30.0
-eta_vp = 1e18
+eta_vp = 7.0711e+11
+n_vp   = 2.0
 Slim = 500e9
 alp  = 10.0e-6
 bet  = 1.0e-11
@@ -94,6 +96,9 @@ gsel = 0             / grain size evo.
 eta0 = 0
 npwl = 0
 Qpwl = 0
+Reac = 5
+Preac = 1.85e9
+treac = 3.1558e11 /equal 10000 ans
 
 /**** PHASE 2 ****/
 ID   = 1
@@ -104,7 +109,10 @@ k    = 2.3
 Qr   = 0.0
 C    = 50.0e60
 phi  = 30.0
-eta_vp = 1e18
+eta_vp = 7.0711e+11
+n_vp   = 2.0
+Slim = 500e9
+n_vp   = 3.0
 Slim = 500e9
 alp  = 10.0e-6
 bet  = 1.0e-11
@@ -118,6 +126,9 @@ gsel = 0             / grain size evo.
 eta0 = 0
 npwl = 0
 Qpwl = 0
+Reac = 0
+Preac = 1.0e90
+treac = 0.0
 
 /**** PHASE 3 ****/
 ID   = 2
@@ -128,7 +139,8 @@ k    = 2.3
 Qr   = 0.0
 C    = 50.0e6
 phi  = 30.0
-eta_vp = 1e18
+eta_vp = 7.0711e+11
+n_vp   = 2.0
 Slim = 500e9
 alp  = 10.0e-6
 bet  = 1.0e-11
@@ -142,6 +154,9 @@ gsel = 0             / grain size evo.
 eta0 = 0
 npwl = 0
 Qpwl = 0
+Reac = 0
+Preac = 1.0e90
+treac = 0.0
 
 /**** PHASE 4 ****/
 ID   = 3
@@ -152,7 +167,8 @@ k    = 2.3
 Qr   = 0.0
 C    = 50.0e6
 phi  = 30.0
-eta_vp = 1e18
+eta_vp = 7.0711e+11
+n_vp   = 2.0
 Slim = 500e9
 alp  = 10.0e-6
 bet  = 1.0e-11
@@ -166,6 +182,9 @@ gsel = 0             / grain size evo.
 eta0 = 0
 npwl = 0
 Qpwl = 0
+Reac = 6
+Preac = 1.85e9
+treac = 3.1558e11   / /equal 10000 ans 
 
 /**** PHASE 5 ****/
 ID   = 4
@@ -176,7 +195,8 @@ k    = 2.3
 Qr   = 0.0
 C    = 50.0e60
 phi  = 30.0
-eta_vp = 1e18
+eta_vp = 7.0711e+11
+n_vp   = 2.0
 Slim = 500.0e9
 alp  = 10.0e-6
 bet  = 1.0e-11
@@ -190,6 +210,9 @@ gsel = 0
 eta0 = 1.0e18
 npwl = 0
 Qpwl = 0
+Reac = 0
+Preac = 1.85e90
+treac = 0.0
 
 /**** PHASE 6 ****/
 ID   = 5
@@ -200,7 +223,8 @@ k    = 2.3
 Qr   = 0.0
 C    = 50.0e6
 phi  = 30.0
-eta_vp = 1e18
+eta_vp = 7.0711e+11
+n_vp   = 2.0
 Slim = 500.0e9
 alp  = 10.0e-6
 bet  = 1.0e-11
@@ -214,6 +238,9 @@ gsel = 0
 eta0 = 0
 npwl = 0
 Qpwl = 0
+Reac = 0
+Preac = 1.85e90
+treac = 0.0
 
 /**** PHASE 7 ****/
 ID   = 6
@@ -224,7 +251,8 @@ k    = 2.3
 Qr   = 0.0
 C    = 50.0e6
 phi  = 30.0
-eta_vp = 1e18
+eta_vp = 7.0711e+11
+n_vp   = 2.0
 Slim = 500.0e9
 alp  = 10.0e-6
 bet  = 1.0e-11
@@ -238,6 +266,9 @@ gsel = 0
 eta0 = 0
 npwl = 0
 Qpwl = 0
+Reac = 0
+Preac = 1.0e90
+treac = 0.0
 
 /**** DEFMAPS ****/
 nT    =    51      / Temperature resolutin []

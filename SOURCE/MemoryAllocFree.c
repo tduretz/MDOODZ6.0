@@ -574,6 +574,9 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->Xreac_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->ttrans_n   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     
+    mesh->OverS_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->OverS_s    = DoodzCalloc ((Nx)*(Nz),sizeof(double));
+    
     printf("Memory succesfully allocated : \nDiantre, que c'est bon!\n");
 
 }
@@ -840,6 +843,10 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->ttrans0_s);
     DoodzFree(mesh->p0_n);
     DoodzFree(mesh->p0_s);
+    
+    DoodzFree(mesh->OverS_n);
+    DoodzFree(mesh->OverS_s);
+    
     
 }
 
