@@ -163,6 +163,7 @@ struct _grid {
 	double *xg_coord, *zg_coord, *xc_coord, *zc_coord, *xvz_coord, *zvx_coord, *xg_coord0, *zg_coord0, *xg_coord_ext, *zg_coord_ext;
 	double *eta_s, *eta_n, *rho_s, *rho_n, *rho_app_s, *rho_app_n;
     double *ttrans0_s, *ttrans0_n, *Xreac_s, *Xreac_n, *p0_n, *p0_s, *ttrans_n;
+    double *OverS_n,  *OverS_s;
     double *strain_n, *strain_s;
 	double *u, *v, *p;
 	double *ru, *rv, *rp;

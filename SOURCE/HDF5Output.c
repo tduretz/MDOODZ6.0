@@ -249,6 +249,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     double *T0, *P0, *x0, *z0, *Tmax, *Pmax;
     float *CT0, *CP0, *Cx0, *Cz0, *CTmax, *CPmax;
     float *CXreac;
+    float *COverS;
     
     int    res_fact = 1;
     int    nxviz, nzviz, nxviz_hr, nzviz_hr;
@@ -381,6 +382,10 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     
     CXreac        = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( mesh->Xreac_n, CXreac, (model.Nx-1)*(model.Nz-1) );
+
+    COverS        = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->OverS_n, COverS, (model.Nx-1)*(model.Nz-1) );
+    ScaleBack( COverS, scaling.S, (model.Nx-1)*(model.Nz-1) );
     
     //---------------------------------------------------
     CT  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
@@ -696,6 +701,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "d" , 'f', (model.Nx-1)*(model.Nz-1), Cd, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "X" , 'f', (model.Nx-1)*(model.Nz-1), CX, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "Xreac",'f', (model.Nx-1)*(model.Nz-1), CXreac, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "OverS",'f', (model.Nx-1)*(model.Nz-1), COverS, 1 );
     
     if ( model.free_surf == 1 ) {
         AddFieldToGroup_generic( _TRUE_, name, "Topo", "height" , 'f', (model.Nx), Cheight, 1 );
@@ -792,6 +798,8 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     DoodzFree( CT );
     DoodzFree( Cd );
     DoodzFree( CXreac );
+    DoodzFree( COverS );
+    
     
     if ( model.free_surf == 1 ) {
         DoodzFree( Cxtopo );

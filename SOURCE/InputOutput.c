@@ -1068,13 +1068,14 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         materials->phi_end[k]   = ReadMatProps( fin, "phie",   k,     30.0  )  / 1.0 * M_PI / 180.0;
         materials->pls_start[k] = ReadMatProps( fin, "plss",   k,    1.0e6  );
         materials->pls_end[k]   = ReadMatProps( fin, "plse",   k,    1.0e6  );
-        // reaction stuff
+        // Reaction stuff
         materials->Reac[k]      = ReadMatProps( fin, "Reac",   k,    0.0  );
         materials->Preac[k]     = ReadMatProps( fin, "Preac",  k,    0.0  ) / scaling->S;
         materials->treac[k]     = ReadMatProps( fin, "treac",  k,    0.0  ) / scaling->t;
         // Density models
         materials->density_model[k]     = (int)ReadMatProps( fin, "density_model",     k,    1  );
         materials->phase_diagram[k]     = (int)ReadMatProps( fin, "phase_diagram",     k,   -1  );
+
         // Viscoplasticity
         materials->n_vp[k]      = ReadMatProps( fin, "n_vp",   k,       1.0 ) ;
         materials->eta_vp[k]    = ReadMatProps( fin, "eta_vp", k,       0.0 ) / scaling->S / pow(scaling->t, 1.0/materials->n_vp[k]);
@@ -1096,6 +1097,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         printf("alp    = %2.2e 1/T        T0 = %2.2e K         bet = %2.2e 1/Pa       P0 = %2.2e Pa       drho = %2.2e kg/m^3 \n", materials->alp[k]*(1/scaling->T), materials->T0[k]*(scaling->T), materials->bet[k]*(1/scaling->S), materials->P0[k]*(scaling->S), materials->drho[k]*scaling->rho );
         printf("prefactor for power-law: %2.2e\n", materials->pref_pwl[k]);
                  printf("C_end    = %2.2e Pa        Phi_end = %2.2e deg         pls_start = %2.2e        pls_end = %2.2e \n", materials->C_end[k]*scaling->S, materials->phi_end[k]*180/M_PI, materials->pls_start[k],  materials->pls_end[k] );
+        printf("eta0_vp   = %2.2e  Pa.s^(1/n)         n_vp   = %2.2e\n", materials->eta_vp[k]* (scaling->S*pow(scaling->t,1.0/materials->n_vp[k])) , materials->n_vp[k]);
         
         printf("Flow law settings:\n");
         if ( abs(materials->cstv[k])>0 ) printf("--->    Constant viscosity activated \n");
