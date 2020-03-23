@@ -646,10 +646,12 @@ int main( int nargs, char *args[] ) {
                 model.aniso=0;
             }
             
-            if ( model.compressible > 0 ) {
-                UpdateDensity( &mesh, &particles, &materials, &model, &scaling );
-            }
+//            if ( model.compressible > 0 ) {
+//                UpdateDensity( &mesh, &particles, &materials, &model, &scaling );
+//            }
             
+    
+           
             UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
             if  (aniso==1) {
                 model.aniso=1;
@@ -662,7 +664,7 @@ int main( int nargs, char *args[] ) {
             MinMaxArrayTag( mesh.eta_phys_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_phys_n", mesh.BCp.type );
             MinMaxArrayTag( mesh.rho_s,      scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s     ", mesh.BCg.type );
             MinMaxArrayTag( mesh.rho_n,      scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n     ", mesh.BCp.type );
-            MinMaxArrayTag( mesh.rho0_n,      scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho0_n     ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.rho0_n,     scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho0_n    ", mesh.BCp.type );
             
             // Stokes solver
             if ( model.ismechanical == 1 ) {

@@ -1911,6 +1911,29 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     if ( mesh->BCv.type[iVzSWW] == 11 ) vSW -= vSWW;
     if ( mesh->BCv.type[iVzSEE] == 11 ) vSE -= vSEE;
     
+//    comp = 1.0;
+//
+//    // simpler
+//    uW = D11W*inW*((1.0/3.0)*comp/dx - 1.0/dx)/dx;
+//    uC = -(-D33N*inN/dz - D33S*inS/dz)/dz - (D11E*inE*((1.0/3.0)*comp/dx - 1/dx) - D11W*inW*(-1.0/3.0*comp/dx + 1.0/dx))/dx;
+//    uE = -D11E*inE*(-1.0/3.0*comp/dx + 1.0/dx)/dx;
+//    uS = -D33S*inS/pow(dz, 2.0);
+//    uN = -D33N*inN/pow(dz, 2.0);
+//    vSW = (1.0/3.0)*D11W*comp*inW/(dx*dz) - D33S*inS/(dx*dz);
+//    vSE = -1.0/3.0*D11E*comp*inE/(dx*dz) + D33S*inS/(dx*dz);
+//    vNW = -1.0/3.0*D11W*comp*inW/(dx*dz) + D33N*inN/(dx*dz);
+//    vNE = (1.0/3.0)*D11E*comp*inE/(dx*dz) - D33N*inN/(dx*dz);
+//
+//    // Add contribution from non-conforming Dirichlets
+//    if ( mesh->BCu.type[iVxS] == 11 ) uC  -=  uS;
+//    if ( mesh->BCu.type[iVxN] == 11 ) uC  -=  uN;
+//
+//    // Pressure gradient
+//    if ( mesh->BCp.type[iPrE] != 30 && mesh->BCp.type[iPrW] != 30 ) {
+//        pW  =  -one_dx;
+//        pE  =   one_dx;
+//    }
+    
 //    if (k==0) printf("%d %d %d\n", mesh->BCu.type[iVxS], mesh->BCu.type[iVxSW], mesh->BCu.type[iVxSE]  );
 
     if ( Assemble == 1 ) {
@@ -2292,8 +2315,8 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     pNE = (-D34E*inE*inNEc*wE/dx);
 
     // Add contribution from non-conforming Dirichlets
-    if ( mesh->BCv.type[iVzS]   == 11 ) vC  -=  vS ;
-    if ( mesh->BCv.type[iVzN]   == 11 ) vC  -=  vN ;
+    if ( mesh->BCv.type[iVzW]   == 11 ) vC  -=  vW ;
+    if ( mesh->BCv.type[iVzE]   == 11 ) vC  -=  vE ;
     if ( mesh->BCv.type[iVzSW]  == 11 ) vW  -=  vSW;
     if ( mesh->BCv.type[iVzSE]  == 11 ) vE  -=  vSE;
     if ( mesh->BCv.type[iVzNW]  == 11 ) vW  -=  vNW;
@@ -2302,6 +2325,52 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     if ( mesh->BCu.type[iVxNNE] == 11 ) uNE -= uNNE;
     if ( mesh->BCu.type[iVxSSW] == 11 ) uSW -= uSSW;
     if ( mesh->BCu.type[iVxSSE] == 11 ) uSE -= uSSE;
+    
+//    comp = 1.0;
+//    // simpler
+//    vW = -D33W*inW/pow(dx, 2);
+//    vC = -(D22N*inN*((1.0/3.0)*comp/dz - 1/dz) - D22S*inS*(-1.0/3.0*comp/dz + 1.0/dz))/dz - (-D33E*inE/dx - D33W*inW/dx)/dx;
+//    vE = -D33E*inE/pow(dx, 2);
+//    vS =  D22S*inS*((1.0/3.0)*comp/dz - 1/dz)/dz;
+//    vN = -D22N*inN*(-1.0/3.0*comp/dz + 1.0/dz)/dz;
+//    uSW = (1.0/3.0)*D22S*comp*inS/(dx*dz) - D33W*inW/(dx*dz);
+//    uSE = -1.0/3.0*D22S*comp*inS/(dx*dz) + D33E*inE/(dx*dz);
+//    uNW = -1.0/3.0*D22N*comp*inN/(dx*dz) + D33W*inW/(dx*dz);
+//    uNE = (1.0/3.0)*D22N*comp*inN/(dx*dz) - D33E*inE/(dx*dz);
+//
+//    // Pressure gradient
+//    if ( mesh->BCp.type[c2] != 30 && mesh->BCp.type[c2+ncx] != 30 ) {
+//        pS  =  -one_dz;
+//        pN  =   one_dz;
+//    }
+//
+//    if ( mesh->BCv.type[c3-1] == 11 ) vC  -=  vW;
+//    if ( mesh->BCv.type[c3+1] == 11 ) vC  -=  vE;
+    
+    // Stabilisation with density gradients
+    if (stab==1) {
+        double drhodz  = (mesh->rho_app_n[c2+ncx] - mesh->rho_app_n[c2]);
+        //        double vC_corr = - 1.00 * om * model.dt * model.gz * drhodz;
+        double correction =  1.0/om * 0.5 * model.dt * model.gz * drhodz * one_dz;
+        vC += correction;
+        
+        //        om = 0.15;
+        //        double vC_corr = -  1.0/om * 0.5 * model.dt * model.gz * drhodz;
+        // Importante trique, voire meme gigantesque!
+        
+        //        if (vC+vC_corr<0.0)  vC += vC_corr;
+        //        if (vW+.25*vC_corr>0)  vW += .25*vC_corr;
+        //        if (vE+.25*vC_corr>0)  vE += .25*vC_corr;
+        //        if (vS+.25*vC_corr>0)  vS += .25*vC_corr;
+        //        if (vN+.25*vC_corr>0)  vN += .25*vC_corr;
+        
+        // Non-symmetric contibution to the system of equation
+        //        double drhodx = (mesh->rho_app_s[c1]   - mesh->rho_app_s[c1-1])*one_dx;
+        //        uNW += - 0.25 * om * model.dt * model.gz * drhodx;
+        //        uNE += - 0.25 * om * model.dt * model.gz * drhodx;
+        //        uSW += - 0.25 * om * model.dt * model.gz * drhodx;
+        //        uSE += - 0.25 * om * model.dt * model.gz * drhodx;
+    }
 
 
     if ( Assemble == 1 ) {
@@ -2521,7 +2590,7 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
     double one_dx_dz = 1.0/mesh->dx/mesh->dz;
     
     // Switches
-    int eqn,  sign = 1, comp = 0, stab = 0;
+    int eqn,  sign = 1, comp = 1, stab = 0;
     if (model.free_surf_stab>0) stab = 1;
     if (model.compressible==1  ) comp = 1;
     double theta = model.free_surf_stab;
@@ -2640,6 +2709,9 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
                 //--------------------- INNER NODES ---------------------//
                 if ( l>0 && l<nzvx-1 && k>0 && k<nx-1 ) {
                      Xjacobian_InnerNodesDecoupled3( Stokes, StokesA, StokesB, Assemble, lev, stab, comp, theta, sign, model, one_dx, one_dz, one_dx_dx, one_dz_dz, one_dx_dz, celvol, mesh, ith, c1, c2, c3, nx, ncx, nxvz, eqn, u, v, p, JtempA, AtempA, nnzc2A, JtempB, AtempB, nnzc2B, k, l );
+                    
+//                    Xmomentum_InnerNodesDecoupled( Stokes, StokesA, StokesB, Assemble, lev, stab, comp, theta, sign, model, one_dx, one_dz, one_dx_dx, one_dz_dz, one_dx_dz, celvol, mesh, ith, c1, c2, c3, nx, ncx, nxvz, eqn, u, v, p, JtempA, AtempA, nnzc2A, JtempB, AtempB, nnzc2B );
+
                 }
 
                 // Periodic

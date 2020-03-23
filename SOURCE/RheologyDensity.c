@@ -78,7 +78,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
     double nx, nz, deta=5e21/scaling->eta;
     
     if (Jacobian == 0  && model->aniso == 0) {
-        
+    
         // Loop on cell centers
 #pragma omp parallel for shared( mesh )
         for (k=0; k<Ncx*Ncz; k++) {
@@ -106,7 +106,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
         }
         
     }
-    
+
     if (Jacobian == 1  && model->aniso == 0) {
         
         double etae;
@@ -192,7 +192,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
         }
         
     }
-    
+
     if ( Jacobian == 0 && model->aniso == 1 ) {
         
         printf("Computing anisotropic viscosity tensor\n");
@@ -1525,7 +1525,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         // Update viscosity
         eta_ve -= r_eta_ve / dfdeta;
     }
-
+    
     // Recalculate stress components
     Txx                  = 2.0*eta_ve*Exx;
     Tzz                  = 2.0*eta_ve*Ezz;
@@ -1576,7 +1576,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         dQdtzz  = Tzz/2.0/Tii;
         dQdtxz  = Txz/1.0/Tii;
         res0    = F_trial;
-                
+        
         for (it=0; it<nitmax; it++) {
             
             Txx     = 2.0*eta_ve*(Exx - gdot*dQdtxx    );
@@ -1607,7 +1607,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         F_corr  = Tii - Tyield;
         //        printf("%2.2e %2.2e %2.2e %2.2e %2.2e\n", Tii, Tyield, F_trial, F_corr, eta_vp*gdot*scaling->S);
     }
-
+    
     //------------------------------------------------------------------------//
 
     // Partial derivatives VEP
@@ -1632,7 +1632,9 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         deta_vep_dP   =                           (sin(Phi) +  a*dlamdP  + gdot*deta_vp_dP  )/(2.0*Eii);
     }
 
-    double inv_eta_diss = 1.0/eta_pwl;
+    double inv_eta_diss = 0.0;
+    if (dislocation== 1)  inv_eta_diss += (1.0/eta_pwl);
+    if (constant   == 1)  inv_eta_diss += (1.0/eta_cst);
     if (is_pl == 0) {
         (*detadexx) = deta_ve_dExx;
         (*detadezz) = deta_ve_dEzz;
@@ -1648,7 +1650,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         (*etaVE)      = eta_vep;
         inv_eta_diss += 1.0/eta_vep;
     }
-
+    
     /*----------------------------------------------------*/
     /*----------------------------------------------------*/
     /*----------------------------------------------------*/
@@ -1677,13 +1679,17 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     eta        = 1.0/(inv_eta_diss);//Tii/2.0/Eii_vis;
     *VEcoeff   = eta_ve/eta_el;//1.0 / (1.0 + G*model->dt/eta); //eta_ve/eta_el;//  //
     if (elastic==0) *VEcoeff = 0.0;
+    
+//    printf("%2.2e\n",*etaVE*scaling->eta );
+
+
 
     // Override viscosty at step 0 (100% visco-plastic)
     if ( model->step == 0 ) *etaVE = eta;
     *txxn = Txx;
     *tzzn = Tzz;
     *txzn = Txz;
-
+    
     // Viscosity limiter
     if( eta > maxEta ) {
         eta = maxEta;
@@ -1701,7 +1707,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     if( *etaVE < minEta ) {
         *etaVE = minEta;
     }
-
+    
     return eta;
 }
 

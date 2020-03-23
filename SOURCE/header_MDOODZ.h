@@ -136,7 +136,7 @@ struct _params {
     // Visualisation
     int rec_T_P_x_z, delete_breakpoints, GNUplot_residuals;
     // Boundary conditions type
-    int    BC_setup_type, shear_style;
+    int    BC_setup_type, shear_style, polar;
     int    StressRotation;
 };
 

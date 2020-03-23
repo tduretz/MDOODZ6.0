@@ -765,7 +765,7 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
     int c, k, l, c1, c2;
     int NX, NZ, NZVX, NXVZ;
     int NCX, NCZ;
-    double rhoVx, rhoVz;
+    double rhoVx, rhoVz, gx, gz, g, tet, x, z;
     double dx, dz;
     double inW, inE, inS, inN;
     
@@ -792,6 +792,17 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
             c2 = k + (l-1)*NCX;
 
             mesh->roger_x[c] = 0.0;
+            gx  = model.gx;
+            
+            if (model.polar == 1 ) {
+                x   = mesh->xg_coord[k];
+                z   = mesh->zvx_coord[l];
+                tet = atan(z/x);
+                if (tet>0.0) gx     = model.gz*cos(tet);
+                if (tet<0.0) gx     =-model.gz*cos(tet);
+            }
+
+//            printf("gx = %2.2e\n", gx*scaling.L/pow(scaling.t,2.0));
 
             if (l>0 && l<NZVX-1) {
 
@@ -815,7 +826,7 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
 
                     // Gravity force: take apparent viscosity (free surface correction)
                     rhoVx             = 0.5*(mesh->rho_app_s[ixyS] + mesh->rho_app_s[ixyN]);
-                    mesh->roger_x[c]  = - model.gx * rhoVx;
+                    mesh->roger_x[c]  = - gx * rhoVx;
 
                     // Elastic force
                     if ( model.iselastic == 1 ) {
@@ -861,7 +872,16 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
             c2 = k-1 + (l-1)*(NX-1);
 
             mesh->roger_z[c]  = 0.0;
-
+            gz  = model.gz;
+            
+            if (model.polar == 1 ) {
+                x   = mesh->xvz_coord[k];
+                z   = mesh->zg_coord[l];
+                tet = atan(z/x);
+                if (tet>0.0) gz     = model.gz*sin(tet);
+                if (tet<0.0) gz     =-model.gz*sin(tet);
+            }
+            
             if (k>0 && k<NXVZ-1) {
 
                 if ( mesh->BCv.type[c] == -1  ) {
@@ -880,7 +900,7 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
 
                     // Gravity force: use apparent density (free surface correction)
                     rhoVz             = 0.5 * (mesh->rho_app_s[ixyW] + mesh->rho_app_s[ixyE]);  // USE THIS ALWAYS
-                    mesh->roger_z[c]  = - model.gz * rhoVz;
+                    mesh->roger_z[c]  = - gz * rhoVz;
 
                     // Elastic force
                     if  (model.iselastic == 1 ) {

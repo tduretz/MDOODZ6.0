@@ -987,6 +987,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->no_markers      = ReadInt2( fin, "no_markers",    0 );
     model->shear_style     = ReadInt2( fin, "shear_style",    0 );
     model->StressRotation  = ReadInt2( fin, "StressRotation", 1 );
+    model->polar           = ReadInt2( fin, "polar", 0 );
     if (model->shear_style==1) model->isperiodic_x  = 1;
     
     // Setup dependant
@@ -1067,19 +1068,16 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         materials->phi_end[k]   = ReadMatProps( fin, "phie",   k,     30.0  )  / 1.0 * M_PI / 180.0;
         materials->pls_start[k] = ReadMatProps( fin, "plss",   k,    1.0e6  );
         materials->pls_end[k]   = ReadMatProps( fin, "plse",   k,    1.0e6  );
-        materials->eta_vp[k]    = ReadMatProps( fin, "eta_vp", k,       0.0 ) / scaling->S / scaling->t;
-        materials->n_vp[k]      = ReadMatProps( fin, "n_vp",   k,       1.0 ) ;
-
         // reaction stuff
         materials->Reac[k]      = ReadMatProps( fin, "Reac",   k,    0.0  );
         materials->Preac[k]     = ReadMatProps( fin, "Preac",  k,    0.0  ) / scaling->S;
         materials->treac[k]     = ReadMatProps( fin, "treac",  k,    0.0  ) / scaling->t;
-        
         // Density models
         materials->density_model[k]     = (int)ReadMatProps( fin, "density_model",     k,    1  );
         materials->phase_diagram[k]     = (int)ReadMatProps( fin, "phase_diagram",     k,   -1  );
         // Viscoplasticity
-        materials->eta_vp[k]            = ReadMatProps( fin, "eta_vp", k,    0.0 ) / scaling->S / scaling->t;
+        materials->n_vp[k]      = ReadMatProps( fin, "n_vp",   k,       1.0 ) ;
+        materials->eta_vp[k]    = ReadMatProps( fin, "eta_vp", k,       0.0 ) / scaling->S / pow(scaling->t, 1.0/materials->n_vp[k]);
         // Check if any flow law is active
         int sum = abs(materials->cstv[k]) + abs(materials->pwlv[k]) + abs(materials->linv[k]) + abs(materials->gbsv[k]) + abs(materials->expv[k]);
         if ( sum == 0 ) {
