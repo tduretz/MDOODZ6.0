@@ -723,6 +723,7 @@ void EvaluateStokesResidualDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
             resz                          += StokesA->F[Stokes->eqn_v[cc]]*StokesA->F[Stokes->eqn_v[cc]];
             mesh->rv[cc]                   = StokesA->F[Stokes->eqn_v[cc]];
             StokesA->F[Stokes->eqn_v[cc]] *= StokesA->d[Stokes->eqn_v[cc]]; // Need to scale the residual here for Defect Correction formulation (F is the RHS)
+//            printf("%2.2e %d\n", StokesA->F[Stokes->eqn_v[cc]], mesh->BCv.type[cc]);
         }
     }
     Nmodel->resz = resz;
@@ -893,6 +894,8 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                     iVyW   = c-1;
                     iVyE   = c+1;
 
+                    // Free surface
+                    inS=0.0, inN = 0.0, inW=0.0, inE = 0.0;
                     if (mesh->BCp.type[iPrS] == -1) inS = 1.0;
                     if (mesh->BCp.type[iPrN] == -1) inN = 1.0;
                     if (mesh->BCg.type[ixyW] != 30 && mesh->BCv.type[iVyW] != 13 ) inW = 1.0;
@@ -907,12 +910,11 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
 
                         // Backward Euler
                         if ( l>0 && l<NZ-1 ) {
-
                             if ( inN ) mesh->roger_z[c]  -= 1.0/dz * (  mesh->eta_n[iPrN] / (mesh->mu_n[iPrN] *model.dt ) * (mesh->szzd0[iPrN]) );
                             if ( inS ) mesh->roger_z[c]  -= 1.0/dz * ( -mesh->eta_n[iPrS] / (mesh->mu_n[iPrS] *model.dt ) * (mesh->szzd0[iPrS]) );
                             if ( inE ) mesh->roger_z[c]  -= 1.0/dx * (  mesh->eta_s[ixyE] / (mesh->mu_s[ixyE] *model.dt ) *  mesh->sxz0[ixyE]) ;
                             if ( inW ) mesh->roger_z[c]  -= 1.0/dx * ( -mesh->eta_s[ixyW] / (mesh->mu_s[ixyW] *model.dt ) *  mesh->sxz0[ixyW]) ;
-
+//                            printf( "%2.2e %2.2e %2.2e %2.2e %2.2e \n", mesh->roger_z[c], mesh->mu_n[iPrN], mesh->mu_n[iPrS], mesh->mu_s[ixyE], mesh->mu_s[ixyW] );
                         }
 //                        // SOUTH OPEN  --- TO BE MODIFIED AS ABOVE
 //                        if ( l==0 && k>0 && k<NXVZ-1 ) {

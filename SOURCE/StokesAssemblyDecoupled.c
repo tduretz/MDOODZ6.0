@@ -718,6 +718,7 @@ void Zmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
         if ( mesh->BCv.type[c3+1] == -12 ) StokesA->F[eqn] += vE*v[c3-nxvz+3];
         StokesA->F[eqn] -= (StokesA->b[eqn]);
         StokesA->F[eqn] *= celvol;
+//        printf("StokesA->F[eqn] = %2.2e %2.2e %2.2e %2.2e %2.2e\n", StokesA->F[eqn], vC*v[c3], vS*v[c3-nxvz], vW*v[c3-1], StokesA->b[eqn]);
     }
 }
 

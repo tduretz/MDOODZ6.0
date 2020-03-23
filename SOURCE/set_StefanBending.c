@@ -108,7 +108,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
 //            }
             
             Z = sqrt((zc - particles->x[np])*(zc + particles->x[np]));
-            printf("%2.2e\n", Z*scaling.L/1000);
+//            printf("%2.2e\n", Z*scaling.L/1000);
             if ( particles->z[np] <  Z  ) particles->phase[np] = 1;
 
         }
