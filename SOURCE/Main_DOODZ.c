@@ -109,8 +109,9 @@ int main( int nargs, char *args[] ) {
     // Initialise grid coordinates
     SetGridCoordinates( &mesh, &model, model.Nx, model.Nz );
     
-    // Initial solution fields (Fine mesh)
-    InitialiseSolutionFields( &mesh, &model );
+//    // Initial solution fields (Fine mesh)
+//    SetBCs( &mesh, &model, scaling , &particles, &materials );
+//    InitialiseSolutionFields( &mesh, &model );
     
     // Get grid indices
     GridIndices( &mesh );
@@ -192,7 +193,6 @@ int main( int nargs, char *args[] ) {
             if ( model.free_surf == 1 ) CleanUpSurfaceParticles( &particles, &mesh, topo, scaling ); /////////!!!!!!!!!
             
 #endif
-            
             if ( model.free_surf == 1 ) CleanUpSurfaceParticles( &particles, &mesh, topo, scaling ); /////////!!!!!!!!!
             
             Interp_P2N ( particles, materials.eta0,  &mesh, mesh.eta_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
@@ -212,16 +212,24 @@ int main( int nargs, char *args[] ) {
                 Interp_P2C ( particles, materials.rho,  &mesh, mesh.rho_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
             }
             
-            printf("*************************************\n");
-            printf("****** Initialize temperature *******\n");
-            printf("*************************************\n");
-            
+            // Initial solution fields (Fine mesh)
 #ifdef _NEW_INPUT_
             SetBCs_new( &mesh, &model, scaling , &particles, &materials );
 #else
             SetBCs( &mesh, &model, scaling , &particles, &materials );
 #endif
+            InitialiseSolutionFields( &mesh, &model );
             
+            printf("*************************************\n");
+            printf("****** Initialize temperature *******\n");
+            printf("*************************************\n");
+            
+//#ifdef _NEW_INPUT_
+//            SetBCs_new( &mesh, &model, scaling , &particles, &materials );
+//#else
+//            SetBCs( &mesh, &model, scaling , &particles, &materials );
+//#endif
+//
             // Get energy and related material parameters from particles
             Interp_P2C ( particles, materials.Cv,   &mesh, mesh.Cv,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
             Interp_P2C ( particles, materials.Qr,   &mesh, mesh.Qr,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
@@ -392,7 +400,6 @@ int main( int nargs, char *args[] ) {
         printf("****************** Time step %05d ******************\n", model.step);
         printf("*****************************************************\n");
         
-        
         //------------------------------------------------------------------------------------------------------------------------------//
         
         t_omp_step = (double)omp_get_wtime();
@@ -406,8 +413,8 @@ int main( int nargs, char *args[] ) {
         
         Initialise1DArrayInt( particles.generation,   particles.Nb_part  , 0 );
         
-        // Initial solution fields (Fine mesh)
-        if ( model.ispureshear_ale == 1 ) InitialiseSolutionFields( &mesh, &model );
+//        // Initial solution fields (Fine mesh)
+//        if ( model.ispureshear_ale == 1 ) InitialiseSolutionFields( &mesh, &model );
         
         //------------------------------------------------------------------------------------------------------------------------------//
         
@@ -588,6 +595,8 @@ int main( int nargs, char *args[] ) {
 #else
         SetBCs( &mesh, &model, scaling , &particles, &materials );
 #endif
+        // Reset fields and BC values if needed
+        if ( model.ispureshear_ale == 1 ) InitialiseSolutionFields( &mesh, &model );
         EvalNumberOfEquations( &mesh, &Stokes );
         if ( model.Newton == 1 ) EvalNumberOfEquations( &mesh, &Jacob  );
         SAlloc( &Stokes,  Stokes.neq );

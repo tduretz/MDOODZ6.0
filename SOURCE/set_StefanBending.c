@@ -48,7 +48,7 @@ void BuildInitialTopography( surface *topo, markers *topo_chain, params model, g
             // see PolarCoordinatesStuff.py
             topo_chain->z[k]     =  sqrt((Rad - topo_chain->x[k])*(Rad + topo_chain->x[k]));
         }
-        printf("topo = %2.2e tet = %2.2e\n", topo_chain->z[k]*scaling.L/1e3, tet*180/M_PI);
+//        printf("topo = %2.2e tet = %2.2e\n", topo_chain->z[k]*scaling.L/1e3, tet*180/M_PI);
         topo_chain->phase[k] = 0;
     }
     
@@ -68,16 +68,15 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double Lz = (double) (model.zmax - model.zmin) ;
     double T_init = (model.user2 + zeroC)/scaling.T;
     int    cyl = (int)model.user1;
-    double X, Z, xc = 0.0, zc = model.user0/scaling.L;
+    double X, Z, xc = 0.0;
     double Tgrad = model.user3/(scaling.T/scaling.L);
     double Tsurf = 293.0/(scaling.T);
     double a = 100e3/scaling.L, b = 10e3/scaling.L, Rad=6370e3/scaling.L;
     double maxAngle = 18.0/2.0*M_PI/180.0;
     double maxX     = model.xmax;
     double amp      = Rad*sin(M_PI/2.0) - Rad*sin(maxAngle+M_PI/2);
+    double zc = Rad + model.user0/scaling.L;
     
-    printf("AMP = %2.2e\n", amp*scaling.L/1000);
-
     // Loop on particles
     for( np=0; np<particles->Nb_part; np++ ) {
         
@@ -96,18 +95,23 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         // ------------------------- //
         
 //        // Mantle
-//        if ( cyl==0 ) {
-//            if (particles->z[np] < zc + b / (1 + pow(particles->x[np]/a,2.0)) ) {
-//                particles->phase[np] = 1;
-//            }
-//        }
-//        if ( cyl==1 ) {
+        if ( model.polar==0 ) {
+            if (particles->z[np] < zc) {// + b / (1.0 + pow(particles->x[np]/a, 2.0)) ) {
+                particles->phase[np] = 1;
+            }
+        }
+        if ( model.polar==1 ) {
 //            X = particles->x[np] * maxAngle/maxX + M_PI/2.0;
 //            Z = zc + Rad*sin(X) - Rad + 0*amp/2.0;
 //            if (particles->z[np] < Z )  {
 //                particles->phase[np] = 1;
 //            }
-//        }
+            
+            Z = sqrt((zc - particles->x[np])*(zc + particles->x[np]));
+            printf("%2.2e\n", Z*scaling.L/1000);
+            if ( particles->z[np] <  Z  ) particles->phase[np] = 1;
+
+        }
         
         // SANITY CHECK
         if (particles->phase[np] > model.Nb_phases) {
@@ -142,15 +146,241 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     int   NX, NZ, NCX, NCZ, NXVZ, NZVX;
     double dmin, VzBC, width = 1 / scaling.L, eta = 1e4 / scaling.eta ;
     double Lx, Lz, T1, T2, rate=model->EpsBG,  z_comp=-140e3/scaling.L;
-    double Vx_r, Vx_l, Vz_b, Vz_t, Vx_tot, Vz_tot;
-    double Lxinit = 1400e3/scaling.L, ShortSwitchV0 = 0.40;
-    double Vfix = (50.0/(1000.0*365.25*24.0*3600.0))/(scaling.L/scaling.t); // [50.0 == 5 cm/yr]
     double Inflow = 0.0, VzOutflow = 0.0, x, z, V, tet, r, Vx, Vz;
-    int    cyl = (int)model->user1;
     
     // Fix temperature
     double Tgrad = model->user3/(scaling.T/scaling.L);
     double Tsurf = 293.0/(scaling.T);
+    
+    // Inflow/Outflow velocities
+    double Vx_tot =  (model->xmax-model->xmin) * model->EpsBG;
+    double VxOut_W = 0.0, VzOut_W = 0.0, VxIn_W = 0.5*Vx_tot, VzIn_W = 0.0;
+    double VxOut_E = 0.0, VzOut_E = 0.0, VxIn_E =-0.5*Vx_tot, VzIn_E = 0.0;
+    double maxAngle = 18.0/2.0*M_PI/180.0, tet_W, alp_W, tet_E, alp_E;
+    
+    if (model->polar == 1) {
+        tet_W  = -maxAngle;
+        alp_W  = M_PI/2.0 - tet_W;
+        VxIn_W = (0.5*Vx_tot) * sin(alp_W);
+        VzIn_W =-(0.5*Vx_tot) * cos(alp_W);
+        printf("VxIn_W = %2.2e m/s VzIn_W = %2.2e m/s \n", VxIn_W*scaling.V, VzIn_W*scaling.V);
+        
+        tet_E  = maxAngle;
+        alp_E  = M_PI/2.0 - tet_E;
+        VxIn_E =-(0.5*Vx_tot) * sin(alp_E);
+        VzIn_E = (0.5*Vx_tot) * cos(alp_E);
+        printf("VxIn_E = %2.2e m/s VzIn_E = %2.2e m/s \n", VxIn_E*scaling.V, VzIn_E*scaling.V);
+    }
+    
+
+    
+    printf("Vx_tot = %2.2e m/s --- VxW = %2.2e m/s --- VxE = %2.2e m/s --- EpsBG = %2.2e 1/s \n", Vx_tot*scaling.V, VxIn_W*scaling.V, VxIn_E*scaling.V, model->EpsBG*scaling.E);
+    
+    //-----------------------------------------------------//
+    
+    // Declare and allocate boundary velocity arrays
+    double HLit   = 100e3/scaling.L; // scale values of lithosphere thickness
+    double *VxBC_W, *VxBC_E, *VzBC_W, *VzBC_E, top_W =  model->zmin, top_E = model->zmin;
+    int c_E, c_W;
+    VxBC_W = DoodzCalloc(mesh->Nz+1, sizeof(double));
+    VxBC_E = DoodzCalloc(mesh->Nz+1, sizeof(double));
+    VzBC_W = DoodzCalloc(mesh->Nz+0, sizeof(double));
+    VzBC_E = DoodzCalloc(mesh->Nz+0, sizeof(double));
+    
+    // Find how many cells have inflow/outflow on each side of the model
+    int nc_in_W=0, nc_out_W=0, nc_in_E=0, nc_out_E=0;
+    
+    // Find top W/E
+    for (l=0; l<mesh->Nz+1; l++) {
+        
+        // Vx node index
+        c_W =           0  + l*(mesh->Nx);
+        c_E = (mesh->Nx-1) + l*(mesh->Nx);
+        
+        if (mesh->BCu.type[c_W] != 30  && mesh->zvx_coord[l]>top_W) top_W = mesh->zvx_coord[l];
+        if (mesh->BCu.type[c_E] != 30  && mesh->zvx_coord[l]>top_E) top_E = mesh->zvx_coord[l];
+    }
+    
+    printf("Top W = %2.2e --- Top E = %2.2e\n", top_W*scaling.L, top_E*scaling.L);
+    
+    // Loop through Vx nodes and count which cells are inside the mode and have inflow/outflow
+    for (l=0; l<mesh->Nz+1; l++) {
+        
+            // Vx node index
+            c_W =           0  + l*(mesh->Nx);
+            c_E = (mesh->Nx-1) + l*(mesh->Nx);
+            
+            // West
+            if (l>0 && l<mesh->Nz) {
+                if ( mesh->BCu.type[c_W] != 30 ) {
+                    if (mesh->zvx_coord[l] > top_W - HLit) {
+                        nc_in_W++;
+                    }
+                    else {
+                        nc_out_W++;
+                    }
+                }
+            }
+            
+            // East
+            if (l>0 && l<mesh->Nz) {
+                if ( mesh->BCu.type[c_E] != 30 ) {
+                    if (mesh->zvx_coord[l] > top_E - HLit) {
+                        nc_in_E++;
+                    }
+                    else {
+                        nc_out_E++;
+                    }
+                }
+            }
+    }
+    
+    // Compute outflow velocities
+    VxOut_W = -VxIn_W*nc_in_W/nc_out_W;
+    VxOut_E = -VxIn_E*nc_in_E/nc_out_E;
+    
+    if (model->polar == 1) {
+        VzOut_W =-VxOut_W * cos(alp_W);
+        VxOut_W = VxOut_W * sin(alp_W);
+        VzOut_E =-VxOut_E * cos(alp_E);
+        VxOut_E = VxOut_E * sin(alp_E);
+    }
+    
+    printf("Vxin_W = %2.2e Vzin_W = %2.2e VxOut_W = %2.2e VzOut_W = %2.2e\n", VxIn_W*scaling.V, VzIn_W*scaling.V, VxOut_W*scaling.V, VzOut_W*scaling.V);
+    printf("Vxin_E = %2.2e Vzin_E = %2.2e VxOut_E = %2.2e VzOut_E = %2.2e\n", VxIn_E*scaling.V, VzIn_E*scaling.V, VxOut_E*scaling.V, VzOut_E*scaling.V);
+    
+    // Loop through Vx nodes and assert BC values
+    for (l=0; l<mesh->Nz+1; l++) {
+        
+            // Vx node index
+            c_W = 0 + l*(mesh->Nx);
+            c_E = (mesh->Nx-1) + l*(mesh->Nx);
+            
+            // West
+            if  (l>0 && l<mesh->Nz) {
+                if ( mesh->BCu.type[c_W] != 30 ) {
+                    if (mesh->zvx_coord[l] > top_W - HLit) {
+                        VxBC_W[l] = VxIn_W;
+                    }
+                    else {
+                        VxBC_W[l] = VxOut_W;
+                    }
+                }
+            }
+            
+            // East
+            if  (l>0 && l<mesh->Nz) {
+                if ( mesh->BCu.type[c_E] != 30 ) {
+                    if (mesh->zvx_coord[l] > top_E - HLit) {
+                        VxBC_E[l] = VxIn_E;
+                    }
+                    else {
+                        VxBC_E[l] = VxOut_E;
+                    }
+                }
+            }
+    }
+    
+    // Loop through Vz nodes and assert BC values
+    for (l=0; l<mesh->Nz; l++) {
+        
+        // Vz node index
+        c_W = 0 + l*(mesh->Nx+1);
+        c_E = (mesh->Nx) + l*(mesh->Nx+1);
+        
+        // West
+            if ( mesh->BCv.type[c_W] != 30 ) {
+                if (mesh->zg_coord[l] > top_W - HLit) {
+                    VzBC_W[l] = VzIn_W;
+                }
+                else {
+                    VzBC_W[l] = VzOut_W;
+                }
+            }
+        
+        // East
+            if ( mesh->BCv.type[c_E] != 30 ) {
+                if (mesh->zg_coord[l] > top_E - HLit) {
+                    VzBC_E[l] = VzIn_E;
+                }
+                else {
+                    VzBC_E[l] = VzOut_E;
+                }
+            }
+    }
+    
+    // Smooth using explicit diffusion solver
+    double qzS, qzN, knum=1, dtnum=1/knum*model->dz*model->dz/2, tnum=0.001, VxN, VxS, VzN, VzS;
+    int    it, nit=(int)(tnum/(dtnum));
+
+    // Loop through Vx nodes and assert BC values
+    for (it=0; it<nit; it++) {
+        for (l=0; l<mesh->Nz+1; l++) {
+
+                // Vx node index
+                c_W = 0 + l*(mesh->Nx);
+                c_E = (mesh->Nx-1) + l*(mesh->Nx);
+
+                // West
+                    if ( mesh->BCu.type[c_W] != 30 ) {
+                        if (l==0          ) VxS = VxOut_W;
+                        else VxS = VxBC_W[l-1];
+                        if (l==mesh->Nz || mesh->BCu.type[c_W+mesh->Nx] == 30 ) VxN = VxIn_W;
+                        else VxN = VxBC_W[l+1];
+                        qzN = (VxN - VxBC_W[l  ])/model->dz;
+                        qzS = (VxBC_W[l  ] - VxS)/model->dz;
+                        VxBC_W[l] = VxBC_W[l] + knum*dtnum/model->dz*(qzN-qzS);
+                    }
+
+                // East
+            if ( mesh->BCu.type[c_E] != 30 ) {
+                        if (l==0          ) VxS = VxOut_E;
+                        else VxS = VxBC_E[l-1];
+                        if (l==mesh->Nz || mesh->BCu.type[c_E+mesh->Nx] == 30 ) VxN = VxIn_E;
+                        else VxN = VxBC_E[l+1];
+                        qzN = (VxN - VxBC_E[l  ])/model->dz;
+                        qzS = (VxBC_E[l  ] - VxS)/model->dz;
+                        VxBC_E[l] = VxBC_E[l] + knum*dtnum/model->dz*(qzN-qzS);
+                    }
+            }
+        
+        for (l=0; l<mesh->Nz; l++) {
+
+            // Vx node index
+            c_W = 0 + l*(mesh->Nx+1);
+            c_E = (mesh->Nx) + l*(mesh->Nx+1);
+
+            // West
+            if ( mesh->BCv.type[c_W] != 30 ) {
+                if (l==0          ) VzS = VzOut_W;
+                else VzS = VzBC_W[l-1];
+                if (l==mesh->Nz || mesh->BCv.type[c_W+mesh->Nx+1] == 30 ) VzN = VzIn_W;
+                else VzN = VzBC_W[l+1];
+                qzN = (VzN - VzBC_W[l  ])/model->dz;
+                qzS = (VzBC_W[l  ] - VzS)/model->dz;
+                VzBC_W[l] += knum*dtnum/model->dz*(qzN-qzS);
+            }
+
+            // East
+            if ( mesh->BCv.type[c_E] != 30 ) {
+                if (l==0          ) VzS = VzOut_E;
+                else VzS = VzBC_E[l-1];
+                if (l==mesh->Nz || mesh->BCv.type[c_E+mesh->Nx+1] == 30 ) VzN = VzIn_E;
+                else VzN = VzBC_E[l+1];
+                qzN = (VzN - VzBC_E[l  ])/model->dz;
+                qzS = (VzBC_E[l  ] - VzS)/model->dz;
+                VzBC_E[l] += knum*dtnum/model->dz*(qzN-qzS);
+            }
+            
+//            printf("%2.2e\n", VzBC_E[l]-VzBC_W[l]);
+
+        }
+        
+    }
+    
+    
+    //-----------------------------------------------------//
+
     
     NX  = mesh->Nx;
     NZ  = mesh->Nz;
@@ -158,24 +388,6 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     NCZ = NZ-1;
     NXVZ = NX+1;
     NZVX = NZ+1;
-    
-    X  = malloc (NX*sizeof(double));
-    Z  = malloc (NZ*sizeof(double));
-    XC = malloc (NCX*sizeof(double));
-    ZC = malloc (NCZ*sizeof(double));
-    
-    for (k=0; k<NX; k++) {
-        X[k] = mesh->xg_coord[k];
-    }
-    for (k=0; k<NCX; k++) {
-        XC[k] = mesh->xc_coord[k];
-    }
-    for (l=0; l<NZ; l++) {
-        Z[l] = mesh->zg_coord[l];
-    }
-    for (l=0; l<NCZ; l++) {
-        ZC[l] = mesh->zc_coord[l];
-    }
     
     // Fix temperature
     for (l=0; l<mesh->Nz-1; l++) {
@@ -208,16 +420,16 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
 				
 				c = k + l*(mesh->Nx);
                 
-                x  = mesh->xg_coord[k];
-                z  = mesh->zvx_coord[l];
-                Vx = -mesh->xg_coord[k] * model->EpsBG;
+//                x  = mesh->xg_coord[k];
+//                z  = mesh->zvx_coord[l];
+//                Vx = -mesh->xg_coord[k] * model->EpsBG;
                 
-                if (cyl==1) {
-                    r           = sqrt(x*x + z*z);
-                    tet         = atan(z/x);
-                    V           = sqrt(Vx*Vx);
-                    Vx          = -V*sin(tet);
-                }
+//                if (cyl==1) {
+////                    r           = sqrt(x*x + z*z);
+////                    tet         = atan(z/x);
+////                    V           = sqrt(Vx*Vx);
+////                    Vx          = -V*sin(tet);
+//                }
                 
                 if ( mesh->BCu.type[c] != 30 ) {
                     
@@ -228,16 +440,28 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                     // Matching BC nodes WEST
                     if (k==0 ) {
                         mesh->BCu.type[c] = 0;
-                        mesh->BCu.val[c]  = Vx;
-                        Inflow           += fabs(mesh->BCu.val[c])*model->dz;
+                        mesh->BCu.val[c]  = VxBC_W[l];
                     }
                     
                     // Matching BC nodes EAST
                     if (k==mesh->Nx-1 ) {
                         mesh->BCu.type[c] = 0;
-                        mesh->BCu.val[c]  = Vx;
-                        Inflow           += fabs(mesh->BCu.val[c])*model->dz;
+                        mesh->BCu.val[c]  = VxBC_E[l];
                     }
+                    
+//                    // Matching BC nodes WEST
+//                    if (k==0 ) {
+//                        mesh->BCu.type[c] = 0;
+//                        mesh->BCu.val[c]  = Vx;
+//                        Inflow           += fabs(mesh->BCu.val[c])*model->dz;
+//                    }
+//
+//                    // Matching BC nodes EAST
+//                    if (k==mesh->Nx-1 ) {
+//                        mesh->BCu.type[c] = 0;
+//                        mesh->BCu.val[c]  = Vx;
+//                        Inflow           += fabs(mesh->BCu.val[c])*model->dz;
+//                    }
                     
                     // Free slip SOUTH
                     if (l==0  ) {
@@ -255,8 +479,8 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
 			}
 		}
     
-    VzOutflow = -Inflow/(model->xmax-model->xmin);
-    printf("VzOutflow = %2.2e\n", VzOutflow*scaling.V);
+//    VzOutflow = -Inflow/(model->xmax-model->xmin);
+//    printf("VzOutflow = %2.2e\n", VzOutflow*scaling.V);
 		
 	
 	/* --------------------------------------------------------------------------------------------------------*/
@@ -283,17 +507,16 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
 				
 				c  = k + l*(mesh->Nx+1);
                 
-                x  = mesh->xvz_coord[k];
-                z  = mesh->zg_coord[l];
-                Vz = 0.0;
-                
-                if (cyl==1) {
-                    r           = sqrt(x*x + z*z);
-                    tet         = atan(z/x);
-                    V           = sqrt(Vx*Vx);
-                    Vz          =  V*cos(tet);
-//                    printf("%2.2e\n", Vz*scaling.V);
-                }
+//                x  = mesh->xvz_coord[k];
+//                z  = mesh->zg_coord[l];
+//                Vz = 0.0;
+//                if (cyl==1) {
+//                    r           = sqrt(x*x + z*z);
+//                    tet         = atan(z/x);
+//                    V           = sqrt(Vx*Vx);
+//                    Vz          =  V*cos(tet);
+////                    printf("%2.2e\n", Vz*scaling.V);
+//                }
                 
                 if ( mesh->BCv.type[c] != 30 ) {
                     
@@ -304,25 +527,25 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                     // Matching BC nodes SOUTH
                     if (l==0 ) {
                         mesh->BCv.type[c] = 0;
-                        mesh->BCv.val[c]  = VzOutflow;//mesh->zg_coord[l] * model->EpsBG;
+                        mesh->BCv.val[c]  = 1e-10/scaling.V;//VzOutflow;//mesh->zg_coord[l] * model->EpsBG;
                     }
                     
                     // Matching BC nodes NORTH
                     if (l==mesh->Nz-1 ) {
                         mesh->BCv.type[c] = 0;
-                        mesh->BCv.val[c]  = mesh->zg_coord[l] * model->EpsBG;
+                        mesh->BCv.val[c]  = 0.0;//mesh->zg_coord[l] * model->EpsBG;
                     }
                     
                     // Non-matching boundary WEST
                     if ( (k==0) ) {
                         mesh->BCv.type[c] =   11;
-                        mesh->BCv.val[c]  =   Vz;
+                        mesh->BCv.val[c]  =   VzBC_W[l];
                     }
                     
                     // Non-matching boundary EAST
                     if ( (k==mesh->Nx) ) {
                         mesh->BCv.type[c] =   11;
-                        mesh->BCv.val[c]  =   Vz;
+                        mesh->BCv.val[c]  =   VzBC_E[l];
                     }
                 }
 				
@@ -430,12 +653,12 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                 
 			}
 		}
-		
     
-	free(X);
-	free(Z);
-	free(XC);
-	free(ZC);
+    DoodzFree( VxBC_W );
+    DoodzFree( VxBC_E );
+    DoodzFree( VzBC_W );
+    DoodzFree( VzBC_E );
+
 	printf("Velocity and pressure were initialised\n");
 	printf("Boundary conditions were set up\n");
 	

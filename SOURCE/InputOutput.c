@@ -1075,7 +1075,6 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         // Density models
         materials->density_model[k]     = (int)ReadMatProps( fin, "density_model",     k,    1  );
         materials->phase_diagram[k]     = (int)ReadMatProps( fin, "phase_diagram",     k,   -1  );
-
         // Viscoplasticity
         materials->n_vp[k]      = ReadMatProps( fin, "n_vp",   k,       1.0 ) ;
         materials->eta_vp[k]    = ReadMatProps( fin, "eta_vp", k,       0.0 ) / scaling->S / pow(scaling->t, 1.0/materials->n_vp[k]);
@@ -1085,7 +1084,6 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
             printf ("Phase %0d has no determined flow mechanism\n Simulation will end now!\n", k);
             exit(12);
         }
-        
         // Print material parameters
         printf("----------------------------------------- MODEL DOMAIN ------------------------------------------\n");
         printf("Xmin   = %2.1lf  km         Xmax   = %2.1lf  km     Nx   = %3d    dx   = %.2lf m\n", (model->xmin*scaling->L)/1e3, (model->xmax*scaling->L)/1e3, model->Nx, model->dx*scaling->L);
