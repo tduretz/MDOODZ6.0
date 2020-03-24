@@ -49,24 +49,8 @@ void AdvectFreeSurf( markers *topo_chain, params model, scale scaling ) {
 
 void SetTopoChainHorizontalCoords( surface *topo, markers *topo_chain, params model, grid Mmesh, scale scaling ) {
     
-//        int k, Nx=model.Nx, count=0, ip, fact=4;
-//        double dxm=model.dx/(fact+1);
-//
-//        // For each cell
-//        for ( k=0; k<Nx-1; k++ ) {
-//            // Initialise marker x coordinate and topography
-//            for ( ip=0; ip<fact; ip++ ) {
-//                topo_chain->x[count]     = dxm + ip*dxm + Mmesh.xg_coord[k];
-//                topo_chain->z[count]     = 0.0/scaling.L;
-//                topo_chain->phase[count] = 0;
-//                count++;
-//            }
-//        }
-//        topo_chain->Nb_part = count;
-//
-//        printf( "Topographic chain initialised with %d markers\n", topo_chain->Nb_part);
-    
-    int k, fact=24, counter;
+    int fact = 23; // Best to use an odd number of markers --> symmetric
+    int k, counter;
     double dx = model.dx/fact;
     topo_chain->Nb_part = model.Nx*fact-(fact-1) - 2;
     
@@ -75,17 +59,7 @@ void SetTopoChainHorizontalCoords( surface *topo, markers *topo_chain, params mo
 
         topo_chain->x[k]     = model.xmin + k*dx + dx;
         topo_chain->z[k]     = 0.0/scaling.L;
-        //        topo_chain->x0[k]    = topo_chain->x[k];
-        //        topo_chain->z0[k]    = topo_chain->z[k];
         topo_chain->phase[k] = 0;
-
-        //        // Save indices of some selected particles
-        //        if ( k%fact == 0 ) {
-        //            topo->VertInd[counter] = k-1+fact;
-        //            counter++;
-        //        }
-        //        if ( k == 0 )  topo->VertInd[0] = 0;
-        //        if ( k == topo_chain->Nb_part-1 )  topo->VertInd[model.Nx-1] = topo_chain->Nb_part-1;
     }
     printf( "Topographic chain initialised with %d markers\n", topo_chain->Nb_part );
 }
@@ -442,17 +416,22 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
         if (model.ispureshear_ale <= 0 && k==0    ) topo->height[k]=topo->height[k+1];
     }
     
-    double sumh=0.0;
-    if ( model.topografix == 1 ) {
-        for (k=0;k<Nx;k++) {
-            sumh += topo->height[k];
-        }
-        sumh /= Nx;
-        
-        for (k=0;k<Nx;k++) {
-            topo->height[k] -= sumh;
-        }
-    }
+//    for (k=0;k<10;k++) printf(" %2.6e\n" , (topo->height[k] - topo->height[Nx-k-1])*scaling.L);
+//    for (k=0;k<10;k++) printf(" %2.6e\n" , (Wm[k] - Wm[Nx-k-1]));
+
+    
+    
+//    double sumh=0.0;
+//    if ( model.topografix == 1 ) {
+//        for (k=0;k<Nx;k++) {
+//            sumh += topo->height[k];
+//        }
+//        sumh /= Nx;
+//
+//        for (k=0;k<Nx;k++) {
+//            topo->height[k] -= sumh;
+//        }
+//    }
     
     // Free memory
     DoodzFree(Xc_virtual);
@@ -930,6 +909,9 @@ void SurfaceDensityCorrection( grid *mesh, params model, surface topo, scale sca
                 h0               = fabs(h - mesh->zc_coord[j]);
                 mesh->rho_n[c1] *= h0/dz;
                 mesh->rho_n[c1]  = mesh->rho_n[c1];
+//                if (i==0) printf("SurfaceDensityCorrection WEST %2.2e x= %2.10e z= %2.10e h= %2.10e\n", mesh->rho_n[c1]*scaling.rho, mesh->xc_coord[i], mesh->zc_coord[i], h);
+//                if (i==ncx-1) printf("SurfaceDensityCorrection EAST %2.2e x= %2.10e z= %2.10e h= %2.10e\n", mesh->rho_n[c1]*scaling.rho, mesh->xc_coord[i], mesh->zc_coord[i] , h);
+
             }
             if ( mesh->BCp.type[c1] == 30 || mesh->BCp.type[c1] == 31 ) {
                 mesh->rho_app_n[c1] = 1.0/scaling.rho;

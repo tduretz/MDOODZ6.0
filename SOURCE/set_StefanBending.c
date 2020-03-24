@@ -68,14 +68,15 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double Lz = (double) (model.zmax - model.zmin) ;
     double T_init = (model.user2 + zeroC)/scaling.T;
     int    cyl = (int)model.user1;
-    double X, Z, xc = 0.0;
+    double X, Z;
     double Tgrad = model.user3/(scaling.T/scaling.L);
     double Tsurf = 293.0/(scaling.T);
     double a = 100e3/scaling.L, b = 10e3/scaling.L, Rad=6370e3/scaling.L;
     double maxAngle = 18.0/2.0*M_PI/180.0;
     double maxX     = model.xmax;
     double amp      = Rad*sin(M_PI/2.0) - Rad*sin(maxAngle+M_PI/2);
-    double zc = Rad + model.user0/scaling.L;
+    double zMoho = Rad + model.user0/scaling.L;
+    double zLAB  = Rad + model.user1/scaling.L;
     
     // Loop on particles
     for( np=0; np<particles->Nb_part; np++ ) {
@@ -89,27 +90,24 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         particles->rho[np]   = 0;
 //        particles->T[np]     = T_init;
         particles->T[np]     = Tsurf + Tgrad*particles->z[np];
-        X = particles->x[np]-xc;
-        Z = particles->z[np]-zc;
+
     
         // ------------------------- //
         
 //        // Mantle
         if ( model.polar==0 ) {
-            if (particles->z[np] < zc) {// + b / (1.0 + pow(particles->x[np]/a, 2.0)) ) {
+            if (particles->z[np] < zMoho) {// + b / (1.0 + pow(particles->x[np]/a, 2.0)) ) {
                 particles->phase[np] = 1;
+            }
+            if (particles->z[np] < zLAB) {// + b / (1.0 + pow(particles->x[np]/a, 2.0)) ) {
+                particles->phase[np] = 2;
             }
         }
         if ( model.polar==1 ) {
-//            X = particles->x[np] * maxAngle/maxX + M_PI/2.0;
-//            Z = zc + Rad*sin(X) - Rad + 0*amp/2.0;
-//            if (particles->z[np] < Z )  {
-//                particles->phase[np] = 1;
-//            }
-            
-            Z = sqrt((zc - particles->x[np])*(zc + particles->x[np]));
-//            printf("%2.2e\n", Z*scaling.L/1000);
+            Z = sqrt((zMoho - particles->x[np])*(zMoho + particles->x[np]));
             if ( particles->z[np] <  Z  ) particles->phase[np] = 1;
+            Z = sqrt((zLAB  - particles->x[np])*(zLAB  + particles->x[np]));
+            if ( particles->z[np] <  Z  ) particles->phase[np] = 2;
 
         }
         
@@ -147,6 +145,7 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     double dmin, VzBC, width = 1 / scaling.L, eta = 1e4 / scaling.eta ;
     double Lx, Lz, T1, T2, rate=model->EpsBG,  z_comp=-140e3/scaling.L;
     double Inflow = 0.0, VzOutflow = 0.0, x, z, V, tet, r, Vx, Vz;
+    int    OutflowOnSides = (int)model->user4;
     
     // Fix temperature
     double Tgrad = model->user3/(scaling.T/scaling.L);
@@ -156,6 +155,7 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     double Vx_tot =  (model->xmax-model->xmin) * model->EpsBG;
     double VxOut_W = 0.0, VzOut_W = 0.0, VxIn_W = 0.5*Vx_tot, VzIn_W = 0.0;
     double VxOut_E = 0.0, VzOut_E = 0.0, VxIn_E =-0.5*Vx_tot, VzIn_E = 0.0;
+    double VzOut_S = 0.0;
     double maxAngle = 18.0/2.0*M_PI/180.0, tet_W, alp_W, tet_E, alp_E;
     
     if (model->polar == 1) {
@@ -179,9 +179,10 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     //-----------------------------------------------------//
     
     // Declare and allocate boundary velocity arrays
-    double HLit   = 100e3/scaling.L; // scale values of lithosphere thickness
+    double HLit   = 150e3/scaling.L; // scale values of lithosphere thickness
     double *VxBC_W, *VxBC_E, *VzBC_W, *VzBC_E, top_W =  model->zmin, top_E = model->zmin;
     int c_E, c_W;
+    double dx = model->dx, dz = model->dz;
     VxBC_W = DoodzCalloc(mesh->Nz+1, sizeof(double));
     VxBC_E = DoodzCalloc(mesh->Nz+1, sizeof(double));
     VzBC_W = DoodzCalloc(mesh->Nz+0, sizeof(double));
@@ -236,8 +237,14 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     }
     
     // Compute outflow velocities
-    VxOut_W = -VxIn_W*nc_in_W/nc_out_W;
-    VxOut_E = -VxIn_E*nc_in_E/nc_out_E;
+    if (OutflowOnSides==1) {
+        VxOut_W = -VxIn_W*nc_in_W/nc_out_W;
+        VxOut_E = -VxIn_E*nc_in_E/nc_out_E;
+    }
+    else {
+        VzOut_S = -( fabs(VxIn_W*nc_in_W*dz) + fabs(VxIn_E*nc_in_E*dz) ) / (mesh->Nx-1)/dx;
+        printf( "VzOut_S = %2.2e m/s\n", VzOut_S*scaling.V);
+    }
     
     if (model->polar == 1) {
         VzOut_W =-VxOut_W * cos(alp_W);
@@ -371,7 +378,7 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                 qzS = (VzBC_E[l  ] - VzS)/model->dz;
                 VzBC_E[l] += knum*dtnum/model->dz*(qzN-qzS);
             }
-            
+
 //            printf("%2.2e\n", VzBC_E[l]-VzBC_W[l]);
 
         }
@@ -506,18 +513,7 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
 			for (k=0; k<mesh->Nx+1; k++) {
 				
 				c  = k + l*(mesh->Nx+1);
-                
-//                x  = mesh->xvz_coord[k];
-//                z  = mesh->zg_coord[l];
-//                Vz = 0.0;
-//                if (cyl==1) {
-//                    r           = sqrt(x*x + z*z);
-//                    tet         = atan(z/x);
-//                    V           = sqrt(Vx*Vx);
-//                    Vz          =  V*cos(tet);
-////                    printf("%2.2e\n", Vz*scaling.V);
-//                }
-                
+
                 if ( mesh->BCv.type[c] != 30 ) {
                     
                     // Internal points:  -1
@@ -527,7 +523,7 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                     // Matching BC nodes SOUTH
                     if (l==0 ) {
                         mesh->BCv.type[c] = 0;
-                        mesh->BCv.val[c]  = 1e-10/scaling.V;//VzOutflow;//mesh->zg_coord[l] * model->EpsBG;
+                        mesh->BCv.val[c]  = VzOut_S;//VzOutflow;//mesh->zg_coord[l] * model->EpsBG;
                     }
                     
                     // Matching BC nodes NORTH

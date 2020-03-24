@@ -58,23 +58,24 @@ no_markers      = 0
 eta_avg         = 1
 advection       = 0
 cpc             = -1
-polar           = 1
+polar           = 0
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = 1e-15
-user0           =-25e3   / Moho depth [m]
-user1           = 1      / cylindrical cartesian
+user0           =-35e3   / Moho depth [m]
+user1           =-120e3  / LAB depth
 user2           = 500    / background T [C]
 user3           = -15e-3 / [C/km]
+user4           = 1      / 0:Bottom outflow / 1:Lateral outflow 
 
 /**** GRAVITY ****/
 gx = 0.0000
 gz =-9.81
 
 /**** MAT PROPERTIES ****/
-Nb_phases = 2
+Nb_phases = 3
 
-/**** PHASE 1 ****/
+/**** PHASE 0 ****/
 ID   = 0
 rho  = 2800.00 / matrix
 mu   = 1e10
@@ -98,7 +99,7 @@ eta0 = 1e23
 npwl = 1
 Qpwl = 0
 
-/**** PHASE 2 ****/
+/**** PHASE 1 ****/
 ID   = 1
 rho  = 3300.00 / inclusion
 mu   = 1e10
@@ -118,7 +119,31 @@ linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
 gsel = 0             / grain size evo.
-eta0 = 1e21
+eta0 = 1e22
+npwl = 1
+Qpwl = 0
+
+/**** PHASE 2 ****/
+ID   = 2
+rho  = 3300.00 / inclusion
+mu   = 1e10
+Cv   = 1050
+k    = 2.5
+Qr   = 0
+C    = 2e90
+phi  = 30
+eta_vp = 1e21
+Slim = 500e9
+alp  = 10.0e-6
+bet  = 1e-11
+drho = 0
+cstv = 1             / constant visc law
+pwlv = 0             / disloc. creep
+linv = 0             / diff. creep
+gbsv = 0             / grain boundary sliding
+expv = 0             / peierls creep
+gsel = 0             / grain size evo.
+eta0 = 1e19
 npwl = 1
 Qpwl = 0
 
