@@ -1020,7 +1020,7 @@ void UpdateParticleGrainSize( grid* mesh, scale scaling, params model, markers* 
 
 void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* particles, mat_prop* materials ) {
     
-    DoodzFP *T_inc_mark, *Tm0, dtm, *dTms, *dTgr, *dTmr;
+    DoodzFP *T_inc_mark, *Tm0, dtm, *dTms, *dTgr, *dTmr, *rho_part;
     double *Tg0, *dTgs, dx=model.dx, dz=model.dz, d=1.0;
     int Nx, Nz, Ncx, Ncz, k, c0, p;
     Nx = mesh->Nx; Ncx = Nx-1;
@@ -1035,6 +1035,9 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
         Tm0  = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
         dTms = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
         dTmr = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        rho_part = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        
+        Interp_Grid2P( *particles, rho_part, mesh, mesh->rho_n, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
         
         // Old temperature grid
 #pragma omp parallel for shared(mesh, Tg0) private(c0) firstprivate(Ncx,Ncz)
@@ -1042,21 +1045,32 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
             if (mesh->BCt.type[c0] != 30) Tg0[c0] = mesh->T[c0] - mesh->dT[c0];
         }
         
+//        MinMaxArrayTag( Tg0,   scaling.T,    (mesh->Nx)*(mesh->Nz),       "Tg0",   mesh->BCp.type    );
+        
         // Old temperature grid --> markers
         Interp_Grid2P( *particles, Tm0, mesh, Tg0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
+        
+//        MinMaxArray(Tm0, scaling.T, particles->Nb_part, "Tm0");
+
         
         // Compute subgrid temperature increments on markers
 #pragma omp parallel for shared(particles,Tm0,dTms) private(k,p,dtm) firstprivate(materials,dx,dz,model,d)
         for ( k=0; k<particles->Nb_part; k++ ) {
             if (particles->phase[k] != -1) {
                 p = particles->phase[k];
-                dtm     = materials->Cv[p]* particles->rho[k]/ (materials->k[p] * (1.0/dx/dx + 1.0/dz/dz));
+                dtm     = materials->Cv[p] * rho_part[k]/ (materials->k[p] * (1.0/dx/dx + 1.0/dz/dz));
+//                dtm     = materials->Cv[p]* particles->rho[k]/ (materials->k[p] * (1.0/dx/dx + 1.0/dz/dz));
                 dTms[k] = -( particles->T[k] - Tm0[k] ) * (1.0-exp(-d*model.dt/dtm));
             }
         }
+//        MinMaxArray(dTms, scaling.T, particles->Nb_part, "dTms");
+
         
         // Subgrid temperature increments markers --> grid
         Interp_P2C ( *particles, dTms, mesh, dTgs, mesh->xg_coord, mesh->zg_coord, 1, 0 );
+        
+//        MinMaxArrayTag( dTgs,   scaling.T,    (mesh->Nx)*(mesh->Nz),       "dTgs",   mesh->BCp.type    );
+
         
         // Remaining temperature increments on the grid
 #pragma omp parallel for shared(mesh, dTgs, dTgr) private(c0) firstprivate(Ncx,Ncz)
@@ -1064,8 +1078,13 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
             if (mesh->BCt.type[c0] != 30) dTgr[c0] = mesh->dT[c0] - dTgs[c0];
         }
         
+//        MinMaxArrayTag( dTgr,   scaling.T,    (mesh->Nx)*(mesh->Nz),       "dTgr",   mesh->BCp.type    );
+
         // Remaining temperature increments grid --> markers
         Interp_Grid2P( *particles, dTmr, mesh, dTgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
+        
+//        MinMaxArray(dTmr, scaling.T, particles->Nb_part, "dTmr");
+
         
         // Final temperature update on markers
 #pragma omp parallel for shared(particles,dTms,dTmr) private(k)
@@ -1078,6 +1097,7 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
         DoodzFree(dTmr);
         DoodzFree(dTgs);
         DoodzFree(dTgr);
+        DoodzFree(rho_part);
     }
     else {
         
@@ -1878,6 +1898,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 mesh->detadgxz_n[c0] *= pow(mesh->eta_n[c0],2.0);
                 mesh->detadp_n[c0]   *= pow(mesh->eta_n[c0],2.0);
                 if (isinf (mesh->eta_phys_n[c0]) ) {
+                    printf("Problem on cell centers:\n");
                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_n[p][c0]);
                     printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e\n", mesh->mu_n[c0], Tn, Pn, mesh->d0[c0], mesh->phi[c0],  mesh->eii_n[c0],  mesh->tii0_n[c0], mesh->exxd[c0], mesh->exz_n[c0], mesh->sxxd0[c0], mesh->sxz0_n[c0]);
                     printf("flag %d nb part cell = %d cell index = %d\n", mesh->BCp.type[c0],mesh->nb_part_cell[c0], c0);
@@ -2008,6 +2029,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 mesh->detadgxz_s[c1] *= pow(mesh->eta_s[c1],2.0);
                 mesh->detadp_s[c1]   *= pow(mesh->eta_s[c1],2.0);
                 if (isinf (mesh->eta_phys_s[c1]) ) {
+                    printf("Problem on cell vertices:\n");
                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_s[p][c1]);
                     printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e \n", mesh->mu_s[c1],  mesh->eii_s[c1],  mesh->tii0_s[c1], mesh->exxd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->sxz0[c1]);
                     printf("x=%2.2e z=%2.2e\n", mesh->xg_coord[k]*scaling->L/1000, mesh->zg_coord[l]*scaling->L/1000);
@@ -2291,9 +2313,16 @@ void ShearModulusGrid( grid* mesh, mat_prop materials, params model, scale scali
                         mesh->mu_s[c1] += mesh->phase_perc_s[p][c1] *  log(materials.mu[p]);
                     }
                 }
+                
+                if ( isinf(1.0/mesh->mu_s[c1]) ) {
+                    printf("Aaaaargh...!! %2.2e %2.2e %2.2e \n", mesh->phase_perc_s[0][c1], mesh->phase_perc_s[1][c1], mesh->phase_perc_s[2][c1]);
+                }
+                
                 // Post-process for geometric/harmonic averages
                 if ( average==1 ) mesh->mu_s[c1] = 1.0/mesh->mu_s[c1];
                 if ( average==2 ) mesh->mu_s[c1] = exp(mesh->mu_s[c1]);
+                
+               
                 
             }
         }
@@ -2310,13 +2339,7 @@ void UpdateParticlettrans( grid *mesh, scale *scaling, params model, markers *pa
     int Nx, Nz, Ncx, Ncz, k, c0, p;
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
-    
-//    printf("=============== UpdateParticlettrans ============\n");
-//    MinMaxArrayTag( mesh->ttrans0_n,   scaling->t,    Ncx*Ncz,   "ttrans0_n",   mesh->BCp.type );
-//    MinMaxArrayTag( mesh->ttrans_n,   scaling->t,    Ncx*Ncz,   "ttrans_n",   mesh->BCp.type );
-    
-    //printf("Pc = %2.2e; Preac = %2.2e; Pold = %2.2e\n", Pc*scaling->S, Preac*scaling->S, Pold*scaling->S);
-    
+
     ttrans_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
     ttrans_inc_grid = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
     
@@ -2324,17 +2347,12 @@ void UpdateParticlettrans( grid *mesh, scale *scaling, params model, markers *pa
         ttrans_inc_grid[k] =0.0;
         if (mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) ttrans_inc_grid[k] = mesh->ttrans_n[k] - mesh->ttrans0_n[k];
     }
-    
-//    MinMaxArrayTag( mesh->ttrans0_n,   scaling->t,    Ncx*Ncz,   "ttrans0_n",   mesh->BCp.type );
-//    MinMaxArrayTag( mesh->ttrans_n,   scaling->t,    Ncx*Ncz,   "ttrans_n",   mesh->BCp.type );
-    
+
     Interp_Grid2P( *particles, ttrans_inc_mark, mesh, ttrans_inc_grid, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
     ArrayPlusArray( particles->ttrans, ttrans_inc_mark, particles->Nb_part );
     
     DoodzFree(ttrans_inc_mark);
     DoodzFree(ttrans_inc_grid);
-    printf("=============== UpdateParticlettrans END============\n");
-    
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/

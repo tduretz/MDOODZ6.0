@@ -382,7 +382,6 @@ firstprivate( model )
                 dvdx_s[c1] = (mesh.v_in[c3+1       ] - mesh.v_in[c3])/model.dx;
             }
         }
-    }
     
 #pragma omp parallel for shared ( mesh, dudx_n, dvdz_n ) \
 private ( k, l, k1, c0, c1, c2 )                         \
@@ -398,6 +397,7 @@ firstprivate( model )
                 dvdz_n[c0]  = (mesh.v_in[c2+1+(model.Nx+1)] - mesh.v_in[c2+1]        )/model.dz;
             }
         }
+    }
 
 #pragma omp parallel for shared ( particles, mesh, om_s ) \
 private ( k, xA, zA, VxA, VzA, VxB, VzB, VxC, VzC, VxD, VzD, OmA, OmB, OmC, OmD, txx, tzz, txz, angle, dudxA, dvdzA, dudzA, dvdxA, dudxB, dvdzB, dudzB, dvdxB, dudxC, dvdzC, dudzC, dvdxC, dudxD, dvdzD, dudzD, dvdxD, VEA,VEB,VEC,VED ) \
@@ -739,6 +739,9 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
             
         // Courant dt
         dtc = C * dmin / fabs(vmax);
+        
+        printf("Courant number = %2.2e --- dtc = %2.2e\n", C, dtc*scaling.t);
+
 
         // Timestep cutoff : Do not allow for very large timestep increase
         if (dtc > fact*model->dt0 ) {

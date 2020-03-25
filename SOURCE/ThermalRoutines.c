@@ -243,6 +243,7 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
             
         }
         
+        MinMaxArrayTag( mesh->T, scaling.T, ncx*ncz, "T0", mesh->BCt.type );
         MinMaxArrayTag( Ha, scaling.S*scaling.E, ncx*ncz, "Ha", mesh->BCt.type );
         MinMaxArrayTag( Hs, scaling.S*scaling.E, ncx*ncz, "Hs", mesh->BCt.type );
         mesh->Ue += dUe;
@@ -452,6 +453,10 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
                 mesh->dT[c2] = 1.0*(x[eqn] -  mesh->T[c2]);
                 mesh->T[c2]  = mesh->T[c2] + mesh->dT[c2];
                 dUt         += mesh->rho_n[c2]*mesh->Cv[c2]*mesh->dT[c2];
+                if (mesh->T[c2] < 0.0) {
+                    printf("Negative temperature --- Are you crazy! (EnergyDirectSolve)\n");
+                    exit(1);
+                }
             }
             else {
                 // Outside the free surface

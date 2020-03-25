@@ -488,6 +488,33 @@ int main( int nargs, char *args[] ) {
                 
                 // Interpolate shear modulus
                 ShearModulusGrid( &mesh, materials, model, scaling );
+                
+                printf("Testing interpolated stress field - sxxd0\n");
+                IsNanArray2DFP(mesh.sxxd0,  (mesh.Nx-1)*(mesh.Nz-1));
+                printf("Testing interpolated stress field - szzd0\n");
+                IsNanArray2DFP(mesh.szzd0,  (mesh.Nx-1)*(mesh.Nz-1));
+                printf("Testing interpolated stress field - sxz0_n\n");
+                IsNanArray2DFP(mesh.sxz0_n, (mesh.Nx-1)*(mesh.Nz-1));
+                printf("Testing interpolated stress field  - sxxd0_s\n");
+                IsNanArray2DFP(mesh.sxxd0_s,  (mesh.Nx-0)*(mesh.Nz-0));
+                printf("Testing interpolated stress field - szzd0_s\n");
+                IsNanArray2DFP(mesh.szzd0_s, (mesh.Nx-0)*(mesh.Nz-0));
+                printf("Testing interpolated stress field  - sxz\n");
+                IsNanArray2DFP(mesh.sxz,  (mesh.Nx-0)*(mesh.Nz-0));
+                
+                printf("sxx p.\n");
+                IsNanArray2DFP(particles.sxxd,  particles.Nb_part);
+                printf("szz p.\n");
+                IsNanArray2DFP(particles.szzd,  particles.Nb_part);
+                printf("sxz p.\n");
+                IsNanArray2DFP(particles.sxz,  particles.Nb_part);
+
+                
+                IsInfArray2DFP(mesh.sxxd0,  (mesh.Nx-1)*(mesh.Nz-1));
+                IsInfArray2DFP(mesh.szzd0,  (mesh.Nx-1)*(mesh.Nz-1));
+                IsInfArray2DFP(mesh.sxz0_n, (mesh.Nx-1)*(mesh.Nz-1));
+                IsInfArray2DFP(mesh.sxxd0_s,  (mesh.Nx-0)*(mesh.Nz-0));
+                IsInfArray2DFP(mesh.szzd0_s, (mesh.Nx-0)*(mesh.Nz-0));
             }
             
             // Director vector
@@ -881,7 +908,7 @@ int main( int nargs, char *args[] ) {
         printf("--------------------------------------------------------------\n");
         for (i=0; i< Nmodel.nit+1; i++) {
             printf("Non-Linear it. %02d --- |Fx| = %2.2e --- log10(|Fx|) = %2.2f\n", i, rx_array[i], log10(rx_array[i]));
-            if (i == Nmodel.nit_max) {
+            if (i == Nmodel.nit_max && model.safe_mode == 1) {
              printf("Exit: Max iteration reached: Nmodel.nit_max = %02d! Check what you wanna do now...\n",Nmodel.nit_max);
                 if ( (Nmodel.resx < Nmodel.tol_u) && (Nmodel.resz < Nmodel.tol_u) && (Nmodel.resp < Nmodel.tol_p) ) {}
                 else {exit(1);}
@@ -933,7 +960,13 @@ int main( int nargs, char *args[] ) {
         // Update stresses on markers
         if (model.iselastic == 1 ) {
             // Compute stress changes on the grid and update stress on the particles
+            MinMaxArray( particles.sxxd,  scaling.S, particles.Nb_part,   "Txx p. before update" );
+            MinMaxArray( particles.szzd,  scaling.S, particles.Nb_part,   "Tzz p. before update" );
+            MinMaxArray( particles.sxz,  scaling.S, particles.Nb_part,   "Txz p. before update" );
             UpdateParticleStress(  &mesh, &particles, &model, &materials, &scaling );
+            MinMaxArray( particles.sxxd,  scaling.S, particles.Nb_part,   "Txx p. after update" );
+            MinMaxArray( particles.szzd,  scaling.S, particles.Nb_part,   "Tzz p. after update" );
+            MinMaxArray( particles.sxz,  scaling.S, particles.Nb_part,   "Txz p. after update" );
         }
         else {
             Interp_Grid2P( particles, particles.sxxd, &mesh, mesh.sxxd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
@@ -982,8 +1015,13 @@ int main( int nargs, char *args[] ) {
             // Matrix assembly and direct solve
             EnergyDirectSolve( &mesh, model,  mesh.T,  mesh.dT,  mesh.rhs_t, mesh.T, &particles, model.dt, model.shear_heat, model.adiab_heat, scaling, 1 );
             
+            MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. before UpdateParticleEnergy");
+            
             // Update energy on particles
             UpdateParticleEnergy( &mesh, scaling, model, &particles, &materials );
+            
+            MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. after UpdateParticleEnergy");
+
             
             if ( model.iselastic == 1 ) Interp_Grid2P( particles, particles.rhoUe0, &mesh, mesh.rhoUe0, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
             
@@ -1072,6 +1110,13 @@ int main( int nargs, char *args[] ) {
             // Update deformation gradient tensor components
             if ( model.fstrain == 1 ) DeformationGradient( mesh, scaling, model, &particles );
             
+//#ifdef _HDF5_
+            if ( model.write_debug == 1 ) {
+                WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, model, "Output_BeforeSurfRemesh", materials, scaling );
+                WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particles_BeforeSurfRemesh", materials, scaling );
+            }
+//#endif
+            
             if ( model.free_surf == 1 ) {
                 
                 if ( model.surf_remesh == 1 ) {
@@ -1090,6 +1135,11 @@ int main( int nargs, char *args[] ) {
                 ProjectTopography( &topo_ini, &topo_chain_ini, model, mesh, scaling, mesh.xg_coord, 0 );
                 ArrayEqualArray( topo.height0, topo.height, mesh.Nx );
                 ArrayEqualArray( topo_ini.height0, topo_ini.height, mesh.Nx );
+                
+                if ( model.write_debug == 1 ) {
+                    WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, model, "Output_AfterSurfRemesh", materials, scaling );
+                    WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particles_AfterSurfRemesh", materials, scaling );
+                }
                 
                 //                    // Diffuse topography
                 if ( model.surf_processes >= 1 )  DiffuseAlongTopography( &mesh, model, scaling, topo.height, mesh.Nx, 0.0, model.dt );
@@ -1136,13 +1186,14 @@ int main( int nargs, char *args[] ) {
             printf("** Time for advection solver = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
             
 #ifdef _HDF5_
-            if ( model.write_debug == 1 ) {WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, model, "Outputxx", materials, scaling );
+            if ( model.write_debug == 1 ) {
+                WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, model, "Outputxx", materials, scaling );
                 WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particlesxx", materials, scaling );
             }
 #endif
            
             // pips adds   
-            MinMaxArray(particles.T, scaling.T, particles.Nb_part, "Tr1 part  ");
+            MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T1 part  ");
  
             // Count the number of particle per cell
             printf("Before re-seeding : number of particles = %d\n", particles.Nb_part);

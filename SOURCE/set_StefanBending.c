@@ -69,14 +69,18 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double T_init = (model.user2 + zeroC)/scaling.T;
     int    cyl = (int)model.user1;
     double X, Z;
-    double Tgrad = model.user3/(scaling.T/scaling.L);
-    double Tsurf = 293.0/(scaling.T);
+
+//    printf("%2.2e %2.2e %2.2e\n", Ttop, Tbot, Tgrad );
     double a = 100e3/scaling.L, b = 10e3/scaling.L, Rad=6370e3/scaling.L;
     double maxAngle = 18.0/2.0*M_PI/180.0;
     double maxX     = model.xmax;
     double amp      = Rad*sin(M_PI/2.0) - Rad*sin(maxAngle+M_PI/2);
     double zMoho = Rad + model.user0/scaling.L;
     double zLAB  = Rad + model.user1/scaling.L;
+    
+    double Ttop  = 293.0/(scaling.T);
+    double Tbot  = (model.user3 + zeroC)/scaling.T;
+    double Tgrad = (Ttop-Tbot)/ (Lz - (model.zmax-Rad));
     
     // Loop on particles
     for( np=0; np<particles->Nb_part; np++ ) {
@@ -89,7 +93,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         particles->phi[np]   = 0.0;                                             // zero porosity everywhere
         particles->rho[np]   = 0;
 //        particles->T[np]     = T_init;
-        particles->T[np]     = Tsurf + Tgrad*particles->z[np];
+        particles->T[np]     = Ttop + Tgrad*(particles->z[np] - Rad);
 
     
         // ------------------------- //
@@ -109,6 +113,13 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
             Z = sqrt((zLAB  - particles->x[np])*(zLAB  + particles->x[np]));
             if ( particles->z[np] <  Z  ) particles->phase[np] = 2;
 
+        }
+        
+        Z = Rad - 45e3/scaling.L;
+        X = 20e3/scaling.L;
+        double rad = 10e3/scaling.L;
+        if ( ( pow(particles->x[np]-X,2) + pow(particles->z[np]-Z,2) ) < rad*rad  ) {
+            particles->phase[np] = 0;
         }
         
         // SANITY CHECK
@@ -143,13 +154,9 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     double *X, *Z, *XC, *ZC;
     int   NX, NZ, NCX, NCZ, NXVZ, NZVX;
     double dmin, VzBC, width = 1 / scaling.L, eta = 1e4 / scaling.eta ;
-    double Lx, Lz, T1, T2, rate=model->EpsBG,  z_comp=-140e3/scaling.L;
+    double Lx, Lz, T1, T2, rate=model->EpsBG;
     double Inflow = 0.0, VzOutflow = 0.0, x, z, V, tet, r, Vx, Vz;
     int    OutflowOnSides = (int)model->user4;
-    
-    // Fix temperature
-    double Tgrad = model->user3/(scaling.T/scaling.L);
-    double Tsurf = 293.0/(scaling.T);
     
     // Inflow/Outflow velocities
     double Vx_tot =  (model->xmax-model->xmin) * model->EpsBG;
@@ -179,7 +186,7 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     //-----------------------------------------------------//
     
     // Declare and allocate boundary velocity arrays
-    double HLit   = 150e3/scaling.L; // scale values of lithosphere thickness
+    double HLit   = -(double)model->user2/scaling.L; // scale values of lithosphere thickness
     double *VxBC_W, *VxBC_E, *VzBC_W, *VzBC_E, top_W =  model->zmin, top_E = model->zmin;
     int c_E, c_W;
     double dx = model->dx, dz = model->dz;
@@ -396,14 +403,6 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     NXVZ = NX+1;
     NZVX = NZ+1;
     
-    // Fix temperature
-    for (l=0; l<mesh->Nz-1; l++) {
-        for (k=0; k<mesh->Nx-1; k++) {
-            c = k + l*(NCX);
-            mesh->T[c]     = Tsurf + Tgrad*mesh->zc_coord[l];
-        }
-    }
-    
     /* --------------------------------------------------------------------------------------------------------*/
 	/* Set the BCs for Vx on all grid levels                                                                   */
 	/* Type  0: Dirichlet point that matches the physical boundary (Vx: left/right, Vz: bottom/top)            */
@@ -485,10 +484,6 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                 
 			}
 		}
-    
-//    VzOutflow = -Inflow/(model->xmax-model->xmin);
-//    printf("VzOutflow = %2.2e\n", VzOutflow*scaling.V);
-		
 	
 	/* --------------------------------------------------------------------------------------------------------*/
 	/* Set the BCs for Vz on all grid levels                                                                   */
@@ -588,8 +583,21 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     /* Type 30: not calculated (part of the "air")                                                            */
 	/* -------------------------------------------------------------------------------------------------------*/
     
-    double Ttop = 273.15/scaling.T;
-    double Tbot= (model->user2 + zeroC)/scaling.T, Tleft, Tright;
+    double Ttop = 293.15/scaling.T;
+    double Tbot= (model->user3 + zeroC)/scaling.T;
+    double Tleft, Tright;
+    
+    double k_crazy = 1000*materials->k[2];
+    
+    if (model->step == 0) {
+        materials->k_eff[2] = k_crazy;
+        printf("Running with crazy conductivity for the asthenosphere!!\n");
+    }
+    
+    else {
+        materials->k_eff[2] = materials->k[2];
+        printf("Running with normal conductivity for the asthenosphere...\n");
+    }
     
     printf("Ttop=%2.2e Tbot=%2.2e\n", Ttop*scaling.T, Tbot*scaling.T);
     

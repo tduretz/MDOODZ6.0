@@ -227,6 +227,9 @@ void MinMaxArray( DoodzFP* array, double scale, int size, char* text ) {
         for (k=0; k<size; k++) {
             if (array[k]>pmax) pmax = array[k];
             if (array[k]<pmin) pmin = array[k];
+            if (isnan(array[k])) {printf("Nan %s : exit (MinMaxArray)\n",text); exit(1);}
+            if (isinf(array[k])) {printf("Inf %s : exit (MinMaxArray)\n",text); exit(1);}
+
         }
 #pragma omp flush (max)
         if (pmax>max) {
@@ -397,6 +400,7 @@ void  IsNanArray2DFP( DoodzFP* arr1, int size1 ) {
         
         if ( isnan(arr1[k])!=0 ) {
             printf("Nan Scheisse!\n");
+            break;
         }
     }
 }
@@ -412,6 +416,7 @@ void  IsInfArray2DFP( DoodzFP* arr1, int size1 ) {
         
         if ( isinf(arr1[k])!=0 ) {
             printf("Inf Scheisse!\n");
+            break;
         }
     }
 }

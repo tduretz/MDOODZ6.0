@@ -209,7 +209,7 @@ void RemeshMarkerChain( markers *topo_chain, surface *topo, params model, scale 
     double dxm=model.dx/(fact+1), xmin = model.xmin + model.dx/2.0;
     int    remesh = model.surf_remesh, Nb_part0=topo_chain->Nb_part, *NumMarkCell;
     double distance, dx=model.dx, grid_topo, mismax = 0.01;
-    int    in, minPartCell=2, NewInd, inc = 0;
+    int    in, minPartCell=4, NewInd, inc = 0;
     int    res = 2;
     
     if (remesh==0) {
@@ -230,7 +230,7 @@ void RemeshMarkerChain( markers *topo_chain, surface *topo, params model, scale 
 //            }
 //        }
         
-        fact = 24;
+        fact = 23;
         xmin = model.xmin + model.dx/2.0;
         dx   = model.dx/fact;
         topo_chain->Nb_part = model.Nx*fact - (fact-1) - 2;
@@ -402,7 +402,7 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
         topo->height[k] = BmWm[k]/Wm[k];
         
         if (isnan(topo->height[k])) {
-            printf("%2.2e %2.2e\n", BmWm[k], Wm[k]);
+            printf("%2.2e %2.2e %d\n", BmWm[k], Wm[k], k);
             exit(1);
         }
         if (itp_type==1) topo->height[k] =  1.0 / topo->height[k];
