@@ -19,6 +19,9 @@
 // along with MDOODZ.  If not, see <http://www.gnu.org/licenses/>.
 // =========================================================================
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
@@ -42,34 +45,33 @@
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void LoadIniParticles( char* name, markers* particles, grid* mesh, markers *topo_chain, markers *topo_chain_ini, params *model, scale scaling ) {
-    
+
     //char *name;
     int s1=0, s2=0, s3=0, s4=0;
     int ss1=sizeof(int), ss2=sizeof(double), ss3=sizeof(DoodzFP), ss4=sizeof(char);
     int k, l, Nx=model->Nx, Nz=model->Nz, c;
     int Ncx = Nx-1, Ncz = Nz-1;
-    
+
     //---------------------------------------------------------------------------------------------------------//
     FILE *file;
-    
+
     // Filename
     //    asprintf(&name, "Breakpoint%05d.dat", model->step);
     //asprintf(&name, "IniParticles.dat");
-    
-    if (fopen(name, "rb")==NULL) {
-        printf("Error opening %s, this file is probably corrupted or non-existant\nExiting...\n", name);
-        exit(1);
-    }
-    else {
-        printf("Load setup from %s...\n", name);
-        file = fopen(name, "rb");
-    }
-    
+
+    file = fopen(name, "rb");
+   if ( file == NULL ) {
+       printf("Error opening %s, this file is probably corrupted or non-existant\nExiting...\n", name);
+       fclose(file);
+       free(name);
+       exit(1);
+   }
+
     fread( &s1, 1, 1, file);
     fread( &s2, 1, 1, file);
     fread( &s3, 1, 1, file);
     fread( &s4, 1, 1, file);
-    
+
     if (model->free_surf == 1) {
         fread(&topo_chain->Nb_part,   s1,                   1, file );
         fread( topo_chain->x,         s3, topo_chain->Nb_part, file );
@@ -77,7 +79,7 @@ void LoadIniParticles( char* name, markers* particles, grid* mesh, markers *topo
         //fread( topo_chain->Vx,        s3, topo_chain->Nb_part, file );
         //fread( topo_chain->Vz,        s3, topo_chain->Nb_part, file );
     }
-    
+
     int Nb_part0 = particles->Nb_part;
     fread( &particles->Nb_part,  s1, 1, file);
     fread( particles->x,    s3, particles->Nb_part, file);
@@ -92,7 +94,7 @@ void LoadIniParticles( char* name, markers* particles, grid* mesh, markers *topo
     fclose(file);
     free(name);
     //---------------------------------------------------------------------------------------------------------//
-    
+
     if (model->free_surf == 1) {
         topo_chain_ini->Nb_part = topo_chain->Nb_part;
         // note: the topo_chain should be scaled as well
@@ -100,8 +102,8 @@ void LoadIniParticles( char* name, markers* particles, grid* mesh, markers *topo
         for ( k=0; k<topo_chain->Nb_part; k++ ) {
             topo_chain->x[k]     /=scaling.L;
             topo_chain->z[k]     /=scaling.L;
-            
-            
+
+
             topo_chain_ini->x[k] = topo_chain->x[k];
             topo_chain_ini->z[k] = topo_chain->z[k];
             //particles->P[k]     /=scaling.S;
@@ -121,8 +123,8 @@ void LoadIniParticles( char* name, markers* particles, grid* mesh, markers *topo
         //particles->phi[k]   /=1.0;
         //particles->X[k]     /=1.0;
     }
-    
-    
+
+
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -154,27 +156,26 @@ void DeletePreviousBreakpoint( int step, int writer_step ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chain, markers *topo_chain_ini, params *model, surface* topo, surface* topo_ini, scale scaling ) {
-    
+
     char *name;
     int s1=0, s2=0, s3=0, s4=0;
     int k, l, Nx=model->Nx, Nz=model->Nz, c;
     int Ncx = Nx-1, Ncz = Nz-1;
-    
+
     //---------------------------------------------------------------------------------------------------------//
-    
+
     FILE *file;
-    
+
     // Filename
 //    asprintf(&name, "Breakpoint%05d.dat", model->step);
     if( model->delete_breakpoints == -1 ) asprintf(&name, "BreakpointXXXXX.dat");
     else asprintf(&name, "Breakpoint%05d.dat", model->step);
-    if (fopen(name, "rb")==NULL) {
-        printf("Error opening %s, this file is probably corrupted or non-existant\nExiting...\n", name);
-        exit(1);
-    }
-    else {
-        printf("Load setup from %s...\n", name);
-        file = fopen(name, "rb");
+    file = fopen(name, "rb");
+    if ( file == NULL ) {
+       printf("Error opening %s, this file is probably corrupted or non-existant\nExiting...\n", name);
+       fclose(file);
+       free(name);
+       exit(1);
     }
     fread( &s1, 1, 1, file);
     fread( &s2, 1, 1, file);
@@ -187,22 +188,22 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
     fread( &model->xmax, s2, 1, file);
     fread( &model->zmin, s2, 1, file);
     fread( &model->zmax, s2, 1, file);
-    
-    
+
+
     if (model->free_surf == 1) {
         fread(&topo_chain->Nb_part,   s1,                   1, file );
         fread( topo_chain->x,         s3, topo_chain->Nb_part, file );
         fread( topo_chain->z,         s3, topo_chain->Nb_part, file );
         fread( topo_chain->Vx,        s3, topo_chain->Nb_part, file );
         fread( topo_chain->Vz,        s3, topo_chain->Nb_part, file );
-        
+
         fread(&topo_chain_ini->Nb_part,   s1,                       1, file );
         fread( topo_chain_ini->x,         s3, topo_chain_ini->Nb_part, file );
         fread( topo_chain_ini->z,         s3, topo_chain_ini->Nb_part, file );
         fread( topo_chain_ini->Vx,        s3, topo_chain_ini->Nb_part, file );
         fread( topo_chain_ini->Vz,        s3, topo_chain_ini->Nb_part, file );
     }
-    
+
     fread( &particles->Nb_part,  s1, 1, file);
     fread( particles->x,    s3, particles->Nb_part, file);
     fread( particles->z,    s3, particles->Nb_part, file);
@@ -212,23 +213,23 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
     fread( particles->phi,  s3, particles->Nb_part, file);
     fread( particles->X  ,  s3, particles->Nb_part, file);
     fread( particles->phase, s1, particles->Nb_part, file);
-    
+
     //        if  (model->moving_front == 1 ) {
     //            fread( particles->generation, s1, particles->Nb_part, file);
     //            fread( particles->progress, s1, particles->Nb_part, file);
     //        }
-    
+
     if (model->iselastic == 1) {
         fread( particles->sxxd,   s3, particles->Nb_part, file );
         fread( particles->szzd,   s3, particles->Nb_part, file );
         fread( particles->sxz,    s3, particles->Nb_part, file );
-        
+
         fread( mesh->eta_n, s3, (Nx-1)*(Nz-1), file );
         fread( mesh->VE_n, s3, (Nx-1)*(Nz-1), file );
         fread( mesh->eta_s, s3, (Nx)*(Nz), file );
         fread( mesh->VE_s, s3, (Nx)*(Nz), file );
     }
-    
+
     fread( particles->strain,     s3, particles->Nb_part, file);
     fread( particles->strain_el,  s3, particles->Nb_part, file);
     fread( particles->strain_pl,  s3, particles->Nb_part, file);
@@ -237,16 +238,16 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
     fread( particles->strain_lin, s3, particles->Nb_part, file);
     fread( particles->strain_gbs, s3, particles->Nb_part, file);
     fread( particles->d         , s3, particles->Nb_part, file);
-    
+
     fread( particles->ttrans    , s3, particles->Nb_part, file);
-    
+
     if (model->fstrain == 1) {
         fread( particles->Fxx         , s3, particles->Nb_part, file);
         fread( particles->Fxz         , s3, particles->Nb_part, file);
         fread( particles->Fzx         , s3, particles->Nb_part, file);
         fread( particles->Fzz         , s3, particles->Nb_part, file);
     }
-    
+
     if (model->rec_T_P_x_z == 1) {
         fread( particles->T0         , s3, particles->Nb_part, file);
         fread( particles->P0         , s3, particles->Nb_part, file);
@@ -255,32 +256,32 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
         fread( particles->Tmax       , s3, particles->Nb_part, file);
         fread( particles->Pmax       , s3, particles->Nb_part, file);
     }
-    
+
     if (model->isthermal == 1) {
         fread( particles->T, s3, particles->Nb_part, file);
     }
-    
+
     if (model->eqn_state > 0) {
         fread( particles->rho, s3, particles->Nb_part, file);
     }
-    
-    
+
+
     fread( mesh->eta_phys_n, s3, (Nx-1)*(Nz-1), file );
     fread( mesh->eta_phys_s, s3, (Nx)*(Nz), file );
-    
+
     //        if (model->isinertial == 2) {
     //            fread( mesh->u_adv, s3, (Nx*(Nz+1)), file );
     //            fread( mesh->v_adv, s3, (Nz*(Nx+1)), file );
     //        }
-    
+
     fread( mesh->u_in, s3, (Nx*(Nz+1)), file );
     fread( mesh->v_in, s3, (Nz*(Nx+1)), file );
     fread( mesh->p_in, s3, ((Nz-1)*(Nx-1)), file );
-    
+
     fread( &mesh->Ut,  s3, 1, file );
     fread( &mesh->W,   s3, 1, file );
     fread( &model->L0, s3, 1, file );
-    
+
     // This is to avoid any problem with restarting - more data needs to be stored
 
         // Topo related
@@ -314,7 +315,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
         fread( mesh->BCg.val,      s3,  Nx *Nz ,   file );
 //    MinMaxArray(mesh->BCg.val, 1.0, Nx *Nz, "mesh->BCg.val");
 
-    
+
      // Phase proportions
         printf("Loading phase proportions - Nb_phases = %d:\n", model->Nb_phases);
 //        fread( &model->Nb_phases,  s1,        1,   file );
@@ -327,13 +328,13 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
         }
         fread( mesh->nb_part_cell, s1,  Ncx*Ncz,   file );
         fread( mesh->nb_part_vert, s1,  Nx *Nz ,   file );
-    
-    
+
+
     fclose(file);
     free(name);
-    
+
     //---------------------------------------------------------------------------------------------------------//
-    
+
     // scale
     model->dt   /= scaling.t;
     model->dt0  /= scaling.t;
@@ -342,7 +343,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
     model->xmax /= scaling.L;
     model->zmin /= scaling.L;
     model->zmax /= scaling.L;
-    
+
 #pragma omp parallel for shared( particles, model, scaling )
     for ( k=0; k<particles->Nb_part; k++ ) {
         particles->x[k]     /=scaling.L;
@@ -360,11 +361,11 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
         if ( model->isthermal == 1 ) {
             particles->T[k]  /= scaling.T;
         }
-        
+
         if ( model->eqn_state > 0 ) {
             particles->rho[k]  /=scaling.rho;
         }
-        
+
         if ( model->rec_T_P_x_z == 1) {
             particles->T0[k]  /= scaling.T;
             particles->P0[k]  /= scaling.S;
@@ -376,7 +377,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
         particles->d[k]  /=scaling.L;
         particles->ttrans[k] /=scaling.t;
     }
-    
+
     // Grid data
     for (k=0; k<Nx; k++) {
         for (l=0; l<Nz+1; l++) {
@@ -385,7 +386,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
             mesh->u_in[c]  /= scaling.V;
         }
     }
-    
+
     for (k=0; k<Nx+1; k++) {
         for (l=0; l<Nz; l++) {
             c = k +l*(Nx+1);
@@ -393,7 +394,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
             mesh->v_in[c]  /= scaling.V;
         }
     }
-    
+
     for (k=0; k<Nx-1; k++) {
         for (l=0; l<Nz-1; l++) {
             c = k +l*(Nx-1);
@@ -403,7 +404,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
             mesh->p_in[c] /= scaling.S;
         }
     }
-    
+
     for (k=0; k<Nx; k++) {
         for (l=0; l<Nz; l++) {
             c = k +l*(Nx);
@@ -412,7 +413,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
             mesh->VE_s[c] /= 1.0;
         }
     }
-    
+
     if (model->free_surf == 1) {
         for (k=0; k<topo_chain->Nb_part; k++) {
             topo_chain->x[k]  /= scaling.L;
@@ -427,7 +428,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
             topo_chain_ini->Vz[k] /= scaling.V;
         }
         //    }
-        
+
         // This is to avoid any problem with restarting - more data needs to be stored
         for (k=0;k<mesh->Nx;k++) {
             topo->height[k]      /= scaling.L;
@@ -437,12 +438,12 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
             topo_ini->height0[k] /= scaling.L;
             topo_ini->vx[k]      /= scaling.V;
         }
-        
+
         for (k=0;k<mesh->Nx+1;k++) {
             topo->vz[k]          /= scaling.V;
             topo_ini->vz[k]      /= scaling.V;
         }
-        
+
         for (k=0;k<mesh->Nx-1;k++) {
             topo->b0[k] /= scaling.L;
             topo->b[k]  /= scaling.L;
@@ -450,13 +451,13 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
             topo_ini->b[k]  /= scaling.L;
         }
     }
-    
+
     mesh->Ut /= (scaling.rhoE*scaling.L*scaling.L);
     mesh->W  /= (scaling.rhoE*scaling.L*scaling.L);
     model->L0  /= (scaling.L);
-    
+
 //    MinMaxArray(particles->T, scaling.T, particles->Nb_part, "T part");
-    
+
 }
 
 
@@ -465,12 +466,12 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_chain, markers *topo_chain_ini, params model, surface *topo, surface* topo_ini, scale scaling ) {
-    
+
     char *name;
     int s1=sizeof(int), s2=sizeof(double), s3=sizeof(DoodzFP), s4=sizeof(char);
     int k, l, Nx=model.Nx, Nz=model.Nz, c;
     int Ncx = Nx-1, Ncz = Nz-1;
-    
+
     // Scale such that dimensional data goes to the breakpoint file
     model.dt   *= scaling.t;
     model.dt0  *= scaling.t;
@@ -479,7 +480,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     model.xmax *= scaling.L;
     model.zmin *= scaling.L;
     model.zmax *= scaling.L;
-    
+
 #pragma omp parallel for shared( particles, model, scaling )
     for ( k=0; k<particles->Nb_part; k++ ) {
         particles->x[k]      *= scaling.L;
@@ -502,7 +503,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
         }
         particles->d[k]        *= scaling.L;
         particles->ttrans[k]   *= scaling.t;
-        
+
         if ( model.rec_T_P_x_z == 1) {
             particles->T0[k]  *= scaling.T;
             particles->P0[k]  *= scaling.S;
@@ -512,7 +513,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             particles->Pmax[k]*= scaling.S;
         }
     }
-    
+
     // grid data
     for (k=0; k<Nx; k++) {
         for (l=0; l<Nz+1; l++) {
@@ -521,7 +522,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             mesh->u_in[c]  *= scaling.V;
         }
     }
-    
+
     for (k=0; k<Nx+1; k++) {
         for (l=0; l<Nz; l++) {
             c = k +l*(Nx+1);
@@ -529,7 +530,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             mesh->v_in[c]  *= scaling.V;
         }
     }
-    
+
     for (k=0; k<Nx-1; k++) {
         for (l=0; l<Nz-1; l++) {
             c = k +l*(Nx-1);
@@ -539,7 +540,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             mesh->p_in[c] *= scaling.S;
         }
     }
-    
+
     for (k=0; k<Nx; k++) {
         for (l=0; l<Nz; l++) {
             c = k +l*(Nx);
@@ -548,7 +549,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             mesh->VE_s[c] *= 1.0;
         }
     }
-    
+
     if (model.free_surf == 1) {
         for (k=0; k<topo_chain->Nb_part; k++) {
             topo_chain->x[k] *= scaling.L;
@@ -562,8 +563,8 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             topo_chain_ini->Vx[k] *= scaling.V;
             topo_chain_ini->Vz[k] *= scaling.V;
         }
-        
-        
+
+
         // This is to avoid any problem with restarting - more data needs to be stored
         for (k=0;k<mesh->Nx;k++) {
             topo->height[k]      *= scaling.L;
@@ -573,12 +574,12 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             topo_ini->height0[k] *= scaling.L;
             topo_ini->vx[k]      *= scaling.V;
         }
-        
+
         for (k=0;k<mesh->Nx+1;k++) {
             topo->vz[k]          *= scaling.V;
             topo_ini->vz[k]      *= scaling.V;
         }
-        
+
         for (k=0;k<mesh->Nx-1;k++) {
             topo->b0[k] *= scaling.L;
             topo->b[k]  *= scaling.L;
@@ -586,28 +587,26 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             topo_ini->b[k]  *= scaling.L;
         }
     }
-    
+
     mesh->Ut *= (scaling.rhoE*scaling.L*scaling.L);
     mesh->W  *= (scaling.rhoE*scaling.L*scaling.L);
     model.L0 *= (scaling.L);
-    
-    
+
+
     //---------------------------------------------------------------------------------------------------------//
-    
+
     FILE *file;
-    
+
     // Filename
     if( model.delete_breakpoints == -1 ) asprintf(&name, "BreakpointXXXXX.dat");
     else asprintf(&name, "Breakpoint%05d.dat", model.step);
-    
-    if (fopen(name, "wb")==NULL) {
+
+    file = fopen(name, "wb");
+    if ( file == NULL ) {
         printf("Error opening %s, this file is probably corrupted or non-existant\nExiting...\n", name);
         free(name);
+        fclose(file);
         exit(1);
-    }
-    else {
-        printf("Save setup in %s...\n", name);
-        file = fopen(name, "wb");
     }
     fwrite( &s1, 1, 1, file);
     fwrite( &s2, 1, 1, file);
@@ -620,21 +619,21 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     fwrite( &model.xmax, s2, 1, file);
     fwrite( &model.zmin, s2, 1, file);
     fwrite( &model.zmax, s2, 1, file);
-    
+
     if (model.free_surf == 1) {
         fwrite( &topo_chain->Nb_part,  s1,                   1, file );
         fwrite( topo_chain->x,         s3, topo_chain->Nb_part, file );
         fwrite( topo_chain->z,         s3, topo_chain->Nb_part, file );
         fwrite( topo_chain->Vx,        s3, topo_chain->Nb_part, file );
         fwrite( topo_chain->Vz,        s3, topo_chain->Nb_part, file );
-        
+
         fwrite( &topo_chain_ini->Nb_part,  s1,                       1, file );
         fwrite( topo_chain_ini->x,         s3, topo_chain_ini->Nb_part, file );
         fwrite( topo_chain_ini->z,         s3, topo_chain_ini->Nb_part, file );
         fwrite( topo_chain_ini->Vx,        s3, topo_chain_ini->Nb_part, file );
         fwrite( topo_chain_ini->Vz,        s3, topo_chain_ini->Nb_part, file );
     }
-    
+
     fwrite( &particles->Nb_part,  s1, 1, file);
     fwrite( particles->x,     s3, particles->Nb_part, file);
     fwrite( particles->z,     s3, particles->Nb_part, file);
@@ -644,23 +643,18 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     fwrite( particles->phi,   s3, particles->Nb_part, file);
     fwrite( particles->X  ,   s3, particles->Nb_part, file);
     fwrite( particles->phase, s1, particles->Nb_part, file);
-    
-    //        if  (model.moving_front == 1 ) {
-    //            fwrite( particles->generation, s1, particles->Nb_part, file);
-    //            fwrite( particles->progress,   s1, particles->Nb_part, file);
-    //        }
-    
+
     if (model.iselastic == 1) {
         fwrite( particles->sxxd,   s3, particles->Nb_part, file );
         fwrite( particles->szzd,   s3, particles->Nb_part, file );
         fwrite( particles->sxz,    s3, particles->Nb_part, file );
-        
+
         fwrite( mesh->eta_n, s3, (Nx-1)*(Nz-1), file );
         fwrite( mesh->VE_n, s3, (Nx-1)*(Nz-1), file );
         fwrite( mesh->eta_s, s3, (Nx)*(Nz), file );
         fwrite( mesh->VE_s, s3, (Nx)*(Nz), file );
     }
-    
+
     fwrite( particles->strain,     s3, particles->Nb_part, file);
     fwrite( particles->strain_el,  s3, particles->Nb_part, file);
     fwrite( particles->strain_pl,  s3, particles->Nb_part, file);
@@ -670,14 +664,14 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     fwrite( particles->strain_gbs, s3, particles->Nb_part, file);
     fwrite( particles->d         , s3, particles->Nb_part, file);
     fwrite( particles->ttrans    , s3, particles->Nb_part, file);
-    
+
     if (model.fstrain == 1) {
         fwrite( particles->Fxx         , s3, particles->Nb_part, file);
         fwrite( particles->Fxz         , s3, particles->Nb_part, file);
         fwrite( particles->Fzx         , s3, particles->Nb_part, file);
         fwrite( particles->Fzz         , s3, particles->Nb_part, file);
     }
-    
+
     if (model.rec_T_P_x_z == 1) {
         fwrite( particles->T0         , s3, particles->Nb_part, file);
         fwrite( particles->P0         , s3, particles->Nb_part, file);
@@ -686,29 +680,25 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
         fwrite( particles->Tmax       , s3, particles->Nb_part, file);
         fwrite( particles->Pmax       , s3, particles->Nb_part, file);
     }
-    
+
     if (model.isthermal == 1) {
         fwrite( particles->T, s3, particles->Nb_part, file);
     }
     if (model.eqn_state > 0) {
         fwrite( particles->rho, s3, particles->Nb_part, file);
     }
-    
+
     fwrite( mesh->eta_phys_n, s3, (Nx-1)*(Nz-1), file );
     fwrite( mesh->eta_phys_s, s3, (Nx)*(Nz), file );
-    
-    //        if (model.isinertial == 2) {
-    //            fwrite( mesh->u_adv, s3, (Nx*(Nz+1)), file );
-    //            fwrite( mesh->v_adv, s3, (Nz*(Nx+1)), file );
-    //        }
+
     fwrite( mesh->u_in, s3, (Nx*(Nz+1)), file );
     fwrite( mesh->v_in, s3, (Nz*(Nx+1)), file );
     fwrite( mesh->p_in, s3, ((Nx-1)*(Nz-1)), file );
-    
+
     fwrite( &mesh->Ut, s3, 1, file );
     fwrite( &mesh->W,  s3, 1, file );
     fwrite( &model.L0, s3, 1, file );
-    
+
     // This is to avoid any problem with restarting - more data needs to be stored
     if (model.free_surf == 1) {
         // Topo related
@@ -739,9 +729,9 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     fwrite( mesh->BCu.val,   s3,  Nx*(Nz+1), file );
     fwrite( mesh->BCv.val,   s3,  (Nx+1)*Nz, file );
     fwrite( mesh->BCg.val,      s3,  Nx *Nz ,   file );
-    
+
 //     MinMaxArray(mesh->BCg.val, 1.0, Nx *Nz, "mesh->BCg.val");
-    
+
     // Phase proportions
     printf("Loading phase proportions - Nb_phases = %d:\n", model.Nb_phases);
 //    fwrite( &model.Nb_phases, s1,        1,   file );
@@ -755,13 +745,12 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     fwrite( mesh->nb_part_cell, s1,  Ncx*Ncz,   file );
     fwrite( mesh->nb_part_vert, s1,  Nx *Nz ,   file );
     //    }
-    
-    
+
     fclose(file);
     free(name);
-    
+
     //---------------------------------------------------------------------------------------------------------//
-    
+
     // scale such that dimensions vanish
     model.dt   /= scaling.t;
     model.dt0  /= scaling.t;
@@ -770,7 +759,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     model.xmax /= scaling.L;
     model.zmin /= scaling.L;
     model.zmax /= scaling.L;
-    
+
 #pragma omp parallel for shared( particles, model, scaling )
     for ( k=0; k<particles->Nb_part; k++ ) {
         particles->x[k]     /= scaling.L;
@@ -780,7 +769,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
         particles->Vz[k]    /= scaling.V;
         particles->phi[k]   /= 1.0;
         particles->X[k]     /= 1.0;
-        
+
         if (model.iselastic == 1) {
             particles->sxxd[k]   /= scaling.S;
             particles->szzd[k]   /= scaling.S;
@@ -794,7 +783,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
         }
         particles->d[k]  /= scaling.L;
         particles->ttrans[k] /= scaling.t;
-        
+
         if (model.rec_T_P_x_z == 1) {
             particles->T0[k]  /= scaling.T;
             particles->P0[k]  /= scaling.S;
@@ -804,7 +793,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             particles->Pmax[k]/= scaling.S;
         }
     }
-    
+
     for (k=0; k<Nx; k++) {
         for (l=0; l<Nz+1; l++) {
             c = k +l*Nx;
@@ -812,7 +801,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             mesh->u_in[c]  /= scaling.V;
         }
     }
-    
+
     for (k=0; k<Nx+1; k++) {
         for (l=0; l<Nz; l++) {
             c = k +l*(Nx+1);
@@ -820,7 +809,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             mesh->v_in[c]  /= scaling.V;
         }
     }
-    
+
     for (k=0; k<Nx-1; k++) {
         for (l=0; l<Nz-1; l++) {
             c = k +l*(Nx-1);
@@ -830,7 +819,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             mesh->p_in[c] /= scaling.S;
         }
     }
-    
+
     for (k=0; k<Nx; k++) {
         for (l=0; l<Nz; l++) {
             c = k +l*(Nx);
@@ -839,7 +828,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             mesh->VE_s[c] /= 1.0;
         }
     }
-    
+
     if (model.free_surf == 1) {
         for (k=0; k<topo_chain->Nb_part; k++) {
             topo_chain->x[k]  /= scaling.L;
@@ -854,7 +843,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             topo_chain_ini->Vz[k] /= scaling.V;
         }
         //}
-        
+
         // This is to avoid any problem with restarting - more data needs to be stored
         for (k=0;k<mesh->Nx;k++) {
             topo->height[k]      /= scaling.L;
@@ -864,12 +853,12 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             topo_ini->height0[k] /= scaling.L;
             topo_ini->vx[k]      /= scaling.V;
         }
-        
+
         for (k=0;k<mesh->Nx+1;k++) {
             topo->vz[k]          /= scaling.V;
             topo_ini->vz[k]      /= scaling.V;
         }
-        
+
         for (k=0;k<mesh->Nx-1;k++) {
             topo->b0[k] /= scaling.L;
             topo->b[k]  /= scaling.L;
@@ -877,7 +866,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             topo_ini->b[k]  /= scaling.L;
         }
     }
-    
+
     mesh->Ut  /= (scaling.rhoE*scaling.L*scaling.L);
     mesh->W   /= (scaling.rhoE*scaling.L*scaling.L);
     model.L0  /= (scaling.L);
@@ -889,48 +878,47 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int *writer_step, params *model, scale *scaling, mat_prop *materials, markers *particles, Nparams *Nmodel ) {
-    
+
     //------------------------------------------------------------------------------------------------------------------------------//
     // MODEL PARAMETERS
     //------------------------------------------------------------------------------------------------------------------------------//
-    
+
     FILE *fin;
     int k, gsel;
-    
-    if (fopen(fin_name,"rt") == NULL) {
+
+    fin = fopen(fin_name,"rt");
+    if (fin == NULL) {
         printf("Setup file '%s' does not exist\nExiting...\n", fin_name);
+        fclose(fin);
         exit(1);
     }
-    else {
-        fin = fopen(fin_name,"rt");
-    }
-    
+
     // Simulation start/restart from Breakpoint
     *istep                 = ReadInt2( fin, "istep", 0 );
     *irestart              = ReadInt2( fin, "irestart", 0 );
-    
+
     if ( *istep == 0 ) {
         *irestart = 0; // Override the restart step number written in the text file (istep)
     }
-    
+
     // Output
     *writer                = ReadInt2( fin, "writer",          0 );
     *writer_step           = ReadInt2( fin, "writer_step",     1 );
     model->write_markers   = ReadInt2( fin, "writer_markers",  0 );
     model->write_debug     = ReadInt2( fin, "writer_debug",    0 );
     model->write_energies  = ReadInt2( fin, "writer_energies", 0 );
-    
+
     // Input
     model->input_file      = ReadChar( fin, "input_file", "blah.bin");
     printf("%s\n",     model->input_file );
-    
+
     // Read scales for non-dimensionalisation
     scaling->eta           = ReadDou2( fin, "eta", 1.0  );
     scaling->L             = ReadDou2( fin, "L",   1.0  );
     scaling->V             = ReadDou2( fin, "V",   1.0  );
     scaling->T             = ReadDou2( fin, "T",   1.0  );
     ScaleMe( scaling );
-    
+
     // Domain size
     model->Nx              = ReadInt2( fin, "Nx",   10 );
     model->Nz              = ReadInt2( fin, "Nz",   10 );
@@ -950,7 +938,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->pc_type         = ReadInt2( fin, "pc_type",       0 );
     model->num_deriv       = ReadInt2( fin, "num_deriv",     1 );
     model->safe_mode       = ReadInt2( fin, "safe_mode",     0 );
-    
+
     // Switches
     model->initial_noise   = ReadInt2( fin, "initial_noise",   0 );
     model->ismechanical    = ReadInt2( fin, "ismechanical",    1 );
@@ -990,7 +978,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->StressRotation  = ReadInt2( fin, "StressRotation", 1 );
     model->polar           = ReadInt2( fin, "polar", 0 );
     if (model->shear_style==1) model->isperiodic_x  = 1;
-    
+
     // Setup dependant
     model->EpsBG           = ReadDou2( fin, "EpsBG",           0.0 ) / scaling->E;
     model->PrBG            = ReadDou2( fin, "PrBG",            0.0 ) / scaling->S;
@@ -1009,7 +997,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->force_act_vol_ast = ReadInt2( fin, "force_act_vol_ast",   0 );
     model->act_vol_dis_ast   = ReadDou2( fin, "act_vol_dis_ast" ,  0.0 );
     model->act_vol_dif_ast   = ReadDou2( fin, "act_vol_dif_ast" ,  0.0 );
-    
+
     // Model user's delights
     model->user0           = ReadDou2( fin, "user0",           0.0 );
     model->user1           = ReadDou2( fin, "user1",           0.0 );
@@ -1020,7 +1008,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->user6           = ReadDou2( fin, "user6",           0.0 );
     model->user7           = ReadDou2( fin, "user7",           0.0 );
     model->user8           = ReadDou2( fin, "user8",           0.0 );
-    
+
     // Derived quantities
     model->dx              = (model->xmax - model->xmin) / (model->Nx - 1); printf("dx = %2.6e\n", model->dx );
     model->dz              = (model->zmax - model->zmin) / (model->Nz - 1);
@@ -1028,11 +1016,11 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->dt_start        = model->dt;
     model->eta_avg         = ReadInt2( fin, "eta_avg",       0 ); // 0 : arithmetic mean
     model->p_avg           = 0;                                   // 0 : arithmetic mean
-    
+
     // Gravity
     model->gx              = ReadDou2( fin, "gx",  0.0 ) / scaling->a;
     model->gz              = ReadDou2( fin, "gz",  0.0 ) / scaling->a;
-    
+
     // Material properties
     model->Nb_phases = materials->Nb_phases =  ReadInt2( fin, "Nb_phases", 0 );
     for ( k=0; k<materials->Nb_phases; k++) {
@@ -1097,7 +1085,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         printf("prefactor for power-law: %2.2e\n", materials->pref_pwl[k]);
                  printf("C_end    = %2.2e Pa        Phi_end = %2.2e deg         pls_start = %2.2e        pls_end = %2.2e \n", materials->C_end[k]*scaling->S, materials->phi_end[k]*180/M_PI, materials->pls_start[k],  materials->pls_end[k] );
         printf("eta0_vp   = %2.2e  Pa.s^(1/n)         n_vp   = %2.2e\n", materials->eta_vp[k]* (scaling->S*pow(scaling->t,1.0/materials->n_vp[k])) , materials->n_vp[k]);
-        
+
         printf("Flow law settings:\n");
         if ( abs(materials->cstv[k])>0 ) printf("--->    Constant viscosity activated \n");
         if ( abs(materials->pwlv[k])>0 ) printf("--->   Power law viscosity activated \n");
@@ -1105,29 +1093,29 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         if ( abs(materials->gbsv[k])>0 ) printf("--->         GBS viscosity activated \n");
         if ( abs(materials->expv[k])>0 ) printf("---> Exponential viscosity activated \n");
         if ( abs(gsel)              >0 ) printf("--->  Grain size evolution activated \n");
-        
+
         // Call flow law data base
         if ( abs(materials->pwlv[k])>0 ) ReadDataPowerLaw   ( materials, model, k, materials->pwlv[k], scaling );
         if ( abs(materials->linv[k])>0 ) ReadDataLinear     ( materials, model, k, materials->linv[k], scaling );
         if ( abs(materials->gbsv[k])>0 ) ReadDataGBS        ( materials, model, k, materials->gbsv[k], scaling );
         if ( abs(materials->expv[k])>0 ) ReadDataExponential( materials, model, k, materials->expv[k], scaling );
         if ( abs(materials->gs[k])  >0 ) ReadDataGSE        ( materials, model, k, materials->gs[k], scaling );
-        
+
         if ( abs(materials->cstv[k])>0 ) {
             materials->eta0[k]  /= scaling->eta;
             printf("eta0 = %2.2e Pa.s\n", materials->eta0[k]*scaling->eta);
         }
     }
-    
+
     for ( k=0; k<materials->Nb_phases; k++)  printf("%02d %2.2e %2.2e\n", materials->Reac[k], materials->Preac[k]*scaling->S, materials->treac[k]*scaling->t );
-    
+
     materials->R = Rg / (scaling->J/scaling->T);
-    
+
     //------------------------------------------------------------------------------------------------------------------------------//
     // PHASE DIAGRAM INFO
     //------------------------------------------------------------------------------------------------------------------------------//
     model->isPD = 0;
-    
+
     for ( k=0; k<materials->Nb_phases; k++) {
         printf("Phase %d ---  density model %d \n",k, materials->density_model[k]);
         if ( materials->density_model[k] == 2 ) {
@@ -1140,17 +1128,17 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
             exit(5);
         }
     }
-    
+
     // Phase diagrams
     if ( model->isPD == 1 ) {
-        
+
         printf("Loading phase_diagrams...\n");
         int pid;
         model->num_PD = 3;
-        
+
         // Allocate
         AllocatePhaseDiagrams( model );
-        
+
         /**** PHASE DIAGRAMS #00 - Mantle (Jenadi_stx.dat)  ****/
         pid                       = 0;         // Kaus & Connolly, 2005: Effect of mineral phase transitions on sedimentary basin subsidence and uplift
         if (pid > (model->num_PD-1) ) {
@@ -1164,7 +1152,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         model->PDMPmin[pid]       = 100e6/scaling->S;         // Minimum pressure           (MANTLE) [Pa]
         model->PDMPmax[pid]       = 15e9 /scaling->S;         // Maximum pressure           (MANTLE) [Pa]
         model->PDMrho[pid]        = ReadBin( "PHASE_DIAGRAMS/Hawaiian_Pyrolite_rho_bin.dat", model->PDMnT[pid], model->PDMnP[pid], scaling->rho);
-        
+
         /**** PHASE DIAGRAMS #00 - Mantle (Jenadi_stx_HR.dat)  ****/
         pid                       = 1;         // Kaus & Connolly, 2005: Effect of mineral phase transitions on sedimentary basin subsidence and uplift
         if (pid > (model->num_PD-1) ) {
@@ -1178,7 +1166,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         model->PDMPmin[pid]       = 1e5/scaling->S;           // Minimum pressure           (MANTLE) [Pa]
         model->PDMPmax[pid]       = 25e9 /scaling->S;         // Maximum pressure           (MANTLE) [Pa]
         model->PDMrho[pid]        = ReadBin( "PHASE_DIAGRAMS/Hawaiian_Pyrolite_HR_rho_bin.dat", model->PDMnT[pid], model->PDMnP[pid], scaling->rho);
-        
+
         /**** PHASE DIAGRAMS #01 - Basalt (MORB_L.dat)  ****/
         pid                       = 2;  // Water saturated MORB - Bulk composition taken from Schmidt & Poli 1998 EPSL (Table 1)
         if (pid > (model->num_PD-1) ) {
@@ -1192,21 +1180,21 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         model->PDMPmin[pid]       = 100e6/scaling->S;         // Minimum pressure           (MANTLE) [Pa]
         model->PDMPmax[pid]       = 5.1e9 /scaling->S;        // Maximum pressure           (MANTLE) [Pa]
         model->PDMrho[pid]        = ReadBin( "PHASE_DIAGRAMS/MORB_H2Osat_rho_bin.dat", model->PDMnT[pid], model->PDMnP[pid], scaling->rho);
-        
+
     }
-    
+
     //------------------------------------------------------------------------------------------------------------------------------//
     // DEFORMATION MAP PARAMETERS
     //------------------------------------------------------------------------------------------------------------------------------//
-    
+
     // Create deformation maps or not (default no)
     model->def_maps        = ReadInt2(fin, "def_maps", 0);
-    
+
     // Resolution
     model->nT              = ReadInt2(fin, "nT", 11);
     model->nE              = ReadInt2(fin, "nE", 11);
     model->nd              = ReadInt2(fin, "nd", 11);
-    
+
     // Temperature, strain rate, grain size MIN/MAX & pressure
     model->Tmin            = ReadDou2(fin, "Tmin", 100.0);  model->Tmin += zeroC; model->Tmin /= scaling->T;    // C -> K & non-dimensionalization
     model->Tmax            = ReadDou2(fin, "Tmax", 1000.0); model->Tmax += zeroC; model->Tmax /= scaling->T;    // C -> K & non-dimensionalization
@@ -1215,18 +1203,18 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->dmin            = ReadDou2(fin, "dmin", -7.0 );   //model->dmin /= scaling->L;                           // Non-dimensionalization
     model->dmax            = ReadDou2(fin, "dmax", -2.0 );   //model->dmax /= scaling->L;                           // Non-dimensionalization
     model->Pn              = ReadDou2(fin, "Pn",  5.0e8 );      model->Pn   /= scaling->S;                           // Non-dimensionalization
-    
+
     //------------------------------------------------------------------------------------------------------------------------------//
     // NUMERICAL PARAMETERS
     //------------------------------------------------------------------------------------------------------------------------------//
-    
+
     // Particles
     particles->Nx_part       = ReadInt2( fin, "Nx_part", 4 );
     particles->Nz_part       = ReadInt2( fin, "Nz_part", 4 );
     particles->min_part_cell = ReadInt2( fin, "min_part_cell", 16 );
     particles->Nb_part       = (model->Nx-1)*(model->Nz-1) * particles->Nx_part * particles->Nz_part;
     particles->Nb_part_max   = 4.1*particles->Nb_part;
-    
+
     // Nonlinear iteration parameters
     model->Newton           = ReadInt2( fin, "Newton", 0 );
     model->rel_tol_KSP      = ReadDou2( fin, "rel_tol_KSP", 1e-13 );
@@ -1236,7 +1224,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->mineta           = ReadDou2( fin, "mineta", 1.0e18 ) / scaling->eta;
     model->maxeta           = ReadDou2( fin, "maxeta", 1.0e24 ) / scaling->eta;
     Nmodel->stagnated       = 0;
-    
+
     // Direct solver parameters
     model->lsolver          = ReadInt2( fin, "lsolver", 2 );
     if ( model->lsolver == 0) {
@@ -1255,7 +1243,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void ScaleMe( scale* scale) {
-    
+
     scale->t    = scale->L / scale->V;
     scale->a    = scale->V / scale->t;
     scale->E    = 1.0 / scale->t;
@@ -1295,28 +1283,28 @@ char* ReadChar( FILE *fin, char FieldName[], char Default[] ) {
     int h, find=0, bufmax=50, length;
     char *string1, *string2;
     char line[bufmax];
-    
+
     string1 = malloc(sizeof(char)*bufmax);
-    
+
     // Get the length of the demanded string
     length = strlen( FieldName );
-    
+
     // Buffer array to contain the string to compare with
     char *param1, *param2;
     param2 = malloc( (length+1)*sizeof(char));
     asprintf(&param1, "%s", FieldName);
-    
+
     // Initialise line
     for (h=0;h<bufmax;h++) {
         line[h]='\0';
     }
-    
+
     // Seach for sign 'equal' in the lines
     while ( find == 0 ) {
-        
+
         // Read new line
         fgets ( line, sizeof(line), fin );
-        
+
         if (feof(fin)) {
             printf("Warning : Parameter '%s' not found in the setup file, running with default value %s\n", FieldName, Default);
             rewind (fin);
@@ -1328,13 +1316,13 @@ char* ReadChar( FILE *fin, char FieldName[], char Default[] ) {
             }
             return string2;
         }
-        
+
         // Get the first 'length' characters of the line
         for (h=0;h<length;h++) {
             param2[h] = line[h];
         }
         param2[length] = '\0';
-        
+
         // Check if we found the right parameter name
         if ( strcmp(param1, param2) == 0 ) {
             find = 1;
@@ -1343,7 +1331,7 @@ char* ReadChar( FILE *fin, char FieldName[], char Default[] ) {
             // Search for equal sign
             for (h=0;h<bufmax;h++) {
                 if(strlen(line)> 0 && line[h]=='=') {
-                    
+
                     for (h1=0; h1<30; h1++) {
                         if ( isspace(line[h+2+h1]) ) {
                             string1[h1] = '\0';
@@ -1355,12 +1343,12 @@ char* ReadChar( FILE *fin, char FieldName[], char Default[] ) {
                             str_size++;
                         }
                     }
-                    
+
                     string2 = malloc((str_size+1)*sizeof(char));
                     for (h1=0; h1<str_size+1; h1++) {
                         string2[h1] = string1[h1];
                     }
-   
+
                     free(param1);
                     free(param2);
                     free(string1);
@@ -1382,28 +1370,28 @@ char* ReadPhaseDiagram( FILE *fin, char FieldName[] ) {
     int h, find=0, bufmax=50, length;
     char *string1, *string2;
     char line[bufmax];
-    
+
     string1 = malloc(sizeof(char)*bufmax);
-    
+
     // Get the length of the demanded string
     length = strlen( FieldName );
-    
+
     // Buffer array to contain the string to compare with
     char *param1, *param2;
     param2 = malloc( (length+1)*sizeof(char));
     asprintf(&param1, "%s", FieldName);
-    
+
     // Initialise line
     for (h=0;h<bufmax;h++) {
         line[h]='\0';
     }
-    
+
     // Seach for sign 'equal' in the lines
     while ( find == 0 ) {
-        
+
         // Read new line
         fgets ( line, sizeof(line), fin );
-        
+
         if (feof(fin)) {
             printf("Error: The phase diagram '%s' could not be found in the setup file. I will exit here.\n", FieldName);
             rewind (fin    );
@@ -1412,13 +1400,13 @@ char* ReadPhaseDiagram( FILE *fin, char FieldName[] ) {
             free   (string1);
             exit(2);
         }
-        
+
         // Get the first 'length' characters of the line
         for (h=0;h<length;h++) {
             param2[h] = line[h];
         }
         param2[length] = '\0';
-        
+
         // Check if we found the right parameter name
         if ( strcmp(param1, param2) == 0 ) {
             find = 1;
@@ -1427,7 +1415,7 @@ char* ReadPhaseDiagram( FILE *fin, char FieldName[] ) {
             // Search for equal sign
             for (h=0;h<bufmax;h++) {
                 if(strlen(line)> 0 && line[h]=='=') {
-                    
+
                     for (h1=0; h1<30; h1++) {
                         if ( isspace(line[h+2+h1]) ) {
                             //printf("found space last char is %c\n", line[h+2+h1-1]);
@@ -1440,7 +1428,7 @@ char* ReadPhaseDiagram( FILE *fin, char FieldName[] ) {
                             str_size++;
                         }
                     }
-                    
+
                     string2 = malloc((str_size+1)*sizeof(char));
                     for (h1=0; h1<str_size+1; h1++) {
                         string2[h1] = string1[h1];
@@ -1470,14 +1458,14 @@ int ReadInt2( FILE *fin, char FieldName[], int Default )
     int     h = 0;
     char    line[bufmax];
     int     value = 0;
-    
+
     // Start from beginning of the file.
     rewind(fin);
-    
+
     // Buffer array to contain the string to compare with
     char *param1;
     asprintf(&param1, "%s", FieldName);
-    
+
     // Loop over all lines in input file
     while(value == 0)
     {
@@ -1489,26 +1477,26 @@ int ReadInt2( FILE *fin, char FieldName[], int Default )
             free(param1);
             return Default;
         }
-        
+
         // Determine the length of the parameter string in the current line.
         int InPar_length = 0;
-        
+
         while(line[InPar_length] != ' ')
         {
             InPar_length = InPar_length + 1;
         }
-        
+
         // Allocate memory to save the current parameter string.
         char *param2;
         param2 = malloc( (InPar_length + 1)*sizeof(char));
-        
+
         // Save the current parameter string.
         for (h = 0; h < InPar_length; h++)
         {
             param2[h] = line[h];
         }
         param2[InPar_length] = '\0';
-        
+
         // Find match.
         if( (strcmp(param1, param2)) == 0 )
         {
@@ -1543,14 +1531,14 @@ double ReadDou2( FILE *fin, char FieldName[], double Default )
     int     h = 0;
     char    line[bufmax];
     double  value = 0.0;
-    
+
     // Start from beginning of the file.
     rewind(fin);
-    
+
     // Buffer array to contain the string to compare with
     char *param1;
     asprintf(&param1, "%s", FieldName);
-    
+
     // Loop over all lines in input file
     while(value == 0)
     {
@@ -1562,25 +1550,25 @@ double ReadDou2( FILE *fin, char FieldName[], double Default )
             free(param1);
             return Default;
         }
-        
+
         // Determine the length of the parameter string in the current line.
         int InPar_length = 0;
         while(line[InPar_length] != ' ')
         {
             InPar_length = InPar_length + 1;
         }
-        
+
         // Allocate memory to save the current parameter string.
         char *param2;
         param2 = malloc( (InPar_length + 1)*sizeof(char));
-        
+
         // Save the current parameter string.
         for (h = 0; h < InPar_length; h++)
         {
             param2[h] = line[h];
         }
         param2[InPar_length] = '\0';
-        
+
         // Find match.
         if( (strcmp(param1, param2)) == 0 )
         {
@@ -1615,14 +1603,14 @@ double ReadMatProps( FILE *fin, char FieldName[], int PhaseID, double Default )
     int     h = 0, ID_value, find = 0, subfind = 0;
     char    line[bufmax], phase_line[bufmax];
     double  value = 0.0;
-    
+
     // Find the current phase ID starting from the beginning of the input file.
     rewind(fin);
-    
+
     // Buffer array to contain the string to compare with
     char *param1;
     asprintf(&param1, "%s", FieldName);
-    
+
     // Loop over all lines in input file.
     while(find == 0)
     {
@@ -1635,26 +1623,26 @@ double ReadMatProps( FILE *fin, char FieldName[], int PhaseID, double Default )
             rewind (fin);
             exit(0);
         }
-        
+
         // Determine the length of the parameter string in the current line.
         int InPar_length = 0;
-        
+
         while(line[InPar_length] != ' ')
         {
             InPar_length = InPar_length + 1;
         }
-        
+
         // Allocate memory to save the current parameter string.
         char *param2;
         param2 = malloc( (InPar_length + 1)*sizeof(char) );
-        
+
         // Save the current parameter string.
         for (h = 0; h < InPar_length; h++)
         {
             param2[h] = line[h];
         }
         param2[InPar_length] = '\0';
-        
+
         // Find match.
         if( (strcmp("ID", param2)) == 0 )
         {
@@ -1667,7 +1655,7 @@ double ReadMatProps( FILE *fin, char FieldName[], int PhaseID, double Default )
                     break;
                 }
             }
-            
+
             // Read parameters if current phase.
             if (ID_value == PhaseID)
             {
@@ -1676,25 +1664,25 @@ double ReadMatProps( FILE *fin, char FieldName[], int PhaseID, double Default )
                 {
                     // Read new line
                     fgets ( phase_line, sizeof(phase_line), fin );
-                    
+
                     // Determine the length of the parameter string in the current line.
                     InPar_length = 0;
                     while(phase_line[InPar_length] != ' ')
                     {
                         InPar_length = InPar_length + 1;
                     }
-                    
+
                     // Allocate memory to save the current parameter string.
                     char *param3;
                     param3 = malloc( (InPar_length + 1)*sizeof(char));
-                    
+
                     // Save the current parameter string.
                     for (h = 0; h < InPar_length; h++)
                     {
                         param3[h] = phase_line[h];
                     }
                     param3[InPar_length] = '\0';
-                    
+
                     // Break in case the parameter has not been defined for the current phase.
                     if ( strcmp(param3,"ID") == 0 || feof(fin) ) {
                         printf("Warning : Parameter '%s' not found in the setup file, running with default value %.2lf\n", FieldName, Default);
@@ -1704,14 +1692,14 @@ double ReadMatProps( FILE *fin, char FieldName[], int PhaseID, double Default )
                         free(param3);
                         return Default;
                     }
-                    
+
                     // Find match.
                     if( (strcmp(param1, param3)) == 0 )
                     {
                         // Search for equal sign
                         for (h = 0; h < bufmax ;h++)
                         {
-                            
+
                             if(strlen(line)> 0 && phase_line[h]=='=')
                             {
                                 value = atof(&phase_line[h+1]);
@@ -1734,8 +1722,75 @@ double ReadMatProps( FILE *fin, char FieldName[], int PhaseID, double Default )
     return Default;
 }
 
-
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+void UpdateInputFile( char fin_name[], int NewNumber ) {
+
+    FILE* fin;
+    char  FieldName[] = "istep";
+    int h, find=0, bufmax=50, length;
+    char line[bufmax];
+
+    // Get the length of the demanded string
+    length = strlen( FieldName );
+
+    // Buffer array to contain the string to compare with
+    char *param1, *param2;
+    param2 = malloc( (length+1)*sizeof(char));
+    asprintf(&param1, "%s", FieldName);
+
+    // Open File
+    fin = fopen(fin_name,"r+");
+	if ( fin == NULL) {
+		printf("Setup file '%s' does not exist\nExiting...\n", fin_name);
+        fclose(fin);
+		exit(1);
+	}
+    // Seach for sign 'equal' in the lines
+    while ( find == 0 && feof(fin) !=1 ) {
+
+        // Read new line
+        fgets ( line, sizeof(line), fin );
+        if (feof(fin)) {
+            printf("Warning : Parameter '%s' not found in the setup file\n", FieldName);
+        }
+
+        // Get the first 'length' characters of the line
+        for (h=0;h<length;h++) {
+            param2[h] = line[h];
+        }
+        param2[length] = '\0';
+
+        // printf("p1 %s p2 %s\n", param1, param2);
+
+        // Check if we found the right parameter name
+        if ( strcmp(param1, param2) == 0 ) {
+            find = 1;
+            // Search for equal sign and replace by the current step
+            for (h=0;h<bufmax;h++) {
+
+                //printf(" %c ", line[h]);
+
+                if(strlen(line)> 0 && line[h]=='=') {
+
+                    //printf("pos =%d SEEK_CUR=%d NewNumber=%d\n", pos, SEEK_CUR, NewNumber);
+                    fseek(fin, -6, SEEK_CUR);
+                    fprintf( fin, "%05d", NewNumber);
+                    break;
+                }
+            }
+        }
+    }
+
+    // Close file
+    fclose(fin);
+    free(param1);
+    free(param2);
+}
+
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/

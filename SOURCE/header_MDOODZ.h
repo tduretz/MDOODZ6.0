@@ -167,7 +167,7 @@ struct _grid {
     double *strain_n, *strain_s;
 	double *u, *v, *p;
 	double *ru, *rv, *rp;
-	double *rhs_u, *rhs_v, *rhs_p, *rhs_t;
+	double *rhs_u, *rhs_v, *rhs_p, *rhs_t, *gx, *gz;
 	double p_scale;
     double *alp, *bet, *p_lith, *dp, *Qrho;
     double *VxVz, *VzVx;

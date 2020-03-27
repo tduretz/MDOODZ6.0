@@ -19,6 +19,9 @@
 // along with MDOODZ.  If not, see <http://www.gnu.org/licenses/>.
 // =========================================================================
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
@@ -42,26 +45,26 @@
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 double UpdateReactionProgress ( double ttrans0, double Pold, double Pc, double treac, double Preac, double dt ,scale *scaling) {
-    
+
     double ttrans= 0.0;
-    
+
     //printf("Update Reaction Progress\n");
     //printf("Pc = %2.2e; Preac = %2.2e; Pold = %2.2e\n", Pc*scaling->S, Preac*scaling->S, Pold*scaling->S);
-    
+
     double dtr = 0.0;
-    
+
     if ((Pc >= Preac) && (Pold >= Preac)) dtr = dt;
     if ((Pc <  Preac) && (Pold <  Preac)) dtr = 0.0;
     if ((Pc >= Preac) && (Pold <  Preac)) dtr = dt*(Pc-Preac)/(Pc-Pold);
     if ((Pc <  Preac) && (Pold >= Preac)) dtr = dt*(Preac-Pc)/(Pold-Pc);
-    
+
     //printf("dt = %2.2e; dtr = %2.2e\n", dt*scaling->t, dtr*scaling->t);
     ttrans = ttrans0 + dtr;
-    
+
     //printf("ttrans = %2.2e; ttrans0 = %2.2e\n", ttrans*scaling->t, ttrans0*scaling->t);
-    
-    
-    
+
+
+
     return ttrans;
 }
 
@@ -70,19 +73,19 @@ double UpdateReactionProgress ( double ttrans0, double Pold, double Pc, double t
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobian ) {
-    
+
     int Nx, Nz, Ncx, Ncz, k;
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
-    
+
     double nx, nz, deta=5e21/scaling->eta;
-    
+
     if (Jacobian == 0  && model->aniso == 0) {
-    
+
         // Loop on cell centers
 #pragma omp parallel for shared( mesh )
         for (k=0; k<Ncx*Ncz; k++) {
-            
+
             if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
                 mesh->D11_n[k] = 2*mesh->eta_n[k];
                 mesh->D22_n[k] = 2*mesh->eta_n[k];
@@ -92,11 +95,11 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 mesh->D22_n[k] = 0.0;
             }
         }
-        
+
         // Loop on cell vertices
 #pragma omp parallel for shared( mesh )
         for (k=0; k<Nx*Nz; k++) {
-            
+
             if ( mesh->BCg.type[k] != 30 ) {
                 mesh->D33_s[k] = mesh->eta_s[k];
             }
@@ -104,18 +107,18 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 mesh->D33_s[k] = 0.0;
             }
         }
-        
+
     }
 
     if (Jacobian == 1  && model->aniso == 0) {
-        
+
         double etae;
         double yn = 1.0;
         int el = model->iselastic;
         // Loop on cell centers
 #pragma omp parallel for shared( mesh ) private ( etae ) firstprivate ( el, yn )
         for (k=0; k<Ncx*Ncz; k++) {
-            
+
             if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
                 switch ( el ) {
                     case 0:
@@ -124,12 +127,12 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                         mesh->D12_n[k] =                      yn*2.0*mesh->detadezz_n[k]*mesh->exxd[k];
                         mesh->D13_n[k] =                      yn*2.0*mesh->detadgxz_n[k]*mesh->exxd[k];
                         mesh->D14_n[k] =                      yn*2.0*mesh->detadp_n[k]  *mesh->exxd[k];
-                        
+
                         mesh->D21_n[k] =                      yn*2.0*mesh->detadexx_n[k]*mesh->ezzd[k];
                         mesh->D22_n[k] = 2.0*mesh->eta_n[k] + yn*2.0*mesh->detadezz_n[k]*mesh->ezzd[k];
                         mesh->D23_n[k] =                      yn*2.0*mesh->detadgxz_n[k]*mesh->ezzd[k];
                         mesh->D24_n[k] =                      yn*2.0*mesh->detadp_n[k]  *mesh->ezzd[k];
-                        
+
                         break;
                     case 1:
                         etae = model->dt*mesh->mu_n[k];
@@ -137,7 +140,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                         mesh->D12_n[k] =                      yn*2.0*mesh->detadezz_n[k]*mesh->exxd[k] + mesh->sxxd0[k]*mesh->detadezz_n[k] / etae;
                         mesh->D13_n[k] =                      yn*2.0*mesh->detadgxz_n[k]*mesh->exxd[k] + mesh->sxxd0[k]*mesh->detadgxz_n[k] / etae;
                         mesh->D14_n[k] =                      yn*2.0*mesh->detadp_n[k]  *mesh->exxd[k] + mesh->sxxd0[k]*mesh->detadp_n[k]   / etae;
-                        
+
                         mesh->D21_n[k] =                      yn*2.0*mesh->detadexx_n[k]*mesh->ezzd[k] + mesh->szzd0[k]*mesh->detadexx_n[k] / etae;
                         mesh->D22_n[k] = 2.0*mesh->eta_n[k] + yn*2.0*mesh->detadezz_n[k]*mesh->ezzd[k] + mesh->szzd0[k]*mesh->detadezz_n[k] / etae;
                         mesh->D23_n[k] =                      yn*2.0*mesh->detadgxz_n[k]*mesh->ezzd[k] + mesh->szzd0[k]*mesh->detadgxz_n[k] / etae;
@@ -150,18 +153,18 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 mesh->D12_n[k] = 0.0;
                 mesh->D13_n[k] = 0.0;
                 mesh->D14_n[k] = 0.0;
-                
+
                 mesh->D21_n[k] = 0.0;
                 mesh->D22_n[k] = 0.0;
                 mesh->D23_n[k] = 0.0;
                 mesh->D24_n[k] = 0.0;
             }
         }
-        
+
         // Loop on cell vertices
 #pragma omp parallel for shared( mesh )  private ( etae ) firstprivate ( el )
         for (k=0; k<Nx*Nz; k++) {
-            
+
             if ( mesh->BCg.type[k] != 30 ) {
                 switch ( el ) {
                     case 0:
@@ -178,7 +181,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                         mesh->D34_s[k] =                  yn*mesh->detadp_s[k]  *2.0*mesh->exz[k] + mesh->sxz0[k]*mesh->detadp_s[k]   / etae;
                         break;
                 }
-                
+
             }
             else {
                 mesh->D31_s[k] = 0.0;
@@ -188,29 +191,29 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
             }
             if (isnan(mesh->D34_s[k])) exit(1);
             if (isinf(mesh->D34_s[k])) exit(1);
-            
+
         }
-        
+
     }
 
     if ( Jacobian == 0 && model->aniso == 1 ) {
-        
+
         printf("Computing anisotropic viscosity tensor\n");
-        
+
         // Loop on cell centers
 #pragma omp parallel for shared( mesh ) private ( nx, nz ) firstprivate (deta)
         for (k=0; k<Ncx*Ncz; k++) {
-            
+
             // Director
             nx = mesh->nx_n[k];
             nz = mesh->nz_n[k];
-            
+
             if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
                 mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 4.0*deta*pow(nx, 2.0)*pow(nz, 2.0);
                 mesh->D12_n[k] =                      4.0*deta*pow(nx, 2.0)*pow(nz, 2.0);
                 mesh->D13_n[k] =                      1.0*deta*(pow(nx, 3.0)*nz - pow(nx, 4.0));
                 mesh->D14_n[k] =                      0.0;
-                
+
                 mesh->D21_n[k] =                      4.0*deta*pow(nx, 2.0)*pow(nz, 2.0);
                 mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 4.0*deta*pow(nx, 2.0)*pow(nz, 2.0);
                 mesh->D23_n[k] =                      1.0*deta*(-pow(nx, 3.0)*nz + pow(nx, 4.0));
@@ -221,22 +224,22 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 mesh->D12_n[k] = 0.0;
                 mesh->D13_n[k] = 0.0;
                 mesh->D14_n[k] = 0.0;
-                
+
                 mesh->D21_n[k] = 0.0;
                 mesh->D22_n[k] = 0.0;
                 mesh->D23_n[k] = 0.0;
                 mesh->D24_n[k] = 0.0;
             }
         }
-        
+
         // Loop on cell vertices
 #pragma omp parallel for shared( mesh )  private ( nx, nz ) firstprivate (deta)
         for (k=0; k<Nx*Nz; k++) {
-            
+
             // Director
             nx = mesh->nx_s[k];
             nz = mesh->nz_s[k];
-            
+
             if ( mesh->BCg.type[k] != 30 ) {
                 mesh->D31_s[k] =                  2.0*deta*(pow(nx, 3.0)*nz - pow(nx, 4.0));
                 mesh->D32_s[k] =                  2.0*deta*(-pow(nx, 3.0)*nz + pow(nx, 4.0));
@@ -250,10 +253,10 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 mesh->D34_s[k] = 0.0;
             }
         }
-        
+
     }
-    
-    
+
+
     //    double D31_per, D32_per, D33_per, D34_per;
     //    for ( int l=0; l<Nz; l++ ) {
     //
@@ -278,7 +281,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
     //
     //        }
     //    }
-    
+
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -286,13 +289,13 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void AccumulatedStrainII( grid* mesh, scale scaling, params model, markers* particles, double* X_vect, double* Z_vect, int Nx, int Nz, char *tag ) {
-    
+
     double *strain_inc;
     int k, l, c1;
     DoodzFP *strain_inc_el, *strain_inc_pl, *strain_inc_pwl, *strain_inc_exp, *strain_inc_lin, *strain_inc_gbs;
-    
+
     //    printf("Accumulating strain\n");
-    
+
     // Allocate
     strain_inc      = DoodzMalloc(sizeof(double)*(mesh->Nx-1)*(mesh->Nz-1));
     strain_inc_el   = DoodzMalloc(sizeof(double)*(mesh->Nx-1)*(mesh->Nz-1));
@@ -301,18 +304,18 @@ void AccumulatedStrainII( grid* mesh, scale scaling, params model, markers* part
     strain_inc_exp  = DoodzMalloc(sizeof(double)*(mesh->Nx-1)*(mesh->Nz-1));
     strain_inc_lin  = DoodzMalloc(sizeof(double)*(mesh->Nx-1)*(mesh->Nz-1));
     strain_inc_gbs  = DoodzMalloc(sizeof(double)*(mesh->Nx-1)*(mesh->Nz-1));
-    
+
     // Interpolate exz to cell centers
 #pragma omp parallel for shared( mesh, model, strain_inc, strain_inc_el, strain_inc_pl, strain_inc_pwl, strain_inc_exp, strain_inc_lin, strain_inc_gbs  ) private( c1 )
     for (c1=0; c1<(mesh->Nx-1)*(mesh->Nz-1); c1++) {
-        
+
         strain_inc[c1]     = model.dt*(mesh->eII_pl[c1]+mesh->eII_pwl[c1]+mesh->eII_exp[c1]+mesh->eII_lin[c1]+mesh->eII_gbs[c1]+mesh->eII_el[c1]+mesh->eII_cst[c1]);
         if (strain_inc[c1]<0) {
             printf("negative strain increment\n");
             printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e\n" ,mesh->eII_pl[c1],mesh->eII_pwl[c1],mesh->eII_exp[c1],mesh->eII_lin[c1],mesh->eII_gbs[c1],mesh->eII_el[c1]);
             exit(0);
         }
-        
+
         strain_inc_el[c1]  = model.dt*mesh->eII_el[c1];
         strain_inc_pl[c1]  = model.dt*mesh->eII_pl[c1];
         strain_inc_pwl[c1] = model.dt*mesh->eII_pwl[c1];
@@ -320,18 +323,18 @@ void AccumulatedStrainII( grid* mesh, scale scaling, params model, markers* part
         strain_inc_lin[c1] = model.dt*mesh->eII_lin[c1];
         strain_inc_gbs[c1] = model.dt*mesh->eII_gbs[c1];
     }
-    
+
     //---------------------------------------------------------------//
-    
+
     double dE_tot, dE_el, dE_pl, dE_pwl, dE_exp, dE_lin, dE_gbs;
     double dx, dz, dxm, dzm, dst, sumW;
     int    i_part, j_part, iSW, iNW, iSE, iNE;
     dx=mesh->dx;
     dz=mesh->dz;
-    
+
     //#pragma omp parallel for shared( particles , strain_inc, strain_inc_el, strain_inc_pl, strain_inc_pwl, strain_inc_exp, strain_inc_lin, strain_inc_gbs, tag  ) private( dE_tot, dE_el, dE_pl, dE_pwl, dE_exp, dE_lin, dE_gbs, sumW, dst, dxm, dzm, iSW, iSE, iNW, iNE, i_part, j_part  ) firstprivate (dx, dz, Nx, Nz)
     for (k=0;k<particles->Nb_part;k++) {
-        
+
         dE_tot = 0.0;
         dE_el  = 0.0;
         dE_pl  = 0.0;
@@ -339,10 +342,10 @@ void AccumulatedStrainII( grid* mesh, scale scaling, params model, markers* part
         dE_exp = 0.0;
         dE_lin = 0.0;
         dE_gbs = 0.0;
-        
-        
+
+
         if (particles->phase[k] != -1) {
-            
+
             dst = (particles->x[k]-X_vect[0]);
             j_part   = ceil((dst/dx)) - 1;
             if (j_part<0) {
@@ -351,7 +354,7 @@ void AccumulatedStrainII( grid* mesh, scale scaling, params model, markers* part
             if (j_part>Nx-2) {
                 j_part = Nx-2;
             }
-            
+
             // Get the line:
             dst = (particles->z[k]-Z_vect[0]);
             i_part   = ceil((dst/dz)) - 1;
@@ -361,15 +364,15 @@ void AccumulatedStrainII( grid* mesh, scale scaling, params model, markers* part
             if (i_part>Nz-2) {
                 i_part = Nz-2;
             }
-            
+
             dxm = (particles->x[k] - X_vect[j_part]);
             dzm = (particles->z[k] - Z_vect[i_part]);
-            
+
             iSW = j_part+i_part*Nx;
             iSE = j_part+i_part*Nx+1;
             iNW = j_part+(i_part+1)*Nx;
             iNE = j_part+(i_part+1)*Nx+1;
-            
+
             dE_tot = 0.0;
             dE_el  = 0.0;
             dE_pl  = 0.0;
@@ -377,11 +380,11 @@ void AccumulatedStrainII( grid* mesh, scale scaling, params model, markers* part
             dE_exp = 0.0;
             dE_lin = 0.0;
             dE_gbs = 0.0;
-            
+
             sumW         = 0.0;
-            
+
             //            if (j_part>0 && j_part<Nx-2 && i_part>0 && i_part<Nz-2) {
-            
+
             if (tag[iSW]!=30 && tag[iSW]!=31) {
                 dE_tot +=  (1.0-dxm/dx) * (1.0-dzm/dz) * strain_inc[iSW];
                 dE_el  +=  (1.0-dxm/dx) * (1.0-dzm/dz) * strain_inc_el[iSW];
@@ -422,12 +425,12 @@ void AccumulatedStrainII( grid* mesh, scale scaling, params model, markers* part
                 dE_gbs +=  (dxm/dx) * (dzm/dz) * strain_inc_gbs[iNE];
                 sumW += (dxm/dx)* (dzm/dz);
             }
-            
+
             //            printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e\n", sumW, dE_tot, strain_inc[iSW], strain_inc[iSE], strain_inc[iNW], strain_inc[iNE]);
             //
             //             if (dE_tot<0.0)exit(1);
             //            }
-            
+
             //            if (j_part==0    && i_part==0   ) {
             //                dE_tot = strain_inc[iNE];
             //                dE_el  = strain_inc[iNE];
@@ -464,7 +467,7 @@ void AccumulatedStrainII( grid* mesh, scale scaling, params model, markers* part
             //                dE_lin = strain_inc[iSW];
             //                dE_gbs = strain_inc[iSW];
             //            }
-            
+
             //            if (j_part==0 && i_part>0 && i_part<Nz-2) {
             //
             //                if (tag[iSE]!=30 && tag[iSE]!=31) {
@@ -530,7 +533,7 @@ void AccumulatedStrainII( grid* mesh, scale scaling, params model, markers* part
             //                    dE_gbs /= sumW;
             //                }
             //            }
-            
+
             //            if (i_part==0 && j_part>0 && j_part<Nx-2) {
             //                if (tag[iNW]!=30 && tag[iNW]!=31) {
             //                    dE_tot += (1.0-dxm/dx)   * strain_inc[iNW];
@@ -593,7 +596,7 @@ void AccumulatedStrainII( grid* mesh, scale scaling, params model, markers* part
             //                    dE_gbs /= sumW;
             //                }
             //            }
-            
+
             if(sumW>1e-13) {
                 dE_tot /= sumW;
                 dE_el  /= sumW;
@@ -603,10 +606,10 @@ void AccumulatedStrainII( grid* mesh, scale scaling, params model, markers* part
                 dE_lin /= sumW;
                 dE_gbs /= sumW;
             }
-            
-            
+
+
         }
-        
+
         particles->strain[k]      += dE_tot;
         particles->strain_el[k]   += dE_el;
         particles->strain_pl[k]   += dE_pl;
@@ -615,9 +618,9 @@ void AccumulatedStrainII( grid* mesh, scale scaling, params model, markers* part
         particles->strain_lin[k]  += dE_lin;
         particles->strain_gbs[k]  += dE_gbs;
     }
-    
+
     //---------------------------------------------------------------//
-    
+
     // Free
     DoodzFree(strain_inc);
     DoodzFree(strain_inc_el);
@@ -633,19 +636,19 @@ void AccumulatedStrainII( grid* mesh, scale scaling, params model, markers* part
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void DeformationGradient ( grid mesh, scale scaling, params model, markers *particles ) {
-    
+
     int k, l, cp, cu, cv, Nx, Nz;
     double dx, dz;
     double fxx, fxz, fzx, fzz, fxx_o, fxz_o, fzx_o, fzz_o;
-    
+
     Nx = mesh.Nx;
     Nz = mesh.Nz;
     dx = mesh.dx;
     dz = mesh.dz;
-    
+
     double *dudx, *dudz, *dvdx, *dvdz;
     DoodzFP *pdudx, *pdudz, *pdvdx, *pdvdz;
-    
+
     dudx   = DoodzMalloc ((Nx-1)*(Nz-1)*sizeof(double));
     dvdz   = DoodzMalloc ((Nx-1)*(Nz-1)*sizeof(double));
     dudz   = DoodzMalloc ((Nx)*(Nz)*sizeof(double));
@@ -654,7 +657,7 @@ void DeformationGradient ( grid mesh, scale scaling, params model, markers *part
     pdudz  = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
     pdvdx  = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
     pdvdz  = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
-    
+
     // Compute dudx and dvdz (cell centers)
     for (k=0; k<Nx-1; k++) {
         for (l=0; l<Nz-1; l++) {
@@ -665,7 +668,7 @@ void DeformationGradient ( grid mesh, scale scaling, params model, markers *part
             dvdz[cp] = 1.0/dz * ( mesh.v_in[cv+(Nx+1)] - mesh.v_in[cv] );
         }
     }
-    
+
     // Compute dudx and dvdz (cell vertices)
     for (k=0; k<Nx; k++) {
         for (l=0; l<Nz; l++) {
@@ -676,27 +679,27 @@ void DeformationGradient ( grid mesh, scale scaling, params model, markers *part
             dvdx[cu] = 1.0/dx * ( mesh.v_in[cv+1]  - mesh.v_in[cv] );
         }
     }
-    
+
     // Interpolate from grid to particles
     Interp_Grid2P( *(particles), pdudx, &mesh, dudx, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type  );
     Interp_Grid2P( *(particles), pdvdz, &mesh, dvdz, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
     Interp_Grid2P( *(particles), pdvdx, &mesh, dvdx, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type   );
     Interp_Grid2P( *(particles), pdudz, &mesh, dudz, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type   );
-    
+
 #pragma omp parallel for shared ( particles ) private ( k, fxx, fxz, fzx, fzz, fxx_o, fxz_o, fzx_o, fzz_o ) firstprivate( model ) schedule( static )
     for(k=0; k<particles->Nb_part; k++) {
-        
+
         fxx = 1.0 + pdudx[k]*model.dt;
         fxz = pdudz[k]*model.dt;
         fzz = 1.0 + pdvdz[k]*model.dt;
         fzx = pdvdx[k]*model.dt;
-        
+
         if (model.step==1) {
             fxx_o = 1.0;
             fxz_o = 0.0;
             fzx_o = 0.0;
             fzz_o = 1.0;
-            
+
         }
         else {
             fxx_o = particles->Fxx[k];
@@ -709,7 +712,7 @@ void DeformationGradient ( grid mesh, scale scaling, params model, markers *part
         particles->Fzx[k] = fzx*fxx_o + fzz*fzx_o;
         particles->Fzz[k] = fzx*fxz_o + fzz*fzz_o;
     }
-   
+
     // Free
     DoodzFree( dudx );
     DoodzFree( dvdz );
@@ -719,7 +722,7 @@ void DeformationGradient ( grid mesh, scale scaling, params model, markers *part
     DoodzFree( pdudz );
     DoodzFree( pdvdx );
     DoodzFree( pdvdz );
- 
+
     printf("Updated deformation gradient tensor\n");
 }
 
@@ -729,16 +732,16 @@ void DeformationGradient ( grid mesh, scale scaling, params model, markers *part
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void AccumulatedStrain( grid* mesh, scale scaling, params model, markers* particles ) {
-    
+
     double *strain_inc;
     int Nx, Nz, k, l, c1;
     DoodzFP *strain_inc_mark, *strain_inc_el, *strain_inc_pl, *strain_inc_pwl, *strain_inc_exp, *strain_inc_lin, *strain_inc_gbs;
-    
+
     Nx = mesh->Nx;
     Nz = mesh->Nz;
-    
+
     printf("Accumulating strain\n");
-    
+
     // Allocate
     //    exz_n           = DoodzMalloc(sizeof(double)*(Nx-1)*(Nz-1));
     strain_inc      = DoodzMalloc(sizeof(double)*(Nx-1)*(Nz-1));
@@ -749,19 +752,19 @@ void AccumulatedStrain( grid* mesh, scale scaling, params model, markers* partic
     strain_inc_lin  = DoodzMalloc(sizeof(double)*(Nx-1)*(Nz-1));
     strain_inc_gbs  = DoodzMalloc(sizeof(double)*(Nx-1)*(Nz-1));
     strain_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-    
+
     // Interpolate exz to cell centers
     for (k=0; k<Nx-1; k++) {
         for (l=0; l<Nz-1; l++) {
             c1 = k  + l*(Nx-1);
-            
+
             strain_inc[c1]     = model.dt*(mesh->eII_pl[c1]+mesh->eII_pwl[c1]+mesh->eII_exp[c1]+mesh->eII_lin[c1]+mesh->eII_gbs[c1]+mesh->eII_el[c1]+mesh->eII_cst[c1]);
             if (strain_inc[c1]<0) {
                 printf("negative strain increment\n");
                 printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e\n" ,mesh->eII_pl[c1],mesh->eII_pwl[c1],mesh->eII_exp[c1],mesh->eII_lin[c1],mesh->eII_gbs[c1],mesh->eII_el[c1]);
                 exit(0);
             }
-            
+
             strain_inc_el[c1]  = model.dt*mesh->eII_el[c1];
             strain_inc_pl[c1]  = model.dt*mesh->eII_pl[c1];
             strain_inc_pwl[c1] = model.dt*mesh->eII_pwl[c1];
@@ -770,29 +773,29 @@ void AccumulatedStrain( grid* mesh, scale scaling, params model, markers* partic
             strain_inc_gbs[c1] = model.dt*mesh->eII_gbs[c1];
         }
     }
-    
+
     // Interp increments to particles
     Interp_Grid2P_strain( *particles, strain_inc_mark, mesh, strain_inc, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type );
     ArrayPlusArray( particles->strain, strain_inc_mark, particles->Nb_part );
-    
+
     Interp_Grid2P_strain( *particles, strain_inc_mark, mesh, strain_inc_el, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type );
     ArrayPlusArray( particles->strain_el, strain_inc_mark, particles->Nb_part );
-    
+
     Interp_Grid2P_strain( *particles, strain_inc_mark, mesh, strain_inc_pl, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type );
     ArrayPlusArray( particles->strain_pl, strain_inc_mark, particles->Nb_part );
-    
+
     Interp_Grid2P_strain( *particles, strain_inc_mark, mesh, strain_inc_pwl, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type );
     ArrayPlusArray( particles->strain_pwl, strain_inc_mark, particles->Nb_part );
-    
+
     Interp_Grid2P_strain( *particles, strain_inc_mark, mesh, strain_inc_exp, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type );
     ArrayPlusArray( particles->strain_exp, strain_inc_mark, particles->Nb_part );
-    
+
     Interp_Grid2P_strain( *particles, strain_inc_mark, mesh, strain_inc_lin, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type );
     ArrayPlusArray( particles->strain_lin, strain_inc_mark, particles->Nb_part );
-    
+
     Interp_Grid2P_strain( *particles, strain_inc_mark, mesh, strain_inc_gbs, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type );
     ArrayPlusArray( particles->strain_gbs, strain_inc_mark, particles->Nb_part );
-    
+
     // Free
     //    DoodzFree(exz_n);
     DoodzFree(strain_inc);
@@ -810,38 +813,38 @@ void AccumulatedStrain( grid* mesh, scale scaling, params model, markers* partic
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 //void RotateStresses( grid mesh, markers* particles, params model, scale *scaling ) {
-//    
+//
 //    int k, l, cp, cu, cv, Nx, Nz,type=0;
 //    double dx, dz;
 //    double angle, txx, tzz, txz;
 //    double sxxr, sxzr;
-//    
+//
 //    Nx = mesh.Nx;
 //    Nz = mesh.Nz;
 //    dx = mesh.dx;
 //    dz = mesh.dz;
-//    
+//
 //    if (type==0) {
 //        // JAUMANN RATE
-//        
+//
 //        // Stress correction
 //#pragma omp parallel for shared ( particles ) private ( angle, k, txx, tzz, txz ) firstprivate( model ) schedule( static )
 //        for(k=0; k<particles->Nb_part; k++) {
-//            
+//
 //            // Filter out particles that are inactive (out of the box)
 //            if (particles->phase[k] != -1) {
-//                
+//
 //                // Angle
 //                angle = model.dt*particles->om_p[k];
-//                
+//
 //                txx = particles->sxxd[k];
 //                tzz = particles->szzd[k];
 //                txz = particles->sxz[k];
-//                
+//
 //                particles->sxxd[k] = (txx*cos(angle) - txz*sin(angle))*cos(angle) - (txz*cos(angle) - tzz*sin(angle))*sin(angle);
 //                particles->szzd[k] = (txx*sin(angle) + txz*cos(angle))*sin(angle) + (txz*sin(angle) + tzz*cos(angle))*cos(angle);
 //                particles->sxz[k]  = (txx*cos(angle) - txz*sin(angle))*sin(angle) + (txz*cos(angle) - tzz*sin(angle))*cos(angle);
-//                
+//
 ////                                // Re-belotte:
 ////                                double sxxr =   ( cos(angle)*particles->sxxd[k] - sin(angle)*particles->sxz[k] ) * cos(angle) + ( particles->sxz[k]*cos(angle) +  sin(angle)*particles->sxxd[k])*sin(angle) ;
 ////                                double sxzr = - ( cos(angle)*particles->sxxd[k] - sin(angle)*particles->sxz[k] ) * sin(angle) + ( particles->sxz[k]*cos(angle) +  sin(angle)*particles->sxxd[k])*cos(angle) ;
@@ -853,12 +856,12 @@ void AccumulatedStrain( grid* mesh, scale scaling, params model, markers* partic
 //        }
 //    }
 //        else {
-//    
+//
 //            // UPPER CONVECTED
-//    
+//
 //            double *dudx, *dudz, *dvdx, *dvdz;
 //            DoodzFP *pdudx, *pdudz, *pdvdx, *pdvdz, *VEm;
-//    
+//
 //            dudx   = DoodzMalloc ((Nx-1)*(Nz-1)*sizeof(double));
 //            dvdz   = DoodzMalloc ((Nx-1)*(Nz-1)*sizeof(double));
 //            dudz   = DoodzMalloc ((Nx)*(Nz)*sizeof(double));
@@ -868,7 +871,7 @@ void AccumulatedStrain( grid* mesh, scale scaling, params model, markers* partic
 //            pdvdx  = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
 //            pdvdz  = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
 //            VEm    = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
-//    
+//
 //            // Compute dudx and dvdz (cell centers)
 //            for (k=0; k<Nx-1; k++) {
 //                for (l=0; l<Nz-1; l++) {
@@ -879,7 +882,7 @@ void AccumulatedStrain( grid* mesh, scale scaling, params model, markers* partic
 //                    dvdz[cp] = 1.0/dz * ( mesh.v_in[cv+(Nx+1)] - mesh.v_in[cv] );
 //                }
 //            }
-//    
+//
 //            // Compute dudx and dvdz (cell vertices)
 //            for (k=0; k<Nx; k++) {
 //                for (l=0; l<Nz; l++) {
@@ -890,15 +893,15 @@ void AccumulatedStrain( grid* mesh, scale scaling, params model, markers* partic
 //                    dvdx[cu] = 1.0/dx * ( mesh.v_in[cv+1]  - mesh.v_in[cv] );
 //                }
 //            }
-//    
+//
 //            // Interpolate from grid to particles
 //            Interp_Grid2P( *(particles), pdudx, &mesh, dudx, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type  );
 //            Interp_Grid2P( *(particles), pdvdz, &mesh, dvdz, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
 //            Interp_Grid2P( *(particles), pdvdx, &mesh, dvdx, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type   );
 //            Interp_Grid2P( *(particles), pdudz, &mesh, dudz, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type   );
 //            Interp_Grid2P( *(particles), VEm, &mesh, mesh.VE_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type  );
-//    
-//    
+//
+//
 //            // Stress correction
 //    #pragma omp parallel for shared ( particles, model, VEm, pdudx, pdudz, pdvdx, pdvdz, sxxr, sxzr ) private ( k ) schedule( static )
 //            for(k=0; k<particles->Nb_part; k++) {
@@ -907,11 +910,11 @@ void AccumulatedStrain( grid* mesh, scale scaling, params model, markers* partic
 ////
 ////                sxxr = model.dt * VEm[k] * ( -2.0*particles->sxxd[k]*pdudx[k] - 2.0*particles->sxz[k]*pdudz[k]);
 ////                sxzr = model.dt * VEm[k] * (      particles->sxxd[k]*pdudz[k] -     particles->sxxd[k]*pdvdx[k] - particles->sxz[k]*(pdudx[k] + pdvdz[k]) );
-//    
+//
 //                particles->sxxd[k] -= sxxr;
 //                particles->szzd[k]  =-sxxr;
 //                particles->sxz[k]  -= sxzr;
-//    
+//
 ////                // Only if explicity
 ////                if (model.subgrid_diff==4) particles->sxxd[k] *= VEm[k];
 ////                if (model.subgrid_diff==4) particles->sxz[k]  *= VEm[k];
@@ -919,8 +922,8 @@ void AccumulatedStrain( grid* mesh, scale scaling, params model, markers* partic
 //            MinMaxArray( pdudx,  scaling->E, particles->Nb_part, "dudx p." );
 //            MinMaxArray( pdvdx,  scaling->E, particles->Nb_part, "dvdx p." );
 //            MinMaxArray( pdudz,  scaling->E, particles->Nb_part, "dudz p." );
-//    
-//    
+//
+//
 //            // clean memory
 //            DoodzFree(dudx);
 //            DoodzFree(dudz);
@@ -940,16 +943,16 @@ void AccumulatedStrain( grid* mesh, scale scaling, params model, markers* partic
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void UpdateMaxPT ( scale scaling, params model, markers *particles ) {
-    
+
     // Update maximum pressure and temperature on markers
     int k;
-    
+
 #pragma omp parallel for shared ( particles ) private ( k ) firstprivate( model ) schedule( static )
     for(k=0; k<particles->Nb_part; k++) {
-        
+
         if (particles->T[k] > particles->Tmax[k] ) particles->Tmax[k] = particles->T[k];
         if (particles->P[k] > particles->Pmax[k] ) particles->Pmax[k] = particles->P[k];
-        
+
     }
 }
 
@@ -958,29 +961,29 @@ void UpdateMaxPT ( scale scaling, params model, markers *particles ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void UpdateParticleDensity( grid* mesh, scale scaling, params model, markers* particles, mat_prop* materials ) {
-    
+
     DoodzFP *rho_inc_mark, *rho_inc_grid;
     int Nx, Nz, Ncx, Ncz, k;
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
-    
+
     rho_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
     rho_inc_grid = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
-    
+
     for (k=0;k<Ncx*Ncz;k++) {
         rho_inc_grid[k] = 0.0;
         if (mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) rho_inc_grid[k] = mesh->rho_n[k] - mesh->rho0_n[k];
     }
-    
+
     // Interp increments to particles
     Interp_Grid2P( *particles, rho_inc_mark, mesh, rho_inc_grid, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
-    
+
     // Increment temperature on particles
     ArrayPlusArray( particles->rho, rho_inc_mark, particles->Nb_part );
-    
+
     DoodzFree(rho_inc_grid);
     DoodzFree(rho_inc_mark);
-    
+
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -988,30 +991,30 @@ void UpdateParticleDensity( grid* mesh, scale scaling, params model, markers* pa
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void UpdateParticleGrainSize( grid* mesh, scale scaling, params model, markers* particles, mat_prop* materials ) {
-    
+
     DoodzFP *d_inc_mark, *d_inc_grid;
     int Nx, Nz, Ncx, Ncz, k;
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
-    
+
     d_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
     d_inc_grid = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
-    
+
     for (k=0;k<Ncx*Ncz;k++) {
         d_inc_grid[k] =0.0;
         if (mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) d_inc_grid[k] = mesh->d[k] - mesh->d0[k];
     }
-    
+
     Interp_Grid2P( *particles, particles->d, mesh, mesh->d, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
-    
+
 #pragma omp parallel for shared ( particles )
     for (k=0;k<particles->Nb_part;k++) {
         if (particles->d[k]<1.0e-16) particles->d[k] = 1.0e-16;
     }
-    
+
     DoodzFree(d_inc_mark);
     DoodzFree(d_inc_grid);
-    
+
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -1019,15 +1022,15 @@ void UpdateParticleGrainSize( grid* mesh, scale scaling, params model, markers* 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* particles, mat_prop* materials ) {
-    
+
     DoodzFP *T_inc_mark, *Tm0, dtm, *dTms, *dTgr, *dTmr, *rho_part;
     double *Tg0, *dTgs, dx=model.dx, dz=model.dz, d=1.0;
     int Nx, Nz, Ncx, Ncz, k, c0, p;
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
-    
+
     if ( model.subgrid_diff >= 1 ) {
-        
+
         printf("Subgrid diffusion for temperature update\n");
         Tg0  = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
         dTgs = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
@@ -1036,23 +1039,23 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
         dTms = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
         dTmr = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
         rho_part = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-        
+
         Interp_Grid2P( *particles, rho_part, mesh, mesh->rho_n, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
-        
+
         // Old temperature grid
 #pragma omp parallel for shared(mesh, Tg0) private(c0) firstprivate(Ncx,Ncz)
         for ( c0=0; c0<Ncx*Ncz; c0++ ) {
             if (mesh->BCt.type[c0] != 30) Tg0[c0] = mesh->T[c0] - mesh->dT[c0];
         }
-        
+
 //        MinMaxArrayTag( Tg0,   scaling.T,    (mesh->Nx)*(mesh->Nz),       "Tg0",   mesh->BCp.type    );
-        
+
         // Old temperature grid --> markers
         Interp_Grid2P( *particles, Tm0, mesh, Tg0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
-        
+
 //        MinMaxArray(Tm0, scaling.T, particles->Nb_part, "Tm0");
 
-        
+
         // Compute subgrid temperature increments on markers
 #pragma omp parallel for shared(particles,Tm0,dTms) private(k,p,dtm) firstprivate(materials,dx,dz,model,d)
         for ( k=0; k<particles->Nb_part; k++ ) {
@@ -1065,27 +1068,27 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
         }
 //        MinMaxArray(dTms, scaling.T, particles->Nb_part, "dTms");
 
-        
+
         // Subgrid temperature increments markers --> grid
         Interp_P2C ( *particles, dTms, mesh, dTgs, mesh->xg_coord, mesh->zg_coord, 1, 0 );
-        
+
 //        MinMaxArrayTag( dTgs,   scaling.T,    (mesh->Nx)*(mesh->Nz),       "dTgs",   mesh->BCp.type    );
 
-        
+
         // Remaining temperature increments on the grid
 #pragma omp parallel for shared(mesh, dTgs, dTgr) private(c0) firstprivate(Ncx,Ncz)
         for ( c0=0; c0<Ncx*Ncz; c0++ ) {
             if (mesh->BCt.type[c0] != 30) dTgr[c0] = mesh->dT[c0] - dTgs[c0];
         }
-        
+
 //        MinMaxArrayTag( dTgr,   scaling.T,    (mesh->Nx)*(mesh->Nz),       "dTgr",   mesh->BCp.type    );
 
         // Remaining temperature increments grid --> markers
         Interp_Grid2P( *particles, dTmr, mesh, dTgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
-        
+
 //        MinMaxArray(dTmr, scaling.T, particles->Nb_part, "dTmr");
 
-        
+
         // Final temperature update on markers
 #pragma omp parallel for shared(particles,dTms,dTmr) private(k)
         for ( k=0; k<particles->Nb_part; k++ ) {
@@ -1100,15 +1103,15 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
         DoodzFree(rho_part);
     }
     else {
-        
+
         T_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-        
+
         // Interp increments to particles
         Interp_Grid2P( *particles, T_inc_mark, mesh, mesh->dT, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
-        
+
         // Increment temperature on particles
         ArrayPlusArray( particles->T, T_inc_mark, particles->Nb_part );
-        
+
         DoodzFree(T_inc_mark);
     }
 }
@@ -1118,22 +1121,22 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* particles, mat_prop* materials ) {
-    
+
     DoodzFP *P_inc_mark;
     int Nx, Nz, Ncx, Ncz, k, c0, p;
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
-    
+
     P_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-    
+
     // Interp increments to particles
     Interp_Grid2P( *particles, P_inc_mark, mesh, mesh->dp, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
-    
+
     // Increment pressure on particles
     ArrayPlusArray( particles->P, P_inc_mark, particles->Nb_part );
-    
+
     DoodzFree(P_inc_mark);
-    
+
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -1141,16 +1144,16 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_prop* materials, scale *scaling ) {
-    
+
     int k, l, c0, c1, Nx, Nz, Ncx, Ncz, p;
     DoodzFP *mdsxxd, *mdszzd, *mdsxz, *dsxxd, *dszzd, *dsxz, d=1.0, dtaum;
     DoodzFP *dtxxgs, *dtzzgs, *dtxzgs, *dtxxgr, *dtzzgr, *dtxzgr, *txxm0, *tzzm0, *txzm0, *dtxxms, *dtzzms, *dtxzms, *dtxxmr, *dtzzmr, *dtxzmr, *etam;
-    
+
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
-    
+
     if ( model->subgrid_diff > -1 ) {
-        
+
         // Alloc
         dtxxgs = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
         dtzzgs = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
@@ -1168,17 +1171,17 @@ void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_pr
         dtzzmr = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
         dtxzmr = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
         etam   = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-        
+
         // Old stresses grid --> markers
         Interp_Grid2P( *particles, txxm0, mesh, mesh->sxxd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type );
         Interp_Grid2P( *particles, tzzm0, mesh, mesh->szzd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type );
         Interp_Grid2P( *particles, txzm0, mesh, mesh->sxz0 , mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type     );
-        Interp_Grid2P( *particles, etam,  mesh, mesh->eta_phys_s, mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type);      
- 
+        Interp_Grid2P( *particles, etam,  mesh, mesh->eta_phys_s, mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type);
+
         if ( model->subgrid_diff == 2 ) {
-            
+
             printf("Subgrid diffusion for stress tensor component update\n");
-            
+
             // Compute subgrid stress increments on markers
 #pragma omp parallel for shared(particles,txxm0,tzzm0,txzm0,dtxxms,dtzzms,dtxzms,etam) private(k,p,dtaum) firstprivate(materials,model,d)
             for ( k=0; k<particles->Nb_part; k++ ) {
@@ -1190,12 +1193,12 @@ void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_pr
                     dtxzms[k] = -( particles->sxz[k]  - txzm0[k]) * (1.0 - exp(-d*model->dt/dtaum));
                 }
             }
-            
+
             // Subgrid stress increments markers --> grid
             Interp_P2C ( *particles, dtxxms, mesh, dtxxgs, mesh->xg_coord, mesh->zg_coord, 1, 0 );
             Interp_P2C ( *particles, dtzzms, mesh, dtzzgs, mesh->xg_coord, mesh->zg_coord, 1, 0 );
             Interp_P2N ( *particles, dtxzms, mesh, dtxzgs, mesh->xg_coord, mesh->zg_coord, 1, 0, model );
-            
+
             // Remaining stress increments on the grid
 #pragma omp parallel for shared(mesh,dtxxgs,dtxxgr,dtzzgs,dtzzgr) private(c0) firstprivate(Ncx,Ncz)
             for ( c0=0; c0<Ncx*Ncz; c0++ ) {
@@ -1206,12 +1209,12 @@ void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_pr
             for ( c0=0; c0<Nx*Nz; c0++ ) {
                 if (mesh->BCg.type[c0]   !=30) dtxzgr[c0] = (mesh->sxz[c0]-mesh->sxz0[c0]) - dtxzgs[c0];
             }
-            
+
             // Remaining stress increments grid --> markers
             Interp_Grid2P( *particles, dtxxmr, mesh, dtxxgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
             Interp_Grid2P( *particles, dtzzmr, mesh, dtzzgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
             Interp_Grid2P( *particles, dtxzmr, mesh, dtxzgr, mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type  );
-            
+
             // Final stresses update on markers
 #pragma omp parallel for shared(particles,dtxxms,dtzzms,dtxzms,dtxxmr,dtzzmr,dtxzmr) private(k)
             for ( k=0; k<particles->Nb_part; k++ ) {
@@ -1220,7 +1223,7 @@ void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_pr
                 if (particles->phase[k] != -1) particles->sxz[k]  += dtxzms[k] + dtxzmr[k];
             }
         }
-        
+
         // Free
         DoodzFree( dtxxgs );
         DoodzFree( dtzzgs );
@@ -1238,12 +1241,12 @@ void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_pr
         DoodzFree( dtzzmr );
         DoodzFree( dtxzmr );
         DoodzFree( etam   );
-        
+
     }
     if (model->subgrid_diff==0 || model->subgrid_diff==1 || model->subgrid_diff==4){
-        
+
         printf("No subgrid diffusion for stress tensor component update\n");
-        
+
         // Alloc
         dsxxd  = DoodzCalloc((Nx-1)*(Nz-1),sizeof(double));
         dszzd  = DoodzCalloc((Nx-1)*(Nz-1),sizeof(double));
@@ -1251,7 +1254,7 @@ void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_pr
         mdsxxd = DoodzCalloc(particles->Nb_part,sizeof(DoodzFP));
         mdszzd = DoodzCalloc(particles->Nb_part,sizeof(DoodzFP));
         mdsxz  = DoodzCalloc(particles->Nb_part,sizeof(DoodzFP));
-        
+
         // Cell: normal stress change
         for (k=0; k<Nx-1; k++) {
             for (l=0; l<Nz-1; l++) {
@@ -1260,7 +1263,7 @@ void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_pr
                 if (mesh->BCp.type[c0] !=30 && mesh->BCp.type[c0] !=31) dszzd[c0] = mesh->szzd[c0] - mesh->szzd0[c0];
             }
         }
-        
+
         // Vertex: shear stress change
         for (k=0; k<Nx; k++) {
             for (l=0; l<Nz; l++) {
@@ -1268,17 +1271,17 @@ void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_pr
                 if (mesh->BCg.type[c1] !=30 ) dsxz[c1] =  mesh->sxz[c1] - mesh->sxz0[c1];
             }
         }
-        
+
         // Interpolate stress changes to markers
         Interp_Grid2P( *particles, mdsxxd, mesh, dsxxd, mesh->xc_coord,  mesh->zc_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type  );
         Interp_Grid2P( *particles, mdszzd, mesh, dszzd, mesh->xc_coord,  mesh->zc_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type  );
         Interp_Grid2P( *particles, mdsxz,  mesh, dsxz,  mesh->xg_coord,  mesh->zg_coord,  mesh->Nx,   mesh->Nz,   mesh->BCg.type  );
-        
+
         // Update marker stresses
         ArrayPlusArray( particles->sxxd, mdsxxd, particles->Nb_part );
         ArrayPlusArray( particles->szzd, mdszzd, particles->Nb_part );
         ArrayPlusArray( particles->sxz,  mdsxz,  particles->Nb_part );
-        
+
         // Free
         DoodzFree(dsxxd);
         DoodzFree(dszzd);
@@ -1329,7 +1332,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     *detadexx=0.0; *detadezz=0.0; *detadexz=0.0; *detadp=0.0;
     *Xreac=0.0; *ttrans=0.0;
     *OverS = 0.0;
-    
+
     // Activate deformation mechanisms
     if ( materials->cstv[phase] !=0                  ) constant    = 1;
     if ( materials->pwlv[phase] !=0                  ) dislocation = 1;
@@ -1388,44 +1391,44 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     //------------------------------------------------------------------------//
     // Reaction stuff:
     if ( materials->Reac[phase] > 0 && model->step > 0) {
-            
+
         *ttrans = UpdateReactionProgress ( ttrans0, (P0+model->PrBG), (P+model->PrBG), materials->treac[phase], materials->Preac[phase], dt , scaling);
- 
+
         double time_reaction = materials->treac[phase];
         double moy  = time_reaction/2.0;
         double sig  = 1.0/6.0*time_reaction;
         *Xreac=0.5*(1.0 + erf((*ttrans-moy)/sig/sqrt(2.0)));
-        
+
         double npwlreac  = materials->npwl[phase];
         double Apwlreac  = materials->Apwl[phase];
         double Eapwlreac = materials->Qpwl[phase];
         double Fpwlreac  = 1.0/6.0*pow(2.0,1.0/npwlreac) * pow(3.0,(npwlreac-1.0)/2.0/npwlreac); // axial compression
-        
-        
+
+
         double npwlprod  = materials->npwl[materials->Reac[phase]];
         double Apwlprod  = materials->Apwl[materials->Reac[phase]];
         double Eapwlprod = materials->Qpwl[materials->Reac[phase]];
         double Fpwlprod  = 1.0/6.0*pow(2.0,1.0/npwlprod) * pow(3.0,(npwlprod-1.0)/2.0/npwlprod); // axial compression
-        
+
         // Huet et al 2014 ---------------
         double npwl_mix, Apwl_mix,Eapwl_mix, Fpwl_mix;
         double f1 = 1.0-*Xreac;
         double f2 = *Xreac;
-        
+
         // (1) Calcul des ai
         double a1 = npwlprod + 1.0;
         double a2 = npwlreac + 1.0;
-        
+
         // (2) Calcul de n bulk:
         double sum_up   = f1*a1*npwlreac + f2*a2*npwlprod;
         double sum_down = f1*a1+f2*a2;
         npwl_mix = sum_up/sum_down;
-        
+
         // (3) Calcul de Q bulk:
         sum_up   = f1*a1*Eapwlreac + f2*a2*Eapwlprod;
         sum_down = f1*a1+f2*a2;
         Eapwl_mix = sum_up/sum_down;
-        
+
         // (4) Calcul de A bulk:
         sum_down = f1*a1 + f2*a2;
         double Prod1 = pow(Apwlreac,(f1*a1/sum_down)) * pow(Apwlprod,(f2*a2/sum_down));
@@ -1433,7 +1436,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         double Prod2 = pow(npwlreac/(npwlreac + 1.0),f1*a1*npwlreac/sum_down) * pow(npwlprod/(npwlprod+1.0),f2*a2*npwlprod/sum_down);
         Apwl_mix = Prod1 * pow(sum_n,-npwl_mix) * Prod2;
         Fpwl_mix = 1.0/6.0*pow(2.0,1.0/npwl_mix) * pow(3.0,(npwl_mix-1.0)/2.0/npwl_mix);
-            
+
         if ( dislocation == 1 ) {
             B_pwl  = pre_factor * Fpwl_mix * pow(Apwl_mix,-1.0/npwl_mix) * exp( (Eapwl_mix)/R/npwl_mix/T );
             C_pwl  = pow(2.0*B_pwl, -npwl_mix);
@@ -1442,9 +1445,9 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
             A_pwl  = Apwl_mix;
         }
     }
-    
+
     //------------------------------------------------------------------------//
-    
+
     // Isolated viscosities
     Exx  = exx;
     Ezz  = ezz;
@@ -1472,7 +1475,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     if ( diffusion   == 1 ) eta_lin  = B_lin * pow( Eii, 1.0/n_lin - 1.0 ) * pow(d, m_lin/n_lin); // !!! gs - dependence !!!
     if ( gbs         == 1 ) eta_gbs  = B_gbs * pow( Eii, 1.0/n_gbs - 1.0 );
     if ( peierls     == 1 ) eta_exp  = B_exp * pow( Eii, 1.0/(ST+n_exp) - 1.0 );
-    
+
     //------------------------------------------------------------------------//
 
     // Viscoelasticity
@@ -1515,10 +1518,10 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
 
     // Initial guess
     eta_ve                  = 0.5*(eta_up+eta_lo);
-    
+
     // Local iterations
     for (it=0; it<nitmax; it++) {
-        
+
         // Function evaluation at current effective viscosity
         Tii = 2.0 * eta_ve * Eii;
         if ( constant    == 1 ) *Eii_cst = Tii/2.0/eta_cst;
@@ -1529,24 +1532,24 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         if ( diffusion   == 1 ) *Eii_lin = C_lin * pow(Tii, n_lin) * pow(*d1,-m_lin); // !!! gs - dependence !!!
         Eii_vis                          = *Eii_pwl + *Eii_exp + *Eii_lin + *Eii_gbs + *Eii_cst;
         r_eta_ve                         = Eii - elastic*Tii/(2.0*eta_el) - Eii_vis;
-        
+
         // Residual check
         res = fabs(r_eta_ve/Eii);
         if (it==0) res0 = res;
         if (noisy==1) printf("It. %02d, r = %2.2e\n", it, res);
         if (res < tol) break;
-        
+
         // UNDER CONSTRUCTION
-        
+
         // Analytical derivative of function
         dfdeta = -Eii/eta_el;
         if ( dislocation == 1 ) dfdeta += -(*Eii_pwl)*n_pwl/eta_ve;
         if ( constant    == 1 ) dfdeta += -Eii/eta_cst;
-        
+
         // Update viscosity
         eta_ve -= r_eta_ve / dfdeta;
     }
-    
+
     // Recalculate stress components
     Txx                  = 2.0*eta_ve*Exx;
     Tzz                  = 2.0*eta_ve*Ezz;
@@ -1585,7 +1588,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
 //        F_corr  = Tii - Tyield;
 ////        printf("%2.2e %2.2e %2.2e %2.2e %2.2e\n", Tii, Tyield, F_trial, F_corr, eta_vp*gdot*scaling->S);
 //    }
-    
+
     if (F_trial > 1e-17) {
         is_pl   = 1;
         double dFdgdot;
@@ -1597,16 +1600,16 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         dQdtzz  = Tzz/2.0/Tii;
         dQdtxz  = Txz/1.0/Tii;
         res0    = F_trial;
-        
+
         for (it=0; it<nitmax; it++) {
-            
+
             Txx     = 2.0*eta_ve*(Exx - gdot*dQdtxx    );
             Tzz     = 2.0*eta_ve*(Ezz - gdot*dQdtzz    );
             Txz     = 2.0*eta_ve*(Exz - gdot*dQdtxz/2.0);
             Tii     = sqrt( 0.5*( pow(Txx,2.0) + pow(Tzz,2.0) ) + pow(Txz,2.0)  );
             eta_vp  = eta_vp0 * pow(fabs(gdot), 1.0/n_vp - 1);
             F_trial = Tii - Tyield - gdot*eta_vp;
-            
+
             // Residual check
             res = fabs(F_trial);
 //            if (it==0) res0 = res;
@@ -1615,7 +1618,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
             dFdgdot  = - eta_ve - eta_vp/n_vp;
             gdot    -= F_trial / dFdgdot;
         }
- 
+
         Txx     = 2.0*eta_ve*(Exx - gdot*dQdtxx    );
         Tzz     = 2.0*eta_ve*(Ezz - gdot*dQdtzz    );
         Txz     = 2.0*eta_ve*(Exz - gdot*dQdtxz/2.0);
@@ -1626,11 +1629,11 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         *Eii_pl = gdot/2.0;
         Tii     = 2.0*eta_vep*Eii;
         F_corr  = Tii - Tyield;
+        // Compute over stress
+        *OverS = eta_vp*gdot;
         //        printf("%2.2e %2.2e %2.2e %2.2e %2.2e\n", Tii, Tyield, F_trial, F_corr, eta_vp*gdot*scaling->S);
     }
-    // Compute over stress
-    *OverS = eta_vp*gdot;
-    
+
     //------------------------------------------------------------------------//
 
     // Partial derivatives VEP
@@ -1673,7 +1676,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         (*etaVE)      = eta_vep;
         inv_eta_diss += 1.0/eta_vep;
     }
-    
+
     /*----------------------------------------------------*/
     /*----------------------------------------------------*/
     /*----------------------------------------------------*/
@@ -1702,7 +1705,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     eta        = 1.0/(inv_eta_diss);//Tii/2.0/Eii_vis;
     *VEcoeff   = eta_ve/eta_el;//1.0 / (1.0 + G*model->dt/eta); //eta_ve/eta_el;//  //
     if (elastic==0) *VEcoeff = 0.0;
-    
+
 //    printf("%2.2e\n",*etaVE*scaling->eta );
 
 
@@ -1712,7 +1715,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     *txxn = Txx;
     *tzzn = Tzz;
     *txzn = Txz;
-    
+
     // Viscosity limiter
     if( eta > maxEta ) {
         eta = maxEta;
@@ -1730,7 +1733,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     if( *etaVE < minEta ) {
         *etaVE = minEta;
     }
-    
+
     return eta;
 }
 
@@ -1739,7 +1742,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, Nparams Nmodel, scale *scaling ) {
-    
+
     int p, k, l, Nx, Nz, Ncx, Ncz, c0, c1, k1, cond;
     double eta, txx1, tzz1, txz1, Pn, Tn, etaVE, VEcoeff=0.0, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, d1;
     double exx_pwl, exz_pwl, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, exx_pl, exz_pl;
@@ -1747,17 +1750,17 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
     double detadexx, detadezz, detadexz, detadp;
     double Xreac, ttrans;
     double OverS;
-    
+
     Nx = mesh->Nx;
     Nz = mesh->Nz;
     Ncx = Nx-1;
     Ncz = Nz-1;
-    
+
     InterpCentroidsToVerticesDouble( mesh->T,    mesh->T_s,   mesh, model, scaling );
     InterpCentroidsToVerticesDouble( mesh->p_in, mesh->P_s,   mesh, model, scaling );
     InterpCentroidsToVerticesDouble( mesh->d0,   mesh->d0_s,  mesh, model, scaling );
     InterpCentroidsToVerticesDouble( mesh->phi,  mesh->phi_s, mesh, model, scaling ); // ACHTUNG NOT FRICTION ANGLE
-    
+
 //    MinMaxArrayTag( mesh->p_in, scaling->S, Ncx*Ncz, "Pn", mesh->BCp.type );
 //    MinMaxArrayTag( mesh->P_s, scaling->S, Nx*Nz,   "Ps", mesh->BCg.type    );
 //    MinMaxArrayTag( mesh->fric_n, 180.0/M_PI, Ncx*Ncz, "Phin", mesh->BCp.type );
@@ -1765,18 +1768,18 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
 //    MinMaxArrayTag( mesh->C_n, scaling->S, Ncx*Ncz, "Cn", mesh->BCp.type );
 //    MinMaxArrayTag( mesh->C_s, scaling->S, Nx*Nz,   "Cs", mesh->BCg.type    );
 
-    
+
     // Evaluate cell center viscosities
 #pragma omp parallel for shared( mesh  ) private( cond, k, l, k1, p, eta, c1, c0, Pn, Tn, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, d1, exx_pwl, exz_pwl, exx_el, exz_el, exx_diss, exz_diss, exx_pl, exz_pl, detadexx, detadezz, detadexz, detadp, Xreac, ttrans, OverS ) firstprivate( materials, scaling, average, model, Ncx, Ncz )
     for ( k1=0; k1<Ncx*Ncz; k1++ ) {
-        
+
         //    for ( l=0; l<Ncz; l++ ) {
         //        for ( k=0; k<Ncx; k++ ) {
-        
+
         k      = mesh->kp[k1];
         l      = mesh->lp[k1];
         c0     = k  + l*(Ncx);
-        
+
         mesh->eta_n[c0]      = 0.0;
         mesh->eta_phys_n[c0] = 0.0;
         mesh->VE_n[c0]       = 0.0;
@@ -1801,28 +1804,28 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
         mesh->detadezz_n[c0] = 0.0;
         mesh->detadgxz_n[c0] = 0.0;
         mesh->detadp_n[c0]   = 0.0;
-        
+
         mesh->Xreac_n[c0]    = 0.0;
         mesh->ttrans_n[c0]   = 0.0;
-        
+
         mesh->OverS_n[c0]    = 0.0;
-        
+
         // Loop on grid nodes
         if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
-            
+
             // If background pressure is removed in the RHS
             Pn = mesh->p_in[c0];
             Tn = mesh->T[c0];
-            
+
             // Loop on phases
             for ( p=0; p<model->Nb_phases; p++) {
-                
+
                 cond =  fabs(mesh->phase_perc_n[p][c0])>1.0e-13;
-                
+
                 if ( cond == 1 ) {
                     eta =  Viscosity( p, mesh->mu_n[c0], Tn, Pn, mesh->d0[c0], mesh->phi[c0], mesh->exxd[c0], mesh->ezzd[c0], mesh->exz_n[c0], mesh->sxxd0[c0], mesh->szzd0[c0], mesh->sxz0_n[c0], materials    , model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_pwl, &exz_pwl, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &exx_pl, &exz_pl, &d1, mesh->strain_n[c0], mesh->fric_n[c0], mesh->C_n[c0], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_n[c0], mesh->ttrans0_n[c0], &Xreac, &ttrans, &OverS);
                 }
-                
+
                 // ARITHMETIC AVERAGE
                 if (average == 0) {
                     if ( cond == 1 ) mesh->eta_n[c0]      += mesh->phase_perc_n[p][c0] * etaVE;
@@ -1845,7 +1848,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 if ( cond == 1 ) mesh->eII_gbs[c0]    += mesh->phase_perc_n[p][c0] * eII_gbs;
                 if ( cond == 1 ) mesh->eII_cst[c0]    += mesh->phase_perc_n[p][c0] * eII_cst;
                 if ( cond == 1 ) mesh->d[c0]          += mesh->phase_perc_n[p][c0] * 1.0/d1;
-                
+
                 if ( cond == 1 ) mesh->exx_pwl_n[c0]  += mesh->phase_perc_n[p][c0] * exx_pwl;
                 if ( cond == 1 ) mesh->exz_pwl_n[c0]  += mesh->phase_perc_n[p][c0] * exz_pwl;
                 if ( cond == 1 ) mesh->exx_el[c0]     += mesh->phase_perc_n[p][c0] * exx_el;
@@ -1853,12 +1856,12 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 if ( cond == 1 ) mesh->ezz_el[c0]     += mesh->phase_perc_n[p][c0] * ezz_el;
                 if ( cond == 1 ) mesh->ezz_diss[c0]   += mesh->phase_perc_n[p][c0] * ezz_diss;
                 if ( cond == 1 ) mesh->exx_pl[c0]     += mesh->phase_perc_n[p][c0] * exx_pl;
-                
+
                 if ( cond == 1 ) mesh->Xreac_n[c0]     += mesh->phase_perc_n[p][c0] * Xreac;
                 if ( cond == 1 ) mesh->ttrans_n[c0]    += mesh->phase_perc_n[p][c0] * ttrans;
-                
+
                 if ( cond == 1 ) mesh->OverS_n[c0]    += mesh->phase_perc_n[p][c0] * OverS;
-                
+
                 // HARMONIC AVERAGE
                 if (average == 1) {
                     if ( cond == 1 ) mesh->sxxd[c0]       += mesh->phase_perc_n[p][c0] * 1.0/txx1;
@@ -1869,9 +1872,9 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                     if ( cond == 1 ) mesh->detadezz_n[c0] += mesh->phase_perc_n[p][c0] * detadezz     / pow(etaVE,2.0);
                     if ( cond == 1 ) mesh->detadgxz_n[c0] += mesh->phase_perc_n[p][c0] * detadexz/2.0 / pow(etaVE,2.0);
                     if ( cond == 1 ) mesh->detadp_n[c0]   += mesh->phase_perc_n[p][c0] * detadp       / pow(etaVE,2.0);
-                    
+
                 }
-                
+
                 // GEOMETRIC AVERAGE
                 if (average == 2) {
                     if ( cond == 1 ) mesh->eta_n[c0]      += mesh->phase_perc_n[p][c0] * log(etaVE);
@@ -1884,9 +1887,9 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
 //                    if ( cond == 1 ) mesh->szzd[c0]       += mesh->phase_perc_n[p][c0] * log(tzz1);
                 }
             }
-            
+
             mesh->d[c0]          = 1.0/mesh->d[c0];
-            
+
             // HARMONIC AVERAGE
             if (average == 1) {
                 mesh->sxxd[c0]       = 1.0/mesh->sxxd[c0];
@@ -1928,17 +1931,17 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
         //if (mesh->eta_n[c0]<1e-8) exit(1);
     }
     ;
-    
+
     // Calculate vertices viscosity
     double d1s; // dummy variable that stores updated grain size on current vertice
-    
+
 #pragma omp parallel for shared( mesh, model ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, d1s, exx_pwl, exz_pwl, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, exx_pl, exz_pl, detadexx, detadezz, detadexz, detadp , Xreac, ttrans, OverS) firstprivate( materials, scaling, average, Nx, Nz  )
     for ( k1=0; k1<Nx*Nz; k1++ ) {
-        
+
         k  = mesh->kn[k1];
         l  = mesh->ln[k1];
         c1 = k + l*Nx;
-        
+
         mesh->VE_s[c1]       = 0.0;
         mesh->sxz[c1]        = 0.0;
         mesh->eta_phys_s[c1] = 0.0;
@@ -1955,26 +1958,26 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
         mesh->detadezz_s[c1] = 0.0;
         mesh->detadgxz_s[c1] = 0.0;
         mesh->detadp_s[c1]   = 0.0;
-        
+
 //        mesh->Xreac_s[c1]    = 0.0;
 //        mesh->ttrans_s[c1]   = 0.0;
         mesh->OverS_s[c1]    = 0.0;
-        
+
         if ( mesh->BCg.type[c1] != 30 ) {
-            
-            
+
+
             for ( p=0; p<model->Nb_phases; p++) {
-                
+
                 cond = fabs(mesh->phase_perc_s[p][c1])>1.0e-13;
-                
+
                 if ( cond == 1 ) {
-                    
+
                     eta =  Viscosity( p, mesh->mu_s[c1], mesh->T_s[c1], mesh->P_s[c1], mesh->d0_s[c1], mesh->phi_s[c1], mesh->exxd_s[c1], mesh->ezzd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->szzd0_s[c1], mesh->sxz0[c1], materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_pwl, &exz_pwl, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &exx_pl, &exz_pl, &d1s, mesh->strain_s[c1], mesh->fric_s[c1], mesh->C_s[c1], &detadexx, &detadezz, &detadexz, &detadp,mesh->p0_s[c1], mesh->ttrans0_s[c1], &Xreac, &ttrans, &OverS);
-                    
+
 //                    if (c1==546) printf("eta_s = %2.2e index = %d\n", etaVE*scaling->eta, c1);
 
                 }
-                
+
                 if (average ==0) {
                     if ( cond == 1 ) mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] * etaVE;
                     if ( cond == 1 ) mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] * eta;
@@ -1994,12 +1997,12 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 if ( cond == 1 ) mesh->exz_el[c1]     += mesh->phase_perc_s[p][c1] * exz_el;
                 if ( cond == 1 ) mesh->exz_diss[c1]   += mesh->phase_perc_s[p][c1] * exz_diss;
                 if ( cond == 1 ) mesh->exz_pl[c1]     += mesh->phase_perc_s[p][c1] * exz_pl;
-                
+
 //                if ( cond == 1 ) mesh->Xreac_s[c1]    += mesh->phase_perc_s[p][c1] * Xreac;
 //                if ( cond == 1 ) mesh->ttrans_s[c1]   += mesh->phase_perc_s[p][c1] * ttrans;
-                
+
                 if ( cond == 1 ) mesh->OverS_s[c1]   += mesh->phase_perc_s[p][c1] * OverS;
-            
+
                 if (average == 1) {
                     if ( cond == 1 ) mesh->sxz[c1]        += mesh->phase_perc_s[p][c1] * 1.0/txz1;
                     if ( cond == 1 ) mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] * 1.0/etaVE;
@@ -2033,14 +2036,14 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_s[p][c1]);
                     printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e \n", mesh->mu_s[c1],  mesh->eii_s[c1],  mesh->tii0_s[c1], mesh->exxd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->sxz0[c1]);
                     printf("x=%2.2e z=%2.2e\n", mesh->xg_coord[k]*scaling->L/1000, mesh->zg_coord[l]*scaling->L/1000);
-                    
+
                     exit(1);
                 }
                 if (isnan (mesh->eta_phys_s[c1]) ) {
                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_s[p][c1]);
                     printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e \n", mesh->mu_s[c1],  mesh->eii_s[c1],  mesh->tii0_s[c1], mesh->exxd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->sxz0[c1]);
                     printf("x=%2.2e z=%2.2e\n", mesh->xg_coord[k]*scaling->L/1000, mesh->zg_coord[l]*scaling->L/1000);
-                    
+
                     exit(1);
                 }
             }
@@ -2056,7 +2059,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
 //            if (c1==546) printf("eta_s = %2.2e index = %d\n", etaVE*scaling->eta, c1);
         }
     }
-    
+
 //    MinMaxArrayTag( mesh->eta_n, scaling->eta, Ncx*Ncz, "eta_n", mesh->BCp.type );
 //    MinMaxArrayTag( mesh->eta_s, scaling->eta, Nx*Nz,   "eta_s", mesh->BCg.type );
 //    MinMaxArrayTag( mesh->detadexx_n, scaling->eta/scaling->E, Ncx*Ncz, "detadexx_n", mesh->BCp.type );
@@ -2066,7 +2069,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
 //    MinMaxArrayTag( mesh->C_n, scaling->S, Ncx*Ncz, "Cn", mesh->BCp.type );
 //    MinMaxArrayTag( mesh->C_s, scaling->S, Nx*Nz,   "Cs", mesh->BCg.type    );
 
-    
+
     //    printf("** Rheology cell centers/vertices ---> %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
 }
 
@@ -2078,42 +2081,42 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
 
 
 void CohesionFrictionGrid( grid* mesh, mat_prop materials, params model, scale scaling ) {
-    
+
     int p, k, l, Nx, Nz, Ncx, Ncz, c0, c1;
     int average = 0;
     double phi, C, strain_acc;
-    
+
     Nx = mesh->Nx;
     Nz = mesh->Nz;
     Ncx = Nx-1;
     Ncz = Nz-1;
-    
+
     // Calculate cell centers cohesion and friction
     for ( l=0; l<Ncz; l++ ) {
         for ( k=0; k<Ncx; k++ ) {
-            
+
             // Cell center index
             c0 = k  + l*(Ncx);
-            
+
             // First - initialize to 0
             mesh->fric_n[c0] = 0.0;
             mesh->C_n[c0]   = 0.0;
-            
+
             // Compute only if below free surface
             if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
-                
+
                 // Retrieve accumulated plastic strain
                 strain_acc = mesh->strain_n[c0];
-                
+
                 // Loop on phases
                 for ( p=0; p<model.Nb_phases; p++) {
-                    
+
                     phi = materials.phi[p];
                     C   = materials.C[p];
-                    
+
                     // Apply strain softening
                     if ( model.isPl_soft == 1 ) {
-                        
+
                         // If we are below the lower strain limit
                         if (strain_acc < materials.pls_start[p]) {
                             //   printf("Allo 1 - %d!\n", p);
@@ -2132,9 +2135,9 @@ void CohesionFrictionGrid( grid* mesh, mat_prop materials, params model, scale s
                             phi = materials.phi[p] - (materials.phi[p] - materials.phi_end[p]) * ( strain_acc / (materials.pls_end[p] - materials.pls_start[p]) );
                             C   = materials.C[p]   + (  materials.C_end[p] -   materials.C[p]) * MINV( 1.0, strain_acc /materials.pls_end[p] );
                         }
-                        
+
                     }
-                    
+
                     // Arithmetic
                     if (average ==0) {
                         mesh->fric_n[c0] += mesh->phase_perc_n[p][c0] * phi;
@@ -2149,7 +2152,7 @@ void CohesionFrictionGrid( grid* mesh, mat_prop materials, params model, scale s
                     if (average == 2) {
                         mesh->fric_n[c0] += mesh->phase_perc_n[p][c0] *  log(phi);
                         mesh->C_n[c0]   += mesh->phase_perc_n[p][c0] *  log(C);
-                        
+
                     }
                 }
                 // Post-process for geometric/harmonic averages
@@ -2157,38 +2160,38 @@ void CohesionFrictionGrid( grid* mesh, mat_prop materials, params model, scale s
                 if ( average==2 ) mesh->fric_n[c0] = exp(mesh->fric_n[c0]);
                 if ( average==1 ) mesh->C_n[c0]   = 1.0/mesh->C_n[c0];
                 if ( average==2 ) mesh->C_n[c0]   = exp(mesh->C_n[c0]);
-                
+
             }
         }
     }
-    
-    
+
+
     // Calculate vertices cohesion and friction
     for ( l=0; l<Nz; l++ ) {
         for ( k=0; k<Nx; k++ ) {
-            
+
             // Vertex index
             c1 = k + l*Nx;
-            
+
             // First - initialize to 0
             mesh->fric_s[c1] = 0.0;
             mesh->C_s[c1]   = 0.0;
-            
+
             // Compute only if below free surface
             if ( mesh->BCg.type[c1] != 30 ) {
-                
+
                 // Retrieve accumulated plastic strain
                 strain_acc = mesh->strain_s[c1];
-                
+
                 // Loop on phases
                 for ( p=0; p<model.Nb_phases; p++) {
-                    
+
                     phi        = materials.phi[p];
                     C          = materials.C[p];
-                    
+
                     // Apply strain softening
                     if ( model.isPl_soft == 1 ) {
-                        
+
                         // If we are below the lower strain limit
                         if (strain_acc < materials.pls_start[p]) {
                             phi = materials.phi[p];
@@ -2205,7 +2208,7 @@ void CohesionFrictionGrid( grid* mesh, mat_prop materials, params model, scale s
                             C   = materials.C[p]   - (  materials.C[p] -   materials.C_end[p]) * ( strain_acc / (materials.pls_end[p] - materials.pls_start[p]) );
                         }
                     }
-                    
+
                     // Arithmetic
                     if (average ==0) {
                         mesh->fric_s[c1] += mesh->phase_perc_s[p][c1] * phi;
@@ -2237,31 +2240,31 @@ void CohesionFrictionGrid( grid* mesh, mat_prop materials, params model, scale s
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void ShearModulusGrid( grid* mesh, mat_prop materials, params model, scale scaling ) {
-    
+
     int p, k, l, Nx, Nz, Ncx, Ncz, c0, c1;
     int average = 1;//%model.eta_avg; // SHOULD NOT BE ALLOWED TO BE ELSE THAN 1
-    
+
     Nx = mesh->Nx;
     Nz = mesh->Nz;
     Ncx = Nx-1;
     Ncz = Nz-1;
-    
+
     // Calculate cell centers shear modulus
     for ( l=0; l<Ncz; l++ ) {
         for ( k=0; k<Ncx; k++ ) {
-            
+
             // Cell center index
             c0 = k  + l*(Ncx);
-            
+
             // First - initialize to 0
             mesh->mu_n[c0] = 0.0;
-            
+
             // Compute only if below free surface
             if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
-                
+
                 // Loop on phases
                 for ( p=0; p<model.Nb_phases; p++) {
-                    
+
                     // Arithmetic
                     if (average ==0) {
                         mesh->mu_n[c0] += mesh->phase_perc_n[p][c0] * materials.mu[p];
@@ -2278,28 +2281,28 @@ void ShearModulusGrid( grid* mesh, mat_prop materials, params model, scale scali
                 // Post-process for geometric/harmonic averages
                 if ( average==1 ) mesh->mu_n[c0] = 1.0/mesh->mu_n[c0];
                 if ( average==2 ) mesh->mu_n[c0] = exp(mesh->mu_n[c0]);
-                
+
             }
         }
     }
-    
-    
+
+
     // Calculate vertices shear modulus
     for ( l=0; l<Nz; l++ ) {
         for ( k=0; k<Nx; k++ ) {
-            
+
             // Vertex index
             c1 = k + l*Nx;
-            
+
             // First - initialize to 0
             mesh->mu_s[c1] = 0.0;
-            
+
             // Compute only if below free surface
             if ( mesh->BCg.type[c1] != 30 ) {
-                
+
                 // Loop on phases
                 for ( p=0; p<model.Nb_phases; p++) {
-                    
+
                     // Arithmetic
                     if (average ==0) {
                         mesh->mu_s[c1] += mesh->phase_perc_s[p][c1] * materials.mu[p];
@@ -2313,17 +2316,17 @@ void ShearModulusGrid( grid* mesh, mat_prop materials, params model, scale scali
                         mesh->mu_s[c1] += mesh->phase_perc_s[p][c1] *  log(materials.mu[p]);
                     }
                 }
-                
+
                 if ( isinf(1.0/mesh->mu_s[c1]) ) {
                     printf("Aaaaargh...!! %2.2e %2.2e %2.2e \n", mesh->phase_perc_s[0][c1], mesh->phase_perc_s[1][c1], mesh->phase_perc_s[2][c1]);
                 }
-                
+
                 // Post-process for geometric/harmonic averages
                 if ( average==1 ) mesh->mu_s[c1] = 1.0/mesh->mu_s[c1];
                 if ( average==2 ) mesh->mu_s[c1] = exp(mesh->mu_s[c1]);
-                
-               
-                
+
+
+
             }
         }
     }
@@ -2333,7 +2336,7 @@ void ShearModulusGrid( grid* mesh, mat_prop materials, params model, scale scali
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 void UpdateParticlettrans( grid *mesh, scale *scaling, params model, markers *particles, mat_prop *materials ) {
-    
+
     DoodzFP *ttrans_inc_mark, *ttrans_inc_grid;
     double dx=model.dx, dz=model.dz;
     int Nx, Nz, Ncx, Ncz, k, c0, p;
@@ -2342,7 +2345,7 @@ void UpdateParticlettrans( grid *mesh, scale *scaling, params model, markers *pa
 
     ttrans_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
     ttrans_inc_grid = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
-    
+
     for (k=0;k<Ncx*Ncz;k++) {
         ttrans_inc_grid[k] =0.0;
         if (mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) ttrans_inc_grid[k] = mesh->ttrans_n[k] - mesh->ttrans0_n[k];
@@ -2350,7 +2353,7 @@ void UpdateParticlettrans( grid *mesh, scale *scaling, params model, markers *pa
 
     Interp_Grid2P( *particles, ttrans_inc_mark, mesh, ttrans_inc_grid, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
     ArrayPlusArray( particles->ttrans, ttrans_inc_mark, particles->Nb_part );
-    
+
     DoodzFree(ttrans_inc_mark);
     DoodzFree(ttrans_inc_grid);
 }
@@ -2360,29 +2363,29 @@ void UpdateParticlettrans( grid *mesh, scale *scaling, params model, markers *pa
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params *model, scale *scaling ) {
-    
+
     int k, p, c0, Nx, Nz, Ncx, Ncz;
     int    phase_diag;
     double rho0, T0, alpha, P0, beta, drho, Tgrid, Pgrid, dT, dP;
     double percT, percP;
     double rhonew, rhop, epsi = 1e-13;
-    
+
     int iT, iP, NT, NP, iSW, iSE, iNW, iNE;
     double dstT, dstP;
     double PW, TW;
-    
+
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
-    
+
 
 #pragma omp parallel for shared(mesh,materials) private( NT, NP, iT, iP, TW, PW, iSW, iSE, iNW, iNE, phase_diag, dT, dP, Tgrid, Pgrid, c0, p, rhonew, rho0, alpha, beta, T0, P0, rhop, drho, percT, percP) firstprivate(Ncx, Ncz, model, epsi)
     for ( c0=0; c0<Ncx*Ncz; c0++ ) {
         rhonew = 0.0;
         // Loop on phases
         for ( p=0; p<model->Nb_phases; p++) {
-            
+
             if ( fabs(mesh->phase_perc_n[p][c0])>epsi) {
-                
+
                 // Constant density
                 if ( materials->density_model[p] == 3 ) {
                     rho0   = materials->rho[p];
@@ -2395,10 +2398,10 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
 //                    rhop   = rho0*(1.0 +  beta * (mesh->p_in[c0] - P0));
 //                    printf("DOING %2.2e  %2.2e %2.2e %2.2e %2.2e\n",  rhop, mesh->p_in[c0], beta, rhop, P0);
                 }
-                
+
                 // T and P dependent density based on EOS
                 if ( materials->density_model[p] == 1 ) {
-                    
+
                     rho0   = materials->rho [p];
                     drho   = materials->drho[p];
                     T0     = materials->T0 [p];
@@ -2408,7 +2411,7 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
                     rhop   = (1.0 -  alpha * (mesh->T[c0] - T0) ) * (1.0 +  beta * (mesh->p_in[c0] - P0) ); // EOS general
                     rhop   = ((1.0-mesh->X[c0])*rho0 + mesh->X[c0]*(rho0+drho))*rhop; // Average density based on X
                 }
-                
+
                 // T and P dependent density based on phase diagrams
                 if ( materials->density_model[p] == 2 ) {
                     // Identify current phase diagram
@@ -2447,7 +2450,7 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
                     rhop +=  (    percT)* (1.0-percP) * model->PDMrho[phase_diag][iSE];
                     rhop +=  (1.0-percT)* (    percP) * model->PDMrho[phase_diag][iNW];
                     rhop +=  (    percT)* (    percP) * model->PDMrho[phase_diag][iNE];
-                    
+
                 }
                 // Average density base on phase density and phase volume fraction
                 if ( mesh->BCp.type[c0] != 30 ) rhonew += mesh->phase_perc_n[p][c0] * rhop;
@@ -2455,9 +2458,9 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
         }
         mesh->rho_n[c0]   = rhonew;
     }
-    
+
     InterpCentroidsToVerticesDouble( mesh->rho_n, mesh->rho_s, mesh, model, scaling );
-    
+
 //    // Interpolate center values to vertices
 //    int l, c1;
 //#pragma omp parallel for shared( mesh ) private( c1, k, l, c0) firstprivate( Nx, Nz, Ncx, Ncz )
@@ -2503,12 +2506,12 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
 //            }
 //        }
 //    }
-    
+
     printf("Updated density fields:\n");
 //    MinMaxArrayTag(        mesh->X,            1, Ncx*Ncz,     "X", mesh->BCp.type );
 //    MinMaxArrayTag( mesh->rho_n, scaling->rho, Ncx*Ncz, "rho_n", mesh->BCp.type );
 //    MinMaxArrayTag( mesh->rho_s, scaling->rho, Nx*Nz,   "rho_s", mesh->BCg.type    );
-    
+
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -2517,17 +2520,17 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
 
 // Strain rate
 void  StrainRateComponents( grid* mesh, scale scaling, params* model ) {
-    
+
     int k, l, c0, c1, c2, Nx, Nz, Ncx, Ncz, k1;
     double dx, dz;
-    
+
     Nx = mesh->Nx;
     Nz = mesh->Nz;
     Ncx = Nx-1;
     Ncz = Nz-1;
     dx = mesh->dx;
     dz = mesh->dz;
-    
+
 #pragma omp parallel for shared( mesh ) private( k, k1, l, c0, c1, c2  ) firstprivate( dx, dz, Nx, Ncx, Ncz )
     for ( k1=0; k1<Ncx*Ncz; k1++ ) {
         k  = mesh->kp[k1];
@@ -2535,12 +2538,12 @@ void  StrainRateComponents( grid* mesh, scale scaling, params* model ) {
         c0 = k  + l*(Nx-1);
         c1 = k  + l*(Nx);
         c2 = k  + l*(Nx+1);
-        
+
         if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
-            
+
             // Velocity divergence
             mesh->div_u[c0] = (mesh->u_in[c1+1+Nx] - mesh->u_in[c1+Nx])/dx + (mesh->v_in[c2+Nx+1+1] - mesh->v_in[c2+1])/dz;
-            
+
             // Normal strain rates
             mesh->exxd[c0]  = (mesh->u_in[c1+1+Nx]     - mesh->u_in[c1+Nx] )/dx - 1.0/3.0*mesh->div_u[c0];
             mesh->ezzd[c0]  = (mesh->v_in[c2+1+(Nx+1)] - mesh->v_in[c2+1]  )/dz - 1.0/3.0*mesh->div_u[c0];
@@ -2551,7 +2554,7 @@ void  StrainRateComponents( grid* mesh, scale scaling, params* model ) {
             mesh->ezzd[c0]  = 0.0;
         }
     }
-    
+
     // Shear components we only calculate sxz because sxz = szx (stress tensor symmetry)
 #pragma omp parallel for shared( mesh ) private( k, k1, l, c1, c2  ) firstprivate( dx, dz, Nx, Nz )
     for ( k1=0; k1<Nx*Nz; k1++ ) {
@@ -2560,7 +2563,7 @@ void  StrainRateComponents( grid* mesh, scale scaling, params* model ) {
         c1 = k  + l*(Nx);
         c2 = k  + l*(Nx+1);
         mesh->exz[c1] = 0.0;
-        
+
         if ( mesh->BCg.type[c1] != 30 ) {
             if (mesh->BCu.type[c1] != 30 && mesh->BCu.type[c1+Nx] != 30) mesh->exz[c1] +=  0.5 * (mesh->u_in[c1+Nx] - mesh->u_in[c1])/dz;
             if (mesh->BCv.type[c2] != 30 && mesh->BCv.type[c2+1]  != 30) mesh->exz[c1] +=  0.5 * (mesh->v_in[c2+1]  - mesh->v_in[c2])/dx;
@@ -2569,18 +2572,18 @@ void  StrainRateComponents( grid* mesh, scale scaling, params* model ) {
             mesh->exz[c1] = 0.0;
         }
     }
-    
+
     double sum=0.0;
 #pragma omp parallel for shared( mesh ) private( k, k1, l, c0, c1, sum ) firstprivate( Nx, Ncx, Ncz )
     for ( k1=0; k1<Ncx*Ncz; k1++ ) {
-        
+
         k  = mesh->kp[k1];
         l  = mesh->lp[k1];
         c0 = k  + l*(Nx-1);
         c1 = k  + l*(Nx);
         mesh->exz_n[c0] = 0.0;
         sum = 0.0;
-        
+
         if ( mesh->BCp.type[c0]      != 30 && mesh->BCp.type[c0] != 31) {
             if (mesh->BCg.type[c1]      != 30 ) { mesh->exz_n[c0] += mesh->exz[c1];      sum++;}
             if (mesh->BCg.type[c1+1]    != 30 ) { mesh->exz_n[c0] += mesh->exz[c1+1];    sum++;}
@@ -2592,7 +2595,7 @@ void  StrainRateComponents( grid* mesh, scale scaling, params* model ) {
             mesh->exz_n[c0] = 0.0;
         }
     }
-    
+
     // Interpolate normal strain rate on vertices
     InterpCentroidsToVerticesDouble( mesh->exxd, mesh->exxd_s, mesh, model, &scaling );
     InterpCentroidsToVerticesDouble( mesh->ezzd, mesh->ezzd_s, mesh, model, &scaling );
@@ -2603,9 +2606,9 @@ void  StrainRateComponents( grid* mesh, scale scaling, params* model ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void GenerateDeformationMaps( grid* mesh, mat_prop *materials, params *model, Nparams Nmodel, scale *scaling ) {
-    
+
     // This functions generates deformation maps and writem to disk
-    
+
     //Definition of parameters and allocation of memory
     int nT = model->nT, nE = model->nE, nd = model->nd, ix, iy, iz;
     double stepT, stepE, stepd;
@@ -2615,7 +2618,7 @@ void GenerateDeformationMaps( grid* mesh, mat_prop *materials, params *model, Np
     double Emax = model->Emax;
     double dmin = model->dmin;
     double dmax = model->dmax;
-    
+
     double *T, *E, *d, *dlog, *Elog, gs_ref;
     double txx1, tzz1, txz1, etaVE, VEcoeff, eII_el=0.0, eII_pl=0.0, eII_pwl=0.0, eII_exp=0.0, eII_lin=0.0, eII_gbs=0.0, eII_cst=0.0, d1;
     double exx_pwl, exz_pwl, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, exx_pl, exz_pl;
@@ -2625,18 +2628,18 @@ void GenerateDeformationMaps( grid* mesh, mat_prop *materials, params *model, Np
     double detadexx, detadezz, detadexz, detadp;
     double Xreac, ttrans;
     double OverS;
-    
+
     T    = malloc(nT*sizeof(double));
     Elog = malloc(nE*sizeof(double));
     E    = malloc(nE*sizeof(double));
     dlog = malloc(nd*sizeof(double));
     d    = malloc(nd*sizeof(double));
-    
+
     //Initialization of arrays
     stepT = (Tmax-Tmin)/(nT-1);
     stepE = (Emax-Emin)/(nE-1);
     stepd = (dmax-dmin)/(nd-1);
-    
+
     // Temperature vector
     for ( ix=0; ix<nT; ix++) {
         if (ix==0) T[ix] = Tmin;
@@ -2654,47 +2657,47 @@ void GenerateDeformationMaps( grid* mesh, mat_prop *materials, params *model, Np
         else       dlog[iz] = dlog[iz-1] + stepd;
         d[iz] = pow(10.0,dlog[iz])/scaling->L;
     }
-    
+
     double Flin, Fgbs, Fpwl, texp;
-    
+
     // Loop on all phases
     for (k=0;k<model->Nb_phases; k++) {
-        
+
         printf("Generating deformation map of phase %2d\n", k);
-        
+
         // Save real values
         Flin   = materials->Flin[k];
         Fgbs   = materials->Fgbs[k];
         Fpwl   = materials->Fpwl[k];
         texp   = materials->texp[k];
         gs_ref = materials->gs_ref[k];
-        
+
         // Set no correction for deformation maps
         materials->Flin[k]   = 1.0;
         materials->Fgbs[k]   = 1.0;
         materials->Fpwl[k]   = 1.0;
         materials->texp[k]   = 0.0;
-        
+
         // Allocate maps
         dom_mech = malloc(nT*nE*nd*sizeof(int));
         stress   = malloc(nT*nE*nd*sizeof(double));
         visco    = malloc(nT*nE*nd*sizeof(double));
-        
+
         t_omp = (double)omp_get_wtime();
-        
+
         // Boucles spatiales 2D pour créations des carte de déformation
-        
+
         for ( iz=0; iz<nd; iz++) {
-            
+
             // Force grain size
             materials->gs_ref[k] = d[iz];
-            
+
             for ( ix=0; ix<nT; ix++) {
                 for ( iy=0; iy<nE; iy++) {
-                    
+
                     // Evaluate viscosity and stress
                     eta =  Viscosity( k, 0.0, T[ix], Pn, d[iz], 0.0, E[iy], E[iy], 0.0, 0.0, 0.0, 0.0, materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_pwl, &exz_pwl, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &exx_pl, &exz_pl,  &d1, 0.0, materials->phi[k], materials->C[k], &detadexx, &detadezz, &detadexz, &detadp, 0.0, 0.0, &Xreac, &ttrans, &OverS);
-                    
+
                     // Select mechanism
                     if (eII_pwl>eII_el && eII_pwl>eII_pl  && eII_pwl>eII_exp && eII_pwl>eII_lin && eII_pwl>eII_gbs && eII_pwl>eII_cst) mech = 1; // dislocation
                     if (eII_lin>eII_el && eII_lin>eII_pl  && eII_lin>eII_exp && eII_lin>eII_pwl && eII_lin>eII_gbs && eII_lin>eII_cst) mech = 2; // diffusion
@@ -2703,7 +2706,7 @@ void GenerateDeformationMaps( grid* mesh, mat_prop *materials, params *model, Np
                     if (eII_pl >eII_el && eII_pl >eII_pwl && eII_pl >eII_exp && eII_pl >eII_lin && eII_pl >eII_gbs && eII_pl >eII_cst) mech = 5; // plastic
                     if (eII_cst>eII_pl && eII_cst>eII_pwl && eII_cst>eII_exp && eII_cst>eII_lin && eII_cst>eII_gbs && eII_cst>eII_el ) mech = 6; // constant viscosity
                     if (eII_el >eII_pl && eII_el >eII_pwl && eII_el >eII_exp && eII_el >eII_lin && eII_el >eII_gbs && eII_el >eII_cst) mech = 7; // elastic
-                    
+
                     // Global index for 3D matrix flattened in a 1D vector
                     ind           = ix + iy*nT + iz*nE*nT;
                     dom_mech[ind] = mech;
@@ -2712,10 +2715,10 @@ void GenerateDeformationMaps( grid* mesh, mat_prop *materials, params *model, Np
                 }
             }
         }
-        
+
         printf("** Deformation map %2d ---> %lf sec\n", k, (double)((double)omp_get_wtime() - t_omp));
-        
-        
+
+
         // Print deformation maps to screen
         if (loud ==1) {
             for ( iz=0; iz<nd; iz++) {
@@ -2729,58 +2732,58 @@ void GenerateDeformationMaps( grid* mesh, mat_prop *materials, params *model, Np
                     printf("%2.2e   ", E[iy]*scaling->E);
                     for ( ix=0; ix<nT; ix++) {
                         ind = ix + iy*nT + iz*nd*nT;
-                        
+
                         printf("%6d ", dom_mech[ind] );
-                        
+
                     }
                     printf("\n");
                 }
                 printf("\n");
             }
         }
-        
+
         // Print deformation maps to file
-        
+
         char *filename;
         asprintf( &filename, "DefMap%02d.gzip.h5", k );
         double *CT, *Cd, *CE, *Cstress, *Cvisco;
-        
+
         CT = DoodzMalloc( sizeof(double)*nT);
         ArrayEqualArray( CT, T, nT );
         //        DoubleToFloat( T, CT, nT );
         ScaleBackD( CT, scaling->T, nT );
-        
+
         CE = DoodzMalloc( sizeof(double)*nE);
         ArrayEqualArray( CE, E, nE );
         //        DoubleToFloat( E, CE, nE );
         ScaleBackD( CE, scaling->E, nE );
-        
+
         Cd = DoodzMalloc( sizeof(double)*nd);
         ArrayEqualArray( Cd, d, nd );
         //        DoubleToFloat( d, Cd, nd );
         ScaleBackD( Cd, scaling->L, nd );
-        
+
         Cstress = DoodzMalloc( sizeof(double)*nT*nE*nd);
         ArrayEqualArray( Cstress, stress, nT*nE*nd );
         //        DoubleToFloat( stress, Cstress, nT*nE*nd );
         ScaleBackD( Cstress, scaling->S, nT*nE*nd );
-        
+
         Cvisco= DoodzMalloc( sizeof(double)*nT*nE*nd);
         ArrayEqualArray( Cvisco, visco, nT*nE*nd );
         //        DoubleToFloat( visco, Cvisco, nT*nE*nd );
         ScaleBackD( Cvisco, scaling->eta, nT*nE*nd );
-        
+
         // Fill in DD data structure
         double params[3];
         params[0] = nT;
         params[1] = nE;
         params[2] = nd;
-        
+
         // Send data to file
         create_output_hdf5( filename );
         AddGroup_to_hdf5( filename, "model" );
         AddGroup_to_hdf5( filename, "arrays" );
-        
+
         AddFieldToGroup_generic( _TRUE_, filename, "model", "params" , 'd',  3, params,  1 );
         AddFieldToGroup_generic( _TRUE_, filename, "arrays", "T"     , 'd', nT, CT,  1 );
         AddFieldToGroup_generic( _TRUE_, filename, "arrays", "E"     , 'd', nE, CE,  1 );
@@ -2788,20 +2791,20 @@ void GenerateDeformationMaps( grid* mesh, mat_prop *materials, params *model, Np
         AddFieldToGroup_generic( _TRUE_, filename, "arrays", "stress", 'd', nT*nE*nd, Cstress,  1 );
         AddFieldToGroup_generic( _TRUE_, filename, "arrays", "visco" , 'd', nT*nE*nd, Cvisco,  1 );
         AddFieldToGroup_generic( _TRUE_, filename, "arrays", "map"   , 'i', nT*nE*nd, dom_mech,  1 );
-        
-        
+
+
         free(filename);
         DoodzFree(CT);
         DoodzFree(CE);
         DoodzFree(Cd);
         DoodzFree(Cstress);
         DoodzFree(Cvisco);
-        
+
         // Free memory 1
         free(dom_mech);
         free(stress);
         free(visco);
-        
+
         // Set no correction for deformation maps
         materials->Flin[k]   = Flin;
         materials->Fgbs[k]   = Fgbs;
@@ -2851,7 +2854,7 @@ void GenerateDeformationMaps( grid* mesh, mat_prop *materials, params *model, Np
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void ComputeViscosityDerivatives_FD( grid* mesh, mat_prop *materials, params *model, Nparams Nmodel, scale *scaling ) {
-    
+
     int p, k, l, Nx, Nz, Ncx, Ncz, c0, c1, k1, cond;
     double eta, txx1, tzz1, txz1, Pn, Tn, Ps, Ts, etaVE, VEcoeff=0.0, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, d1;
     double exx_pwl, exz_pwl, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, exx_pl, exz_pl;
@@ -2859,69 +2862,69 @@ void ComputeViscosityDerivatives_FD( grid* mesh, mat_prop *materials, params *mo
     double detadexx, detadezz, detadexz, detadp;
     double Xreac, ttrans;
     double OverS;
-    
+
     double eta_exx, eta_ezz, eta_exz, eta_p;
     double etaVE_exx, etaVE_ezz, etaVE_exz, etaVE_p;
     double eps = 1e-5, pert_xx, pert_zz, pert_xz , pert_p;
     double eps1=1e-13, eii;
-    
+
     Nx = mesh->Nx;
     Nz = mesh->Nz;
     Ncx = Nx-1;
     Ncz = Nz-1;
-    
+
     printf("---> Computing numerical derivatives\n");
-    
+
     // Evaluate cell center viscosities
 #pragma omp parallel for shared( mesh  ) private( eii, cond, k, l, k1, p, eta, c1, c0, Pn, Tn, txx1, tzz1, txz1, etaVE, etaVE_exx, etaVE_ezz, etaVE_exz, etaVE_p, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, d1, exx_pwl, exz_pwl, exx_el, exz_el, exx_diss, exz_diss, exx_pl, exz_pl, eta_exx, eta_ezz, eta_exz, eta_p, pert_xx, pert_zz, pert_xz , pert_p, detadexx, detadezz, detadexz, detadp, Xreac, ttrans, OverS ) firstprivate( materials, scaling, average, model, Ncx, Ncz, eps, eps1 )
     for ( k1=0; k1<Ncx*Ncz; k1++ ) {
-        
+
         k      = mesh->kp[k1];
         l      = mesh->lp[k1];
         c0     = k  + l*(Ncx);
-        
+
         mesh->detadexx_n[c0]      = 0.0;
         mesh->detadezz_n[c0]      = 0.0;
         mesh->detadgxz_n[c0]      = 0.0;
         mesh->detadp_n[c0]        = 0.0;
-        
+
         eta_exx = 0.0;
         eta_ezz = 0.0;
         eta_exz = 0.0;
         eta_p   = 0.0;
-        
+
         // Loop on grid nodes
         if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
-            
+
             Pn = mesh->p_in[c0];
             Tn = mesh->T[c0];
-            
+
             eii = sqrt(0.5*pow(mesh->exxd[c0],2)+0.5*pow(mesh->ezzd[c0],2)+pow(mesh->exz_n[c0],2));
             pert_xx = eps*eii;
             pert_zz = eps*eii;
             pert_xz = eps*eii;
             pert_p  = eps*Pn;//eps1;
             pert_p  = eps1;
-            
+
             // Loop on phases
             for ( p=0; p<model->Nb_phases; p++) {
-                
+
                 cond =  fabs(mesh->phase_perc_n[p][c0])>1.0e-13;
-                
+
                 if ( cond == 1 ) {
-                    
+
                     eta =  Viscosity( p, mesh->mu_n[c0], Tn, Pn, mesh->d0[c0], mesh->phi[c0], mesh->exxd[c0], mesh->ezzd[c0], mesh->exz_n[c0], mesh->sxxd0[c0], mesh->szzd0[c0], mesh->sxz0_n[c0], materials    , model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_pwl, &exz_pwl, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &exx_pl, &exz_pl, &d1, mesh->strain_n[c0], mesh->fric_n[c0], mesh->C_n[c0], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_n[c0], mesh->ttrans0_n[c0], &Xreac, &ttrans, &OverS );
-                    
+
                     eta =  Viscosity( p, mesh->mu_n[c0], Tn, Pn, mesh->d0[c0], mesh->phi[c0], mesh->exxd[c0]+pert_xx, mesh->ezzd[c0], mesh->exz_n[c0], mesh->sxxd0[c0], mesh->szzd0[c0], mesh->sxz0_n[c0], materials    , model, scaling, &txx1, &tzz1, &txz1, &etaVE_exx, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_pwl, &exz_pwl, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &exx_pl, &exz_pl, &d1, mesh->strain_n[c0], mesh->fric_n[c0], mesh->C_n[c0], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_n[c0], mesh->ttrans0_n[c0], &Xreac, &ttrans, &OverS );
-                    
+
                     eta =  Viscosity( p, mesh->mu_n[c0], Tn, Pn, mesh->d0[c0], mesh->phi[c0], mesh->exxd[c0], mesh->ezzd[c0]+pert_zz, mesh->exz_n[c0], mesh->sxxd0[c0], mesh->szzd0[c0], mesh->sxz0_n[c0], materials    , model, scaling,  &txx1, &tzz1, &txz1, &etaVE_ezz, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_pwl, &exz_pwl, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &exx_pl, &exz_pl, &d1, mesh->strain_n[c0], mesh->fric_n[c0], mesh->C_n[c0], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_n[c0], mesh->ttrans0_n[c0], &Xreac, &ttrans, &OverS );
-                    
+
                     eta =  Viscosity( p, mesh->mu_n[c0], Tn, Pn, mesh->d0[c0], mesh->phi[c0], mesh->exxd[c0], mesh->ezzd[c0], mesh->exz_n[c0]+pert_xz, mesh->sxxd0[c0], mesh->szzd0[c0], mesh->sxz0_n[c0], materials    , model, scaling,  &txx1, &tzz1, &txz1, &etaVE_exz, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_pwl, &exz_pwl, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &exx_pl, &exz_pl, &d1, mesh->strain_n[c0], mesh->fric_n[c0], mesh->C_n[c0], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_n[c0], mesh->ttrans0_n[c0], &Xreac, &ttrans, &OverS );
-                    
+
                     eta =  Viscosity( p, mesh->mu_n[c0], Tn, Pn+pert_p, mesh->d0[c0], mesh->phi[c0], mesh->exxd[c0], mesh->ezzd[c0], mesh->exz_n[c0], mesh->sxxd0[c0], mesh->szzd0[c0], mesh->sxz0_n[c0], materials    , model, scaling,  &txx1, &tzz1, &txz1, &etaVE_p  , &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_pwl, &exz_pwl, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &exx_pl, &exz_pl, &d1, mesh->strain_n[c0], mesh->fric_n[c0], mesh->C_n[c0], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_n[c0], mesh->ttrans0_n[c0], &Xreac, &ttrans, &OverS );
-                    
+
                 }
-                
+
                 // ARITHMETIC AVERAGE
                 if (average == 0) {
                     if ( cond == 1 ) eta_exx   += mesh->phase_perc_n[p][c0] * etaVE_exx;
@@ -2929,7 +2932,7 @@ void ComputeViscosityDerivatives_FD( grid* mesh, mat_prop *materials, params *mo
                     if ( cond == 1 ) eta_exz   += mesh->phase_perc_n[p][c0] * etaVE_exz;
                     if ( cond == 1 ) eta_p     += mesh->phase_perc_n[p][c0] * etaVE_p;
                 }
-                
+
                 // HARMONIC AVERAGE
                 if (average == 1) {
                     if ( cond == 1 ) eta_exx   += mesh->phase_perc_n[p][c0] * 1.0/etaVE_exx;
@@ -2937,7 +2940,7 @@ void ComputeViscosityDerivatives_FD( grid* mesh, mat_prop *materials, params *mo
                     if ( cond == 1 ) eta_exz   += mesh->phase_perc_n[p][c0] * 1.0/etaVE_exz;
                     if ( cond == 1 ) eta_p     += mesh->phase_perc_n[p][c0] * 1.0/etaVE_p;
                 }
-                
+
                 // GEOMETRIC AVERAGE
                 if (average == 2) {
                     if ( cond == 1 ) eta_exx   += mesh->phase_perc_n[p][c0] * log(etaVE_exx);
@@ -2945,15 +2948,15 @@ void ComputeViscosityDerivatives_FD( grid* mesh, mat_prop *materials, params *mo
                     if ( cond == 1 ) eta_exz   += mesh->phase_perc_n[p][c0] * log(etaVE_exz);
                     if ( cond == 1 ) eta_p     += mesh->phase_perc_n[p][c0] * log(etaVE_p);
                 }
-                
+
                 //                // General FD
                 //                mesh->detadexx_n[c0]     += mesh->phase_perc_n[p][c0] * (etaVE_exx - etaVE) / pert_xx;
                 //                mesh->detadezz_n[c0]     += mesh->phase_perc_n[p][c0] * (etaVE_ezz - etaVE) / pert_zz;
                 //                mesh->detadgxz_n[c0]     += mesh->phase_perc_n[p][c0] * (etaVE_exz - etaVE) / pert_xz / 2.0;
                 //                mesh->detadp_n[c0]       += mesh->phase_perc_n[p][c0] * (etaVE_p   - etaVE) / pert_p;
-                
+
             }
-            
+
             // HARMONIC AVERAGE
             if (average == 1) {
                 eta_exx      = 1.0/eta_exx;
@@ -2968,85 +2971,85 @@ void ComputeViscosityDerivatives_FD( grid* mesh, mat_prop *materials, params *mo
                 eta_exz   = exp(eta_exz);
                 eta_p     = exp(eta_p);
             }
-            
+
             // General FD
             mesh->detadexx_n[c0]      = (eta_exx - mesh->eta_n[c0]) / pert_xx;
             mesh->detadezz_n[c0]      = (eta_ezz - mesh->eta_n[c0]) / pert_zz;
             mesh->detadgxz_n[c0]      = (eta_exz - mesh->eta_n[c0]) / pert_xz / 2.0;
             mesh->detadp_n[c0]        = (eta_p   - mesh->eta_n[c0]) / pert_p;
-            
+
             //        printf("pert_p = %2.2e Pn = %2.2e\n", pert_p, Pn);
             //            if (isnan(mesh->detadp_n[c0])) {
             //                printf("%2.2e %2.2e %2.2e\n", pert_p, Pn, mesh->detadp_n[c0] );
             //                exit(1);
             //            }
-            
+
         }
-        
+
     }
-    
-    
+
+
     // Calculate vertices viscosity
     double d1s; // dummy variable that stores updated grain size on current vertice
 #pragma omp parallel for shared( mesh, model ) private( eii, cond, k, l, k1, p, eta, c1, c0, Ps, Ts, txx1, tzz1, txz1, etaVE, etaVE_exx, etaVE_ezz, etaVE_exz, etaVE_p, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, d1s, exx_pwl, exz_pwl, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, exx_pl, exz_pl, eta_exx, eta_ezz, eta_exz, eta_p, pert_xx, pert_zz, pert_xz , pert_p, detadexx, detadezz, detadexz, detadp, Xreac, ttrans, OverS ) firstprivate( materials, scaling, average, Nx, Nz, eps, eps1  )
     for ( k1=0; k1<Nx*Nz; k1++ ) {
-        
+
         k  = mesh->kn[k1];
         l  = mesh->ln[k1];
         c1 = k + l*Nx;
-        
+
         mesh->detadexx_s[c1]      = 0.0;
         mesh->detadezz_s[c1]      = 0.0;
         mesh->detadgxz_s[c1]      = 0.0;
         mesh->detadp_s[c1]        = 0.0;
-        
+
         eta_exx = 0.0;
         eta_ezz = 0.0;
         eta_exz = 0.0;
         eta_p   = 0.0;
-        
+
         if ( mesh->BCg.type[c1] != 30 ) {
-            
+
             Ps = mesh->P_s[c1];
             Ts = mesh->T_s[c1];
-            
+
             eii = sqrt(pow(0.5*mesh->exxd_s[c1],2)+0.5*pow(mesh->ezzd_s[c1],2)+pow(mesh->exz[c1],2));
             pert_xx = eps*eii;
             pert_zz = eps*eii;
             pert_xz = eps*eii;
             pert_p  = eps*Ps;//eps1;
             pert_p  = eps1;
-            
+
             //            pert_xx = eps1;
             //            pert_zz = eps1;
             //            pert_xz = eps1;
             //            pert_p = eps1;
-            
+
             for ( p=0; p<model->Nb_phases; p++) {
-                
+
                 cond = fabs(mesh->phase_perc_s[p][c1])>1.0e-13;
-                
+
                 if ( cond == 1 ) {
-                    
+
                     eta =  Viscosity( p, mesh->mu_s[c1], mesh->T_s[c1], mesh->P_s[c1], mesh->d0_s[c1], mesh->phi_s[c1], mesh->exxd_s[c1], mesh->ezzd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->szzd0_s[c1], mesh->sxz0[c1], materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_pwl, &exz_pwl, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &exx_pl, &exz_pl, &d1s, mesh->strain_s[c1], mesh->fric_s[c1], mesh->C_s[c1], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_n[c0], mesh->ttrans0_n[c0], &Xreac, &ttrans, &OverS );
-                    
+
                     eta =  Viscosity( p, mesh->mu_s[c1], mesh->T_s[c1], mesh->P_s[c1], mesh->d0_s[c1], mesh->phi_s[c1], mesh->exxd_s[c1]+pert_xx, mesh->ezzd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->szzd0_s[c1], mesh->sxz0[c1], materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE_exx, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_pwl, &exz_pwl, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &exx_pl, &exz_pl, &d1s, mesh->strain_s[c1], mesh->fric_s[c1], mesh->C_s[c1], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_n[c0], mesh->ttrans0_n[c0], &Xreac, &ttrans, &OverS );
-                    
+
                     eta =  Viscosity( p, mesh->mu_s[c1], mesh->T_s[c1], mesh->P_s[c1], mesh->d0_s[c1], mesh->phi_s[c1], mesh->exxd_s[c1], mesh->ezzd_s[c1]+pert_zz, mesh->exz[c1], mesh->sxxd0_s[c1], mesh->szzd0_s[c1], mesh->sxz0[c1], materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE_ezz, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_pwl, &exz_pwl, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &exx_pl, &exz_pl, &d1s, mesh->strain_s[c1], mesh->fric_s[c1], mesh->C_s[c1], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_n[c0], mesh->ttrans0_n[c0], &Xreac, &ttrans, &OverS );
-                    
+
                     eta =  Viscosity( p, mesh->mu_s[c1], mesh->T_s[c1], mesh->P_s[c1], mesh->d0_s[c1], mesh->phi_s[c1], mesh->exxd_s[c1], mesh->ezzd_s[c1], mesh->exz[c1]+pert_xz, mesh->sxxd0_s[c1], mesh->szzd0_s[c1], mesh->sxz0[c1], materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE_exz, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_pwl, &exz_pwl, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &exx_pl, &exz_pl, &d1s, mesh->strain_s[c1], mesh->fric_s[c1], mesh->C_s[c1], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_n[c0], mesh->ttrans0_n[c0], &Xreac, &ttrans, &OverS );
-                    
+
                     eta =  Viscosity( p, mesh->mu_s[c1], mesh->T_s[c1], mesh->P_s[c1]+pert_p, mesh->d0_s[c1], mesh->phi_s[c1], mesh->exxd_s[c1], mesh->ezzd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->szzd0_s[c1], mesh->sxz0[c1], materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE_p, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_pwl, &exz_pwl, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &exx_pl, &exz_pl, &d1s, mesh->strain_s[c1], mesh->fric_s[c1], mesh->C_s[c1], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_n[c0], mesh->ttrans0_n[c0], &Xreac, &ttrans, &OverS );
-                    
+
                 }
-                
+
                 if (average ==0) {
                     if ( cond == 1 ) eta_exx   += mesh->phase_perc_s[p][c1] * etaVE_exx;
                     if ( cond == 1 ) eta_ezz   += mesh->phase_perc_s[p][c1] * etaVE_ezz;
                     if ( cond == 1 ) eta_exz   += mesh->phase_perc_s[p][c1] * etaVE_exz;
                     if ( cond == 1 ) eta_p     += mesh->phase_perc_s[p][c1] * etaVE_p;
                 }
-                
+
                 // HARMONIC AVERAGE
                 if (average == 1) {
                     if ( cond == 1 ) eta_exx   += mesh->phase_perc_s[p][c1] * 1.0/etaVE_exx;
@@ -3054,7 +3057,7 @@ void ComputeViscosityDerivatives_FD( grid* mesh, mat_prop *materials, params *mo
                     if ( cond == 1 ) eta_exz   += mesh->phase_perc_s[p][c1] * 1.0/etaVE_exz;
                     if ( cond == 1 ) eta_p     += mesh->phase_perc_s[p][c1] * 1.0/etaVE_p;
                 }
-                
+
                 // GEOMETRIC AVERAGE
                 if (average == 2) {
                     if ( cond == 1 ) eta_exx   += mesh->phase_perc_s[p][c1] * log(etaVE_exx);
@@ -3077,16 +3080,16 @@ void ComputeViscosityDerivatives_FD( grid* mesh, mat_prop *materials, params *mo
                 eta_exz   = exp(eta_exz);
                 eta_p     = exp(eta_p);
             }
-            
+
             // General FD
             mesh->detadexx_s[c1]      = (eta_exx - mesh->eta_s[c1]) / pert_xx;
             mesh->detadezz_s[c1]      = (eta_ezz - mesh->eta_s[c1]) / pert_zz;
             mesh->detadgxz_s[c1]      = (eta_exz - mesh->eta_s[c1]) / pert_xz / 2.0;
             mesh->detadp_s[c1]        = (eta_p   - mesh->eta_s[c1]) / pert_p;
-            
+
         }
     }
-    
+
     MinMaxArrayTag( mesh->detadexx_n, scaling->eta/scaling->E, Ncx*Ncz, "detadexx_n", mesh->BCp.type );
     MinMaxArrayTag( mesh->detadexx_s, scaling->eta/scaling->E, Nx*Nz,   "detadexx_s", mesh->BCg.type );
 }

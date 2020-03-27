@@ -19,6 +19,10 @@
 // along with MDOODZ.  If not, see <http://www.gnu.org/licenses/>.
 // =========================================================================
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
+
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
@@ -96,75 +100,6 @@ double SumArray( double* array, double scale, int size, char* text ) {
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void UpdateInputFile( char fin_name[], int NewNumber ) {
-    
-    FILE* fin;
-    char  FieldName[] = "istep";
-    int h, find=0, bufmax=50, length;
-    char line[bufmax];
-    
-    // Get the length of the demanded string
-    length = strlen( FieldName );
-    
-    // Buffer array to contain the string to compare with
-    char *param1, *param2;
-    param2 = malloc( (length+1)*sizeof(char));
-    asprintf(&param1, "%s", FieldName);
-    
-    // Open File
-    if (fopen(fin_name,"rwt") == NULL) {
-        printf("Setup file '%s' does not exist\nExiting...\n", fin_name);
-        exit(1);
-    }
-    else {
-        fin = fopen(fin_name,"r+");
-    }
-    // Seach for sign 'equal' in the lines
-    while ( find == 0 && feof(fin) !=1 ) {
-        
-        // Read new line
-        fgets ( line, sizeof(line), fin );
-        if (feof(fin)) {
-            printf("Warning : Parameter '%s' not found in the setup file\n", FieldName);
-        }
-        
-        // Get the first 'length' characters of the line
-        for (h=0;h<length;h++) {
-            param2[h] = line[h];
-        }
-        param2[length] = '\0';
-        
-        // printf("p1 %s p2 %s\n", param1, param2);
-        
-        // Check if we found the right parameter name
-        if ( strcmp(param1, param2) == 0 ) {
-            find = 1;
-            // Search for equal sign and replace by the current step
-            for (h=0;h<bufmax;h++) {
-                
-                //printf(" %c ", line[h]);
-                
-                if(strlen(line)> 0 && line[h]=='=') {
-                    
-                    //printf("pos =%d SEEK_CUR=%d NewNumber=%d\n", pos, SEEK_CUR, NewNumber);
-                    fseek(fin, -6, SEEK_CUR);
-                    fprintf( fin, "%05d", NewNumber);
-                    break;
-                }
-            }
-        }
-    }
-    
-    // Close file
-    fclose(fin);
-    free(param1);
-    free(param2);
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------*/
-
 void  ArrayMinusArray( DoodzFP* arr1, DoodzFP* arr2, int size ) {
     int k;
 #pragma omp parallel for shared( arr1, arr2) private(k) schedule( static )
@@ -215,11 +150,11 @@ void ArrayTimesScalar( double* arr1, double scalar, int size ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void MinMaxArray( DoodzFP* array, double scale, int size, char* text ) {
-    
+
     // Search min/max values of an array and prints it to standard out
     double min=array[0], max=array[0];
     int k;
-    
+
 #pragma omp parallel
     {
         double pmin=array[0], pmax=array[0];
@@ -238,7 +173,7 @@ void MinMaxArray( DoodzFP* array, double scale, int size, char* text ) {
                 if (pmax>max) max = pmax;
             }
         }
-        
+
 #pragma omp flush (min)
         if (pmin<min) {
 #pragma omp critical
@@ -255,11 +190,11 @@ void MinMaxArray( DoodzFP* array, double scale, int size, char* text ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void MinMaxArrayTag( DoodzFP* array, double scale, int size, char* text, char* tag ) {
-    
+
     // Search min/max values of an array and prints it to standard out
     double min=array[0], max=array[0];
     int k;
-    
+
 #pragma omp parallel
     {
         double pmin=array[0], pmax=array[0];
@@ -277,7 +212,7 @@ void MinMaxArrayTag( DoodzFP* array, double scale, int size, char* text, char* t
                 if (pmax>max) max = pmax;
             }
         }
-        
+
 #pragma omp flush (min)
         if (pmin<min) {
 #pragma omp critical
@@ -294,12 +229,12 @@ void MinMaxArrayTag( DoodzFP* array, double scale, int size, char* text, char* t
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void MinMaxArrayVal( DoodzFP* array, int size, double* min, double* max ) {
-    
+
     // Search min/max values of an array and prints it to standard out
     *min=array[0];
     *max=array[0];
     int k;
-    
+
 #pragma omp parallel
     {
         double pmin=array[0], pmax=array[0];
@@ -315,7 +250,7 @@ void MinMaxArrayVal( DoodzFP* array, int size, double* min, double* max ) {
                 if (pmax>*max) *max = pmax;
             }
         }
-        
+
 #pragma omp flush (min)
         if (pmin<*min) {
 #pragma omp critical
@@ -324,7 +259,7 @@ void MinMaxArrayVal( DoodzFP* array, int size, double* min, double* max ) {
             }
         }
     }
-    
+
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -397,7 +332,7 @@ void  IsNanArray2DFP( DoodzFP* arr1, int size1 ) {
     int k;
     //#pragma omp parallel for shared( arr1, mesh ) private(k) schedule( static )
     for(k=0;k<size1;k++) {
-        
+
         if ( isnan(arr1[k])!=0 ) {
             printf("Nan Scheisse!\n");
             break;
@@ -413,7 +348,7 @@ void  IsInfArray2DFP( DoodzFP* arr1, int size1 ) {
     int k;
     //#pragma omp parallel for shared( arr1, mesh ) private(k) schedule( static )
     for(k=0;k<size1;k++) {
-        
+
         if ( isinf(arr1[k])!=0 ) {
             printf("Inf Scheisse!\n");
             break;
@@ -450,11 +385,11 @@ void  Initialise2DArrayInt( int* arr, int nx, int nz, int val ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void MinMaxArrayPart( DoodzFP* array, double scale, int size, char* text, int* phase ) {
-    
+
     // Search min/max values of an array and prints it to standard out
     double min=array[0], max=array[0];
     int k;
-    
+
 #pragma omp parallel
     {
         double pmin=array[0], pmax=array[0];
@@ -470,7 +405,7 @@ void MinMaxArrayPart( DoodzFP* array, double scale, int size, char* text, int* p
                 if (pmax>max) max = pmax;
             }
         }
-        
+
 #pragma omp flush (min)
         if (pmin<min) {
 #pragma omp critical
@@ -485,4 +420,3 @@ void MinMaxArrayPart( DoodzFP* array, double scale, int size, char* text, int* p
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
-

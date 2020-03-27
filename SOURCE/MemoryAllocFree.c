@@ -34,15 +34,15 @@
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void* DoodzMalloc( size_t size ) {
-    
+
     void *pointer;
-    
+
 #ifdef _MKL_
     pointer = mkl_malloc( size, 64  );
 #else
     pointer = malloc( size );
 #endif
-    
+
     return pointer;
 }
 
@@ -51,15 +51,15 @@ void* DoodzMalloc( size_t size ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void* DoodzCalloc( int length, size_t type_size ) {
-    
+
     void *pointer;
-    
+
 #ifdef _MKL_
     pointer = mkl_calloc( length, type_size, 64  );
 #else
     pointer = calloc( length, type_size );
 #endif
-    
+
     return pointer;
 }
 
@@ -68,15 +68,15 @@ void* DoodzCalloc( int length, size_t type_size ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void* DoodzRealloc( void *pointer, size_t new_size ) {
-    
+
     void *new;
-    
+
 #ifdef _MKL_
     new = mkl_realloc( pointer, new_size );
 #else
     new = realloc( pointer, new_size );
 #endif
-    
+
     return new;
 }
 
@@ -86,13 +86,13 @@ void* DoodzRealloc( void *pointer, size_t new_size ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void DoodzFree( void *pointer ) {
-    
+
 #ifdef _MKL_
     mkl_free( pointer );
 #else
     free( pointer );
 #endif
-    
+
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -137,12 +137,12 @@ void AllocatePhaseDiagrams( params* model ) {
 
 void FreePhaseDiagrams( params* model  ) {
     int k;
-    
+
     for (k=0; k<model->num_PD; k++) {
         DoodzFree( model->PDMrho );
     }
     DoodzFree( model->PDMrho );
-    
+
     DoodzFree( model->PDMnT   );
     DoodzFree( model->PDMnP   );
     DoodzFree( model->PDMTmin );
@@ -180,7 +180,7 @@ void SFree( SparseMat *Mat ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void PartAlloc( markers *particles, params* model  ) {
-    
+
     // Allocate particle arrays
     particles->x          = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->z          = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
@@ -190,20 +190,20 @@ void PartAlloc( markers *particles, params* model  ) {
     particles->sxxd       = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->szzd       = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->sxz        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
-    
+
     particles->phase      = DoodzCalloc( particles->Nb_part_max,sizeof(int));
     particles->generation = DoodzCalloc( particles->Nb_part_max,sizeof(int));
     particles->progress   = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
-    
+
     particles->rho        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->rhoUe0     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->T          = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->d          = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->phi        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->X          = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
-    
-    particles->ttrans     = DoodzMalloc( particles->Nb_part_max*sizeof(DoodzFP));
-    
+
+    particles->ttrans     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+
     particles->strain     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->strain_el  = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->strain_pl  = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
@@ -211,16 +211,16 @@ void PartAlloc( markers *particles, params* model  ) {
     particles->strain_exp = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->strain_lin = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->strain_gbs = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
-    
+
     particles->intag      = DoodzCalloc( particles->Nb_part_max,sizeof(int));
-    
+
     if (model->fstrain == 1) {
         particles->Fxx        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
         particles->Fxz        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
         particles->Fzx        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
         particles->Fzz        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     }
-    
+
     if (model->rec_T_P_x_z == 1) {
         particles->T0        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
         particles->P0        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
@@ -229,7 +229,7 @@ void PartAlloc( markers *particles, params* model  ) {
         particles->Tmax      = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
         particles->Pmax      = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     }
-    
+
     if (model->aniso == 1) {
         particles->nx        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
         particles->nz        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
@@ -242,7 +242,7 @@ void PartAlloc( markers *particles, params* model  ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void PartFree( markers *particles, params* model ) {
-    
+
     // Deallocate particle arrays
     DoodzFree(particles->x);
     DoodzFree(particles->z);
@@ -262,9 +262,9 @@ void PartFree( markers *particles, params* model ) {
     DoodzFree(particles->d);
     DoodzFree(particles->phi);
     DoodzFree(particles->X);
-    
+
     DoodzFree(particles->ttrans);
-    
+
     DoodzFree(particles->strain);
     DoodzFree(particles->strain_el);
     DoodzFree(particles->strain_pl);
@@ -272,16 +272,16 @@ void PartFree( markers *particles, params* model ) {
     DoodzFree(particles->strain_exp);
     DoodzFree(particles->strain_lin);
     DoodzFree(particles->strain_gbs);
-    
+
     DoodzFree(particles->intag);
-    
+
     if (model->fstrain == 1) {
         DoodzFree(particles->Fxx);
         DoodzFree(particles->Fxz);
         DoodzFree(particles->Fzx);
         DoodzFree(particles->Fzz);
     }
-    
+
     if (model->rec_T_P_x_z == 1) {
         DoodzFree(particles->T0);
         DoodzFree(particles->P0);
@@ -290,7 +290,7 @@ void PartFree( markers *particles, params* model ) {
         DoodzFree(particles->Tmax);
         DoodzFree(particles->Pmax);
     }
-    
+
     if (model->aniso == 1) {
         DoodzFree(particles->nx);
         DoodzFree(particles->nz);
@@ -302,85 +302,87 @@ void PartFree( markers *particles, params* model ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void GridAlloc ( grid* mesh, params* model ) {
-    
+
     // Allocate all grid-based arrays
-    
+
     int k, Nx, Nz, NxVz, NzVx;
-    
+
     Nx       = model->Nx;
     Nz       = model->Nz;
     mesh->Nx = model->Nx;
     mesh->Nz = model->Nz;
     NxVz     = Nx + 1;
     NzVx     = Nz + 1;
-    
+
     printf("Allocation of grid arrays !\n");
-    
-    mesh->xg_coord  = (double*) DoodzMalloc( mesh->Nx *sizeof(double));
-    mesh->zg_coord  = (double*) DoodzMalloc( mesh->Nz *sizeof(double));
-    mesh->xg_coord_ext  = (double*) DoodzMalloc( (mesh->Nx+2) *sizeof(double));
-    mesh->zg_coord_ext  = (double*) DoodzMalloc( (mesh->Nz+2) *sizeof(double));
-    mesh->xg_coord0 = (double*) DoodzMalloc( mesh->Nx *sizeof(double));
-    mesh->zg_coord0 = (double*) DoodzMalloc( mesh->Nz *sizeof(double));
-    mesh->xc_coord  = (double*) DoodzMalloc( (mesh->Nx-1) *sizeof(double));
-    mesh->zc_coord  = (double*) DoodzMalloc( (mesh->Nz-1) *sizeof(double));
-    mesh->xvz_coord = (double*) DoodzMalloc( (mesh->Nx+1) *sizeof(double));
-    mesh->zvx_coord = (double*) DoodzMalloc( (mesh->Nz+1) *sizeof(double));
-    
+
+    mesh->xg_coord  = (double*) DoodzCalloc( mesh->Nx ,sizeof(double));
+    mesh->zg_coord  = (double*) DoodzCalloc( mesh->Nz ,sizeof(double));
+    mesh->xg_coord_ext  = (double*) DoodzCalloc( (mesh->Nx+2) ,sizeof(double));
+    mesh->zg_coord_ext  = (double*) DoodzCalloc( (mesh->Nz+2) ,sizeof(double));
+    mesh->xg_coord0 = (double*) DoodzCalloc( mesh->Nx ,sizeof(double));
+    mesh->zg_coord0 = (double*) DoodzCalloc( mesh->Nz ,sizeof(double));
+    mesh->xc_coord  = (double*) DoodzCalloc( (mesh->Nx-1) ,sizeof(double));
+    mesh->zc_coord  = (double*) DoodzCalloc( (mesh->Nz-1) ,sizeof(double));
+    mesh->xvz_coord = (double*) DoodzCalloc( (mesh->Nx+1) ,sizeof(double));
+    mesh->zvx_coord = (double*) DoodzCalloc( (mesh->Nz+1) ,sizeof(double));
+
     mesh->eta_s     = (double*) DoodzCalloc(  mesh->Nx   * mesh->Nz    ,sizeof(double));
     mesh->eta_n     = (double*) DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1) ,sizeof(double));
     mesh->rho_s     = (double*) DoodzCalloc(  mesh->Nx   * mesh->Nz    ,sizeof(double));
     mesh->rho_n     = (double*) DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1) ,sizeof(double));
     mesh->rho0_n    = (double*) DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1) ,sizeof(double));
-    
+
     mesh->u     = (double*) DoodzCalloc( (mesh->Nx)  *(mesh->Nz+1) ,sizeof(double));
     mesh->ru    = (double*) DoodzCalloc( (mesh->Nx)  *(mesh->Nz+1) ,sizeof(double));
     mesh->rhs_u = (double*) DoodzCalloc( (mesh->Nx)  *(mesh->Nz+1) ,sizeof(double));
+    mesh->gx    = (double*) DoodzCalloc( (mesh->Nx)  *(mesh->Nz+1) ,sizeof(double));
     mesh->v     = (double*) DoodzCalloc( (mesh->Nx+1)*(mesh->Nz)   ,sizeof(double));
     mesh->rv    = (double*) DoodzCalloc( (mesh->Nx+1)*(mesh->Nz)   ,sizeof(double));
     mesh->rhs_v = (double*) DoodzCalloc( (mesh->Nx+1)*(mesh->Nz)   ,sizeof(double));
+    mesh->gz    = (double*) DoodzCalloc( (mesh->Nx+1)*(mesh->Nz)   ,sizeof(double));
     mesh->p     = (double*) DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1) ,sizeof(double));
     mesh->rp    = (double*) DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1) ,sizeof(double));
     mesh->rhs_p = (double*) DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1) ,sizeof(double));
-    
+
     mesh->BCu.type = (char*)   DoodzCalloc( (mesh->Nx)  *(mesh->Nz+1)   ,sizeof(char));
     mesh->BCv.type = (char*)   DoodzCalloc( (mesh->Nx+1)*(mesh->Nz)     ,sizeof(char));
     mesh->BCp.type = (char*)   DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1)   ,sizeof(char));
     mesh->BCu.val  = (double*) DoodzCalloc( (mesh->Nx)  *(mesh->Nz+1) ,sizeof(double));
     mesh->BCv.val  = (double*) DoodzCalloc( (mesh->Nx+1)*(mesh->Nz)   ,sizeof(double));
     mesh->BCp.val  = (double*) DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1) ,sizeof(double));
-    
+
     //-------------------------------------------------------------------------------------------------//
-    
+
     // Allocate 2D array : phase percentage per cell center (fine mesh only)
-    mesh->phase_perc_n = (double**) DoodzMalloc( model->Nb_phases *sizeof(double*));
+    mesh->phase_perc_n = (double**) DoodzCalloc( model->Nb_phases,sizeof(double*));
     for ( k=0; k<model->Nb_phases; k++ ) {
         mesh->phase_perc_n[k] = (double*) DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1), sizeof(double));
     }
-    
+
     // Allocate 2D array : phase percentage per cell vertices (fine mesh only)
-    mesh->phase_perc_s = (double**) DoodzMalloc( model->Nb_phases *sizeof(double*));
+    mesh->phase_perc_s = (double**) DoodzCalloc( model->Nb_phases,sizeof(double*));
     for ( k=0; k<model->Nb_phases; k++ ) {
         mesh->phase_perc_s[k] = (double*) DoodzCalloc( (mesh->Nx)*(mesh->Nz), sizeof(double));
     }
-    
+
     //--------------------------------------------------//
-    
+
     // Roger's
     mesh->roger_x    = DoodzCalloc (Nx*(Nz+1),sizeof(double));
     mesh->roger_z    = DoodzCalloc ((Nx+1)*Nz,sizeof(double));
     mesh->div_u      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->Qrho       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    
+
     // Solution arrays
     mesh->u_in       = DoodzCalloc (Nx*NzVx,sizeof(double));
     mesh->v_in       = DoodzCalloc (NxVz*Nz,sizeof(double));
     mesh->p_in       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    
+
     mesh->u_start    = DoodzCalloc (Nx*NzVx,sizeof(double));
     mesh->v_start    = DoodzCalloc (NxVz*Nz,sizeof(double));
     mesh->p_start    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    
+
     // Derived quantities
     mesh->sxxd       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->szzd       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
@@ -388,34 +390,34 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->exxd       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->ezzd       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->exz        = DoodzCalloc ((Nx)*(Nz),sizeof(double));
-    
+
     // Right-hand side viscoelastic coefficient
     mesh->mu_s   = DoodzCalloc ((Nx)*(Nz),sizeof(double));
     mesh->mu_n   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->VE_s   = DoodzCalloc ((Nx)*(Nz),sizeof(double));
     mesh->VE_n   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    
+
     mesh->sxxd0  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->szzd0  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->sxz0   = DoodzCalloc ((Nx)*(Nz),sizeof(double));
     mesh->sxxd0_s= DoodzCalloc ((Nx)*(Nz),sizeof(double));
     mesh->szzd0_s= DoodzCalloc ((Nx)*(Nz),sizeof(double));
     mesh->sxz0_n = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    
+
     mesh->exxd_s= DoodzCalloc ((Nx)*(Nz),sizeof(double));
     mesh->ezzd_s= DoodzCalloc ((Nx)*(Nz),sizeof(double));
     mesh->exz_n = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->sxz_n = DoodzCalloc ((Nx)*(Nz),sizeof(double));
-    
+
     mesh->u_adv  = DoodzCalloc (Nx*NzVx,sizeof(double));
     mesh->v_adv  = DoodzCalloc (NxVz*Nz,sizeof(double));
-    
+
     mesh->eta_phys_n = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->eta_phys_s = DoodzCalloc ((Nx)*(Nz),sizeof(double));
-    
+
     mesh->strain_n   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->strain_s   = DoodzCalloc ((Nx)*(Nz),sizeof(double));
-    
+
     // Energy equation
     mesh->Cv       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->kx       = DoodzCalloc (Nx*NzVx,sizeof(double));
@@ -432,17 +434,17 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->BCt.valE = DoodzCalloc ((Nz-1),sizeof(double));
     mesh->BCt.valS = DoodzCalloc ((Nx-1),sizeof(double));
     mesh->BCt.valN = DoodzCalloc ((Nx-1),sizeof(double));
-    
+
     // Grid tagging (free surf)
     mesh->BCg.type = DoodzCalloc ((Nx)*(Nz),sizeof(char));
     mesh->BCg.val  = DoodzCalloc ((Nx)*(Nz),sizeof(double));
-    
+
     // Volumetric deformation
     mesh->p_lith   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->dp       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->alp      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->bet      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    
+
     // Grid indices
     mesh->kvx       = DoodzCalloc (Nx*NzVx,sizeof(int));
     mesh->lvx       = DoodzCalloc (Nx*NzVx,sizeof(int));
@@ -452,26 +454,26 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->lp        = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(int));
     mesh->kn        = DoodzCalloc ((Nx)*(Nz),sizeof(int));
     mesh->ln        = DoodzCalloc ((Nx)*(Nz),sizeof(int));
-    
+
     // Array containing the number of particles in each cell
     mesh->nb_part_cell = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(int));
     mesh->nb_part_vert = DoodzCalloc ((Nx)*(Nz),sizeof(int));
-    
+
     // Inertia : keep density on velocity points and velocity increments
     //    mesh->rhoVx  = DoodzMalloc (Nx*NzVx*sizeof(double));
     //    mesh->rhoVz  = DoodzMalloc (NxVz*Nz*sizeof(double));
     mesh->VzVx   = DoodzCalloc (Nx*NzVx,sizeof(double));
     mesh->VxVz   = DoodzCalloc (NxVz*Nz,sizeof(double));
-    
+
     mesh->rho_app_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->rho_app_s  = DoodzCalloc ((Nx)*(Nz),sizeof(double));
-    
+
     mesh->Uthermal   = DoodzCalloc (model->Nt,sizeof(double));
     mesh->Uelastic   = DoodzCalloc (model->Nt,sizeof(double));
     mesh->Work       = DoodzCalloc (model->Nt,sizeof(double));
     mesh->Time       = DoodzCalloc (model->Nt,sizeof(double));
     mesh->Short      = DoodzCalloc (model->Nt,sizeof(double));
-    
+
     mesh->T          = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->dT         = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->eII_el     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
@@ -483,9 +485,9 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->exz_diss   = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->exz_n_el   = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->exz_n_diss = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
-    
+
     mesh->comp_cells = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    
+
     // To remove
     mesh->exx_pl     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->exz_pl     = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
@@ -501,7 +503,7 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->tii0_s     = DoodzCalloc ((Nx)*(Nz),sizeof(double));
     mesh->tii0_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->exz_n_pl   = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
-    
+
     mesh->eII_pl     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->eII_pl_s   = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->eII_pwl    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
@@ -514,57 +516,57 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->d0      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->phi     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->X       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    
+
     mesh->cell_min_z = DoodzCalloc( (Nz-1), sizeof(double));
     mesh->cell_max_z = DoodzCalloc( (Nz-1), sizeof(double));
     mesh->vert_min_z = DoodzCalloc( (Nz-0), sizeof(double));
     mesh->vert_max_z = DoodzCalloc( (Nz-0), sizeof(double));
-    
+
     // New arrays for plastic strain softening
     mesh->C_s        = DoodzCalloc ((Nx)*(Nz),sizeof(double));
     mesh->fric_s     = DoodzCalloc ((Nx)*(Nz),sizeof(double));
     mesh->C_n        = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->fric_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    
+
     mesh->rhoUe0     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    
+
     // For Newton iterations
     mesh->D11_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->D12_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->D13_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->D14_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    
+
     mesh->D21_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->D22_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->D23_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->D24_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    
+
     mesh->D31_s     = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->D32_s     = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->D33_s     = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->D34_s     = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
-                                                        
+
     mesh->detadexx_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->detadezz_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->detadgxz_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->detadp_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    
+
     mesh->detadexx_s  = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->detadezz_s  = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->detadgxz_s  = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->detadp_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
-    
+
     mesh->d0_s   = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->phi_s  = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->T_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->P_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
-    
+
     if ( model->aniso == 1 ) mesh->nx_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     if ( model->aniso == 1 ) mesh->nx_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     if ( model->aniso == 1 ) mesh->nz_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     if ( model->aniso == 1 ) mesh->nz_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
-    
-    
+
+
     // reaction
     mesh->p0_s       = DoodzCalloc ((Nx)*(Nz),sizeof(double));
     mesh->Xreac_s    = DoodzCalloc ((Nx)*(Nz),sizeof(double));
@@ -573,10 +575,10 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->ttrans0_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->Xreac_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->ttrans_n   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    
+
     mesh->OverS_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->OverS_s    = DoodzCalloc ((Nx)*(Nz),sizeof(double));
-    
+
     printf("Memory succesfully allocated : \nDiantre, que c'est bon!\n");
 
 }
@@ -587,25 +589,25 @@ void GridAlloc ( grid* mesh, params* model ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void GridFree( grid* mesh, params* model ) {
-    
+
     // Free all grid-based arrays
-    
+
     int k;
-    
+
     DoodzFree(mesh->roger_x);
     DoodzFree(mesh->roger_z);
     DoodzFree(mesh->div_u);
     DoodzFree(mesh->Qrho);
-	
+
 	// Solution arrays
     DoodzFree(mesh->u_in);
     DoodzFree(mesh->v_in);
     DoodzFree(mesh->p_in);
-    
+
     DoodzFree(mesh->u_start);
     DoodzFree(mesh->v_start);
     DoodzFree(mesh->p_start);
-    
+
 	// Stresses and strain rates
     DoodzFree(mesh->sxxd);
     DoodzFree(mesh->szzd);
@@ -613,7 +615,7 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->exxd);
     DoodzFree(mesh->ezzd);
     DoodzFree(mesh->exz);
-    
+
     // Previously multigrid structures
     DoodzFree(mesh->xg_coord);
     DoodzFree(mesh->zg_coord);
@@ -637,11 +639,13 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->rv);
     DoodzFree(mesh->p);
     DoodzFree(mesh->rp);
-    
+
     DoodzFree(mesh->rhs_u);
+    DoodzFree(mesh->gx);
     DoodzFree(mesh->rhs_v);
+    DoodzFree(mesh->gz);
     DoodzFree(mesh->rhs_p);
-    
+
     DoodzFree(mesh->BCu.val);
     DoodzFree(mesh->BCv.val);
     DoodzFree(mesh->BCp.val);
@@ -649,33 +653,33 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->BCv.type);
     DoodzFree(mesh->BCp.type);
     // Previously multigrid structures
-    
+
     // Viscoelasticity
     DoodzFree(mesh->mu_s);
     DoodzFree(mesh->mu_n);
     DoodzFree(mesh->VE_s);
     DoodzFree(mesh->VE_n);
-    
+
     DoodzFree(mesh->sxxd0);
     DoodzFree(mesh->szzd0);
     DoodzFree(mesh->sxz0);
     DoodzFree(mesh->sxxd0_s);
     DoodzFree(mesh->szzd0_s);
     DoodzFree(mesh->sxz0_n);
-    
+
     DoodzFree(mesh->exxd_s);
     DoodzFree(mesh->ezzd_s);
     DoodzFree(mesh->exz_n);
     DoodzFree(mesh->sxz_n);
-    
+
     DoodzFree(mesh->u_adv);
     DoodzFree(mesh->v_adv);
     DoodzFree(mesh->eta_phys_s);
     DoodzFree(mesh->eta_phys_n);
-    
+
     DoodzFree(mesh->strain_s);
     DoodzFree(mesh->strain_n);
-    
+
     // Energy equation
     DoodzFree(mesh->Cv);
     DoodzFree(mesh->kx);
@@ -692,17 +696,17 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->BCt.typE);
     DoodzFree(mesh->BCt.typS);
     DoodzFree(mesh->BCt.typN);
-    
+
     // Grid tagging
     DoodzFree(mesh->BCg.val);
     DoodzFree(mesh->BCg.type);
-    
+
     // Volumetric deformation
     DoodzFree(mesh->p_lith);
     DoodzFree(mesh->dp);
     DoodzFree(mesh->alp);
     DoodzFree(mesh->bet);
-    
+
     // Grid indices
     DoodzFree( mesh->kvx );
     DoodzFree( mesh->lvx );
@@ -712,36 +716,36 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree( mesh->lp  );
     DoodzFree( mesh->kn  );
     DoodzFree( mesh->ln  );
-    
+
     // Phases cell centers
     for ( k=0; k<model->Nb_phases; k++ ) {
         DoodzFree( mesh->phase_perc_n[k] );
     }
     DoodzFree( mesh->phase_perc_n );
-    
+
     // Phases cell vertices
     for ( k=0; k<model->Nb_phases; k++ ) {
         DoodzFree( mesh->phase_perc_s[k] );
     }
     DoodzFree( mesh->phase_perc_s );
-    
+
     // Inertia
     DoodzFree(mesh->VxVz);
     DoodzFree(mesh->VzVx);
-    
+
     DoodzFree( mesh->rho_app_n  );
     DoodzFree( mesh->rho_app_s  );
-    
+
     // Array containing the number of particles in each cell
     DoodzFree(mesh->nb_part_cell);
     DoodzFree(mesh->nb_part_vert);
-    
+
     DoodzFree(mesh->Uthermal);
     DoodzFree(mesh->Uelastic);
     DoodzFree(mesh->Work);
     DoodzFree(mesh->Time);
     DoodzFree(mesh->Short);
-    
+
     DoodzFree(mesh->T);
     DoodzFree(mesh->dT);
     DoodzFree(mesh->eII_el);
@@ -759,7 +763,7 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->eII_lin);
     DoodzFree(mesh->eII_gbs);
     DoodzFree(mesh->eII_cst);
-    
+
     DoodzFree( mesh->comp_cells );
 
     // To remove
@@ -780,46 +784,46 @@ void GridFree( grid* mesh, params* model ) {
 
     DoodzFree(mesh->exz_n_el);
     DoodzFree(mesh->exz_n_diss);
-    
+
     DoodzFree(mesh->d);
     DoodzFree(mesh->d0);
     DoodzFree(mesh->phi);
     DoodzFree(mesh->X);
-    
+
     DoodzFree(mesh->cell_min_z);
     DoodzFree(mesh->cell_max_z);
     DoodzFree(mesh->vert_min_z);
     DoodzFree(mesh->vert_max_z);
-    
+
     // New arrays for plastic strain softening
     DoodzFree(mesh->C_s);
     DoodzFree(mesh->fric_s);
     DoodzFree(mesh->C_n);
     DoodzFree(mesh->fric_n);
-    
+
     DoodzFree(mesh->rhoUe0);
-    
+
     // For Newton iterations
     DoodzFree(mesh->D11_n);
     DoodzFree(mesh->D12_n);
     DoodzFree(mesh->D13_n);
     DoodzFree(mesh->D14_n);
-    
+
     DoodzFree(mesh->D21_n);
     DoodzFree(mesh->D22_n);
     DoodzFree(mesh->D23_n);
     DoodzFree(mesh->D24_n);
-    
+
     DoodzFree(mesh->D31_s);
     DoodzFree(mesh->D32_s);
     DoodzFree(mesh->D33_s);
     DoodzFree(mesh->D34_s);
-    
+
     DoodzFree(mesh->detadexx_n);
     DoodzFree(mesh->detadezz_n);
     DoodzFree(mesh->detadgxz_n);
     DoodzFree(mesh->detadp_n);
-    
+
     DoodzFree(mesh->detadexx_s);
     DoodzFree(mesh->detadezz_s);
     DoodzFree(mesh->detadgxz_s);
@@ -829,12 +833,12 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->phi_s);
     DoodzFree(mesh->T_s);
     DoodzFree(mesh->P_s);
-    
+
     if ( model->aniso == 1 ) DoodzFree(mesh->nx_n);
     if ( model->aniso == 1 ) DoodzFree(mesh->nx_s);
     if ( model->aniso == 1 ) DoodzFree(mesh->nz_n);
     if ( model->aniso == 1 ) DoodzFree(mesh->nz_s);
-    
+
     // reac
     DoodzFree(mesh->Xreac_n);
     DoodzFree(mesh->Xreac_s);
@@ -843,11 +847,11 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->ttrans0_s);
     DoodzFree(mesh->p0_n);
     DoodzFree(mesh->p0_s);
-    
+
     DoodzFree(mesh->OverS_n);
     DoodzFree(mesh->OverS_s);
-    
-    
+
+
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/

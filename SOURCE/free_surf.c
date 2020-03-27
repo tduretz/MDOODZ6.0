@@ -844,6 +844,7 @@ void CellFlagging( grid *mesh, params model, surface topo, scale scaling ) {
             
         }
     }
+    
     DoodzFree( PVtag  );
     DoodzFree( PVtag0 );
 }

@@ -801,6 +801,8 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                 tet = atan(z/x);
                 if (tet>0.0) gx     = model.gz*cos(tet);
                 if (tet<0.0) gx     =-model.gz*cos(tet);
+                mesh->gx[c]         = gx;
+
             }
 
 //            printf("gx = %2.2e\n", gx*scaling.L/pow(scaling.t,2.0));
@@ -840,17 +842,13 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                             if ( inS ) mesh->roger_x[c]  -= 1.0/dz * (-mesh->eta_s[ixyS] / (mesh->mu_s[ixyS]*model.dt)  * mesh->sxz0[ixyS] );
                         }
 
-//                        // WEST OPEN  --- TO BE MODIFIED AS ABOVE
-//                        if (  l>0 && l<NZVX-1 && k==0 && mesh->BCu.type[c] == 2) {
-//                            mesh->roger_x[c]  -= 1.0/dx * ( mesh->VE_n[c2] * mesh->sxxd0[c2] );
+//                        // Inner nodes
+//                        if (  l>0 && l<NZVX-1 && k>0 && k<NX-1 && model.subgrid_diff!=4 ) {
+//                            // Elasticity
+//                            mesh->roger_x[c]  -= 1.0/dx * ( mesh->VE_n[c2] * mesh->sxxd0[c2] - mesh->VE_n[c2-1]  * mesh->sxxd0[c2-1] );
 //                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->VE_s[c]  * mesh->sxz0[c]   - mesh->VE_s[c-NX]  * mesh->sxz0[c-NX]  );
 //                        }
-//
-//                        // EAST OPEN  --- TO BE MODIFIED AS ABOVE
-//                        if (  l>0 && l<NZVX-1 && k==NX-1 && mesh->BCu.type[c] == 2) {
-//                            mesh->roger_x[c]  -= 1.0/dx * ( - mesh->VE_n[c2-1]  * mesh->sxxd0[c2-1] );
-//                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->VE_s[c]  * mesh->sxz0[c]   - mesh->VE_s[c-NX]  * mesh->sxz0[c-NX]  );
-//                        }
+
 
                     }
                 }
@@ -881,6 +879,7 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                 tet = atan(z/x);
                 if (tet>0.0) gz     = model.gz*sin(tet);
                 if (tet<0.0) gz     =-model.gz*sin(tet);
+                mesh->gz[c]         = gz;
             }
             
             if (k>0 && k<NXVZ-1) {
@@ -914,19 +913,16 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                             if ( inS ) mesh->roger_z[c]  -= 1.0/dz * ( -mesh->eta_n[iPrS] / (mesh->mu_n[iPrS] *model.dt ) * (mesh->szzd0[iPrS]) );
                             if ( inE ) mesh->roger_z[c]  -= 1.0/dx * (  mesh->eta_s[ixyE] / (mesh->mu_s[ixyE] *model.dt ) *  mesh->sxz0[ixyE]) ;
                             if ( inW ) mesh->roger_z[c]  -= 1.0/dx * ( -mesh->eta_s[ixyW] / (mesh->mu_s[ixyW] *model.dt ) *  mesh->sxz0[ixyW]) ;
-//                            printf( "%2.2e %2.2e %2.2e %2.2e %2.2e \n", mesh->roger_z[c], mesh->mu_n[iPrN], mesh->mu_n[iPrS], mesh->mu_s[ixyE], mesh->mu_s[ixyW] );
                         }
-//                        // SOUTH OPEN  --- TO BE MODIFIED AS ABOVE
-//                        if ( l==0 && k>0 && k<NXVZ-1 ) {
-//                            mesh->roger_z[c]  -= 1.0/dz * ( mesh->VE_n[c2+(NCX)] * -(mesh->sxxd0[c2+(NCX)]) );
+                        
+//                        // Backward Euler
+//                        if ( l>0 && l<NZ-1 && k>0 && k<NXVZ-1 && model.subgrid_diff!=4  ) {
+//                            // Elasticity
+//                            mesh->roger_z[c]  -= 1.0/dz * ( mesh->VE_n[c2+(NCX)] * -(mesh->sxxd0[c2+(NCX)]) - mesh->VE_n[c2] * -(mesh->sxxd0[c2]) );
 //                            mesh->roger_z[c]  -= 1.0/dx * ( mesh->VE_s[c1+1]     *   mesh->sxz0[c1+1]      - mesh->VE_s[c1] *   mesh->sxz0[c1]  );
-//                        }
 //
-//                        // NORTH OPEN  --- TO BE MODIFIED AS ABOVE
-//                        if ( l==NZ-1 && k>0 && k<NXVZ-1 ) {
-//                            mesh->roger_z[c]  -= 1.0/dz * ( - mesh->VE_n[c2] * -(mesh->sxxd0[c2]) );
-//                            mesh->roger_z[c]  -= 1.0/dx * ( mesh->VE_s[c1+1]     *   mesh->sxz0[c1+1]      - mesh->VE_s[c1] *   mesh->sxz0[c1]  );
 //                        }
+
                     }
                 }
             }

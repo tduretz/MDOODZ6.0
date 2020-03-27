@@ -1,6 +1,9 @@
 /**** RESTART ****/
-istep = 00170
+istep = 00130
 irestart = 0
+
+/**** OUTPUT FILE ****/
+input_file = none
 
 /**** OUTPUT FILES ****/
 writer          = 1
@@ -16,9 +19,9 @@ V   = 1e-9
 T   = 100
 
 /**** SPACE-TIME ****/
-Nx      = 101
-Nz      = 51
-Nt      = 1
+Nx      = 501
+Nz      = 301
+Nt      = 00
 xmin    = -9.959000e5
 zmin    =  5969400
 xmax    =  9.959000e5
@@ -60,15 +63,17 @@ no_markers      = 0
 eta_avg         = 1
 advection       = 1
 polar           = 1
+StressRotation  = 2
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = 1e-15
 user0           =-35e3   / Moho depth [m]
-user1           =-120e3  / LAB depth [m]
-user2           =-150e3  / depth of compression [m] 
+user1           =-150e3  / LAB depth [m]
+user2           =-200e3  / depth of compression [m] 
 user3           = 1400   / Mantle temperature [C]
-user4           = 1      / 0:Bottom outflow / 1:Lateral outflow 
-
+user4           = 0      / 0:Bottom outflow / 1:Lateral outflow 
+user5           = 10e3   / radius perturbation [m]
+   
 /**** GRAVITY ****/
 gx = 0.0000
 gz =-9.81
@@ -144,7 +149,7 @@ linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
 gsel = 0             / grain size evo.
-eta0 = 1e19
+eta0 = 5e21
 npwl = 1
 Qpwl = 0
 
@@ -167,7 +172,7 @@ min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
 Newton  = 0 
-nit_max = 0
+nit_max = 3
 rel_tol_KSP = 1e-4
 tol_u   = 1e-10
 tol_p   = 1e-10
