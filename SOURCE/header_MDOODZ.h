@@ -437,8 +437,10 @@ void DeformationGradient ( grid, scale, params , markers * );
 void UpdateParticleEnergy( grid*, scale, params, markers*, mat_prop* );
 //void UpdateParticleVelocity( grid*, scaleOutputSparseMatrix , params, markers* );
 void EnergyDirectSolve( grid*, params, double*, double*, double*, double*, markers*, double, int, int, scale, int );
-cholmod_factor* FactorEnergyCHOLMOD( cholmod_common*, double*, int*, int*, int, int );
-void SolveEnergyCHOLMOD( cholmod_common*, cholmod_factor*, double*, double*, int, int );
+cholmod_factor* FactorEnergyCHOLMOD( cholmod_common*, cs_di*, double*, int*, int*, int, int, int );
+cs_di* TransposeA( cholmod_common*, double*, int*, int*, int, int );
+
+void SolveEnergyCHOLMOD( cholmod_common*, cs_di*, cholmod_factor*, double*, double*, int, int, int );
 //void EnergyTemperatureConvertPart( double*, markers*, mat_prop, params );
 void ThermalSteps( grid*, params, double*, double*, double*, double*, markers*, double, scale );
 void Energies( grid*, params, scale );

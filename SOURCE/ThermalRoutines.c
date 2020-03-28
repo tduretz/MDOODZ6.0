@@ -32,19 +32,6 @@
 #include "omp.h"
 #endif
 
-#ifdef _MKL_
-#include "mkl_rci.h"
-#include "mkl_blas.h"
-#include "mkl_spblas.h"
-#include "mkl_service.h"
-#include "mkl_pardiso.h"
-#include "mkl_types.h"
-#endif
-
-#ifdef _VG_
-#define printf(...) printf("")
-#endif
-
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -97,6 +84,8 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
     eqn = 0;
     double transient=1.0;
     double Hr = 1.0, zero_celsius, ks, mink, maxk;
+    double aW=0.0, aE=0.0;
+    double yW, yE, xn, zn, tet;
 
     // Pre-calculate FD coefs
     double one_dx_dx = 1.0/mesh->dx/mesh->dx;
@@ -116,6 +105,7 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
     cholmod_common c;
     cholmod_start( &c );
     cholmod_factor *Afact;
+    cs_di *At;
 
     double *Hs, *Ha, dexz_th, dexz_el, dexz_tot, dexx_th, dexx_el, dexx_tot, diss_limit=1.0e-8/(scaling.S*scaling.E);
     int neq, nnz, it;
@@ -392,6 +382,42 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
                             bbc[eqn] += 2.0*AN*one_dz_dz * mesh->BCt.valN[k];
                         }
 
+                        // Zero flux in radial coordinates
+                        if (k==0 && model.polar==1 && mesh->BCt.type[c2+ncx] != 30 ) {
+//                            xn   = mesh->xg_coord[k];
+//                            zn   = mesh->zc_coord[l];
+//                            tet  = -atan(zn/xn) / (2.0*model.dx/model.dz);
+//                            if (tet>0.0) yW  = atan(tet) * model.dx;
+//                            if (tet<0.0) yW  =-atan(tet) * model.dx;
+//                            aW   = yW/model.dz;
+
+
+                            xn   = mesh->xg_coord[k]-model.dx/2.0;
+                            zn   = mesh->zc_coord[l];
+                            tet  = atan(zn/xn);
+                            if (tet<0.0) tet  *= -1;
+                            yW   = atan(M_PI/2.0-tet) * model.dx;
+                            aW   = yW/model.dz;
+                            val +=  (1.0-aW)*AW*one_dx_dx;
+                        }
+
+                        if (k==ncx-1 && model.polar==1) {
+//                            xn   = mesh->xg_coord[k+1];
+//                            zn   = mesh->zc_coord[l];
+//                            tet  = -atan(zn/xn) / (2.0*model.dx/model.dz);
+//                            if (tet>0.0) yE  = atan(tet) * model.dx;
+//                            if (tet<0.0) yE  =-atan(tet) * model.dx;
+//                            aE   = yE/model.dz;
+
+                            xn   = mesh->xg_coord[k+1]+model.dx/2.0;
+                            zn   = mesh->zc_coord[l];
+                            tet  = atan(zn/xn);
+                            if (tet<0.0) tet  *= -1;
+                            yE   = atan(M_PI/2.0-tet) * model.dx;
+                            aE   = yE/model.dz;
+                            val +=  (1.0-aE)*AE*one_dx_dx;
+                        }
+
                         AddCoeffThermal( J, A, eqn, eqn_t[c2],   &nnzc, val );
 
                         // -------------- Dirichlet contibutions -------------- //
@@ -414,6 +440,16 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
                         if (l<ncz-1)  {
                             if (mesh->BCt.type[c2+ncx] != 30 ) {
                                 val   = -theta*AN*one_dz_dz;
+
+                                // Zero flux in radial coordinates
+                                if (k==0 && model.polar==1) {
+                                    val +=  (aW-1.0)*AW*one_dx_dx;
+                                }
+
+                                if (k==ncx-1 && model.polar==1) {
+                                    val +=  (aE-1.0)*AE*one_dx_dx;
+                                }
+
                                 AddCoeffThermal( J, A, eqn, eqn_t[c2+ncx],   &nnzc,  val );
                             }
                         }
@@ -436,12 +472,16 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
 
         // ------------------------------------------- SOLVER ------------------------------------------- //
 
+        // Compute transpose of A matrix (used in polar mode only)
+        if ( it == 0 ) At = TransposeA( &c, A, Ic, J, neq, nnzc );
+
         // Factor matrix only at the first step
-        if ( it == 0 ) Afact = FactorEnergyCHOLMOD( &c, A, Ic, J, neq, nnzc );
+        if ( it == 0 ) Afact = FactorEnergyCHOLMOD( &c, At, A, Ic, J, neq, nnzc, model.polar );
+
 
         // Solve
         ArrayPlusScalarArray( b, 1.0, bbc, neq );
-        SolveEnergyCHOLMOD( &c, Afact, x, b, neq, nnzc );
+        SolveEnergyCHOLMOD( &c, At, Afact, x, b, neq, nnzc, model.polar );
 
         // ------------------------------------------- SOLVER ------------------------------------------- //
 
@@ -527,6 +567,7 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
     }
     // Free factors
     cholmod_free_factor ( &Afact, &c) ;
+    cs_spfree(At);
     cholmod_finish( &c ) ;
     DoodzFree(bbc);
     DoodzFree(eqn_t);

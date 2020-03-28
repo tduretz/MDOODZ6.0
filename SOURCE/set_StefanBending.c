@@ -162,7 +162,7 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     int   NX, NZ, NCX, NCZ, NXVZ, NZVX;
     double dmin, VzBC, width = 1 / scaling.L, eta = 1e4 / scaling.eta ;
     double Lx, Lz, T1, T2, rate=model->EpsBG;
-    double Inflow = 0.0, VzOutflow = 0.0, x, z, V, tet, r, Vx, Vz;
+    double Inflow = 0.0, VzOutflow = 0.0, x, z, V, tet, r, Vx, Vz, Vt, Vr;
     int    OutflowOnSides = (int)model->user4;
 
     // Inflow/Outflow velocities
@@ -433,17 +433,16 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
 
 				c = k + l*(mesh->Nx);
 
-//                x  = mesh->xg_coord[k];
-//                z  = mesh->zvx_coord[l];
-//                Vx = -mesh->xg_coord[k] * model->EpsBG;
+                x  = mesh->xg_coord[k];
+                z  = mesh->zvx_coord[l];
 
-//                if (cyl==1) {
-////                    r           = sqrt(x*x + z*z);
-////                    tet         = atan(z/x);
-////                    V           = sqrt(Vx*Vx);
-////                    Vx          = -V*sin(tet);
-//                }
-
+                if ( model->ismechanical ==0 && model->polar==1 ) {
+                    r           = sqrt(x*x + z*z);
+                    tet         = atan(z/x);
+                    Vt          = 2.0*model->EpsBG*r*sin(tet);
+                    mesh->u_in[c] = Vt*sin(tet);
+                }
+                
                 if ( mesh->BCu.type[c] != 30 ) {
 
                     // Internal points:  -1
@@ -515,6 +514,16 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
 			for (k=0; k<mesh->Nx+1; k++) {
 
 				c  = k + l*(mesh->Nx+1);
+                
+                x  = mesh->xvz_coord[k];
+                z  = mesh->zg_coord[l];
+                
+                 if ( model->ismechanical ==0 && model->polar==1 ) {
+                     r           = sqrt(x*x + z*z);
+                     tet         = atan(z/x);
+                     Vt          = 2.0*model->EpsBG*r*sin(tet);
+                     mesh->v_in[c] =-Vt*cos(tet);
+                 }
 
                 if ( mesh->BCv.type[c] != 30 ) {
 

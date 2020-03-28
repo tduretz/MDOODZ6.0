@@ -41,10 +41,6 @@
 
 #define error printf
 
-#ifdef _VG_
-#define printf(...) printf("")
-#endif
-
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -133,7 +129,7 @@
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void copy_cs_to_cholmod_matrix1( cholmod_sparse* Acm, cs* Ac ) {
-    
+
     int k;
 #pragma omp parallel for shared( Acm, Ac ) private(k)
     for (k=0; k<Ac->n+1; k++) {
@@ -151,7 +147,7 @@ void copy_cs_to_cholmod_matrix1( cholmod_sparse* Acm, cs* Ac ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void copy_vec_to_cholmod_dense1( cholmod_dense* xcm, DoodzFP* x ) {
-    
+
     int k;
 #pragma omp parallel for shared( xcm, x ) private(k)
     for (k=0; k<xcm->nrow; k++) {
@@ -164,7 +160,7 @@ void copy_vec_to_cholmod_dense1( cholmod_dense* xcm, DoodzFP* x ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void copy_cholmod_dense_to_cholmod_dense1( cholmod_dense* xcm1, cholmod_dense* xcm2 ) {
-    
+
     int k;
 #pragma omp parallel for shared( xcm1, xcm2 ) private(k)
     for (k=0; k<xcm1->nrow; k++) {
@@ -177,7 +173,7 @@ void copy_cholmod_dense_to_cholmod_dense1( cholmod_dense* xcm1, cholmod_dense* x
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void copy_cholmod_to_cs_matrix1( cholmod_sparse* Acm, cs* Ac ) {
-    
+
     int k;
 #pragma omp parallel for shared( Acm, Ac ) private(k)
     for (k=0; k<Ac->n+1; k++) {
@@ -194,12 +190,12 @@ void copy_cholmod_to_cs_matrix1( cholmod_sparse* Acm, cs* Ac ) {
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-
-cholmod_factor* FactorEnergyCHOLMOD( cholmod_common *c, double *a, int *ia, int *ja, int n, int nnz ) {
+cs_di* TransposeA( cholmod_common *c, double *a, int *ia, int *ja, int n, int nnz ) {
 
     cs_di  A, *Ac;
     clock_t t_omp;
-    
+    cs_di *At;
+
     // Prepare A
     A.nzmax = nnz;
     A.nz    = nnz;
@@ -212,16 +208,55 @@ cholmod_factor* FactorEnergyCHOLMOD( cholmod_common *c, double *a, int *ia, int 
     ArrayEqualArrayI( A.p, ja,  A.nzmax );
     ArrayEqualArray(  A.x, a,  A.nzmax );
     Ac  = cs_di_compress( &A );
-    
+
+    cs_di *AAt;
+    At  = cs_di_transpose( Ac, 1 );
+
+    DoodzFree( A.p );
+    DoodzFree( A.x );
+    DoodzFree( A.i );
+    cs_spfree(Ac);
+    // cs_spfree(At);
+
+return At;
+}
+
+
+cholmod_factor* FactorEnergyCHOLMOD( cholmod_common *c, cs_di *At, double *a, int *ia, int *ja, int n, int nnz, int polar_mode ) {
+
+    cs_di  A, *Ac, *AAt;
+    clock_t t_omp;
+
+    // Prepare A
+    A.nzmax = nnz;
+    A.nz    = nnz;
+    A.m     = n;
+    A.n     = A.m;
+    A.p     = DoodzCalloc( A.nzmax, sizeof(int) );
+    A.i     = DoodzCalloc( A.nzmax, sizeof(int) );
+    A.x     = DoodzCalloc( A.nzmax, sizeof(double) );
+    DecompressCSRtoTriplets( A.m, ia, A.i );
+    ArrayEqualArrayI( A.p, ja,  A.nzmax );
+    ArrayEqualArray(  A.x, a,  A.nzmax );
+    Ac  = cs_di_compress( &A );
+
     // CHOLMOD
     cholmod_sparse *Acm, *Acml;
     cholmod_factor *Afact, *Lfact;
-    
-    // Copy matrix to CHOLMOD context
-    Acm = cholmod_allocate_sparse (Ac->m, Ac->n, Ac->nzmax, 0, 1, 0, 1, c) ;
-    copy_cs_to_cholmod_matrix1( Acm, Ac );
-    
-    // Extract lower triangular part 
+
+    if ( polar_mode == 1 ) {
+        // AAt = A*At
+        AAt = cs_di_multiply( Ac, At);
+        Acm = cholmod_allocate_sparse (AAt->m, AAt->n, AAt->nzmax, 0, 1, 0, 1, c) ;
+        copy_cs_to_cholmod_matrix1( Acm, AAt );
+    }
+    else {
+        // Copy matrix to CHOLMOD context
+        Acm = cholmod_allocate_sparse (Ac->m, Ac->n, Ac->nzmax, 0, 1, 0, 1, c) ;
+        copy_cs_to_cholmod_matrix1( Acm, Ac );
+    }
+
+    // Extract lower triangular part
     Acml = cholmod_copy ( Acm, -1, 1, c );
 
     // Factorization
@@ -233,22 +268,22 @@ cholmod_factor* FactorEnergyCHOLMOD( cholmod_common *c, double *a, int *ia, int 
     t_omp = (double)omp_get_wtime();
     cholmod_factorize( Acml, Afact, c) ;
     printf("** Time for Cholesky factorization = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
- 
+
     if ( Afact->is_super == 0 ) cholmod_change_factor( 1, 1, Afact->is_super, 0, 0, Afact, c );
 
     // free matrices
     cholmod_free_sparse( &Acm, c );
     cholmod_free_sparse( &Acml, c );
-    
+
     DoodzFree(A.p);
     DoodzFree(A.i);
     DoodzFree(A.x);
     cs_spfree(Ac);
-    
+    if ( polar_mode == 1 ) cs_spfree(AAt);
+
     Lfact = cholmod_copy_factor( Afact, c );
-//    cholmod_print_factor ( Lfact, "L", c ) ;
     cholmod_free_factor ( &Afact, c) ;
-    
+
     return Lfact;
 }
 
@@ -256,24 +291,31 @@ cholmod_factor* FactorEnergyCHOLMOD( cholmod_common *c, double *a, int *ia, int 
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void SolveEnergyCHOLMOD( cholmod_common *c, cholmod_factor *Afact, double *x, double *b, int n, int nnz ) {
-    
+void SolveEnergyCHOLMOD( cholmod_common *c, cs_di *At, cholmod_factor *Afact, double *x, double *b, int n, int nnz, int polar_mode ) {
+
     int k;
     cholmod_dense *bcm, *xcm;
-    
+    double *y = DoodzCalloc(sizeof(double),n );
+
     // Copy matrix RHS to CHOLMOD context
     bcm  = cholmod_allocate_dense( n, 1, n, CHOLMOD_REAL, c );
     copy_vec_to_cholmod_dense1( bcm, b );
-    
+
     // Back-substitutions
     xcm = cholmod_solve (CHOLMOD_A, Afact, bcm, c) ;
-    
+
     // Retrieve  solution from cholmod array
     for (k=0; k<n; k++) x[k] = ((double*)xcm->x)[k];
-    
+
+    if ( polar_mode == 1 ) {
+        cs_di_gaxpy( At, x, y );
+        for (k=0; k<n; k++) x[k] = y[k];
+    }
+
     // Free
     cholmod_free_dense( &xcm, c );
     cholmod_free_dense( &bcm, c );
+    DoodzFree( y );
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
