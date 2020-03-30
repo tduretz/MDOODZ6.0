@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00006
+istep = 00004
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -32,7 +32,7 @@ lsolver           = 2
 diag_scaling      = 0
 abs_tol_div       = 1e-10
 rel_tol_div       = 1e-10
-GNUplot_residuals = 1
+GNUplot_residuals = 0
 shear_style       = 1
 pc_type           = 0
 eta_avg           = 1

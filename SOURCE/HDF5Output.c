@@ -256,7 +256,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     int    res_fact = 1;
     int    nxviz, nzviz, nxviz_hr, nzviz_hr;
     char  *compo, *compo_hr;
-    float *Cxviz, *Czviz, *Cxviz_hr, *Czviz_hr, *Cxtopo, *Cztopo, *Cheight, *Ctopovx, *Ctopovz;
+    float *Cxviz, *Czviz, *Cxviz_hr, *Czviz_hr, *Cxtopo, *Cztopo, *Cheight, *Ctopovx, *Ctopovz, *Ctopovx_mark, *Ctopovz_mark;
     double *P_total;
     float  *Ccohesion, *Cfriction;
 
@@ -618,6 +618,14 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
         Ctopovz = DoodzMalloc( sizeof(float)*(model.Nx+1));
         DoubleToFloat( topo->vz, Ctopovz, model.Nx+1 );
         ScaleBack( Ctopovz, scaling.V, model.Nx+1 );
+        
+        Ctopovx_mark = DoodzMalloc( sizeof(float)*topo_chain->Nb_part);
+        DoubleToFloat( topo_chain->Vx, Ctopovx_mark, topo_chain->Nb_part );
+        ScaleBack( Ctopovx_mark, scaling.V, topo_chain->Nb_part );
+        
+        Ctopovz_mark = DoodzMalloc( sizeof(float)*topo_chain->Nb_part);
+        DoubleToFloat( topo_chain->Vz, Ctopovz_mark, topo_chain->Nb_part );
+        ScaleBack( Ctopovz_mark, scaling.V, topo_chain->Nb_part );
 
     }
 
@@ -706,12 +714,14 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "OverS",'f', (model.Nx-1)*(model.Nz-1), COverS, 1 );
 
     if ( model.free_surf == 1 ) {
-        AddFieldToGroup_generic( _TRUE_, name, "Topo", "height" , 'f', (model.Nx), Cheight, 1 );
-        AddFieldToGroup_generic( _TRUE_, name, "Topo", "vx" , 'f', (model.Nx), Ctopovx, 1 );
-        AddFieldToGroup_generic( _TRUE_, name, "Topo", "vz" , 'f', (model.Nx+1), Ctopovz, 1 );
-        AddFieldToGroup_generic( _TRUE_, name, "Topo", "x" , 'f', topo_chain->Nb_part, Cxtopo, 1 );
-        AddFieldToGroup_generic( _TRUE_, name, "Topo", "z" , 'f', topo_chain->Nb_part, Cztopo, 1 );
-        AddFieldToGroup_generic( _TRUE_, name, "Topo", "phase" , 'i', topo_chain->Nb_part, topo_chain->phase, 1 );
+        AddFieldToGroup_generic( _TRUE_, name, "Topo", "z_grid" , 'f', (model.Nx), Cheight, 1 );
+        AddFieldToGroup_generic( _TRUE_, name, "Topo", "Vx_grid" , 'f', (model.Nx), Ctopovx, 1 );
+        AddFieldToGroup_generic( _TRUE_, name, "Topo", "Vz_grid" , 'f', (model.Nx+1), Ctopovz, 1 );
+        AddFieldToGroup_generic( _TRUE_, name, "Topo", "x_mark" , 'f', topo_chain->Nb_part, Cxtopo, 1 );
+        AddFieldToGroup_generic( _TRUE_, name, "Topo", "z_mark" , 'f', topo_chain->Nb_part, Cztopo, 1 );
+        AddFieldToGroup_generic( _TRUE_, name, "Topo", "Vx_mark" , 'f', topo_chain->Nb_part, Ctopovx_mark, 1 );
+        AddFieldToGroup_generic( _TRUE_, name, "Topo", "Vz_mark" , 'f', topo_chain->Nb_part, Ctopovz_mark, 1 );
+        AddFieldToGroup_generic( _TRUE_, name, "Topo", "phase_mark" , 'i', topo_chain->Nb_part, topo_chain->phase, 1 );
     }
 
     if (model.isPl_soft == 1) {
@@ -809,6 +819,8 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
         DoodzFree( Cheight );
         DoodzFree( Ctopovx );
         DoodzFree( Ctopovz );
+        DoodzFree( Ctopovx_mark );
+        DoodzFree( Ctopovz_mark );
     }
 
     if (model.isPl_soft == 1) {

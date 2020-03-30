@@ -37,10 +37,6 @@
 #define omp_get_wtime() clock()/CLOCKS_PER_SEC
 #endif
 
-#ifdef _VG_
-#define printf(...) printf("")
-#endif
-
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -1322,7 +1318,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     double pg = materials->ppzm[phase], Kg = materials->Kpzm[phase], Qg = materials->Qpzm[phase], gam = materials->Gpzm[phase], cg = materials->cpzm[phase], lambda = materials->Lpzm[phase];
     double eta_vp0 = materials->eta_vp[phase], n_vp = materials->n_vp[phase], eta_vp;
     double  detadTxx=0.0, detadTzz=0.0, detadTxz=0.0, deta_ve_dExx=0.0, deta_ve_dEzz=0.0, deta_ve_dExz=0.0, deta_ve_dP=0.0;
-    double  dFdExx=0.0, dFdEzz=0.0, dFdExz=0.0, dFdP=0.0, g=0.0, dlamdExx=0.0, dlamdEzz=0.0, dlamdExz=0.0, dlamdP=0.0, a=0.0, deta_vep_dExx=0.0, deta_vep_dEzz=0.0, deta_vep_dExz=0.0, deta_vep_dP=0.0, deta_vp_dExx, deta_vp_dEzz, deta_vp_dExz, deta_vp_dP;
+    double  dFdExx=0.0, dFdEzz=0.0, dFdExz=0.0, dFdP=0.0, g=0.0, dlamdExx=0.0, dlamdEzz=0.0, dlamdExz=0.0, dlamdP=0.0, a=0.0, deta_vep_dExx=0.0, deta_vep_dEzz=0.0, deta_vep_dExz=0.0, deta_vep_dP=0.0, deta_vp_dExx, deta_vp_dEzz, deta_vp_dExz, deta_vp_dP, deta;
 
     //------------------------------------------------------------------------//
 
@@ -1543,6 +1539,8 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
 
         // Analytical derivative of function
         dfdeta = -Eii/eta_el;
+        if ( peierls     == 1 ) dfdeta += -(*Eii_exp)*(ST+n_exp)/eta_ve;
+        if ( diffusion   == 1 ) dfdeta += -(*Eii_lin)*n_lin/eta_ve;
         if ( dislocation == 1 ) dfdeta += -(*Eii_pwl)*n_pwl/eta_ve;
         if ( constant    == 1 ) dfdeta += -Eii/eta_cst;
 
@@ -1557,9 +1555,17 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     Tii                  = 2.0*eta_ve*Eii;
 
     // Partial derivatives VE
-    detadTxx     = -    C_pwl * pow(Tii, n_pwl - 3.0) * Txx*(n_pwl - 1.0) * pow(eta_ve,2.0);
-    detadTzz     = -    C_pwl * pow(Tii, n_pwl - 3.0) * Tzz*(n_pwl - 1.0) * pow(eta_ve,2.0);
-    detadTxz     = -2.0*C_pwl * pow(Tii, n_pwl - 3.0) * Txz*(n_pwl - 1.0) * pow(eta_ve,2.0);
+    deta     = 0.0;
+    if (dislocation == 1) deta += -C_pwl * pow(Tii, n_pwl    - 3.0)*(n_pwl    - 1.0);
+    if (peierls     == 1) deta += -C_exp * pow(Tii, n_exp+ST - 3.0)*(n_exp+ST - 1.0);
+    if (diffusion   == 1) deta += -C_exp * pow(Tii, n_lin    - 3.0)*(n_lin    - 1.0) * pow(*d1,-m_lin);
+    detadTxx    =     deta*Txx*pow(eta_ve,2.0);
+    detadTzz    =     deta*Tzz*pow(eta_ve,2.0);
+    detadTxz    = 2.0*deta*Txz*pow(eta_ve,2.0);
+    
+//    detadTxx     = -    C_pwl * pow(Tii, n_pwl - 3.0) * Txx*(n_pwl - 1.0) * pow(eta_ve,2.0);
+//    detadTzz     = -    C_pwl * pow(Tii, n_pwl - 3.0) * Tzz*(n_pwl - 1.0) * pow(eta_ve,2.0);
+//    detadTxz     = -2.0*C_pwl * pow(Tii, n_pwl - 3.0) * Txz*(n_pwl - 1.0) * pow(eta_ve,2.0);
     deta_ve_dExx = detadTxx * 2.0*eta_ve / (1.0 - 2.0*(detadTxx*Exx + detadTzz*Ezz + detadTxz*Exz));
     deta_ve_dEzz = detadTzz * 2.0*eta_ve / (1.0 - 2.0*(detadTxx*Exx + detadTzz*Ezz + detadTxz*Exz));
     deta_ve_dExz = detadTxz * 2.0*eta_ve / (1.0 - 2.0*(detadTxx*Exx + detadTzz*Ezz + detadTxz*Exz));

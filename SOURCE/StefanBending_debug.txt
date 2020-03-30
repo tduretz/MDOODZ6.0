@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00200
+istep = 00003
 irestart = 0
 
 /**** OUTPUT FILE ****/
@@ -7,8 +7,8 @@ input_file = none
 
 /**** OUTPUT FILES ****/
 writer          = 1
-writer_step     = 10
-writer_markers  = 0
+writer_step     = 1
+writer_markers  = 1
 writer_debug    = 0
 writer_energies = 0
 
@@ -21,7 +21,7 @@ T   = 100
 /**** SPACE-TIME ****/
 Nx      = 251
 Nz      = 151
-Nt      = 50
+Nt      = 10
 xmin    = -9.959000e5
 zmin    =  5969400
 xmax    =  9.959000e5
@@ -39,15 +39,15 @@ num_deriv   = 0
 safe_mode   = 0
 
 /**** SWITCHES ****/
-ismechanical    = 1
+ismechanical    = 0
 RK              = 4
 isperiodic_x    = 0
 ispureshear_ALE = 0  /turns on inflow check
 iselastic       = 1
-isthermal       = 1
+isthermal       = 0
 shear_heat      = 1    
 adiab_heat      = 0
-thermal_eq      = 1
+thermal_eq      = 0
 shear_heat      = 1
 line_search     = 1
 free_surf       = 1
@@ -63,6 +63,7 @@ eta_avg         = 1
 advection       = 1
 polar           = 1
 StressRotation  = 2
+surf_remesh     = 1
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = 1e-15
@@ -170,8 +171,8 @@ Nz_part  = 4
 min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
-Newton  = 1 
-nit_max = 6
+Newton  = 0 
+nit_max = 3
 rel_tol_KSP = 1e-4
 tol_u   = 1e-10
 tol_p   = 1e-10

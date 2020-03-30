@@ -1,6 +1,6 @@
 /**** RESTART ****/
-istep = 00200
-irestart = 0
+istep = 00040
+irestart = 1
 
 /**** OUTPUT FILE ****/
 input_file = none
@@ -20,11 +20,11 @@ T   = 100
 
 /**** SPACE-TIME ****/
 Nx      = 251
-Nz      = 151
-Nt      = 50
-xmin    = -9.959000e5
+Nz      = 121
+Nt      = 100
+xmin    = -1.000e6
 zmin    =  5969400
-xmax    =  9.959000e5
+xmax    =  1.000e6
 zmax    =  6.400000e6
 dt      = 1e11
 dt_constant = 0
@@ -61,7 +61,7 @@ GNUplot_residuals = 0
 no_markers      = 0
 eta_avg         = 1
 advection       = 1
-polar           = 1
+polar           = 0
 StressRotation  = 2
 
 /**** SETUP DEPENDANT ****/
@@ -171,7 +171,7 @@ min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
 Newton  = 1 
-nit_max = 6
+nit_max = 10
 rel_tol_KSP = 1e-4
 tol_u   = 1e-10
 tol_p   = 1e-10

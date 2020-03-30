@@ -683,7 +683,7 @@ int main( int nargs, char *args[] ) {
                 // Non-Linearity
                 if  (model.aniso==1) {
                     aniso = 1;
-                    model.aniso=0;
+                    model.aniso = 0;
                 }
                 
                 //            if ( model.compressible > 0 ) {
@@ -693,6 +693,11 @@ int main( int nargs, char *args[] ) {
                 UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
                 if  (aniso==1) {
                     model.aniso=1;
+                }
+                
+                if ( model.write_debug == 1 ) {
+                    WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, model, "Output_BeforeSolve", materials, scaling );
+                    WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particles_BeforeSolve", materials, scaling );
                 }
                 
                 
@@ -776,9 +781,8 @@ int main( int nargs, char *args[] ) {
                 rx_array[Nmodel.nit] = Nmodel.resx;
                 rz_array[Nmodel.nit] = Nmodel.resz;
                 rp_array[Nmodel.nit] = Nmodel.resp;
-#ifndef _VG_
+                
                 if ( model.write_debug == 1 ) WriteResiduals( mesh, model, Nmodel, scaling );
-#endif
                 
                 // if pass --> clear matrix break
                 if ( (Nmodel.resx < Nmodel.tol_u) && (Nmodel.resz < Nmodel.tol_u) && (Nmodel.resp < Nmodel.tol_p) ) {

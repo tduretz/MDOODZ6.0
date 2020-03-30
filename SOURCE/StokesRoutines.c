@@ -801,9 +801,8 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                 tet = atan(z/x);
                 if (tet>0.0) gx     = model.gz*cos(tet);
                 if (tet<0.0) gx     =-model.gz*cos(tet);
-                mesh->gx[c]         = gx;
-
             }
+            mesh->gx[c]         = gx;
 
 //            printf("gx = %2.2e\n", gx*scaling.L/pow(scaling.t,2.0));
 
@@ -879,8 +878,8 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                 tet = atan(z/x);
                 if (tet>0.0) gz     = model.gz*sin(tet);
                 if (tet<0.0) gz     =-model.gz*sin(tet);
-                mesh->gz[c]         = gz;
             }
+            mesh->gz[c]         = gz;
             
             if (k>0 && k<NXVZ-1) {
 

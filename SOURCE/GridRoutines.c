@@ -116,6 +116,8 @@ void UpdateNonLinearity( grid* mesh, markers* particles, markers* topo_chain, su
         
     // Strain rate component evaluation
     StrainRateComponents( mesh, scaling, model );
+//    MinMaxArrayTag( mesh->exxd,      scaling.E, (mesh->Nx-1)*(mesh->Nz-1),     "exx     ", mesh->BCp.type );
+
     
     //-----------------------------------------------//
     
@@ -363,47 +365,64 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
 
     for( l=0; l<nzvx; l++) {
         for( k=0; k<nx; k++) {
+            
             c = k + l*nx;
             
-            mesh->u_in[c]  = 0.0;
-            
             if ( mesh->BCu.type[c] != 30 ) {
-                // Initial velocity field (zero or pure shear)
-                if (model->EpsBG == 0) mesh->u_in[c]  = 0.0;
-                // Pure shear
-                else mesh->u_in[c]  = -mesh->xg_coord[k]*model->EpsBG;
-                // Simple shear
-                if (model->isperiodic_x == 1) mesh->u_in[c] = 2.0*mesh->zvx_coord[l]*model->EpsBG;
+                
+                if (model->step==0) {
+                    // Initial velocity field (zero or pure shear)
+                    if (model->EpsBG == 0) mesh->u_in[c]  = 0.0;
+                    // Pure shear
+                    else mesh->u_in[c]  = -mesh->xg_coord[k]*model->EpsBG;
+                    // Simple shear
+                    if (model->isperiodic_x == 1) mesh->u_in[c] = 2.0*mesh->zvx_coord[l]*model->EpsBG;
+                }
                 // Force Dirichlets
                 if (mesh->BCu.type[c] == 0) mesh->u_in[c]  = mesh->BCu.val[c];
+            }
+            else if ( mesh->BCu.type[c] == 30 ) {
+                mesh->u_in[c]  = 0.0;
             }
         }
     }
 	
     for( l=0; l<nz; l++) {
         for( k=0; k<nxvz; k++) {
+            
             c = k + l*nxvz;
             
-            mesh->v_in[c]  = 0.0;
-            
             if ( mesh->BCv.type[c] != 30 ) {
-                // Initial velocity field (zero or pure shear)
-                if (model->EpsBG == 0) mesh->v_in[c]  = 0.0;
-                else mesh->v_in[c]  = mesh->zg_coord[l]*model->EpsBG;
-                if (model->isperiodic_x == 1) mesh->v_in[c]  = 0.0;
+                if (model->step==0) {
+                    // Initial velocity field (zero or pure shear)
+                    if (model->EpsBG == 0) mesh->v_in[c]  = 0.0;
+                    else mesh->v_in[c]  = mesh->zg_coord[l]*model->EpsBG;
+                    if (model->isperiodic_x == 1) mesh->v_in[c]  = 0.0;
+                }
                 // Force Dirichlets
                 if (mesh->BCv.type[c] == 0) mesh->v_in[c]  = mesh->BCv.val[c];
+            }
+            else if ( mesh->BCv.type[c] == 30 ) {
+                mesh->v_in[c]  = 0.0;
             }
         }
     }
     
     for( l=0; l<ncz; l++) {
         for( k=0; k<ncx; k++) {
+            
             c = k + l*ncx;
             
-            // Initial pressure field
-            if (model->num_deriv==0) mesh->p_in[c]  = 0.0;//eps;
-            if (model->num_deriv==1) mesh->p_in[c]  = eps;
+            if ( mesh->BCp.type[c] != 30 ||  mesh->BCp.type[c] != 31) {
+                if (model->step==0) {
+                    // Initial pressure field
+                    if (model->num_deriv==0) mesh->p_in[c]  = 0.0;//eps;
+                    if (model->num_deriv==1) mesh->p_in[c]  = eps;
+                }
+            }
+            else if ( mesh->BCp.type[c] == 30 ||  mesh->BCp.type[c] == 31) {
+                mesh->p_in[c]  = 0.0;
+            }
         }
     }
     
