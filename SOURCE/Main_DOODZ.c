@@ -61,7 +61,7 @@ int main( int nargs, char *args[] ) {
     SparseMat    Stokes, Jacob;
     DirectSolver CholmodSolver;
     surface      topo, topo_ini;
-    int          Nmax_picard, nstag, nstagmax=3, safe=0;
+    int          Nmax_picard, nstag;
     SparseMat    StokesA, StokesB, StokesC, StokesD;
     SparseMat    JacobA,  JacobB,  JacobC,  JacobD;
     int          Nx, Nz, Ncx, Ncz;
@@ -673,7 +673,7 @@ int main( int nargs, char *args[] ) {
             
             int Nmax_picard = Nmodel.nit_max;
             
-            while ( Nmodel.nit <= Nmax_picard ) {
+            while ( Nmodel.nit <= Nmax_picard && nstag<model.nstagmax) {
                 
                 printf("**********************************************\n");
                 printf("*** Non-linear it. %02d of %02d (step = %05d) ***\n", Nmodel.nit, Nmodel.nit_max, model.step);
@@ -820,11 +820,11 @@ int main( int nargs, char *args[] ) {
                     
                     //                    }
                     
-                    if ( Nmodel.stagnated == 1 && safe == 0 ) {
+                    if ( Nmodel.stagnated == 1 && model.safe_mode <= 0 ) {
                         printf( "Non-linear solver stagnated to res_u = %2.2e res_z = %2.2e\n", Nmodel.resx_f, Nmodel.resz_f );
                         printf( "You may want to try setting line_search_min > 0.0\n Good luck good man!\n");
-                        //exit(0);
                         
+                        if (model.safe_mode==-1) exit(0);
                         
                         if ( model.decoupled_solve == 0 ) { FreeMat( &Stokes ); }
                         if ( model.decoupled_solve == 1 ) {
@@ -843,16 +843,7 @@ int main( int nargs, char *args[] ) {
                         break;
                         
                     }
-                    if ( Nmodel.stagnated == 1 && model.iselastic == 1 && safe == 1 ) {
-                        printf( "\e[1;31mWARNING : Non-linear solver stagnated (tol_u = %2.2e tol_p = %2.2e)\e[m\n", Nmodel.tol_u, Nmodel.tol_p );
-                        printf( "\e[1;31mReducing the timestep, and restart the iterations cycle...\e[m\n");
-                        Nmodel.nit = -1;
-                        printf( "Restart solutions\n");
-                        ArrayEqualArray( mesh.p_in, mesh.p_start,  (mesh.Nx-1)*(mesh.Nz-1) );
-                        ArrayEqualArray( mesh.u_in, mesh.u_start,  (mesh.Nx)  *(mesh.Nz+1) );
-                        ArrayEqualArray( mesh.v_in, mesh.v_start,  (mesh.Nx+1)*(mesh.Nz)   );
-                        nstag++;
-                    }
+
                 }
                 
                 if ( Nmodel.stagnated == 0 ) {
@@ -871,6 +862,32 @@ int main( int nargs, char *args[] ) {
 #endif
                     }
                 }
+                
+                if ( Nmodel.stagnated == 1 && model.iselastic == 1 && model.safe_mode == 1 ) {
+                    printf( "\e[1;31mWARNING : Non-linear solver stagnated (tol_u = %2.2e tol_p = %2.2e)\e[m\n", Nmodel.tol_u, Nmodel.tol_p );
+                    printf( "\e[1;31mReducing the timestep, and restart the iterations cycle...\e[m\n");
+                    printf( "Before reduction: model.dt =, %2.2e\n", model.dt*scaling.t);
+                    // ----------------------
+                    model.dt /= 5.0;
+                    printf( "HARD-CODED: Timestep divided by 5.0 => NEW CURRENT model.dt =, %2.2e\n", model.dt*scaling.t);
+                    Nmodel.stagnated = 0;
+                    // ----------------------
+                    Nmodel.nit = -1;
+                    printf( "Restart solutions\n");
+                    ArrayEqualArray( mesh.p_in, mesh.p_start,  (mesh.Nx-1)*(mesh.Nz-1) );
+                    ArrayEqualArray( mesh.u_in, mesh.u_start,  (mesh.Nx)  *(mesh.Nz+1) );
+                    ArrayEqualArray( mesh.v_in, mesh.v_start,  (mesh.Nx+1)*(mesh.Nz)   );
+                    nstag++;
+                    //-----------------------
+                    printf( "nstag value = %02d - nstagmax = %02d\n", nstag, model.nstagmax);
+                    if (nstag==model.nstagmax) {
+                        printf( "CheckDoudzOut!!\n", nstag, model.nstagmax);
+                        exit(0);
+                        //-----------------------
+                    }
+                }
+                
+                
                 if ( model.decoupled_solve == 0 ) { FreeMat( &Stokes ); }
                 if ( model.decoupled_solve == 1 ) {
                     FreeMat( &StokesA );
@@ -1065,7 +1082,8 @@ int main( int nargs, char *args[] ) {
             
             t_omp = (double)omp_get_wtime();
             //EvaluateCourantCriterion_BEN( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
-            EvaluateCourantCriterion( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
+            //EvaluateCourantCriterion( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
+            Check_dt_for_advection( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
             
             //            double whole_dt = model.dt;
             //            int nsub, isub;
