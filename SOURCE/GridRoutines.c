@@ -368,8 +368,15 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
             
             c = k + l*nx;
             
+//            // This works with cylindrical
+//            mesh->u_in[c]  = 0.0;
+//            if (mesh->BCu.type[c] == 0) mesh->u_in[c]  = mesh->BCu.val[c];
+            
+            if ( mesh->BCu.type[c] == 30 )  mesh->u_in[c]  = 0.0;
+            
+            
             if ( mesh->BCu.type[c] != 30 ) {
-                
+
                 if (model->step==0) {
                     // Initial velocity field (zero or pure shear)
                     if (model->EpsBG == 0) mesh->u_in[c]  = 0.0;
@@ -381,9 +388,7 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
                 // Force Dirichlets
                 if (mesh->BCu.type[c] == 0) mesh->u_in[c]  = mesh->BCu.val[c];
             }
-            else if ( mesh->BCu.type[c] == 30 ) {
-                mesh->u_in[c]  = 0.0;
-            }
+    
         }
     }
 	
@@ -391,6 +396,11 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
         for( k=0; k<nxvz; k++) {
             
             c = k + l*nxvz;
+            
+//            mesh->v_in[c]  = 0.0;
+//            if (mesh->BCv.type[c] == 0) mesh->v_in[c]  = mesh->BCv.val[c];
+            
+            if ( mesh->BCv.type[c] == 30 )  mesh->v_in[c]  = 0.0;
             
             if ( mesh->BCv.type[c] != 30 ) {
                 if (model->step==0) {
@@ -402,9 +412,7 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
                 // Force Dirichlets
                 if (mesh->BCv.type[c] == 0) mesh->v_in[c]  = mesh->BCv.val[c];
             }
-            else if ( mesh->BCv.type[c] == 30 ) {
-                mesh->v_in[c]  = 0.0;
-            }
+            
         }
     }
     
@@ -413,6 +421,10 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
             
             c = k + l*ncx;
             
+//            mesh->p_in[c]  = 0.0;
+            
+            if ( mesh->BCp.type[c] == 30 ||  mesh->BCp.type[c] == 31 ) mesh->p_in[c]  = 0.0;
+            
             if ( mesh->BCp.type[c] != 30 ||  mesh->BCp.type[c] != 31) {
                 if (model->step==0) {
                     // Initial pressure field
@@ -420,9 +432,7 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
                     if (model->num_deriv==1) mesh->p_in[c]  = eps;
                 }
             }
-            else if ( mesh->BCp.type[c] == 30 ||  mesh->BCp.type[c] == 31) {
-                mesh->p_in[c]  = 0.0;
-            }
+            
         }
     }
     

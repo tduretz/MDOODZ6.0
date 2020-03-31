@@ -1,6 +1,6 @@
 /**** RESTART ****/
-istep = 00040
-irestart = 1
+istep = 00090
+irestart = 0
 
 /**** OUTPUT FILE ****/
 input_file = none
@@ -19,12 +19,12 @@ V   = 1e-9
 T   = 100
 
 /**** SPACE-TIME ****/
-Nx      = 251
-Nz      = 121
+Nx      = 500
+Nz      = 250
 Nt      = 100
-xmin    = -1.000e6
+xmin    = -9.959000e5
 zmin    =  5969400
-xmax    =  1.000e6
+xmax    =  9.959000e5
 zmax    =  6.400000e6
 dt      = 1e11
 dt_constant = 0
@@ -42,7 +42,7 @@ safe_mode   = 0
 ismechanical    = 1
 RK              = 4
 isperiodic_x    = 0
-ispureshear_ALE = 0  /turns on inflow check
+ispureshear_ALE =-1  /turns on inflow check
 iselastic       = 1
 isthermal       = 1
 shear_heat      = 1    
@@ -171,7 +171,7 @@ min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
 Newton  = 1 
-nit_max = 10
+nit_max = 6
 rel_tol_KSP = 1e-4
 tol_u   = 1e-10
 tol_p   = 1e-10

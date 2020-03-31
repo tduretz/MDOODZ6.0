@@ -37,10 +37,6 @@
 #define omp_get_wtime() clock()/CLOCKS_PER_SEC
 #endif
 
-#ifdef _VG_
-#define printf(...) printf("")
-#endif
-
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -850,7 +846,9 @@ void Zmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
         double drhodz  = (mesh->rho_app_n[c2+ncx] - mesh->rho_app_n[c2])*one_dz;
         double vC_corr = 1.00 * om * model.dt * mesh->gz[c3] * drhodz;
         // Importante trique, voire meme gigantesque!
-        if (vC+vC_corr>0.0) vC += vC_corr;
+        if (vC+vC_corr>0.0) { vC += vC_corr;
+//            if (vC_corr>1e-6)printf("vC_corr = %2.2e gz=%2.2e\n",vC_corr, mesh->gz[c3]);
+        }
     }
 
     // Pressure gradient
@@ -2319,6 +2317,14 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     pSE = ( D34S*inS*inSEc*wS/dz);
     pNW = (-D34N*inN*inNWc*wN/dz);
     pNE = (-D34N*inN*inNEc*wN/dz);
+    
+    // Stabilisation with density gradients
+    if (stab==1) {
+        double drhodx  = (mesh->rho_app_n[c2+1] - mesh->rho_app_n[c2])*one_dx;
+        double uC_corr = 1.00 * om * model.dt * mesh->gx[c1] * drhodx;
+        // Importante trique, voire meme gigantesque!
+        if (uC+uC_corr>0.0) uC += uC_corr;
+    }
 
     // Add contribution from non-conforming Dirichlets
     if ( mesh->BCu.type[iVxS]   == 11 ) uC  -=  uS ;
@@ -2734,6 +2740,15 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     pSE = (-D34E*inE*inSEc*wE/dx);
     pNW = (D34W*inNWc*inW*wW/dx);
     pNE = (-D34E*inE*inNEc*wE/dx);
+    
+    // Stabilisation with density gradients
+    if (stab==1) {
+        double drhodz  = (mesh->rho_app_n[c2+ncx] - mesh->rho_app_n[c2])*one_dz;
+        double vC_corr = 1.00 * om * model.dt * mesh->gz[c3] * drhodz;
+        // Importante trique, voire meme gigantesque!
+        if (vC+vC_corr>0.0) vC += vC_corr;
+    }
+
 
     // Add contribution from non-conforming Dirichlets
     if ( mesh->BCv.type[iVzW]   == 11 ) vC  -=  vW ;
@@ -2767,32 +2782,6 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
 //
 //    if ( mesh->BCv.type[c3-1] == 11 ) vC  -=  vW;
 //    if ( mesh->BCv.type[c3+1] == 11 ) vC  -=  vE;
-
-    // Stabilisation with density gradients
-    if (stab==1) {
-        double drhodz  = (mesh->rho_app_n[c2+ncx] - mesh->rho_app_n[c2]);
-        //        double vC_corr = - 1.00 * om * model.dt * model.gz * drhodz;
-        double correction =  1.0/om * 0.5 * model.dt * model.gz * drhodz * one_dz;
-        vC += correction;
-
-        //        om = 0.15;
-        //        double vC_corr = -  1.0/om * 0.5 * model.dt * model.gz * drhodz;
-        // Importante trique, voire meme gigantesque!
-
-        //        if (vC+vC_corr<0.0)  vC += vC_corr;
-        //        if (vW+.25*vC_corr>0)  vW += .25*vC_corr;
-        //        if (vE+.25*vC_corr>0)  vE += .25*vC_corr;
-        //        if (vS+.25*vC_corr>0)  vS += .25*vC_corr;
-        //        if (vN+.25*vC_corr>0)  vN += .25*vC_corr;
-
-        // Non-symmetric contibution to the system of equation
-        //        double drhodx = (mesh->rho_app_s[c1]   - mesh->rho_app_s[c1-1])*one_dx;
-        //        uNW += - 0.25 * om * model.dt * model.gz * drhodx;
-        //        uNE += - 0.25 * om * model.dt * model.gz * drhodx;
-        //        uSW += - 0.25 * om * model.dt * model.gz * drhodx;
-        //        uSE += - 0.25 * om * model.dt * model.gz * drhodx;
-    }
-
 
     if ( Assemble == 1 ) {
         StokesA->b[eqn] *= celvol;
