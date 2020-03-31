@@ -701,6 +701,8 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
     double C = model->Courant;
     double time_reaction = 3.1558e11;
     int reaction_in_progress;
+    
+    model->dt0 = model->dt;
 
     for (k=0; k<model->Nx; k++) {
         for (l=0; l<model->Nz+1; l++) {
@@ -770,7 +772,7 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
         if (model->dt>=0.1*time_reaction/scaling.t){
             model->dt = 0.1*time_reaction/scaling.t;
             printf("!!! => Timestep potentially limited by Chemical Reaction Time\n");
-            printf("!! model dt = 0.2 x Reaction Time = %2.2e\n", model->dt*scaling.t);
+            printf("!! model dt = 0.1 x Reaction Time = %2.2e\n", model->dt*scaling.t);
             }
         }
         else{
@@ -791,6 +793,70 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
         if (quiet==0) printf("Fixed timestep dt = %2.2e s\n", model->dt * scaling.t );
     }
 
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+void Check_dt_for_advection( double* Vx, double* Vz, params *model, scale scaling, grid *mesh, int quiet ) {
+    
+    int k, l, c;
+    double minVx=0.0, minVz=0.0, maxVx=0.0, maxVz=0.0, dmin, dtc=0.0, vmax, vmin;
+    double C = model->Courant;
+    double dt_solve =0.0;
+    
+    if (model->dt_constant == 0) {
+    // Get current dt value;
+    dt_solve = model->dt;
+    
+    // Compute dt_Courant value;
+    for (k=0; k<model->Nx; k++) {
+        for (l=0; l<model->Nz+1; l++) {
+            c = k + l*model->Nx;
+            maxVx = MAXV(maxVx, (Vx[c]));
+            minVx = MINV(minVx, (Vx[c]));
+        }
+    }
+    
+    for (k=0; k<model->Nx+1; k++) {
+        for (l=0; l<model->Nz; l++) {
+            c = k + l*(model->Nx+1);
+            maxVz = MAXV(maxVz, (Vz[c]));
+            minVz = MINV(minVz, (Vz[c]));
+        }
+    }
+    if (quiet==0) printf("Min Vxm = %2.2e m/s / Max Vxm = %2.2e m/s\n", minVx * scaling.V, maxVx * scaling.V);
+    if (quiet==0) printf("Min Vzm = %2.2e m/s / Max Vzm = %2.2e m/s\n", minVz * scaling.V, maxVz * scaling.V);
+    
+    dmin = MINV(model->dx, model->dz);
+    vmax = MAXV(fabs(maxVx), fabs(maxVz));
+    vmin = MAXV(fabs(minVx), fabs(minVz));
+    vmax = MAXV(fabs(vmax),  fabs(vmin));
+        
+    // Courant dt
+    dtc = C * dmin / fabs(vmax);
+    
+    // If timestep is adaptive
+        printf("dt_Courant = %2.2e\n", dtc*scaling.t);
+        printf("dt_Solve   = %2.2e\n", dt_solve*scaling.t);
+        
+    model->dt = MINV(dtc,dt_solve);
+        
+        printf("dt selected for advection = %2.2e\n",  model->dt*scaling.t);
+        
+        // If there is no motion, then the timestep becomes huge: cut off the motion.
+        if( model->dt>1.0e30 || vmax<1.0e-30) {
+            dtc = 0.0;
+            model->dt = model->dt_start;
+        }
+        
+        //if (quiet==0) printf("Current dt = %2.2e s / Courant dt = %2.2e s\n", model->dt * scaling.t, dtc * scaling.t );
+    }
+    else {
+        model->dt = model->dt_start;
+        if (quiet==0) printf("Fixed timestep dt = %2.2e s\n", model->dt * scaling.t );
+    }
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/

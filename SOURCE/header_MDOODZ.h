@@ -119,7 +119,8 @@ struct _params {
     int decoupled_solve, lsolver, diag_scaling, pc_type;
     double penalty, abs_tol_div, rel_tol_div, auto_penalty, compressible, rel_tol_KSP;
     // Non-linear solver
-    double line_search_min, num_deriv, safe_mode;
+    double line_search_min, num_deriv;
+    int    safe_mode, nstagmax;
     // Deformation maps
     int nT, nE, nd, def_maps;
     double Pn, Tmin, Tmax, Emin, Emax, dmin, dmax, PrBG;
@@ -417,6 +418,7 @@ void UpdateParticleDensity( grid*, scale, params, markers*, mat_prop* );
 // Advection
 void DefineInitialTimestep( params*, grid*, markers, mat_prop, scale );
 void EvaluateCourantCriterion( double*, double*, params*, scale, grid*, int);
+void Check_dt_for_advection( double*, double*, params*, scale, grid*, int);
 //void EvaluateCourantCriterionParticles( markers, params*, scale);
 void RogerGunther( markers*, params, grid, int, scale );
 void isout( markers*, params );
