@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00090
+istep = 00100
 irestart = 0
 
 /**** OUTPUT FILE ****/
@@ -19,8 +19,8 @@ V   = 1e-9
 T   = 100
 
 /**** SPACE-TIME ****/
-Nx      = 500
-Nz      = 250
+Nx      = 250
+Nz      = 126
 Nt      = 100
 xmin    = -9.959000e5
 zmin    =  5969400
@@ -170,8 +170,8 @@ Nz_part  = 4
 min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
-Newton  = 1 
-nit_max = 6
+Newton  = 0 
+nit_max = 3
 rel_tol_KSP = 1e-4
 tol_u   = 1e-10
 tol_p   = 1e-10

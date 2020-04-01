@@ -38,11 +38,6 @@
 #define omp_get_wtime() clock()/CLOCKS_PER_SEC
 #endif
 
-#ifdef _VG_
-#define printf(...) printf("")
-#endif
-
-
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -658,7 +653,6 @@ int main( int nargs, char *args[] ) {
             Nmodel.stagnated = 0;
             nstag            = 0;
             Nmax_picard      = Nmodel.nit_max;
-            //        dummy            = model.free_surf_stab;
             
             ArrayEqualArray( mesh.p_start,    mesh.p_in,      (mesh.Nx-1)*(mesh.Nz-1) );
             ArrayEqualArray( mesh.u_start,    mesh.u_in,      (mesh.Nx)  *(mesh.Nz+1) );

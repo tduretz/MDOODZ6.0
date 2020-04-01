@@ -1570,7 +1570,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     deta_ve_dEzz = detadTzz * 2.0*eta_ve / (1.0 - 2.0*(detadTxx*Exx + detadTzz*Ezz + detadTxz*Exz));
     deta_ve_dExz = detadTxz * 2.0*eta_ve / (1.0 - 2.0*(detadTxx*Exx + detadTzz*Ezz + detadTxz*Exz));
     deta_ve_dP   = 0.0;
-
+    
     // Check yield stress
     F_trial = Tii - Tyield;
 //    if (F>0.0){ exit(1); }
@@ -1606,6 +1606,9 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         dQdtzz  = Tzz/2.0/Tii;
         dQdtxz  = Txz/1.0/Tii;
         res0    = F_trial;
+        
+//        printf("fail viscosity 1, F_trial = %2.2e, gdot = %2.2e\n", F_trial, gdot);
+
 
         for (it=0; it<nitmax; it++) {
 
@@ -1615,6 +1618,9 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
             Tii     = sqrt( 0.5*( pow(Txx,2.0) + pow(Tzz,2.0) ) + pow(Txz,2.0)  );
             eta_vp  = eta_vp0 * pow(fabs(gdot), 1.0/n_vp - 1);
             F_trial = Tii - Tyield - gdot*eta_vp;
+            
+//            printf("fail viscosity 1, %2.2e %2.2e F_trial = %2.2e, gdot = %2.2e\n", eta_vp0, n_vp, F_trial, gdot);
+
 
             // Residual check
             res = fabs(F_trial);
@@ -1639,6 +1645,8 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         *OverS = eta_vp*gdot;
         //        printf("%2.2e %2.2e %2.2e %2.2e %2.2e\n", Tii, Tyield, F_trial, F_corr, eta_vp*gdot*scaling->S);
     }
+//    if isnan((eta_vep) ) {printf("fail viscosity 1, eta_ve = %2.2e, eta_vep = %2.2e\n", eta_ve, eta_vep); exit(1);};
+
 
     //------------------------------------------------------------------------//
 
@@ -1682,6 +1690,8 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         (*etaVE)      = eta_vep;
         inv_eta_diss += 1.0/eta_vep;
     }
+    
+
 
     /*----------------------------------------------------*/
     /*----------------------------------------------------*/
@@ -1739,7 +1749,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     if( *etaVE < minEta ) {
         *etaVE = minEta;
     }
-
+    
     return eta;
 }
 

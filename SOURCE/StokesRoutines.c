@@ -679,6 +679,9 @@ void EvaluateStokesResidual( SparseMat *Stokes, Nparams *Nmodel, grid *mesh, par
     }
     
     if ( isnan(Nmodel->resx) || isnan(Nmodel->resz) || isnan(Nmodel->resp) ) {
+        printf("Fu = %2.6e\n", Nmodel->resx ); // Units of momentum
+        printf("Fv = %2.6e\n", Nmodel->resz ); // Units of momentum
+        printf("Fp = %2.6e\n", Nmodel->resp ); // Units of velocity gradient
         printf("Solve went wrong - Nan residuals...\nExiting...\n");
         exit(122);
     }
@@ -751,6 +754,9 @@ void EvaluateStokesResidualDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
     }
     
     if ( isnan(Nmodel->resx) || isnan(Nmodel->resz) || isnan(Nmodel->resp) ) {
+        printf("Fu = %2.6e\n", Nmodel->resx ); // Units of momentum
+        printf("Fv = %2.6e\n", Nmodel->resz ); // Units of momentum
+        printf("Fp = %2.6e\n", Nmodel->resp ); // Units of velocity gradient
         printf("Solve went wrong - Nan residuals...\nExiting...\n");
         exit(122);
     }
