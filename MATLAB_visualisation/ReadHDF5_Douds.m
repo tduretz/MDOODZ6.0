@@ -13,17 +13,14 @@ MarkSize=1e0 ;
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Compression/'
 % path = '/Users/tduretz/REPO_GIT/TEST/SOURCE/'
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Shear_periodic_VEVP/'
-
-
-nopatate = 0;
-nodec    = 0;
+path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
 
 cd(path)
 
 % File
-istart = 0;
-ijump  = 1;
-iend   = 10;
+istart = 100;
+ijump  = 10;
+iend   = 100;
 
 %--------------------------------------------------
 % what do you want to plot:
@@ -32,13 +29,13 @@ eta_sym         = 0;
 eta_plot        = 0;
 rho_plot        = 0;
 phase_on_grid   = 0;
-phase_temp2     = 0;
+phase_temp2     = 1;
 vel_plot        = 0;
 vel_vectors     = 0;
 vel_divergence  = 0;
 pre_plot        = 0;
 dyna_pre        = 0;
-stress_inv      = 1;
+stress_inv      = 0;
 stress_evol     = 0;
 stress_plot     = 0;
 srate_plot      = 0;
@@ -54,9 +51,9 @@ Christmas_Tree  = 0;
 topo            = 0;
 topo_eta_plot   = 0;
 topo_SR_plot    = 0;
-topo_phase      = 0;
+topo_maps       = 0;
 dt_time         = 0;
-srate_add       = 1;
+srate_add       = 0;
 acc_strain_add  = 0;
 phase_temp      = 0;
 srate_add_perc  = 0;
@@ -73,8 +70,8 @@ shear_heating    = 0;
 princi_stress    = 0;
 
 % Visualisation options
-printfig      = 1;
-print2screen  = 0;
+printfig      = 0;
+print2screen  = 1;
 res           = '-r300';
 format        = '-dpng';
 color_map     = 'Benoit_MLPS';
@@ -88,7 +85,9 @@ Ccontours     = 0;
 step          = 10;
 MaskAir       = 1;
 ColorFabio    = 1;
-FrameRate = 1/1;
+y             = 365.25*24*3600;
+My            = 1e6*y;
+topo_ref      = 0; %6370
 
 
 % Contour
@@ -105,14 +104,14 @@ maxTxx =  0.642;
 % minPdyn = -1e9;
 % maxPdyn =  1e9;
 
-% minEta = 19;
-% maxEta = 25;
-% 
-% minEii = -16;
-% maxEii = -14;
-% 
-% minSii = 1e6;
-% maxSii = 300e6;
+minEta = 19;
+maxEta = 25;
+
+minEii = -17;
+maxEii = -13.5;
+
+minSii = 1e6;
+maxSii = 400e6;
 
 % Size of the window
 crop       = -1;
@@ -3108,11 +3107,11 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if ( topo == 1 )
             
-            xtopo = hdf5read(filename,'/Topo/x');
-            ztopo = hdf5read(filename,'/Topo/z');
+            xtopo = hdf5read(filename,'/Topo/x_mark');
+            ztopo = hdf5read(filename,'/Topo/z_mark');
             xtopo = cast(xtopo, 'double');
             ztopo = cast(ztopo, 'double');
-            height = hdf5read(filename,'/Topo/height');
+            height = hdf5read(filename,'/Topo/z_grid');
             
             if print2screen == 1
                 figCount = figCount +1;
@@ -3153,11 +3152,11 @@ for istep=istart:ijump:iend
             eta   = reshape(Vert.eta_s,params(4),params(5))';
             eta_n = reshape(eta_n,params(4)-1,params(5)-1)';
             
-            xtopo = hdf5read(filename,'/Topo/x');
-            ztopo = hdf5read(filename,'/Topo/z');
+            xtopo = hdf5read(filename,'/Topo/x_mark');
+            ztopo = hdf5read(filename,'/Topo/z_mark');
             xtopo = cast(xtopo, 'double');
             ztopo = cast(ztopo, 'double');
-            height = hdf5read(filename,'/Topo/height');
+            height = hdf5read(filename,'/Topo/z_grid');
             
             % Nodes
             if print2screen == 1
@@ -3171,8 +3170,8 @@ for istep=istart:ijump:iend
             
             title(['min = ', num2str(min(ztopo)), ' max = ', num2str(max(ztopo)), TimeLabel])
             hold on
-            plot( xtopo, ztopo-mean(ztopo), '.r' )
-            plot( xg_coord, height-mean(height), '-o')
+            plot( xtopo, ztopo, '.r' )
+            plot( xg_coord, height, '-o')
             hold off
             
             subplot(212)
@@ -3201,11 +3200,11 @@ for istep=istart:ijump:iend
         if (topo_SR_plot==1)
             
             
-            xtopo = hdf5read(filename,'/Topo/x');
-            ztopo = hdf5read(filename,'/Topo/z');
+            xtopo = hdf5read(filename,'/Topo/x_mark');
+            ztopo = hdf5read(filename,'/Topo/z_mark');
             xtopo = cast(xtopo, 'double');
             ztopo = cast(ztopo, 'double');
-            height = hdf5read(filename,'/Topo/height');
+            height = hdf5read(filename,'/Topo/z_grid');
             
             Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
             Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
@@ -3225,8 +3224,8 @@ for istep=istart:ijump:iend
             
             title(['min = ', num2str(min(ztopo)), ' max = ', num2str(max(ztopo)), TimeLabel])
             hold on
-            plot( xtopo, ztopo-mean(ztopo), '.r' )
-            plot( xg_coord, height-mean(height), '-o')
+            plot( xtopo, ztopo, '.r' )
+            plot( xg_coord, height, '-o')
             hold off
             
             subplot(212)
@@ -3249,51 +3248,90 @@ for istep=istart:ijump:iend
             
         end
         
-        
         %--------------------------------------------------
-        % plot phases on visualisation grid
+        %  Toporgraphy through time
         %--------------------------------------------------
-        if(topo_phase==1)
+        if ( topo_maps == 1 )
             
-            VizGrid = PhaseMap( filename, VizGrid );
-            
-            if crop == 1
-                [ VizGrid.ph, VizGrid.x_plot, VizGrid.z_plot ] = CropCellArray( VizGrid.ph, VizGrid.x_plot, VizGrid.z_plot, lim );
+            xtopo = hdf5read(filename,'/Topo/x_mark');
+            ztopo = hdf5read(filename,'/Topo/z_mark');
+            xtopo = cast(xtopo, 'double');
+            ztopo = cast(ztopo, 'double');
+            vx_mark = hdf5read(filename,'/Topo/Vx_mark');
+            vz_mark = hdf5read(filename,'/Topo/Vz_mark');
+            vx_mark = cast(vx_mark, 'double');
+            vz_mark = cast(vz_mark, 'double');
+            vx_grid = hdf5read(filename,'/Topo/Vx_grid');
+            vz_grid = hdf5read(filename,'/Topo/Vz_grid');
+            vx_grid = cast(vx_grid, 'double');
+            vz_grid = cast(vz_grid, 'double');
+            z_grid  = hdf5read(filename,'/Topo/z_grid');
+            z_grid  = cast(z_grid, 'double');
+
+            if istep == istart
+                topo2D = zeros(iend/ijump+1, length(xg_coord));
+                vx2D   = zeros(iend/ijump+1, length(xg_coord));
+                vz2D   = zeros(iend/ijump+1, length(xg_coord));
+                x2D    = zeros(iend/ijump+1, length(xg_coord));
+                t2D    = zeros(iend/ijump+1, length(xg_coord));
             end
             
-            if print2screen == 1
-                figCount = figCount +1;
-                figure(figCount), clf
-            else
-                figure('Visible', 'Off')
-            end
-            %         colormap(map);
-            p = imagesc(VizGrid.x_plot, VizGrid.z_plot, VizGrid.ph);
-            xlabel(xLabel), ylabel(zLabel)
-            title(['Phases at' TimeLabel]);
-            shading flat, axis xy image
-            hold off
-            colorbar
-            colormap('gray')
-            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-            if exist('minPhase', 'var') caxis([minPhase maxPhase]); end
+            topo2D(icount,:) = z_grid;
+            x2D(icount,:)    = xg_coord;
+            vx2D(icount,:)   = vx_grid;
+            vz2D(icount,:)   = 0.5*(vz_grid(1:end-1)+vz_grid(2:end-0));
+            t2D(icount,:)    = time;
             
-            %         grid(gca, 'minor')
-            %         alpha (p,0.7)
-            
-            if printfig == 1
-                if crop == 1
-                    print([path, './Fig_Phases/Crop_PhasesGrid', num2str(istep,'%05d'),file_suffix], format, res)
+            if istep == iend
+                if print2screen == 1
+                    figCount = figCount +1;
+                    figure(figCount), clf
                 else
-                    print([path, './Fig_Phases/Fig_PhasesGrid', num2str(istep,'%05d'),file_suffix], format, res)
+                    figure('Visible', 'Off')
                 end
-                close all
+                
+                subplot(131)
+                pcolor(x2D/1e3,t2D/My,topo2D/1e3-topo_ref), colorbar, shading flat;
+                caxis([-3 2])
+                xlabel('x [km]'), ylabel('t [My]')
+                title('Topography [km]')
+                
+                subplot(132)
+                pcolor(x2D/1e3,t2D/My,vx2D*y*1e3), colorbar, shading flat;
+                caxis([-10 10])
+                xlabel('x [km]'), ylabel('t [My]')
+                title('Surface velocity x [mm/y]')
+                
+                subplot(133)
+                pcolor(x2D/1e3,t2D/My,vz2D*y*1e3), colorbar, shading flat;
+                caxis([-2.5 2.5])
+                xlabel('x [km]'), ylabel('t [My]')
+                title('Surface velocity z [mm/y]')
+
             end
-            
-            clear VizGrid.ph VizGrid.x VizGrid.z
+%             title(['min = ', num2str(min(ztopo)), ' max = ', num2str(max(ztopo)), TimeLabel])
+%             hold on
+%             plot( xtopo, ztopo-0*mean(ztopo), '.r' )
+%             plot( xg_coord, height-0*mean(height), '-o')
+%             hold off
+%             
+%             % figure(45)
+%             % plot( time/365.25/3600/24/1e6, max(ztopo), '+')
+%             % axis([0 20 0 900])
+%             % xlabel('Time [ky]')
+%             % ylabel('max. Topo [km]')
+%             % hold on
+%             
+%             mxtopo(icount) = max(ztopo);
+%             drawnow
+%             
+%             if istep == iend
+%                 save( [path,'TopoData'], 'mxtopo', 't_vec')
+%                 disp('file saved')
+%             end
             
         end
-        
+       
         %--------------------------------------------------
         % plot phases on visualisation grid
         %--------------------------------------------------
@@ -3442,14 +3480,7 @@ for istep=istart:ijump:iend
             end
 
             hold on
-            
-            if nopatate == 1
-                VizGrid.ph(VizGrid.ph==4) = 3;
-            end
-            if nodec == 1
-                VizGrid.ph(VizGrid.ph==0) = 1;
-            end
-            
+           
             clf
             colormap(map);
             imagesc(VizGrid.x_plot, VizGrid.z_plot, VizGrid.ph);
