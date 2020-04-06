@@ -758,3 +758,63 @@ void SetUpModel_NoMarkers ( grid* mesh, params *model, scale *scaling ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
+
+void Diffuse_X( grid* mesh, params* model, scale* scaling ) {
+    
+    double K = 1.0e-5 / (pow(scaling->L,2.0)/scaling->t);
+    double dx = mesh->dx, dz = mesh->dz;
+    double L_diff = model->diffusion_length;
+    double dt = pow(MAXV(dx,dz), 2.0) / K / 4.1;
+    double t_diff = pow(L_diff,2.0)/K;
+    int    nsteps = (int) t_diff/dt;
+    int    k, l, it, c;
+    int    ncx = mesh->Nx-1;
+    int    ncz = mesh->Nz-1;
+    double *X0, qE, qW, qN, qS;
+    int * flag;
+    X0   = DoodzCalloc(sizeof(DoodzFP), ncx*ncz);
+    flag = DoodzCalloc(sizeof(int), ncx*ncz);
+    printf("Diffusion length = %2.2e  Diffusion time = %2.2e dt = %2.2e nsteps = %03d\n", L_diff*scaling->L, t_diff*scaling->t, dt*scaling->t, nsteps);
+    
+    
+    for (l=1;l<ncz-1;l++) {
+        
+        for (k=1;k<ncx-1;k++) {
+            c = k + l*ncx;
+            
+            if ( mesh->Xreac_n[c]>0.99 ) flag[c] = 1;
+        }
+    }
+    
+    
+    for (it=0;it<nsteps;it++) {
+        ArrayEqualArray( X0, mesh->Xreac_n, ncx*ncz );
+        
+        // !!!! BCs are not included!
+        for (l=1;l<ncz-1;l++) {
+            
+            for (k=1;k<ncx-1;k++) {
+                c = k + l*ncx;
+                
+                if (flag[c]!=1) {
+                    
+                    qW = - K*(X0[c]-X0[c-1])/dx;
+                    qE = - K*(X0[c+1]-X0[c])/dx;
+                    qS = - K*(X0[c]-X0[c-ncz])/dz;
+                    qN = - K*(X0[c+ncz]-X0[c])/dz;
+                    mesh->Xreac_n[c] = X0[c] - dt* ( 1.0/dx*(qE-qW) + 1.0/dz*(qN-qS));
+                }
+            }
+            
+        }
+    }
+    MinMaxArrayTag( mesh->Xreac_n,   1.0,    (mesh->Nx-1)*(mesh->Nz-1),   "Xreac_n",   mesh->BCp.type );
+    
+    DoodzFree(X0);
+    DoodzFree(flag);
+    
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/

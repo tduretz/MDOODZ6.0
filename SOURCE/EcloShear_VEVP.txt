@@ -42,6 +42,7 @@ safe_mode         = 1
 nstagmax          = 3
 
 /**** SWITCHES ****/
+ProgReac        = 1            / !!!!
 ismechanical    = 1
 RK              = 4
 isperiodic_x    = 1

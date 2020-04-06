@@ -56,11 +56,10 @@ int main( int nargs, char *args[] ) {
     SparseMat    Stokes, Jacob;
     DirectSolver CholmodSolver;
     surface      topo, topo_ini;
-    int          Nmax_picard, nstag;
+    int          nstag;
     SparseMat    StokesA, StokesB, StokesC, StokesD;
     SparseMat    JacobA,  JacobB,  JacobC,  JacobD;
     int          Nx, Nz, Ncx, Ncz;
-    int          Np0;
     
     double *rx_array, *rz_array, *rp_array;
     
@@ -289,6 +288,18 @@ int main( int nargs, char *args[] ) {
             ArrayEqualArray( mesh.rho_app_s, mesh.rho_s, (mesh.Nx)*(mesh.Nz) );
             
             printf("*************************************\n");
+            printf("****** Initialize composition *******\n");
+            printf("*************************************\n");
+            
+            if (model.diffuse_X == 1) {
+                Interp_P2C ( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+                Diffuse_X(&mesh, &model, &scaling);
+                Interp_Grid2P( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+                Interp_P2C ( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+                Interp_P2N ( particles, particles.X, &mesh, mesh.Xreac_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+            }
+            
+            printf("*************************************\n");
             printf("******* Initialize viscosity ********\n");
             printf("*************************************\n");
             
@@ -296,7 +307,6 @@ int main( int nargs, char *args[] ) {
             
             // Compute cohesion and friction angle on the grid
             CohesionFrictionGrid( &mesh, materials, model, scaling );
-            
             Interp_Grid2P( particles, particles.P,    &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
             Interp_Grid2P( particles, particles.T,    &mesh, mesh.T,    mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type );
             NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
@@ -484,33 +494,6 @@ int main( int nargs, char *args[] ) {
                 
                 // Interpolate shear modulus
                 ShearModulusGrid( &mesh, materials, model, scaling );
-                
-                // printf("Testing interpolated stress field - sxxd0\n");
-                // IsNanArray2DFP(mesh.sxxd0,  (mesh.Nx-1)*(mesh.Nz-1));
-                // printf("Testing interpolated stress field - szzd0\n");
-                // IsNanArray2DFP(mesh.szzd0,  (mesh.Nx-1)*(mesh.Nz-1));
-                // printf("Testing interpolated stress field - sxz0_n\n");
-                // IsNanArray2DFP(mesh.sxz0_n, (mesh.Nx-1)*(mesh.Nz-1));
-                // printf("Testing interpolated stress field  - sxxd0_s\n");
-                // IsNanArray2DFP(mesh.sxxd0_s,  (mesh.Nx-0)*(mesh.Nz-0));
-                // printf("Testing interpolated stress field - szzd0_s\n");
-                // IsNanArray2DFP(mesh.szzd0_s, (mesh.Nx-0)*(mesh.Nz-0));
-                // printf("Testing interpolated stress field  - sxz\n");
-                // IsNanArray2DFP(mesh.sxz,  (mesh.Nx-0)*(mesh.Nz-0));
-                //
-                // printf("sxx p.\n");
-                // IsNanArray2DFP(particles.sxxd,  particles.Nb_part);
-                // printf("szz p.\n");
-                // IsNanArray2DFP(particles.szzd,  particles.Nb_part);
-                // printf("sxz p.\n");
-                // IsNanArray2DFP(particles.sxz,  particles.Nb_part);
-                //
-                //
-                // IsInfArray2DFP(mesh.sxxd0,  (mesh.Nx-1)*(mesh.Nz-1));
-                // IsInfArray2DFP(mesh.szzd0,  (mesh.Nx-1)*(mesh.Nz-1));
-                // IsInfArray2DFP(mesh.sxz0_n, (mesh.Nx-1)*(mesh.Nz-1));
-                // IsInfArray2DFP(mesh.sxxd0_s,  (mesh.Nx-0)*(mesh.Nz-0));
-                // IsInfArray2DFP(mesh.szzd0_s, (mesh.Nx-0)*(mesh.Nz-0));
             }
             
             // Director vector
@@ -519,6 +502,15 @@ int main( int nargs, char *args[] ) {
                 Interp_P2C ( particles, particles.nz, &mesh, mesh.nz_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
                 Interp_P2N ( particles, particles.nx, &mesh, mesh.nx_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
                 Interp_P2N ( particles, particles.nz, &mesh, mesh.nz_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+            }
+            
+            // Diffuse rheological contrasts
+            if (model.diffuse_X == 1) {
+                Interp_P2C ( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+                Diffuse_X(&mesh, &model, &scaling);
+                Interp_Grid2P( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+                Interp_P2C ( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+                Interp_P2N ( particles, particles.X, &mesh, mesh.Xreac_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
             }
             
             // Interpolate Grain size
@@ -652,7 +644,6 @@ int main( int nargs, char *args[] ) {
             model.nit        = 0;
             Nmodel.stagnated = 0;
             nstag            = 0;
-            Nmax_picard      = Nmodel.nit_max;
             
             ArrayEqualArray( mesh.p_start,    mesh.p_in,      (mesh.Nx-1)*(mesh.Nz-1) );
             ArrayEqualArray( mesh.u_start,    mesh.u_in,      (mesh.Nx)  *(mesh.Nz+1) );
@@ -693,7 +684,6 @@ int main( int nargs, char *args[] ) {
                     WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, model, "Output_BeforeSolve", materials, scaling );
                     WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particles_BeforeSolve", materials, scaling );
                 }
-                
                 
                 MinMaxArrayTag( mesh.eta_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "eta_s     ", mesh.BCg.type );
                 MinMaxArrayTag( mesh.eta_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_n     ", mesh.BCp.type );
@@ -875,7 +865,7 @@ int main( int nargs, char *args[] ) {
                     //-----------------------
                     printf( "nstag value = %02d - nstagmax = %02d\n", nstag, model.nstagmax);
                     if (nstag==model.nstagmax) {
-                        printf( "CheckDoudzOut!!\n", nstag, model.nstagmax);
+                        printf( "CheckDoudzOut!!\n");
                         exit(0);
                         //-----------------------
                     }
@@ -1015,8 +1005,7 @@ int main( int nargs, char *args[] ) {
         
         MinMaxArray( particles.P,  scaling.S, particles.Nb_part,   "P part" );
         MinMaxArray( particles.ttrans,  scaling.t, particles.Nb_part,   "ttrans. part" );
-        
-        
+
         //------------------------------------------------------------------------------------------------------------------------------//
         
         if (model.isthermal == 1 ) {
@@ -1211,8 +1200,6 @@ int main( int nargs, char *args[] ) {
             // Count the number of particle per cell
             printf("Before re-seeding : number of particles = %d\n", particles.Nb_part);
             t_omp = (double)omp_get_wtime();
-            
-            Np0 = particles.Nb_part;
             
             // Count the number of particle per cell
             t_omp = (double)omp_get_wtime();

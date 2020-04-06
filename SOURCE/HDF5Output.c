@@ -276,14 +276,8 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     // Define visual grid
     xviz[0] = mesh->xg_coord[0];
     zviz[0] = mesh->zg_coord[0];
-
-    for (k=1; k<nxviz; k++) {
-        xviz[k] = xviz[k-1] + mesh->dx/res_fact;
-    }
-    for (k=1; k<nzviz; k++) {
-        zviz[k] = zviz[k-1] + mesh->dz/res_fact;
-    }
-
+    for (k=1; k<nxviz; k++) xviz[k] = xviz[k-1] + mesh->dx/res_fact;
+    for (k=1; k<nzviz; k++) zviz[k] = zviz[k-1] + mesh->dz/res_fact;
     compo  = DoodzMalloc( sizeof(char)*(nxviz-1)*(nzviz-1));
     // Closest point interpolation: marker phase --> visual nodes
     Interp_Phase2VizGrid ( *particles, particles->phase, mesh, compo, xviz, zviz, nxviz, nzviz, model, *topo );
@@ -297,17 +291,15 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     // Define visual grid
     xviz_hr[0] = mesh->xg_coord[0];
     zviz_hr[0] = mesh->zg_coord[0];
-
-    for (k=1; k<nxviz_hr; k++) {
-        xviz_hr[k] = xviz_hr[k-1] + mesh->dx/res_fact;
-    }
-    for (k=1; k<nzviz_hr; k++) {
-        zviz_hr[k] = zviz_hr[k-1] + mesh->dz/res_fact;
-    }
-
+    for (k=1; k<nxviz_hr; k++) xviz_hr[k] = xviz_hr[k-1] + mesh->dx/res_fact;
+    for (k=1; k<nzviz_hr; k++) zviz_hr[k] = zviz_hr[k-1] + mesh->dz/res_fact;
+    
     compo_hr  = DoodzMalloc( sizeof(char)*(nxviz_hr-1)*(nzviz_hr-1));
     // Closest point interpolation: marker phase --> visual nodes
     Interp_Phase2VizGrid ( *particles, particles->phase, mesh, compo_hr, xviz_hr, zviz_hr, nxviz_hr, nzviz_hr, model, *topo );
+    // ---------------------------------------------------------
+    // Smooth rheological contrasts
+    if (model.diffuse_X) Interp_P2C ( *particles, particles->X, mesh, mesh->Xreac_n, mesh->xg_coord, mesh->zg_coord, 1, 0 );
     // ---------------------------------------------------------
     // Cast grid arrays
     Crho_s  = DoodzMalloc( sizeof(float)*model.Nx*model.Nz);

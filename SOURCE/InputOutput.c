@@ -978,7 +978,8 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->no_markers      = ReadInt2( fin, "no_markers",    0 );
     model->shear_style     = ReadInt2( fin, "shear_style",    0 );
     model->StressRotation  = ReadInt2( fin, "StressRotation", 1 );
-    model->polar           = ReadInt2( fin, "polar", 0 );
+    model->polar           = ReadInt2( fin, "polar",          0 );
+    model->ProgReac        = ReadInt2( fin, "ProgReac",       0 );
     if (model->shear_style==1) model->isperiodic_x  = 1;
 
     // Setup dependant
@@ -1017,7 +1018,9 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->dt0             = model->dt;
     model->dt_start        = model->dt;
     model->eta_avg         = ReadInt2( fin, "eta_avg",       0 ); // 0 : arithmetic mean
-    model->p_avg           = 0;                                   // 0 : arithmetic mean
+    model->diffuse_X       = ReadInt2( fin, "diffuse_X",     0 ); // 0 or 1
+    model->diffuse_avg     = ReadInt2( fin, "diffuse_avg",   0 ); // 0 : arithmetic mean
+    model->diffusion_length= ReadDou2( fin, "diffusion_length",  0.0 ) / scaling->L;
 
     // Gravity
     model->gx              = ReadDou2( fin, "gx",  0.0 ) / scaling->a;
@@ -1069,6 +1072,9 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         // Viscoplasticity
         materials->n_vp[k]      = ReadMatProps( fin, "n_vp",   k,       1.0 ) ;
         materials->eta_vp[k]    = ReadMatProps( fin, "eta_vp", k,       0.0 ) / scaling->S / pow(scaling->t, 1.0/materials->n_vp[k]);
+        // Diffused rheological contrasts
+        materials->phase_mix[k]  = (int)ReadMatProps( fin, "phase_mix",k,          0.0  );
+        materials->phase_two[k]  = (int)ReadMatProps( fin, "phase_mix",k,    (double)k  );
         // Check if any flow law is active
         int sum = abs(materials->cstv[k]) + abs(materials->pwlv[k]) + abs(materials->linv[k]) + abs(materials->gbsv[k]) + abs(materials->expv[k]);
         if ( sum == 0 ) {
