@@ -240,7 +240,7 @@ void ReadDataPowerLaw( mat_prop* mat, params* model, int k, int number, scale* s
             break;
             
         case 19:
-            printf("Anorthite 100 - 0.007 H20 Wt%% - Rybacki & Dresen (2004):\n" );
+            printf("Anorthite 100 - 0.007 H20 Wt%% - Rybacki & Dresen (2000, 2004):\n" );
             mat->tpwl[k] = 1;
             mat->npwl[k] = 3.0;
             mat->mpwl[k] = 0.0;
@@ -548,6 +548,20 @@ void ReadDataLinear( mat_prop* mat, params* model, int k, int number, scale* sca
             mat->Qlin[k] = 200e3;
             mat->Vlin[k] = 0e-6;
             mat->Alin[k] = 1.7119e-19;
+            mat->flin[k] = 0.0;
+            mat->alin[k] = 0.0;
+            success      = 1;
+            break;
+            
+        case 19 :
+            printf("Anorthite 100 - 0.007 H20 Wt%% - Rybacki & Dresen (2000, 2004):\n");
+            mat->tlin[k] = 1.0;
+            mat->nlin[k] = 1.0;
+            mat->mlin[k] = 3.0;
+            mat->rlin[k] = 0.0;
+            mat->Qlin[k] = 170e3;
+            mat->Vlin[k] = 0e-6;
+            mat->Alin[k] = 5.0119e-23;
             mat->flin[k] = 0.0;
             mat->alin[k] = 0.0;
             success      = 1;
