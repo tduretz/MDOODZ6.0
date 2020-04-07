@@ -44,7 +44,7 @@
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 double DotProduct( DoodzFP *vec1, DoodzFP *vec2, int size ) {
-    
+
     int k;
     double result = 0.0;
     double *dummy;
@@ -60,6 +60,22 @@ double DotProduct( DoodzFP *vec1, DoodzFP *vec2, int size ) {
     DoodzFree(dummy);
     return result;
 }
+
+//double DotProduct( DoodzFP *a, DoodzFP *b, int n ) {
+//
+//    int i, chunk = 10;
+//    double result = 0.0;
+//
+//
+//#pragma omp parallel for      \
+//default(shared) private(i)  \
+//    schedule(static,chunk)      \
+//    reduction(+:result)
+//
+//    for (i=0; i < n; i++)
+//        result += (a[i] * b[i]);
+//    return result;
+//}
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/

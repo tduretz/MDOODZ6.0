@@ -275,6 +275,8 @@ int main( int nargs, char *args[] ) {
             // Grain size
             Interp_P2C ( particles, particles.d,  &mesh, mesh.d, mesh.xg_coord,  mesh.zg_coord, 1, 0 );
             ArrayEqualArray( mesh.d0, mesh.d,  (mesh.Nx-1)*(mesh.Nz-1) );
+            MinMaxArrayTag( mesh.d0,         scaling.L,   (mesh.Nx-1)*(mesh.Nz-1), "d0        ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.d,          scaling.L,   (mesh.Nx-1)*(mesh.Nz-1), "d         ", mesh.BCp.type );
             
             printf("*************************************\n");
             printf("******** Initialize density *********\n");

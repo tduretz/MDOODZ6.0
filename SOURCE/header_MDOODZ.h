@@ -57,6 +57,7 @@ struct _mat_prop {
     DoodzFP C_end[20], phi_end[20], pls_start[20], pls_end[20], eta_vp[20], n_vp[20];
     DoodzFP Preac[20], treac[20];
     int     Reac[20];
+    int     phase_mix[20], phase_two[20];
 };
 
 // markers is the particles structure
@@ -103,7 +104,7 @@ struct _params {
     double  xmin0, zmin0, xmax0, zmax0;
 	double gx, gz;
 	int Nx, Nz, Nt, step, nit, Newton;
-	int eta_avg, p_avg;
+	int eta_avg;
 	int ismechanical, isperiodic_x, isinertial, iselastic, isnonnewtonian, isthermal, ispureshear_ale, free_surf, eqn_state, write_markers, write_debug, write_energies, no_markers;
     double free_surf_stab;
     int dt_constant, moving_front, imp_advection, RK, line_search, thermal_eq, subgrid_diff, adiab_heat, shear_heat, advection, fstrain;
@@ -139,6 +140,11 @@ struct _params {
     // Boundary conditions type
     int    BC_setup_type, shear_style, polar;
     int    StressRotation;
+    // For diffused rheological constrasts
+    int diffuse_X, diffuse_avg;
+    double diffusion_length;
+    // For Pips
+    int ProgReac;
 };
 
 // Nparams contains numerical parameters of the non-linear solver
@@ -360,11 +366,6 @@ void WriteOutputHDF5( grid*, markers*, surface*, markers*, params, char*, mat_pr
 void WriteOutputHDF5Particles( grid*, markers*, surface*, markers*, surface*, markers* , params, char*, mat_prop, scale );
 void WriteResiduals( grid, params, Nparams, scale );
 //
-//// Viscosity continuation
-//void LimitViscosityFields( Mparams, grid*, Eparams );
-//void FieldLimiter( grid*, double*, double*, double*, int );
-//
-
 //
 //// Phase diagrams
 //void AllocatePhaseDiagrams( params* );
@@ -392,9 +393,6 @@ void ExtractSolutions( SparseMat*, grid*, params* );
 void InitialiseSolutionVector( grid*, SparseMat*, params* );
 //
 //// Viscoelastoplasticity
-//void EffectiveViscosityCalc( markers*, mat_prop, params, scale );
-//void EffectiveViscosityCalcGrid(  grid*, mat_prop, params, scaleOutputSparseMatrix  );
-//void StrainStressCalcVE( grid* );
 void RotateStresses( grid, markers*, params, scale* );
 void UpdateParticleStress( grid*, markers*, params*, mat_prop*, scale* );
 void ShearModulusGrid( grid*, mat_prop, params, scale );
@@ -581,3 +579,4 @@ void ScaleMatrix(SparseMat *, SparseMat *, SparseMat *, SparseMat * ) ;
 void RheologicalOperators( grid*, params*, scale*, int );
 void ComputeViscosityDerivatives_FD( grid*, mat_prop*, params*, Nparams, scale* );
 void SetUpModel_NoMarkers ( grid*, params*, scale* );
+void Diffuse_X( grid*, params*, scale* );

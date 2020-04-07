@@ -936,7 +936,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->decoupled_solve = ReadInt2( fin, "decoupled_solve",    1 );
     model->diag_scaling    = ReadInt2( fin, "diag_scaling",       1 );
     model->pc_type         = ReadInt2( fin, "pc_type",       0 );
-    model->num_deriv       = ReadInt2( fin, "num_deriv",     1 );
+    model->num_deriv       = ReadInt2( fin, "num_deriv",     0 );
     model->safe_mode       = ReadInt2( fin, "safe_mode",     0 );
     model->nstagmax        = ReadInt2( fin, "nstagmax",      3 );
     
@@ -1225,7 +1225,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
 
     // Nonlinear iteration parameters
     model->Newton           = ReadInt2( fin, "Newton", 0 );
-    model->rel_tol_KSP      = ReadDou2( fin, "rel_tol_KSP", 1e-13 );
+    model->rel_tol_KSP      = ReadDou2( fin, "rel_tol_KSP", 1e-4 );
     Nmodel->nit_max         = ReadInt2( fin, "nit_max", 1 );
     Nmodel->tol_u           = ReadDou2( fin, "tol_u", 5.0e-6 );// / (scaling->F/pow(scaling->L,3.0));
     Nmodel->tol_p           = ReadDou2( fin, "tol_p", 5.0e-6 );// / scaling->E;

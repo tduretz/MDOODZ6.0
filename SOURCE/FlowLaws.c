@@ -240,7 +240,7 @@ void ReadDataPowerLaw( mat_prop* mat, params* model, int k, int number, scale* s
             break;
             
         case 19:
-            printf("Anorthite - Rybacki & Dresen (2004):\n" );
+            printf("Anorthite 100 - 0.007 H20 Wt%% - Rybacki & Dresen (2004):\n" );
             mat->tpwl[k] = 1;
             mat->npwl[k] = 3.0;
             mat->mpwl[k] = 0.0;

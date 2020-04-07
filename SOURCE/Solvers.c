@@ -51,7 +51,7 @@
 void kspgcr( cholmod_sparse *M, cholmod_dense *b, cholmod_dense *x, cholmod_factor *Lfact, int N, cholmod_common *c, double eps, int noisy, int *its_tot) {
     
     // Initialise KSP
-    int restart = 20, cc;//6;
+    int restart = 25, cc;//6;
     int max_it  = 1000;
     int ncycles = 0;
     int its     = 0, i1, i2, success=0;
@@ -2429,6 +2429,7 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     //------------------------------------------------------------------------------------------------//
 
     // Powell-Hestenes iterations
+    t_omp = (double)omp_get_wtime();
     printf("Powell-Hestenes iterations, noisy = %d...\n", noisy);
 
     cholmod_dense  *du, *dp, *bu, *bp, *pdum, *udum, *fu, *fp;

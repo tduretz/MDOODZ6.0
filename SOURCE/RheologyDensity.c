@@ -1300,7 +1300,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     double TmaxPeierls = (1200.0+zeroC)/scaling->T;      // max. T for Peierls
 
     // Parameters for deformation map calculations
-    int    local_iter = model->loc_iter, it, nitmax = 20, noisy=0;
+    int    local_iter = model->loc_iter, it, nitmax = 20, noisy = 1;
     int    constant=0, dislocation=0, peierls=0, diffusion=0, gbs=0, elastic = model->iselastic;
     double tol = 1.0e-13, res=0.0, res0=0.0, dfdeta=0.0, Txx=0.0, Tzz=0.0, Txz=0.0, Tii=0.0, ieta_sum=0.0, Tii0 = sqrt(Txx0*Txx0 + Txz0*Txz0);
     double eta_up=0.0, eta_lo=0.0, eta_ve=0.0, eta_p=0.0, r_eta_pl=0.0, r_eta_ve=0.0, r_eta_p=0.0;
@@ -1356,9 +1356,8 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     // Turn of elasticity for the initialisation step  (viscous flow stress)
     if ( model->step    == 0                         ) elastic     = 0;
 
-    // Constant grain size
-    if ( gs == 1 ) *d1 = materials->gs_ref[phase];
-    else           *d1 = materials->gs_ref[phase];
+    // Constant grain size initially
+    *d1 = materials->gs_ref[phase];
 
     // Tensional cut-off
     if ( model->gz>0.0 && P<0.0     ) { P = 0.0; printf("Aie aie aie P < 0 !!!\n"); exit(122);}
@@ -1426,8 +1425,8 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         double npwl_mix, Apwl_mix,Eapwl_mix, Fpwl_mix;
         if ( ProgressiveReaction == 1 ) f1 = 1.0-*Xreac;
         if ( ProgressiveReaction == 1 ) f2 = *Xreac;
-        if ( StaticReaction      == 1 ) f1 = X;
-        if ( StaticReaction      == 1 ) f2 = 1.0-X;
+        if ( StaticReaction      == 1 ) f1 = 1.0-X;
+        if ( StaticReaction      == 1 ) f2 = X;
         
         // (1) Calcul des ai
         double a1 = npwlprod + 1.0;
@@ -1538,6 +1537,9 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         ieta_sum += 1.0/eta_gbs;
     }
     eta_lo = 1.0/(ieta_sum);
+    
+//    eta_up = eta_lin;
+//    eta_lo = eta_pwl;
 
     //------------------------------------------------------------------------//
 
@@ -1561,18 +1563,19 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         // Residual check
         res = fabs(r_eta_ve/Eii);
         if (it==0) res0 = res;
-        if (noisy==1) printf("It. %02d, r = %2.2e\n", it, res);
+//        if (noisy==1 && res>tol) printf("It. %02d, r = %2.2e eta_ve = %2.2e eta_lo = %2.2e eta_up = %2.2e eta_lin = %2.2e eta_pwl = %2.2e\n", it, res, eta_ve, eta_lo, eta_up, eta_lin, eta_pwl);
         if (res < tol) break;
 
         // UNDER CONSTRUCTION
 
         // Analytical derivative of function
-        dfdeta = -Eii/eta_el;
+        dfdeta  = 0.0;
+        if ( elastic     == 1 ) dfdeta += -Eii/eta_el;
         if ( peierls     == 1 ) dfdeta += -(*Eii_exp)*(ST+n_exp)/eta_ve;
         if ( diffusion   == 1 ) dfdeta += -(*Eii_lin)*n_lin/eta_ve;
         if ( dislocation == 1 ) dfdeta += -(*Eii_pwl)*n_pwl/eta_ve;
         if ( constant    == 1 ) dfdeta += -Eii/eta_cst;
-
+        
         // Update viscosity
         eta_ve -= r_eta_ve / dfdeta;
     }
@@ -1587,7 +1590,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     deta     = 0.0;
     if (dislocation == 1) deta += -C_pwl * pow(Tii, n_pwl    - 3.0)*(n_pwl    - 1.0);
     if (peierls     == 1) deta += -C_exp * pow(Tii, n_exp+ST - 3.0)*(n_exp+ST - 1.0);
-    if (diffusion   == 1) deta += -C_exp * pow(Tii, n_lin    - 3.0)*(n_lin    - 1.0) * pow(*d1,-m_lin);
+    if (diffusion   == 1) deta += -C_lin * pow(Tii, n_lin    - 3.0)*(n_lin    - 1.0) * pow(*d1,-m_lin);
     detadTxx    =     deta*Txx*pow(eta_ve,2.0);
     detadTzz    =     deta*Tzz*pow(eta_ve,2.0);
     detadTxz    = 2.0*deta*Txz*pow(eta_ve,2.0);
@@ -1727,9 +1730,9 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     /*----------------------------------------------------*/
 
     eta_pwl  = pow(2.0*C_pwl,-1.0) * pow(Tii, 1.0-n_pwl);
-    *Exx_el =  (Txx-Txx0)/2.0/eta_el;
-    *Ezz_el =  (Tzz-Tzz0)/2.0/eta_el;
-    *Exz_el =  (Txz-Txz0)/2.0/eta_el;
+    *Exx_el =  (double)elastic*(Txx-Txx0)/2.0/eta_el;
+    *Ezz_el =  (double)elastic*(Tzz-Tzz0)/2.0/eta_el;
+    *Exz_el =  (double)elastic*(Txz-Txz0)/2.0/eta_el;
     *Exx_pl = gdot*dQdtxx;
      Ezz_pl = gdot*dQdtzz;
     *Exz_pl = gdot*dQdtxz/2.0;
@@ -1743,7 +1746,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     *Ezz_diss =  Ezz_pl + Ezz_lin +  Ezz_pwl + Exx_exp + Exx_gbs + Exx_cst;
     *Exz_diss = *Exz_pl + Exz_lin + *Exz_pwl + Exz_exp + Exz_gbs + Exz_cst;
 
-    *Eii_el  = fabs(Tii-Tii0)/2.0/eta_el;
+    *Eii_el  = (double)elastic*fabs(Tii-Tii0)/2.0/eta_el;
     *Eii_pwl =  Tii/2.0/eta_pwl;
 
     // Viscosity for dissipative processes (no elasticity)
