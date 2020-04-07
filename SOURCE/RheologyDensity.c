@@ -1300,9 +1300,9 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     double TmaxPeierls = (1200.0+zeroC)/scaling->T;      // max. T for Peierls
 
     // Parameters for deformation map calculations
-    int    local_iter = model->loc_iter, it, nitmax = 20, noisy = 1;
+    int    local_iter = model->loc_iter, it, nitmax = 20, noisy = 0;
     int    constant=0, dislocation=0, peierls=0, diffusion=0, gbs=0, elastic = model->iselastic;
-    double tol = 1.0e-13, res=0.0, res0=0.0, dfdeta=0.0, Txx=0.0, Tzz=0.0, Txz=0.0, Tii=0.0, ieta_sum=0.0, Tii0 = sqrt(Txx0*Txx0 + Txz0*Txz0);
+    double tol = 1.0e-12, res=0.0, res0=0.0, dfdeta=0.0, Txx=0.0, Tzz=0.0, Txz=0.0, Tii=0.0, ieta_sum=0.0, Tii0 = sqrt(Txx0*Txx0 + Txz0*Txz0);
     double eta_up=0.0, eta_lo=0.0, eta_ve=0.0, eta_p=0.0, r_eta_pl=0.0, r_eta_ve=0.0, r_eta_p=0.0;
     double eta_pwl=0.0, eta_exp=0.0, eta_vep=0.0, eta_lin=0.0, eta_el=0.0, eta_gbs=0.0, eta_cst=0.0, eta_step=0.0;
     double Exx=0.0, Ezz=0.0, Exz=0.0, Eii_vis=0.0, Eii= 0.0, eII=0.0;
@@ -1545,7 +1545,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
 
     // Initial guess
     eta_ve                  = 0.5*(eta_up+eta_lo);
-
+    
     // Local iterations
     for (it=0; it<nitmax; it++) {
 
@@ -1563,7 +1563,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         // Residual check
         res = fabs(r_eta_ve/Eii);
         if (it==0) res0 = res;
-//        if (noisy==1 && res>tol) printf("It. %02d, r = %2.2e eta_ve = %2.2e eta_lo = %2.2e eta_up = %2.2e eta_lin = %2.2e eta_pwl = %2.2e\n", it, res, eta_ve, eta_lo, eta_up, eta_lin, eta_pwl);
+        if (noisy==1 && res>tol) printf("It. %02d, r = %2.2e eta_ve = %2.2e eta_lo = %2.2e eta_up = %2.2e eta_lin = %2.2e eta_pwl = %2.2e eta_exp = %2.2e\n", it, res, eta_ve, eta_lo, eta_up, eta_lin, eta_pwl, eta_exp);
         if (res < tol) break;
 
         // UNDER CONSTRUCTION
@@ -1605,6 +1605,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     
     // Check yield stress
     F_trial = Tii - Tyield;
+    double F_trial0 = F_trial;
 //    if (F>0.0){ exit(1); }
 
 //    if (F_trial > 1e-17) {
@@ -1657,8 +1658,8 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
             // Residual check
             res = fabs(F_trial);
 //            if (it==0) res0 = res;
-            if (noisy==1) printf("Visco-Plastic iterations It. %02d, r = %2.2e\n", it, res);
-            if (res < tol) break;
+            if (noisy==1) printf("Visco-Plastic iterations It. %02d, F = %2.2e Frel = %2.2e --- n_vp = %2.2e, eta_vp = %2.2e\n", it, res, res/F_trial0, n_vp, eta_vp);
+            if ( res < tol || res/F_trial0 < tol ) break;
             dFdgdot  = - eta_ve - eta_vp/n_vp;
             gdot    -= F_trial / dFdgdot;
         }

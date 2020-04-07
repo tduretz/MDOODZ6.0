@@ -14,22 +14,27 @@ path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Compression/'
 % path = '/Users/tduretz/REPO_GIT/TEST/SOURCE/'
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Shear_periodic_VEVP/'
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
+% path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/RUNS/SubInit_Cart_MR/'
+% path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/RUNS/Pauline_600x800_6its/'
+path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/RUNS/Pauline_200x300_Eulerian_markers/'
+% path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/RUNS/SubInit_Cart_MR_InflowCheck0/'
 
 cd(path)
 
 % File
-istart = 100;
+istart = 0;
 ijump  = 10;
-iend   = 100;
+iend   = 110;
 
 %--------------------------------------------------
 % what do you want to plot:
 %--------------------------------------------------
+X_plot          = 0;
 eta_sym         = 0;
 eta_plot        = 0;
 rho_plot        = 0;
 phase_on_grid   = 0;
-phase_temp2     = 1;
+phase_temp2     = 0;
 vel_plot        = 0;
 vel_vectors     = 0;
 vel_divergence  = 0;
@@ -51,7 +56,8 @@ Christmas_Tree  = 0;
 topo            = 0;
 topo_eta_plot   = 0;
 topo_SR_plot    = 0;
-topo_maps       = 0;
+topo_maps       = 1;
+phases_uplift   = 0;
 dt_time         = 0;
 srate_add       = 0;
 acc_strain_add  = 0;
@@ -88,6 +94,7 @@ ColorFabio    = 1;
 y             = 365.25*24*3600;
 My            = 1e6*y;
 topo_ref      = 0; %6370
+mdoodz6       = 1;
 
 
 % Contour
@@ -104,22 +111,22 @@ maxTxx =  0.642;
 % minPdyn = -1e9;
 % maxPdyn =  1e9;
 
-minEta = 19;
-maxEta = 25;
+% minEta = 19;
+% maxEta = 25;
 
-minEii = -17;
-maxEii = -13.5;
+% minEii = -16;
+% maxEii = -13.5;
 
 minSii = 1e6;
 maxSii = 400e6;
 
 % Size of the window
-crop       = -1;
+crop       = 0;
 
-lim.xmin   = -120;
-lim.xmax   =  120;
-lim.zmin   = -50;
-lim.zmax   = 5;
+lim.xmin   = -175;
+lim.xmax   =  175;
+lim.zmin   = -175;
+lim.zmax   =  175;
 
 % lim.xmin   = -75;
 % lim.xmax   =  75;
@@ -519,6 +526,33 @@ for istep=istart:ijump:iend
         z_tab(:,:) = z_arr;
         
         %--------------------------------------------------
+        % X plot
+        %--------------------------------------------------
+         if (X_plot==1)
+            X = hdf5read(filename,'/Centers/Xreac');  X = cast(X, 'double');
+            X = reshape(X,params(4)-1,params(5)-1)';
+            
+            % Nodes
+            if print2screen == 1
+                figCount = figCount +1;
+                figure(figCount); clf;
+            else
+                figure('Visible', 'Off');
+            end
+            
+            imagesc(xc_plot, zc_plot, (X));
+            shading flat, axis xy image, colorbar;
+            hold on
+            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+            if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
+            hold off
+            title(['X at' TimeLabel, ' min = ', num2str(min(X(X>0)), '%2.4e'), ' max = ', num2str(max(X(X>0)), '%2.4e')])
+            xlabel(xLabel), ylabel(zLabel);
+            if crop == 1, xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            if exist('minX', 'var') caxis([minX maxX]); end
+            
+        end
+        %--------------------------------------------------
         % viscosity symmetry plot
         %--------------------------------------------------
         if (eta_sym==1)
@@ -744,12 +778,14 @@ for istep=istart:ijump:iend
             %         colormap('gray')
             
             Vx = VxA(2:end-1,:);
-            imagesc(xg_plot, zvx_plot(2:end-1), Vx*100*3600*24*365);
+            imagesc(xg_plot, zvx_plot(2:end-1), Vx*1000*3600*24*365);
             shading flat,axis xy image, colorbar;
             xlabel(xLabel), ylabel(zLabel);
             title(['Vx at' TimeLabel, ' min = ', num2str(min(Vx(:))), ' max = ', num2str(max(Vx(:)))])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             if exist('minVx', 'var') caxis([minVx maxVx]); end
+            caxis([-10 10])
+
             
             if ( H>L )
                 subplot(1,2,2)
@@ -757,12 +793,13 @@ for istep=istart:ijump:iend
                 subplot(2,1,2)
             end
             Vz = VzA(:,2:end-1);
-            imagesc(xvz_plot(2:end-1),zg_plot,Vz*100*3600*24*365);
+            imagesc(xvz_plot(2:end-1),zg_plot,Vz*1000*3600*24*365);
             shading flat,axis xy image, colorbar;
             xlabel(xLabel), ylabel(zLabel);
             title(['Vz at' TimeLabel, ' min = ', num2str(min(Vz(:))), ' max = ', num2str(max(Vz(:)))])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             if exist('minVz', 'var') caxis([minVz maxVz]); end
+            caxis([-2.5 2.5])
             
             if printfig == 1
                 print([path, './Fig_Velocity/Fig_Velocity', num2str(istep,'%05d'),file_suffix], format, res)
@@ -1266,7 +1303,7 @@ for istep=istart:ijump:iend
             else
                 figure('Visible', 'Off')
             end
-            
+                        
             % eII
             if ( H>L )
                 subplot(1,2,1)
@@ -1306,6 +1343,9 @@ for istep=istart:ijump:iend
             if exist('minSii', 'var') caxis([(minSii) (maxSii)]); end
             if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
             axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
+            
+%                         colormap('parula')
+
             
             if printfig == 1
                 print([path,'./Fig_Stress_StrainRate/Fig_Stress_StrainRate',num2str(istep,'%05d'),file_suffix], format, res)
@@ -1859,55 +1899,7 @@ for istep=istart:ijump:iend
                 figure('Visible', 'Off')
             end            
             
-            subplot(311)
-            imagesc( xc_plot, zc_plot, log10(eII_el) )
-            hold on
-            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
-            imagesc( xc_plot, zc_plot, log10(eII_el), 'Visible', 'off' )
-            shading flat,axis xy image, colorbar;
-            if exist('minEii', 'var') caxis([minEii maxEii]); end
-            shading flat,axis xy image, colorbar;
-            xlabel(xLabel), ylabel(zLabel)
-            title(['Elastic strain rate at' TimeLabel])
-            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-            if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
-            axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
-            
-            
-            subplot(312)
-            imagesc( xc_plot, zc_plot, log10(eII_pwl) )
-            hold on
-            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
-            imagesc( xc_plot, zc_plot, log10(eII_pwl), 'Visible', 'off' )
-            shading flat,axis xy image, colorbar;
-            if ColorFabio==1,             load('roma.mat')
-            colormap(flipud(roma));
-            end
-            if exist('minEii', 'var') caxis([minEii maxEii]); end
-            hold off
-            xlabel(xLabel), ylabel(zLabel)
-            title(['Power law strain rate at' TimeLabel])
-            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-            if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
-            axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
-            
-            subplot(313)
-            imagesc( xc_plot, zc_plot, log10(eII_pl) )
-            hold on
-            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
-            imagesc( xc_plot, zc_plot, log10(eII_pl), 'Visible', 'off' )
-            shading flat,axis xy image, colorbar;
-            if exist('minEii', 'var') caxis([minEii maxEii]); end
-            hold off
-            xlabel(xLabel), ylabel(zLabel)
-            title(['Plastic strain rate at' TimeLabel])
-            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-            if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
-            axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
-            
-%             colormap('jet');
-%             
-%             subplot(321)
+%             subplot(311)
 %             imagesc( xc_plot, zc_plot, log10(eII_el) )
 %             hold on
 %             if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
@@ -1918,8 +1910,28 @@ for istep=istart:ijump:iend
 %             xlabel(xLabel), ylabel(zLabel)
 %             title(['Elastic strain rate at' TimeLabel])
 %             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+%             if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
+%             axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
 %             
-%             subplot(323)
+%             
+%             subplot(312)
+%             imagesc( xc_plot, zc_plot, log10(eII_pwl) )
+%             hold on
+%             if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+%             imagesc( xc_plot, zc_plot, log10(eII_pwl), 'Visible', 'off' )
+%             shading flat,axis xy image, colorbar;
+%             if ColorFabio==1,             load('roma.mat')
+%             colormap(flipud(roma));
+%             end
+%             if exist('minEii', 'var') caxis([minEii maxEii]); end
+%             hold off
+%             xlabel(xLabel), ylabel(zLabel)
+%             title(['Power law strain rate at' TimeLabel])
+%             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+%             if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
+%             axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
+%             
+%             subplot(313)
 %             imagesc( xc_plot, zc_plot, log10(eII_pl) )
 %             hold on
 %             if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
@@ -1930,55 +1942,83 @@ for istep=istart:ijump:iend
 %             xlabel(xLabel), ylabel(zLabel)
 %             title(['Plastic strain rate at' TimeLabel])
 %             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-%             
-%             subplot(322)
-%             imagesc( xc_plot, zc_plot, log10(eII_pwl) )
-%             hold on
-%             if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
-%             imagesc( xc_plot, zc_plot, log10(eII_pwl), 'Visible', 'off' )
-%             shading flat,axis xy image, colorbar;
-%             if exist('minEii', 'var') caxis([minEii maxEii]); end
-%             hold off
-%             xlabel(xLabel), ylabel(zLabel)
-%             title(['Power law strain rate at' TimeLabel])
-%             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-%             
-%             subplot(324)
-%             imagesc( xc_plot, zc_plot, (log10(eII_exp)) )
-%             hold on
-%             if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
-%             imagesc( xc_plot, zc_plot, (log10(eII_exp)), 'Visible', 'off' )
-%             shading flat,axis xy image, colorbar;
-%             if exist('minEii', 'var') caxis([minEii maxEii]); end
-%             hold off
-%             xlabel(xLabel), ylabel(zLabel)
-%             title(['Exponential strain rate at' TimeLabel])
-%             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-%             
-%             subplot(325)
-%             imagesc( xc_plot, zc_plot, (log10(eII_lin)) )
-%             %         imagesc( xc_plot, zc_plot, eII_lin./eII )
-%             hold on
-%             if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
-%             imagesc( xc_plot, zc_plot, (log10(eII_lin)), 'Visible', 'off' )
-%             shading flat,axis xy image, colorbar;
-%             if exist('minEii', 'var') caxis([minEii maxEii]); end
-%             hold off
-%             xlabel(xLabel), ylabel(zLabel)
-%             title(['Linear strain rate at' TimeLabel])
-%             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-%             
-%             subplot(326)
-%             imagesc( xc_plot, zc_plot, (log10(eII_gbs)) )
-%             hold on
-%             if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
-%             imagesc( xc_plot, zc_plot, (log10(eII_gbs)), 'Visible', 'off' )
-%             shading flat,axis xy image, colorbar;
-%             if exist('minEii', 'var') caxis([minEii maxEii]); end
-%             hold off
-%             xlabel(xLabel), ylabel(zLabel)
-%             title(['GBS strain rate at' TimeLabel])
-%             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+%             if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
+%             axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
+            
+            colormap('jet');
+            
+            subplot(321)
+            imagesc( xc_plot, zc_plot, log10(eII_el) )
+            hold on
+            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+            imagesc( xc_plot, zc_plot, log10(eII_el), 'Visible', 'off' )
+            shading flat,axis xy image, colorbar;
+            if exist('minEii', 'var') caxis([minEii maxEii]); end
+            shading flat,axis xy image, colorbar;
+            xlabel(xLabel), ylabel(zLabel)
+            title(['Elastic strain rate at' TimeLabel])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            
+            subplot(323)
+            imagesc( xc_plot, zc_plot, log10(eII_pl) )
+            hold on
+            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+            imagesc( xc_plot, zc_plot, log10(eII_pl), 'Visible', 'off' )
+            shading flat,axis xy image, colorbar;
+            if exist('minEii', 'var') caxis([minEii maxEii]); end
+            hold off
+            xlabel(xLabel), ylabel(zLabel)
+            title(['Plastic strain rate at' TimeLabel])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            
+            subplot(322)
+            imagesc( xc_plot, zc_plot, log10(eII_pwl) )
+            hold on
+            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+            imagesc( xc_plot, zc_plot, log10(eII_pwl), 'Visible', 'off' )
+            shading flat,axis xy image, colorbar;
+            if exist('minEii', 'var') caxis([minEii maxEii]); end
+            hold off
+            xlabel(xLabel), ylabel(zLabel)
+            title(['Power law strain rate at' TimeLabel])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            
+            subplot(324)
+            imagesc( xc_plot, zc_plot, (log10(eII_exp)) )
+            hold on
+            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+            imagesc( xc_plot, zc_plot, (log10(eII_exp)), 'Visible', 'off' )
+            shading flat,axis xy image, colorbar;
+            if exist('minEii', 'var') caxis([minEii maxEii]); end
+            hold off
+            xlabel(xLabel), ylabel(zLabel)
+            title(['Exponential strain rate at' TimeLabel])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            
+            subplot(325)
+            imagesc( xc_plot, zc_plot, (log10(eII_lin)) )
+            %         imagesc( xc_plot, zc_plot, eII_lin./eII )
+            hold on
+            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+            imagesc( xc_plot, zc_plot, (log10(eII_lin)), 'Visible', 'off' )
+            shading flat,axis xy image, colorbar;
+            if exist('minEii', 'var') caxis([minEii maxEii]); end
+            hold off
+            xlabel(xLabel), ylabel(zLabel)
+            title(['Linear strain rate at' TimeLabel])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            
+            subplot(326)
+            imagesc( xc_plot, zc_plot, (log10(eII_gbs)) )
+            hold on
+            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+            imagesc( xc_plot, zc_plot, (log10(eII_gbs)), 'Visible', 'off' )
+            shading flat,axis xy image, colorbar;
+            if exist('minEii', 'var') caxis([minEii maxEii]); end
+            hold off
+            xlabel(xLabel), ylabel(zLabel)
+            title(['GBS strain rate at' TimeLabel])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             
             if printfig == 1
                 print([path,'./Fig_Stress_StrainRate/StrainRatesAdd',num2str(istep,'%05d'),file_suffix], format, res)
@@ -3249,24 +3289,25 @@ for istep=istart:ijump:iend
         end
         
         %--------------------------------------------------
-        %  Toporgraphy through time
+        %  Topography through time
         %--------------------------------------------------
         if ( topo_maps == 1 )
             
-            xtopo = hdf5read(filename,'/Topo/x_mark');
-            ztopo = hdf5read(filename,'/Topo/z_mark');
-            xtopo = cast(xtopo, 'double');
-            ztopo = cast(ztopo, 'double');
-            vx_mark = hdf5read(filename,'/Topo/Vx_mark');
-            vz_mark = hdf5read(filename,'/Topo/Vz_mark');
-            vx_mark = cast(vx_mark, 'double');
-            vz_mark = cast(vz_mark, 'double');
-            vx_grid = hdf5read(filename,'/Topo/Vx_grid');
-            vz_grid = hdf5read(filename,'/Topo/Vz_grid');
-            vx_grid = cast(vx_grid, 'double');
-            vz_grid = cast(vz_grid, 'double');
-            z_grid  = hdf5read(filename,'/Topo/z_grid');
-            z_grid  = cast(z_grid, 'double');
+            if mdoodz6 == 1
+                vx_grid = hdf5read(filename,'/Topo/Vx_grid');
+                vz_grid = hdf5read(filename,'/Topo/Vz_grid');
+                vx_grid = cast(vx_grid, 'double');
+                vz_grid = cast(vz_grid, 'double');
+                z_grid  = hdf5read(filename,'/Topo/z_grid');
+                z_grid  = cast(z_grid, 'double');
+            else
+                vx_grid = hdf5read(filename,'/Topo/vx');
+                vz_grid = hdf5read(filename,'/Topo/vz');
+                vx_grid = cast(vx_grid, 'double');
+                vz_grid = cast(vz_grid, 'double');
+                z_grid  = hdf5read(filename,'/Topo/height');
+                z_grid  = cast(z_grid, 'double');
+            end
 
             if istep == istart
                 topo2D = zeros(iend/ijump+1, length(xg_coord));
@@ -3290,45 +3331,153 @@ for istep=istart:ijump:iend
                     figure('Visible', 'Off')
                 end
                 
-                subplot(131)
+                subplot(231)
                 pcolor(x2D/1e3,t2D/My,topo2D/1e3-topo_ref), colorbar, shading flat;
                 caxis([-3 2])
                 xlabel('x [km]'), ylabel('t [My]')
                 title('Topography [km]')
                 
-                subplot(132)
+                subplot(232)
                 pcolor(x2D/1e3,t2D/My,vx2D*y*1e3), colorbar, shading flat;
                 caxis([-10 10])
                 xlabel('x [km]'), ylabel('t [My]')
                 title('Surface velocity x [mm/y]')
                 
-                subplot(133)
+                subplot(233)
                 pcolor(x2D/1e3,t2D/My,vz2D*y*1e3), colorbar, shading flat;
+                hold on 
+%                 contour(x2D/1e3,t2D/My,topo2D/1e3-topo_ref, [0 0], 'k')
                 caxis([-2.5 2.5])
                 xlabel('x [km]'), ylabel('t [My]')
                 title('Surface velocity z [mm/y]')
+                
+                
+                dt2D     = t2D(2:end,:) - t2D(1:end-1,:);
+                dx2D     = x2D(:,2:end) - x2D(:,1:end-1);
+                Vz_wrong = (topo2D(2:end,:) - topo2D(1:end-1,:)) ./ dt2D;
+                t2D_av   = 0.5*(t2D(2:end,:) + t2D(1:end-1,:));
+                x2D_av   = 0.5*(x2D(:,2:end) + x2D(:,1:end-1));
+                vx2D_av   = 0.5*(vx2D(:,2:end) + vx2D(:,1:end-1));
+                
+                dHdx     = (topo2D(:,2:end) - topo2D(:,1:end-1)) ./ dx2D;
+                
+                Vz_wrong_av = 0.5*(Vz_wrong(:,2:end) + Vz_wrong(:,1:end-1));
+                Vz_corr  = Vz_wrong_av + vx2D_av(1:end-1,:).*dHdx(1:end-1,:);
+                
+                subplot(235)
+                pcolor(x2D(1:end-1,:)/1e3,t2D_av/My,Vz_wrong*y*1e3), colorbar, shading flat;
+                caxis([-2.5 2.5])
+                xlabel('x [km]'), ylabel('t [My]')
+                title('DH/Dt = dH/dt [mm/y]')
+                
+                subplot(236)
+                pcolor(x2D_av(1:end-1,:)/1e3,t2D_av(:,1:end-1)/My,Vz_corr*y*1e3), colorbar, shading flat;
+                caxis([-2.5 2.5])
+                xlabel('x [km]'), ylabel('t [My]')
+                title('DH/Dt = dH/dt + Vx*dHdx [mm/y]')
+                
+                if printfig == 1
+                    print([path, './Fig_TopoMaps', num2str(istep,'%05d'),file_suffix], format, res)
+                close all
+            end
 
             end
-%             title(['min = ', num2str(min(ztopo)), ' max = ', num2str(max(ztopo)), TimeLabel])
+        end
+        
+        %--------------------------------------------------
+        % phases + uplift rate
+        %--------------------------------------------------
+        if(phases_uplift==1)
+            
+            if mdoodz6 == 1
+                vx_grid = hdf5read(filename,'/Topo/Vx_grid');
+                vz_grid = hdf5read(filename,'/Topo/Vz_grid');
+                vx_grid = cast(vx_grid, 'double');
+                vz_grid = cast(vz_grid, 'double');
+                z_grid  = hdf5read(filename,'/Topo/z_grid');
+                z_grid  = cast(z_grid, 'double');
+            else
+                vx_grid = hdf5read(filename,'/Topo/vx');
+                vz_grid = hdf5read(filename,'/Topo/vz');
+                vx_grid = cast(vx_grid, 'double');
+                vz_grid = cast(vz_grid, 'double');
+                z_grid  = hdf5read(filename,'/Topo/height');
+                z_grid  = cast(z_grid, 'double');
+            end
+            
+            VizGrid = PhaseMap_hr( filename, VizGrid );
+            Cent.T = hdf5read(filename,'/Centers/T'); Cent.T = cast(Cent.T, 'double');
+            T = reshape(Cent.T,params(4)-1,params(5)-1)';
+
+            if print2screen == 1
+                figCount = figCount +1;
+                figure(figCount), clf
+            else
+                figure('Visible', 'Off')
+            end
+            clf
+            
+%             subplot(211)
 %             hold on
-%             plot( xtopo, ztopo-0*mean(ztopo), '.r' )
-%             plot( xg_coord, height-0*mean(height), '-o')
+%             plot(xvz_coord/1e3, vz_grid*y*1e3, '-k', 'LineWidth', 2)
+%             plot(xvz_coord/1e3, 0*vz_grid*y*1e3, '-.k')
+% 
+%             
+%             subplot(212)
+% 
+%             hold on
+            
+%             colormap(map);
+%             imagesc(VizGrid.x_plot_hr, VizGrid.z_plot_hr, VizGrid.ph_hr);
+%             set(gca,'Ydir','Normal')
+%             shading interp, caxis ([-1 size(map,1)-2])%, axis ij
+%             axis image
+%             title(['Time = ', num2str(time/1e6),' Myrs'], 'FontSize', 15, 'FontName', 'Myriad pro');
+             contour(VizGrid.x_plot_hr, VizGrid.z_plot_hr, VizGrid.ph_hr, 1:10, 'k')
+            
+%             % Isotherms
+%             hold on
+%             v = 200:200:2000;
+%             [c, h] = contour(VizGrid.x_plot, VizGrid.z_plot, T-273, v);
+%             set(h, 'Color', 'w', 'LineWidth', 1.0);
 %             hold off
-%             
-%             % figure(45)
-%             % plot( time/365.25/3600/24/1e6, max(ztopo), '+')
-%             % axis([0 20 0 900])
-%             % xlabel('Time [ky]')
-%             % ylabel('max. Topo [km]')
-%             % hold on
-%             
-%             mxtopo(icount) = max(ztopo);
-%             drawnow
-%             
-%             if istep == iend
-%                 save( [path,'TopoData'], 'mxtopo', 't_vec')
-%                 disp('file saved')
-%             end
+
+
+            hold on
+            vz_grid_av = 0.5*(vz_grid(1:end-1)+vz_grid(2:end));
+%             plot(xg_coord(vz_grid_av>0)/1e3, z_grid(vz_grid_av>0)/1e3, '.r', 'LineWidth', 4)
+%             plot(xg_coord(vz_grid_av<0)/1e3, z_grid(vz_grid_av<0)/1e3, '.b', 'LineWidth', 4)
+            
+            scatter(xg_coord/1e3, z_grid/1e3, 60, vz_grid_av*y*1e3, 'filled')
+            colormap('jet')
+            colorbar
+            caxis([-2.5 2.5])
+            hold off
+            axis image
+            
+%             colorbar('Location', 'SouthOutside')
+            xlabel(xLabel, 'FontSize', Ftsz), ylabel(zLabel, 'FontSize', Ftsz)
+            
+            title(['Surface uplift at' TimeLabel], 'FontSize', Ftsz);
+            % %         hold off
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            
+            xlim([min(VizGrid.x_plot) max(VizGrid.x_plot)]); ylim([-40 10])
+            
+            %         if exist('minPhase', 'var') caxis([minPhase maxPhase]); end
+%             set(gca, 'FontSize', Ftsz);%, 'FontName', 'Myriad pro')
+            set(gcf,'Color','white')
+            
+            if printfig == 1
+                if crop == 1
+                    print([path, './Fig_Phases/Crop_PhasesUpliftGrid', num2str(istep,'%05d'),file_suffix], format, res)
+                else
+                    print([path, './Fig_Phases/Fig_PhasesUpliftGrid', num2str(istep,'%05d'),file_suffix], format, res)
+                end
+                close all
+            end
+            
+            clear VizGrid.ph VizGrid.x VizGrid.z
             
         end
        
@@ -3546,13 +3695,6 @@ for istep=istart:ijump:iend
             Cent.T = hdf5read(filename,'/Centers/T'); Cent.T = cast(Cent.T, 'double');
             T = reshape(Cent.T,params(4)-1,params(5)-1)';
 
-%             if print2screen == 1
-%                 figCount = figCount +1;
-%                 fh=figure(figCount); clf;
-%             else
-%                 fh=figure('Visible', 'Off');
-%                 set(fh,'units','normalized','position',[0.0 0.0 1.0 1.0]);
-%             end
             if print2screen == 1
                 figCount = figCount +1;
                 figure(figCount), clf
