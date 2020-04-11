@@ -761,12 +761,12 @@ void SetUpModel_NoMarkers ( grid* mesh, params *model, scale *scaling ) {
 
 void Diffuse_X( grid* mesh, params* model, scale* scaling ) {
     
-    double K = 1.0e-5 / (pow(scaling->L,2.0)/scaling->t);
+    double K = 1.0e-6 / (pow(scaling->L,2.0)/scaling->t);
     double dx = mesh->dx, dz = mesh->dz;
     double L_diff = model->diffusion_length;
     double dt = pow(MAXV(dx,dz), 2.0) / K / 4.1;
     double t_diff = pow(L_diff,2.0)/K;
-    int    nsteps = (int) t_diff/dt;
+    int    nsteps = (int) (t_diff/dt);
     int    k, l, it, c;
     int    ncx = mesh->Nx-1;
     int    ncz = mesh->Nz-1;

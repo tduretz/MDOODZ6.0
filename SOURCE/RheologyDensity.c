@@ -1392,8 +1392,10 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         if ( (int)t_exp == 0) F_exp  = 1.0;
         if ( (int)t_exp == 1) F_exp  = 1.0/6.0*pow(2.0,1.0/(ST+n_exp)) * pow(3.0,(ST+n_exp-1.0)/2.0/(ST+n_exp));
         if ( (int)t_exp == 2) F_exp  = 1.0/4.0*pow(2,1.0/(ST+n_exp));
-        B_exp                   = F_exp * pow(E_exp*exp(-Ea_exp/R/T*pow(1.0-gamma,2.0)), -1.0/(ST+n_exp)) * pow(gamma*S_exp, ST/(ST+n_exp));
-        C_exp                   = pow(2.0*B_exp, -(ST+n_exp));
+//        B_exp                   = F_exp * pow(E_exp*exp(-Ea_exp/R/T*pow(1.0-gamma,2.0)), -1.0/(ST+n_exp)) * pow(gamma*S_exp, ST/(ST+n_exp));
+//        C_exp                   = pow(2.0*B_exp, -(ST+n_exp));
+        C_exp = E_exp *exp(-Ea_exp/R/T * pow(1.0-gam,2.0)) * pow(gamma*S_exp,-ST);
+        B_exp = 0.5*pow(C_exp, -1./(n_exp+ST) );
     }
 
     Tyield                      = C*cos(Phi) +  ( P + model->PrBG)*sin(Phi);
@@ -1538,13 +1540,14 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     }
     eta_lo = 1.0/(ieta_sum);
     
-//    eta_up = eta_lin;
-//    eta_lo = eta_pwl;
-
+    
     //------------------------------------------------------------------------//
 
     // Initial guess
     eta_ve                  = 0.5*(eta_up+eta_lo);
+    
+//    eta_ve = eta_up;
+
     
     // Local iterations
     for (it=0; it<nitmax; it++) {
@@ -1563,7 +1566,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         // Residual check
         res = fabs(r_eta_ve/Eii);
         if (it==0) res0 = res;
-        if (noisy==1 && res>tol) printf("It. %02d, r = %2.2e eta_ve = %2.2e eta_lo = %2.2e eta_up = %2.2e eta_lin = %2.2e eta_pwl = %2.2e eta_exp = %2.2e\n", it, res, eta_ve, eta_lo, eta_up, eta_lin, eta_pwl, eta_exp);
+        if (noisy==1) printf("It. %02d, r abs. = %2.2e r rel. = %2.2e tol = %2.2e eta_ve = %2.2e eta_lo = %2.2e eta_up = %2.2e eta_lin = %2.2e eta_pwl = %2.2e eta_exp = %2.2e %d\n", it, res, res/res0, tol, eta_ve, eta_lo, eta_up, eta_lin, eta_pwl, eta_exp, nitmax);
         if (res < tol) break;
 
         // UNDER CONSTRUCTION
@@ -2747,7 +2750,9 @@ void GenerateDeformationMaps( grid* mesh, mat_prop *materials, params *model, Np
                 for ( iy=0; iy<nE; iy++) {
 
                     // Evaluate viscosity and stress
-                    eta =  Viscosity( k, 0.0, T[ix], Pn, d[iz], 0.0, 1.0, E[iy], E[iy], 0.0, 0.0, 0.0, 0.0, materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_pwl, &exz_pwl, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &exx_pl, &exz_pl,  &d1, 0.0, materials->phi[k], materials->C[k], &detadexx, &detadezz, &detadexz, &detadp, 0.0, 0.0, &Xreac, &ttrans, &OverS);
+                    eta =  Viscosity( k, 0.0, T[ix], Pn, d[iz], 0.0, 0.0, E[iy], E[iy], 0.0, 0.0, 0.0, 0.0, materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_pwl, &exz_pwl, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &exx_pl, &exz_pl,  &d1, 0.0, materials->phi[k], materials->C[k], &detadexx, &detadezz, &detadexz, &detadp, 0.0, 0.0, &Xreac, &ttrans, &OverS);
+                    
+//                    if(k==0 && eII_exp*scaling->E>1e-17)printf("eII_exp = %2.2e eII_pwl = %2.2e \n", eII_exp*scaling->E, eII_pwl*scaling->E);
 
                     // Select mechanism
                     if (eII_pwl>eII_el && eII_pwl>eII_pl  && eII_pwl>eII_exp && eII_pwl>eII_lin && eII_pwl>eII_gbs && eII_pwl>eII_cst) mech = 1; // dislocation
