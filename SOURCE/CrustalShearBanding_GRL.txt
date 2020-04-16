@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00100
+istep = 00060
 irestart = 0
 
 /**** OUTPUT FILES ****/
