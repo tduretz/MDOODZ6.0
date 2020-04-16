@@ -1330,9 +1330,13 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     int phase_two    = materials->phase_two[phase];
     int constant_mix = materials->phase_mix[phase];
     int mix_avg      = model->diffuse_avg;
-    
-    int ProgressiveReaction = model->ProgReac==1 && model->step > 0;
+    double npwlreac, Apwlreac, Eapwlreac;
+    double npwlprod, Apwlprod, Eapwlprod;
+    int ProgressiveReaction = model->ProgReac==1 && model->step > 0 && materials->Reac[phase]>0;
     int StaticReaction = model->diffuse_X==1;
+    double time_reaction = materials->treac[phase];
+    double moy  = time_reaction/2.0;
+    double sig  = 1.0/6.0*time_reaction;
     
     if (model->diffuse_X==0) constant_mix  = 0;
 
@@ -1394,7 +1398,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         if ( (int)t_exp == 2) F_exp  = 1.0/4.0*pow(2,1.0/(ST+n_exp));
 //        B_exp                   = F_exp * pow(E_exp*exp(-Ea_exp/R/T*pow(1.0-gamma,2.0)), -1.0/(ST+n_exp)) * pow(gamma*S_exp, ST/(ST+n_exp));
 //        C_exp                   = pow(2.0*B_exp, -(ST+n_exp));
-        C_exp = E_exp *exp(-Ea_exp/R/T * pow(1.0-gam,2.0)) * pow(gamma*S_exp,-ST);
+        C_exp = E_exp *exp(-Ea_exp/R/T * pow(1.0-gam,2.0)) * pow(gamma*S_exp,-ST);  // ajouter Fexp
         B_exp = 0.5*pow(C_exp, -1./(n_exp+ST) );
     }
 
@@ -1405,16 +1409,15 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     // Reaction stuff: 1. Update reaction progress
     if ( ProgressiveReaction == 1 ) {
         *ttrans = UpdateReactionProgress ( ttrans0, (P0+model->PrBG), (P+model->PrBG), materials->treac[phase], materials->Preac[phase], dt , scaling);
-        double time_reaction = materials->treac[phase];
-        double moy  = time_reaction/2.0;
-        double sig  = 1.0/6.0*time_reaction;
         *Xreac=0.5*(1.0 + erf((*ttrans-moy)/sig/sqrt(2.0)));
     }
+    
+    if (isnan(*Xreac)) printf("%2.2e %2.2e %2.2e %2.2e\n", *ttrans, 0.5*(1.0 + erf((*ttrans-moy)/sig/sqrt(2.0))), sig, moy );
+
+
 
     // Reaction stuff: 2. Mixture rheology (Huet et al., 2014)
     if (  ProgressiveReaction == 1 || StaticReaction == 1 ) {
-        double npwlreac, Apwlreac, Eapwlreac;                  // removed Fpwlreac and Fpwlprod
-        double npwlprod, Apwlprod, Eapwlprod;
         npwlreac  = materials->npwl[phase];
         Apwlreac  = materials->Apwl[phase];
         Eapwlreac = materials->Qpwl[phase];
@@ -1465,7 +1468,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
             A_pwl  = Apwl_mix;
         }
     }
-
+    
     //------------------------------------------------------------------------//
 
     // Isolated viscosities
@@ -1500,8 +1503,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     if ( peierls     == 1 ) eta_exp  = B_exp * pow( Eii, 1.0/(ST+n_exp) - 1.0 );
     
 //    printf("f1 = %2.2e m_pwl = %2.2e eta_pwl=%2.2e\n", f1, n_pwl, eta_pwl*scaling->eta);
-
-
+    
     //------------------------------------------------------------------------//
 
     // Viscoelasticity
@@ -1859,8 +1861,6 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
         X                    =  mesh->Xreac_n[c0]; // Save X first
         if (model->ProgReac==1) mesh->Xreac_n[c0]    = 0.0;
         if (model->ProgReac==1) mesh->ttrans_n[c0]   = 0.0;
-
-
         mesh->OverS_n[c0]    = 0.0;
 
         // Loop on grid nodes
@@ -1954,16 +1954,18 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 mesh->detadgxz_n[c0] *= pow(mesh->eta_n[c0],2.0);
                 mesh->detadp_n[c0]   *= pow(mesh->eta_n[c0],2.0);
                 if (isinf (mesh->eta_phys_n[c0]) ) {
-                    printf("Problem on cell centers:\n");
+                    printf("Inf: Problem on cell centers:\n");
                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_n[p][c0]);
-                    printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e\n", mesh->mu_n[c0], Tn, Pn, mesh->d0[c0], mesh->phi[c0],  mesh->eii_n[c0],  mesh->tii0_n[c0], mesh->exxd[c0], mesh->exz_n[c0], mesh->sxxd0[c0], mesh->sxz0_n[c0]);
+                    printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e\n", eta, mesh->mu_n[c0], Tn, Pn, mesh->d0[c0], mesh->phi[c0],  mesh->eii_n[c0],  mesh->tii0_n[c0], mesh->exxd[c0], mesh->exz_n[c0], mesh->sxxd0[c0], mesh->sxz0_n[c0]);
                     printf("flag %d nb part cell = %d cell index = %d\n", mesh->BCp.type[c0],mesh->nb_part_cell[c0], c0);
                     printf("x=%2.2e z=%2.2e\n", mesh->xc_coord[k]*scaling->L/1000.0, mesh->zc_coord[l]*scaling->L/1000.0);
                     exit(1);
                 }
                 if (isnan (mesh->eta_phys_n[c0]) ) {
+                    printf("NaN: Problem on cell centers:\n");
+                    printf("ProgReac %d\n", model->ProgReac);
                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_n[p][c0]);
-                    printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e\n", mesh->mu_n[c0], Tn, Pn, mesh->d0[c0], mesh->phi[c0],  mesh->eii_n[c0],  mesh->tii0_n[c0], mesh->exxd[c0], mesh->exz_n[c0], mesh->sxxd0[c0], mesh->sxz0_n[c0]);
+                    printf("%2,2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e\n", eta, mesh->mu_n[c0], Tn, Pn, mesh->d0[c0], mesh->phi[c0],  mesh->eii_n[c0],  mesh->tii0_n[c0], mesh->exxd[c0], mesh->exz_n[c0], mesh->sxxd0[c0], mesh->sxz0_n[c0]);
                     printf("flag %d nb part cell = %d cell index = %d\n", mesh->BCp.type[c0],mesh->nb_part_cell[c0], c0);
                     printf("x=%2.2e z=%2.2e\n", mesh->xc_coord[k]*scaling->L/1000.0, mesh->zc_coord[l]*scaling->L/1000.0);
                     exit(1);
@@ -2086,7 +2088,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 mesh->detadgxz_s[c1] *= pow(mesh->eta_s[c1],2.0);
                 mesh->detadp_s[c1]   *= pow(mesh->eta_s[c1],2.0);
                 if (isinf (mesh->eta_phys_s[c1]) ) {
-                    printf("Problem on cell vertices:\n");
+                    printf("Inf: Problem on cell vertices:\n");
                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_s[p][c1]);
                     printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e \n", mesh->mu_s[c1],  mesh->eii_s[c1],  mesh->tii0_s[c1], mesh->exxd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->sxz0[c1]);
                     printf("x=%2.2e z=%2.2e\n", mesh->xg_coord[k]*scaling->L/1000, mesh->zg_coord[l]*scaling->L/1000);
@@ -2094,6 +2096,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                     exit(1);
                 }
                 if (isnan (mesh->eta_phys_s[c1]) ) {
+                    printf("Nan: Problem on cell vertices:\n");
                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_s[p][c1]);
                     printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e \n", mesh->mu_s[c1],  mesh->eii_s[c1],  mesh->tii0_s[c1], mesh->exxd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->sxz0[c1]);
                     printf("x=%2.2e z=%2.2e\n", mesh->xg_coord[k]*scaling->L/1000, mesh->zg_coord[l]*scaling->L/1000);
