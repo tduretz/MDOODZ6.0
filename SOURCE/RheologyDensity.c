@@ -1443,12 +1443,12 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         npwl_mix = sum_up/sum_down;
 
         // (3) Calcul de Q bulk:
-        sum_up   = f1*a1*Eapwlreac + f2*a2*Eapwlprod;
-        sum_down = f1*a1+f2*a2;
+        sum_up    = f1*a1*Eapwlreac + f2*a2*Eapwlprod;
+        sum_down  = f1*a1+f2*a2;
         Eapwl_mix = sum_up/sum_down;
 
         // (4) Calcul de A bulk:
-        sum_down = f1*a1 + f2*a2;
+        sum_down     = f1*a1 + f2*a2;
         double Prod1 = pow(Apwlreac,(f1*a1/sum_down)) * pow(Apwlprod,(f2*a2/sum_down));
         double sum_n = f1*npwlreac/(npwlreac + 1.0) + f2*npwlprod/(npwlprod + 1.0);
         double Prod2 = pow(npwlreac/(npwlreac + 1.0),f1*a1*npwlreac/sum_down) * pow(npwlprod/(npwlprod+1.0),f2*a2*npwlprod/sum_down);
