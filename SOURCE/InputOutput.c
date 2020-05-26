@@ -1139,14 +1139,14 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
 
     // Phase diagrams
     if ( model->isPD == 1 ) {
-
+        
         printf("Loading phase_diagrams...\n");
         int pid;
-        model->num_PD = 3;
-
+        model->num_PD = 9;
+        
         // Allocate
         AllocatePhaseDiagrams( model );
-
+        
         /**** PHASE DIAGRAMS #00 - Mantle (Jenadi_stx.dat)  ****/
         pid                       = 0;         // Kaus & Connolly, 2005: Effect of mineral phase transitions on sedimentary basin subsidence and uplift
         if (pid > (model->num_PD-1) ) {
@@ -1160,7 +1160,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         model->PDMPmin[pid]       = 100e6/scaling->S;         // Minimum pressure           (MANTLE) [Pa]
         model->PDMPmax[pid]       = 15e9 /scaling->S;         // Maximum pressure           (MANTLE) [Pa]
         model->PDMrho[pid]        = ReadBin( "PHASE_DIAGRAMS/Hawaiian_Pyrolite_rho_bin.dat", model->PDMnT[pid], model->PDMnP[pid], scaling->rho);
-
+        
         /**** PHASE DIAGRAMS #00 - Mantle (Jenadi_stx_HR.dat)  ****/
         pid                       = 1;         // Kaus & Connolly, 2005: Effect of mineral phase transitions on sedimentary basin subsidence and uplift
         if (pid > (model->num_PD-1) ) {
@@ -1171,7 +1171,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         model->PDMnP[pid]         = 1500;                     // Resolution for pressure    (MANTLE) []
         model->PDMTmin[pid]       = 273.0/scaling->T;         // Minimum temperature        (MANTLE) [K]
         model->PDMTmax[pid]       = 2273.0/scaling->T;        // Maximum temperature        (MANTLE) [K]
-        model->PDMPmin[pid]       = 1e5/scaling->S;           // Minimum pressure           (MANTLE) [Pa]
+        model->PDMPmin[pid]       = 1e5/scaling->S;         // Minimum pressure           (MANTLE) [Pa]
         model->PDMPmax[pid]       = 25e9 /scaling->S;         // Maximum pressure           (MANTLE) [Pa]
         model->PDMrho[pid]        = ReadBin( "PHASE_DIAGRAMS/Hawaiian_Pyrolite_HR_rho_bin.dat", model->PDMnT[pid], model->PDMnP[pid], scaling->rho);
 
@@ -1189,6 +1189,90 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         model->PDMPmax[pid]       = 5.1e9 /scaling->S;        // Maximum pressure           (MANTLE) [Pa]
         model->PDMrho[pid]        = ReadBin( "PHASE_DIAGRAMS/MORB_H2Osat_rho_bin.dat", model->PDMnT[pid], model->PDMnP[pid], scaling->rho);
 
+        /**** PHASE DIAGRAMS #04 - Andesite (Andesite.dat)  ****/
+        pid                       = 3;  // Andesite
+        if (pid > (model->num_PD-1) ) {
+            printf ("One should increment 'model->num_PD' to allocate enough memory and store the database\n");
+            exit(5);
+        }
+        model->PDMnT[pid]         = 1249;                     // Resolution for temperature (MANTLE) []
+        model->PDMnP[pid]         = 1249;                     // Resolution for pressure    (MANTLE) []
+        model->PDMTmin[pid]       = 373.0/scaling->T;         // Minimum temperature        (MANTLE) [K]
+        model->PDMTmax[pid]       = 1373.0/scaling->T;        // Maximum temperature        (MANTLE) [K]
+        model->PDMPmin[pid]       = 10.13e6/scaling->S;         // Minimum pressure           (MANTLE) [Pa]
+        model->PDMPmax[pid]       = 5.5816e9 /scaling->S;        // Maximum pressure           (MANTLE) [Pa]
+        model->PDMrho[pid]        = ReadBin( "PHASE_DIAGRAMS/Andesite.dat", model->PDMnT[pid], model->PDMnP[pid], scaling->rho);
+
+        /**** PHASE DIAGRAMS #05 - Hydrated Peridotite (Hydrated_Pdt.dat)  ****/
+        pid                       = 4;  // Hydrated peridotite
+        if (pid > (model->num_PD-1) ) {
+            printf ("One should increment 'model->num_PD' to allocate enough memory and store the database\n");
+            exit(5);
+        }
+        model->PDMnT[pid]         = 793;                     // Resolution for temperature (MANTLE) []
+        model->PDMnP[pid]         = 793;                     // Resolution for pressure    (MANTLE) []
+        model->PDMTmin[pid]       = 373.0/scaling->T;         // Minimum temperature        (MANTLE) [K]
+        model->PDMTmax[pid]       = 1373.0/scaling->T;        // Maximum temperature        (MANTLE) [K]
+        model->PDMPmin[pid]       = 10.13e6/scaling->S;         // Minimum pressure           (MANTLE) [Pa]
+        model->PDMPmax[pid]       = 5.5816e9 /scaling->S;        // Maximum pressure           (MANTLE) [Pa]
+        model->PDMrho[pid]        = ReadBin( "PHASE_DIAGRAMS/Hydrated_Pdt.dat", model->PDMnT[pid], model->PDMnP[pid], scaling->rho);
+
+        /**** PHASE DIAGRAMS #06 - MORB (MORB.dat)  ****/
+        pid                       = 5;  // MORB
+        if (pid > (model->num_PD-1) ) {
+            printf ("One should increment 'model->num_PD' to allocate enough memory and store the database\n");
+            exit(5);
+        }
+        model->PDMnT[pid]         = 1249;                     // Resolution for temperature (MANTLE) []
+        model->PDMnP[pid]         = 1249;                     // Resolution for pressure    (MANTLE) []
+        model->PDMTmin[pid]       = 373.0/scaling->T;         // Minimum temperature        (MANTLE) [K]
+        model->PDMTmax[pid]       = 1373.0/scaling->T;        // Maximum temperature        (MANTLE) [K]
+        model->PDMPmin[pid]       = 10.13e6/scaling->S;         // Minimum pressure           (MANTLE) [Pa]
+        model->PDMPmax[pid]       = 5.5816e9 /scaling->S;        // Maximum pressure           (MANTLE) [Pa]
+        model->PDMrho[pid]        = ReadBin( "PHASE_DIAGRAMS/MORB.dat", model->PDMnT[pid], model->PDMnP[pid], scaling->rho);
+
+        /**** PHASE DIAGRAMS #07 - Pelite (Pelite.dat)  ****/
+        pid                       = 6;  // Pelite
+        if (pid > (model->num_PD-1) ) {
+            printf ("One should increment 'model->num_PD' to allocate enough memory and store the database\n");
+            exit(5);
+        }
+        model->PDMnT[pid]         = 1249;                     // Resolution for temperature (MANTLE) []
+        model->PDMnP[pid]         = 1249;                     // Resolution for pressure    (MANTLE) []
+        model->PDMTmin[pid]       = 373.0/scaling->T;         // Minimum temperature        (MANTLE) [K]
+        model->PDMTmax[pid]       = 1373.0/scaling->T;        // Maximum temperature        (MANTLE) [K]
+        model->PDMPmin[pid]       = 10.13e6/scaling->S;         // Minimum pressure           (MANTLE) [Pa]
+        model->PDMPmax[pid]       = 5.5816e9 /scaling->S;        // Maximum pressure           (MANTLE) [Pa]
+        model->PDMrho[pid]        = ReadBin( "PHASE_DIAGRAMS/Pelite.dat", model->PDMnT[pid], model->PDMnP[pid], scaling->rho);
+
+        /**** PHASE DIAGRAMS #08 - Rhyolite (Rhyolite.dat)  ****/
+        pid                       = 7;  // Rhyolite
+        if (pid > (model->num_PD-1) ) {
+            printf ("One should increment 'model->num_PD' to allocate enough memory and store the database\n");
+            exit(5);
+        }
+        model->PDMnT[pid]         = 1249;                     // Resolution for temperature (MANTLE) []
+        model->PDMnP[pid]         = 1249;                     // Resolution for pressure    (MANTLE) []
+        model->PDMTmin[pid]       = 373.0/scaling->T;         // Minimum temperature        (MANTLE) [K]
+        model->PDMTmax[pid]       = 1373.0/scaling->T;        // Maximum temperature        (MANTLE) [K]
+        model->PDMPmin[pid]       = 10.13e6/scaling->S;         // Minimum pressure           (MANTLE) [Pa]
+        model->PDMPmax[pid]       = 5.5816e9 /scaling->S;        // Maximum pressure           (MANTLE) [Pa]
+        model->PDMrho[pid]        = ReadBin( "PHASE_DIAGRAMS/Rhyolite.dat", model->PDMnT[pid], model->PDMnP[pid], scaling->rho);
+
+        /**** PHASE DIAGRAMS #09 - Serpentinite (Serpentinite.dat)  ****/
+        pid                       = 8;  // Serpentinite
+        if (pid > (model->num_PD-1) ) {
+            printf ("One should increment 'model->num_PD' to allocate enough memory and store the database\n");
+            exit(5);
+        }
+        model->PDMnT[pid]         = 793;                     // Resolution for temperature (MANTLE) []
+        model->PDMnP[pid]         = 793;                     // Resolution for pressure    (MANTLE) []
+        model->PDMTmin[pid]       = 373.0/scaling->T;         // Minimum temperature        (MANTLE) [K]
+        model->PDMTmax[pid]       = 1373.0/scaling->T;        // Maximum temperature        (MANTLE) [K]
+        model->PDMPmin[pid]       = 10.13e6/scaling->S;         // Minimum pressure           (MANTLE) [Pa]
+        model->PDMPmax[pid]       = 5.5816e9 /scaling->S;        // Maximum pressure           (MANTLE) [Pa]
+        model->PDMrho[pid]        = ReadBin( "PHASE_DIAGRAMS/Serpentinite.dat", model->PDMnT[pid], model->PDMnP[pid], scaling->rho);
+        
     }
 
     //------------------------------------------------------------------------------------------------------------------------------//
@@ -1273,6 +1357,7 @@ void ScaleMe( scale* scale) {
 double* ReadBin( char A_name[], int nx, int ny, double scale ){
     double *A;
     char* bname; size_t nb_elems = nx*ny; FILE* fid; asprintf(&bname, "%s", A_name);
+    
     A = malloc((nb_elems)*sizeof(double));
     fid=fopen(bname, "rb"); // Open file
     if (!fid){

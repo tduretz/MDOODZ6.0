@@ -137,9 +137,9 @@ void AllocatePhaseDiagrams( params* model ) {
 
 void FreePhaseDiagrams( params* model  ) {
     int k;
-
+    
     for (k=0; k<model->num_PD; k++) {
-        DoodzFree( model->PDMrho );
+        DoodzFree( model->PDMrho[k] );
     }
     DoodzFree( model->PDMrho );
 

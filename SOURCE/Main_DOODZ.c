@@ -394,8 +394,8 @@ int main( int nargs, char *args[] ) {
         SetGridCoordinates( &mesh, &model, model.Nx, model.Nz ); // Overwrite previous grid
     }
     
-    // Evaluate rhs functions
-    EvaluateRHS( &mesh, model, scaling, materials.rho[0] );
+//    // Evaluate rhs functions
+//    EvaluateRHS( &mesh, model, scaling, materials.rho[0] );
     
     //------------------------------------------------------------------------------------------------------------------------------//
     //------------------------------------------------------------------------------------------------------------------------------//
