@@ -1407,15 +1407,23 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
 
     //------------------------------------------------------------------------//
     // Reaction stuff: 1. Update reaction progress
-    if ( ProgressiveReaction == 1 ) {
-        *ttrans = UpdateReactionProgress ( ttrans0, (P0+model->PrBG), (P+model->PrBG), materials->treac[phase], materials->Preac[phase], dt , scaling);
-        *Xreac=0.5*(1.0 + erf((*ttrans-moy)/sig/sqrt(2.0)));
-    }
+//    if ( ProgressiveReaction == 1 ) {
+//        *ttrans = UpdateReactionProgress ( ttrans0, (P0+model->PrBG), (P+model->PrBG), materials->treac[phase], materials->Preac[phase], dt , scaling);
+//        *Xreac=0.5*(1.0 + erf((*ttrans-moy)/sig/sqrt(2.0)));
+//    }
+//    
+//    if (isnan(*Xreac)) printf("%2.2e %2.2e %2.2e %2.2e\n", *ttrans, 0.5*(1.0 + erf((*ttrans-moy)/sig/sqrt(2.0))), sig, moy );
     
-    if (isnan(*Xreac)) printf("%2.2e %2.2e %2.2e %2.2e\n", *ttrans, 0.5*(1.0 + erf((*ttrans-moy)/sig/sqrt(2.0))), sig, moy );
-
-
-
+    double dPr = 100.0e6/scaling->S;
+    double Xreac0 = ttrans0;
+    
+    *Xreac = 0.5 *erfc( -((P+model->PrBG)-materials->Preac[phase])/dPr);
+    
+    if (*Xreac<= Xreac0){
+        *ttrans = Xreac0;
+    }
+    *ttrans = *Xreac;
+    
     // Reaction stuff: 2. Mixture rheology (Huet et al., 2014)
     if (  ProgressiveReaction == 1 || StaticReaction == 1 ) {
         npwlreac  = materials->npwl[phase];

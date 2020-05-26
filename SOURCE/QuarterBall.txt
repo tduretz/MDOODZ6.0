@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00200
+istep = 00010
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -10,15 +10,15 @@ writer_debug    = 0
 writer_energies = 0
 
 /**** SCALES ****/
-eta = 1e25
+eta = 1e26
 L   = 2.0
-V   = 1.0e-13
+V   = 1.0e-12
 T   = 700
 
 /**** SPACE-TIME ****/
-Nx      = 201
-Nz      = 201
-Nt      = 200
+Nx      = 101
+Nz      = 101
+Nt      = 10
 xmin    = -1.000000
 zmin    = -1.000000
 xmax    =  1.000000
@@ -39,7 +39,7 @@ eta_avg           = 1
 num_deriv         = 0
 StressRotation    = 2
 safe_mode         = 1
-nstagmax          = 3
+nstagmax          = 5
 
 /**** SWITCHES ****/
 ProgReac        = 1            / !!!!
@@ -82,7 +82,7 @@ mu   = 1.0e10
 Cv   = 1050.0
 k    = 2.3
 Qr   = 0.0
-C    = 50.0e6
+C    = 50.0e60
 phi  = 30.0
 eta_vp = 3.5355e13
 n_vp   = 2.0
@@ -140,7 +140,7 @@ mu   = 1.0e10
 Cv   = 1050.0
 k    = 2.3
 Qr   = 0.0
-C    = 50.0e6
+C    = 50.0e60
 phi  = 30.0
 eta_vp = 3.5355e13
 n_vp   = 2.0
@@ -168,7 +168,7 @@ mu   = 1.0e10
 Cv   = 1050.0
 k    = 2.3
 Qr   = 0.0
-C    = 50.0e6
+C    = 50.0e60
 phi  = 30.0
 eta_vp = 3.5355e13
 n_vp   = 2.0
@@ -224,7 +224,7 @@ mu   = 1.0e10
 Cv   = 1050.0
 k    = 2.3
 Qr   = 0.0
-C    = 50.0e6
+C    = 50.0e60
 phi  = 30.0
 eta_vp = 3.5355e13
 n_vp   = 2.0
@@ -252,7 +252,7 @@ mu   = 1.0e10
 Cv   = 1050.0
 k    = 2.3
 Qr   = 0.0
-C    = 50.0e6
+C    = 50.0e60
 phi  = 30.0
 eta_vp = 6.7860e14
 n_vp   = 2.0
@@ -294,7 +294,7 @@ min_part_cell = 16
 Newton  = 1
 nit_max = 20
 rel_tol_KSP = 5e-4
-tol_u   = 1e-12
-tol_p   = 1e-12
+tol_u   = 1e-10
+tol_p   = 1e-10
 mineta  = 1e10
 maxeta  = 1e30

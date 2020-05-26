@@ -699,8 +699,8 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
     int k, l, c;
     double minVx=0.0, minVz=0.0, maxVx=0.0, maxVz=0.0, dmin, dtc=0.0, vmax, vmin;
     double C = model->Courant;
-    double time_reaction = 3.1558e11;
-    int reaction_in_progress;
+//    double time_reaction = 3.1558e11;
+//    int reaction_in_progress;
     
     model->dt0 = model->dt;
 
@@ -757,28 +757,28 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
         }
 
 
-        // REACTION DT:
-        // is there a reaction somewhere?
-        reaction_in_progress = 0;
-        for (k=0; k<model->Nx; k++) {
-            for (l=0; l<model->Nz; l++) {
-                c = k + l*(model->Nx);
-                if (mesh->ttrans0_s[c] > 0.0 && mesh->ttrans0_s[c]< time_reaction) reaction_in_progress += 1;
-            }
-        }
-
-        if (reaction_in_progress > 0){
-        printf("Reaction in progress in %d mesh(es)\n", reaction_in_progress);
-        if (model->dt>=0.1*time_reaction/scaling.t){
-            model->dt = 0.1*time_reaction/scaling.t;
-            printf("!!! => Timestep potentially limited by Chemical Reaction Time\n");
-            printf("!! model dt = 0.1 x Reaction Time = %2.2e\n", model->dt*scaling.t);
-            }
-        }
-        else{
-            printf("No Reaction in progress \n");
-            printf("No timestep limitation due to Chemical Reaction \n");
-        }
+//        // REACTION DT:
+//        // is there a reaction somewhere?
+//        reaction_in_progress = 0;
+//        for (k=0; k<model->Nx; k++) {
+//            for (l=0; l<model->Nz; l++) {
+//                c = k + l*(model->Nx);
+//                if (mesh->ttrans0_s[c] > 0.0 && mesh->ttrans0_s[c]< time_reaction) reaction_in_progress += 1;
+//            }
+//        }
+//
+//        if (reaction_in_progress > 0){
+//        printf("Reaction in progress in %d mesh(es)\n", reaction_in_progress);
+//        if (model->dt>=0.1*time_reaction/scaling.t){
+//            model->dt = 0.1*time_reaction/scaling.t;
+//            printf("!!! => Timestep potentially limited by Chemical Reaction Time\n");
+//            printf("!! model dt = 0.1 x Reaction Time = %2.2e\n", model->dt*scaling.t);
+//            }
+//        }
+//        else{
+//            printf("No Reaction in progress \n");
+//            printf("No timestep limitation due to Chemical Reaction \n");
+//        }
 
         // If there is no motion, then the timestep becomes huge: cut off the motion.
         if( model->dt>1.0e30 || vmax<1.0e-30) {
