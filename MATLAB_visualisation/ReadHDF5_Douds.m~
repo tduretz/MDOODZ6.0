@@ -22,9 +22,9 @@ path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
 cd(path)
 
 % File
-istart = 1;
+istart = 0;
 ijump  = 10;
-iend   = 1;
+iend   = 100;
 
 %--------------------------------------------------
 % what do you want to plot:
@@ -36,7 +36,7 @@ rho_plot        = 0;
 phase_on_grid   = 0;
 phase_temp2     = 0;
 vel_plot        = 0;
-vel_vectors     = 0;
+vel_vectors     = 1;
 vel_divergence  = 0;
 pre_plot        = 0;
 dyna_pre        = 0;

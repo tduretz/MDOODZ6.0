@@ -985,7 +985,10 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     // Setup dependant
     model->EpsBG           = ReadDou2( fin, "EpsBG",           0.0 ) / scaling->E;
     model->PrBG            = ReadDou2( fin, "PrBG",            0.0 ) / scaling->S;
-    // Surface processes
+    // Anisotropy
+    model->director_angle  = ReadDou2( fin, "director_angle",  0.0 )  * M_PI/ 180.0;
+    model->aniso_factor    = ReadDou2( fin, "aniso_factor",    1.0 );
+        // Surface processes
     model->surf_diff       = ReadDou2( fin, "surf_diff",       0.0 ) / (pow(scaling->L,2.0)/scaling->t);
     model->surf_ised1      = ReadInt2( fin, "surf_ised1",      0.0 );
     model->surf_ised2      = ReadInt2( fin, "surf_ised2",      0.0 );
