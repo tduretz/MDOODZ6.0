@@ -668,22 +668,37 @@ int main( int nargs, char *args[] ) {
                 printf("*** Non-linear it. %02d of %02d (step = %05d) ***\n", Nmodel.nit, Nmodel.nit_max, model.step);
                 printf("**********************************************\n");
                 
-                int aniso = 0;
-                // Non-Linearity
-                if  (model.aniso==1) {
-                    aniso = 1;
-                    model.aniso = 0;
-                }
-                
-                //            if ( model.compressible > 0 ) {
-                //                UpdateDensity( &mesh, &particles, &materials, &model, &scaling );
-                //            }
-
                 UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
-                if  (aniso==1) {
-                    model.aniso=1;
-                }
                 
+                // If iteration > 0 ---> Evaluate non-linear residual and test
+                printf("---- Non-linear residual ----\n");
+                RheologicalOperators( &mesh, &model, &scaling, 0 );
+                NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
+                if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
+                if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
+                
+                MinMaxArrayTag( mesh.exxd,      scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "exxd     ", mesh.BCp.type );
+                MinMaxArrayTag( mesh.ezzd,      scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "ezzd     ", mesh.BCp.type );
+                MinMaxArrayTag( mesh.exz,       scaling.E, (mesh.Nx-0)*(mesh.Nz-0), "exz      ", mesh.BCg.type );
+                MinMaxArrayTag( mesh.sxxd,      scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "sxxd     ", mesh.BCp.type );
+                MinMaxArrayTag( mesh.szzd,      scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "szzd     ", mesh.BCp.type );
+                MinMaxArrayTag( mesh.sxz,       scaling.S, (mesh.Nx-0)*(mesh.Nz-0), "sxz      ", mesh.BCg.type );
+                
+                JacobA.neq = StokesA.neq ;
+                ArrayEqualArray( JacobA.F, StokesA.F, StokesA.neq );
+                ArrayEqualArray( JacobC.F, StokesC.F, StokesC.neq );
+                MinMaxArray(JacobA.F, 1, JacobA.neq, "Fu" );
+                MinMaxArray(JacobA.F, 1, JacobA.neq, "Fp" );
+                
+//                MinMaxArrayTag( mesh.D11_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "D11_n     ", mesh.BCp.type );
+//                MinMaxArrayTag( mesh.D12_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "D12_n     ", mesh.BCp.type );
+//                MinMaxArrayTag( mesh.D13_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "D13_n     ", mesh.BCp.type );
+//                MinMaxArrayTag( mesh.D21_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "D21_n     ", mesh.BCp.type );
+//                MinMaxArrayTag( mesh.D22_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "D22_n     ", mesh.BCp.type );
+//                MinMaxArrayTag( mesh.D23_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "D23_n     ", mesh.BCp.type );
+//                MinMaxArrayTag( mesh.D31_s,      scaling.eta, (mesh.Nx-0)*(mesh.Nz-0), "D31_s     ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.D32_s,      scaling.eta, (mesh.Nx-0)*(mesh.Nz-0), "D32_s     ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.D33_s,      scaling.eta, (mesh.Nx-0)*(mesh.Nz-0), "D33_s     ", mesh.BCg.type );
 //                Print2DArrayDouble(mesh.u_in, mesh.Nx, mesh.Nz+1, 1.0);
                 
                 if ( model.write_debug == 1 ) {
@@ -725,11 +740,11 @@ int main( int nargs, char *args[] ) {
                     ScaleMatrix( &StokesA, &StokesB, &StokesC, &StokesD );
                 }
                 
-                // If iteration > 0 ---> Evaluate non-linear residual and test
-                printf("---- Non-linear residual ----\n");
-                RheologicalOperators( &mesh, &model, &scaling, 0 );
-                if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
-                if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
+//                // If iteration > 0 ---> Evaluate non-linear residual and test
+//                printf("---- Non-linear residual ----\n");
+//                RheologicalOperators( &mesh, &model, &scaling, 0 );
+//                if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
+//                if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
                 
                 //                    model.aniso=0;
                 //                    if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
@@ -805,7 +820,17 @@ int main( int nargs, char *args[] ) {
                     
                     if ( Nmodel.nit == 0  ) {
                         printf("---- Direct solve residual ----\n");
+                        StrainRateComponents( &mesh, scaling, &model );
                         RheologicalOperators( &mesh, &model, &scaling, 0 );
+                        NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
+
+//                        printf("szz\n");
+//                        Print2DArrayDouble(mesh.szzd, mesh.Nx-1, mesh.Nz-1, 1.0);
+//                         printf("p\n");
+//                        Print2DArrayDouble(mesh.p_in, mesh.Nx-1, mesh.Nz-1, 1.0);
+//                         printf("sxz\n");
+//                        Print2DArrayDouble(mesh.sxz , mesh.Nx-0, mesh.Nz-0, 1.0);
+                        
                         if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
                         if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
                         printf("---- Direct solve residual ----\n");
@@ -874,10 +899,12 @@ int main( int nargs, char *args[] ) {
             MinMaxArray( mesh.div_u, scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "  div(V)" );
             MinMaxArray( mesh.Qrho,  scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "  Qrho  " );
             
-            int i;
             
             printf("--------------------------------------------------------------\n");
-            for (i=0; i<=Nmodel.nit; i++) {
+            int i, nit;
+            if (Nmodel.nit>=Nmodel.nit_max)  nit = Nmodel.nit_max;
+            if (Nmodel.nit<Nmodel.nit_max)  nit = Nmodel.nit;
+            for (i=0; i<=nit; i++) {
                 printf("Non-Linear it. %02d --- |Fx| = %2.2e --- |Fy| = %2.2e\n", i, rx_array[i],  rz_array[i]);
                 if (i == Nmodel.nit_max && model.safe_mode == 1) {
                     printf("Exit: Max iteration reached: Nmodel.nit_max = %02d! Check what you wanna do now...\n",Nmodel.nit_max);

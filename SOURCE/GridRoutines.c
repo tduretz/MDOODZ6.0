@@ -106,7 +106,16 @@ void ApplyBC( grid* mesh, params* model ) {
             mesh->u_in[j*nx + nx-1] = mesh->u_in[j*nx];
         }
     }
+    
+//    printf("Vx\n");
+//    Print2DArrayDouble( mesh->u_in, nx, nzvx, 1.0 );
+//    printf("Vz\n");
+//    Print2DArrayDouble( mesh->v_in, nxvz, nz, 1.0 );
+//    printf("p\n");
+//    Print2DArrayDouble( mesh->p_in, nx-1, nz-1, 1.0 );
 }
+
+
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
@@ -117,7 +126,6 @@ void UpdateNonLinearity( grid* mesh, markers* particles, markers* topo_chain, su
     // Strain rate component evaluation
     StrainRateComponents( mesh, scaling, model );
 //    MinMaxArrayTag( mesh->exxd,      scaling.E, (mesh->Nx-1)*(mesh->Nz-1),     "exx     ", mesh->BCp.type );
-
     
     //-----------------------------------------------//
     
@@ -132,6 +140,7 @@ void UpdateNonLinearity( grid* mesh, markers* particles, markers* topo_chain, su
     
     // Fill up the rheological matrices arrays
     RheologicalOperators( mesh, model, &scaling, 0 );
+    
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/

@@ -23,7 +23,7 @@ cd(path)
 
 % File
 istart = 1;
-ijump  = 10;
+ijump  = 1;
 iend   = 1;
 
 %--------------------------------------------------
@@ -35,7 +35,7 @@ eta_plot        = 0;
 rho_plot        = 0;
 phase_on_grid   = 0;
 phase_temp2     = 0;
-vel_plot        = 0;
+vel_plot        = 1;
 vel_vectors     = 0;
 vel_divergence  = 0;
 pre_plot        = 0;
@@ -74,7 +74,7 @@ emergency_benoit = 0;
 fstrain          = 0;
 shear_heating    = 0;
 princi_stress    = 0;
-director_vector  = 1;
+director_vector  = 0;
 
 
 % Visualisation options
@@ -780,13 +780,14 @@ for istep=istart:ijump:iend
             %         colormap('gray')
             
             Vx = VxA(2:end-1,:);
-            imagesc(xg_plot, zvx_plot(2:end-1), Vx*1000*3600*24*365);
+%             imagesc(xg_plot, zvx_plot(2:end-1), Vx*1000*3600*24*365);
+            imagesc(xg_plot, zvx_plot(2:end-1), Vx);
             shading flat,axis xy image, colorbar;
             xlabel(xLabel), ylabel(zLabel);
             title(['Vx at' TimeLabel, ' min = ', num2str(min(Vx(:))), ' max = ', num2str(max(Vx(:)))])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             if exist('minVx', 'var') caxis([minVx maxVx]); end
-            caxis([-10 10])
+%             caxis([-10 10])
 
             
             if ( H>L )
@@ -795,13 +796,15 @@ for istep=istart:ijump:iend
                 subplot(2,1,2)
             end
             Vz = VzA(:,2:end-1);
-            imagesc(xvz_plot(2:end-1),zg_plot,Vz*1000*3600*24*365);
+%             imagesc(xvz_plot(2:end-1),zg_plot,Vz*1000*3600*24*365);
+            imagesc(xvz_plot(2:end-1),zg_plot,Vz);
+
             shading flat,axis xy image, colorbar;
             xlabel(xLabel), ylabel(zLabel);
             title(['Vz at' TimeLabel, ' min = ', num2str(min(Vz(:))), ' max = ', num2str(max(Vz(:)))])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             if exist('minVz', 'var') caxis([minVz maxVz]); end
-            caxis([-2.5 2.5])
+%             caxis([-2.5 2.5])
             
             if printfig == 1
                 print([path, './Fig_Velocity/Fig_Velocity', num2str(istep,'%05d'),file_suffix], format, res)

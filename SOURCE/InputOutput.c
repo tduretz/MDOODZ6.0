@@ -981,6 +981,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->polar           = ReadInt2( fin, "polar",          0 );
     model->ProgReac        = ReadInt2( fin, "ProgReac",       0 );
     if (model->shear_style==1) model->isperiodic_x  = 1;
+    if (model->shear_style==0) model->isperiodic_x  = 0;
 
     // Setup dependant
     model->EpsBG           = ReadDou2( fin, "EpsBG",           0.0 ) / scaling->E;

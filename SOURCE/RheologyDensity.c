@@ -83,8 +83,8 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
         for (k=0; k<Ncx*Ncz; k++) {
 
             if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
-                mesh->D11_n[k] = 2*mesh->eta_n[k];
-                mesh->D22_n[k] = 2*mesh->eta_n[k];
+                mesh->D11_n[k] = 2.0*mesh->eta_n[k];
+                mesh->D22_n[k] = 2.0*mesh->eta_n[k];
             }
             else {
                 mesh->D11_n[k] = 0.0;
@@ -206,18 +206,31 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
             
             if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
                 // See Anisotropy_v2.ipynb
-                deta =  mesh->eta_n[k] - mesh->eta_n[k] / model->aniso_factor;
-                d0   =  pow(nx, 2.0)*pow(nz, 2.0);
+                deta =  (mesh->eta_n[k] - mesh->eta_n[k] / model->aniso_factor);
+                d0   = 2.0*pow(nx, 2.0)*pow(nz, 2.0);
                 d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
                 mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*deta*d0;
                 mesh->D12_n[k] =                      2.0*deta*d0;
-                mesh->D13_n[k] =                      2.0*deta*d1 / 2.0;
+                mesh->D13_n[k] =                      2.0*deta*d1;
                 mesh->D14_n[k] =                      0.0;
-                
+
                 mesh->D21_n[k] =                      2.0*deta*d0;
                 mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 2.0*deta*d0;
-                mesh->D23_n[k] =                     -2.0*deta*d1 / 2.0;
+                mesh->D23_n[k] =                     -2.0*deta*d1;
                 mesh->D24_n[k] =                      0.0;
+                
+//                mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 4.0*deta*pow(nx, 2.0)*pow(nz, 2.0);
+//                mesh->D12_n[k] =                      4.0*deta*pow(nx, 2.0)*pow(nz, 2.0);
+//                mesh->D13_n[k] =                      1.0*deta*(pow(nx, 3.0)*nz - pow(nx, 4.0));
+//                mesh->D14_n[k] =                      0.0;
+//
+//                mesh->D21_n[k] =                      4.0*deta*pow(nx, 2.0)*pow(nz, 2.0);
+//                mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 4.0*deta*pow(nx, 2.0)*pow(nz, 2.0);
+//                mesh->D23_n[k] =                      1.0*deta*(-pow(nx, 3.0)*nz + pow(nx, 4.0));
+//                mesh->D24_n[k] =                      0.0;
+                
+//                printf("D23=%2.2e\n",mesh->D23_n[k]);
+                
             }
             else {
                 mesh->D11_n[k] = 0.0;
@@ -232,6 +245,8 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
             }
         }
         
+//        int k, l;
+        
         // Loop on cell vertices
 #pragma omp parallel for shared( mesh )  private ( nx, nz ) private ( deta, d0, d1 )
         for (k=0; k<Nx*Nz; k++) {
@@ -240,15 +255,30 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
             nx = mesh->nx_s[k];
             nz = mesh->nz_s[k];
             
+//            k      = mesh->kp[k];
+//            l      = mesh->lp[k];
+            
             if ( mesh->BCg.type[k] != 30 ) {
                 // See Anisotropy_v2.ipynb
-                deta =  mesh->eta_s[k] - mesh->eta_s[k] / model->aniso_factor;
-                d0   =  pow(nx, 2.0)*pow(nz, 2.0);
+                deta =  (mesh->eta_s[k] - mesh->eta_s[k] / model->aniso_factor);
+                d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
                 d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
+
                 mesh->D31_s[k] =                  2.0*deta*d1;
                 mesh->D32_s[k] =                 -2.0*deta*d1;
-                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*deta*(d0 - 0.5) / 2.0;
+                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*deta*(d0 - 0.5);
                 mesh->D34_s[k] =                  0.0;
+//                mesh->D31_s[k] =                  2.0*deta*(pow(nx, 3.0)*nz - pow(nx, 4.0));
+//                mesh->D32_s[k] =                  2.0*deta*(-pow(nx, 3.0)*nz + pow(nx, 4.0));
+//                mesh->D33_s[k] = mesh->eta_s[k] + deta*(2.0*pow(nx, 2.0)*pow(nz, 2.0) - 0.5);
+//                mesh->D34_s[k] =                  0.0;
+                
+//                if (k==0 || l == 0) {
+//                    mesh->D31_s[k] = 0.0;
+//                    mesh->D32_s[k] = 0.0;
+//                    mesh->D33_s[k] = mesh->eta_s[k];
+//                }
+                
             }
             else {
                 mesh->D31_s[k] = 0.0;
@@ -1973,8 +2003,9 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
             // ACHTUNG!!!! THIS IS HARD-CODED
             // Anisotropy
             if (model->aniso==1) {
-                mesh->sxxd[c0] =  mesh->D11_n[c0]*mesh->exxd[c0] + mesh->D12_n[c0]*mesh->ezzd[c0] + mesh->D13_n[c0]*mesh->exz_n[c0];
-                mesh->szzd[c0] =  mesh->D21_n[c0]*mesh->exxd[c0] + mesh->D22_n[c0]*mesh->ezzd[c0] + mesh->D23_n[c0]*mesh->exz_n[c0];
+                mesh->sxxd[c0] =  mesh->D11_n[c0]*mesh->exxd[c0] + mesh->D12_n[c0]*mesh->ezzd[c0] +  2.0*mesh->D13_n[c0]*mesh->exz_n[c0];
+                mesh->szzd[c0] =  mesh->D21_n[c0]*mesh->exxd[c0] + mesh->D22_n[c0]*mesh->ezzd[c0] +  2.0*mesh->D23_n[c0]*mesh->exz_n[c0];
+//                printf("%2.2e \n", mesh->sxxd[c0]*scaling->S);
             }
 //            printf("eta_n = %2.2e\n", mesh->eta_n[c0]*scaling->eta);
 
@@ -2114,7 +2145,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
             // Anisotropy
             if (model->aniso==1) {
 //                printf("Stress computed from anisotropy");
-                mesh->sxz[c1] =  mesh->D31_s[c1]*mesh->exxd_s[c1] + mesh->D32_s[c1]*mesh->ezzd_s[c1] + mesh->D33_s[c1]*mesh->exz[c1];
+                mesh->sxz[c1] =  mesh->D31_s[c1]*mesh->exxd_s[c1] + mesh->D32_s[c1]*mesh->ezzd_s[c1] + 2.0*mesh->D33_s[c1]*mesh->exz[c1];
             }
 //            if (c1==546) printf("eta_s = %2.2e index = %d\n", etaVE*scaling->eta, c1);
         }

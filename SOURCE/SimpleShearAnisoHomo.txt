@@ -1,12 +1,12 @@
 **** RESTART ****/
-istep =00300
+istep =00001
 irestart = 0
 
 /**** OUTPUT FILES ****/
 writer = 1
 writer_step = 1
 writer_markers = 0
-writer_debug   = 0
+writer_debug   = 1
 
 /**** INPUT FILE FOR PARTICLES ****/
 input_file = setup_r201x201_F40_P20_B20.bin
@@ -18,14 +18,14 @@ V   = 1e0
 T   = 1
  
 /**** SPACE-TIME ****/
-Nx   = 101
-Nz   = 101
-Nt   = 300
+Nx   = 11
+Nz   = 11
+Nt   = 1
 xmin = -0.5000000
 zmin = -0.5000000
 xmax =  0.5000000
 zmax =  0.5000000 
-dt   = 1.2623e+11
+dt   = 1e-2
 Courant      = 0.5
 lsolver      = 0
 penalty      = 1e5
@@ -34,7 +34,7 @@ diag_scaling = 1
 /**** SWITCHES ****/
 aniso           = 1
 ismechanical    = 1
-dt_constant     = 0
+dt_constant     = 1
 RK              = 4
 isperiodic_x    = 1
 ispureshear_ALE = 0
@@ -51,13 +51,14 @@ shear_heat      = 0
 adiab_heat      = 0
 isPl_soft       = 0
 surf_processes  = 0
+shear_style     = 0
 
 /**** ANISOTROPY ****/
-director_angle = 45.0
+director_angle = 35.0
 aniso_factor   = 10.0
  
 /**** SETUP DEPENDANT ****/
-EpsBG           = 1e1 /Background strain rate
+EpsBG           = 1e0 /Background strain rate
 PrBG            = 0
 surf_diff       = 0
 user0           = 0
@@ -93,7 +94,7 @@ linv = 0
 gbsv = 0
 expv = 0
 gsel = 0
-eta0 = 1e1
+eta0 = 1e0
 npwl = 1
 Qpwl = 0
 
@@ -115,7 +116,7 @@ linv = 0
 gbsv = 0
 expv = 0
 gsel = 0
-eta0 = 1e1
+eta0 = 1e0
 npwl = 1
 Qpwl = 0
 
@@ -137,7 +138,7 @@ linv = 0
 gbsv = 0
 expv = 0
 gsel = 0
-eta0 = 1e1
+eta0 = 1e0
 npwl = 1
 Qpwl = 0
 
@@ -159,7 +160,7 @@ linv = 0
 gbsv = 0
 expv = 0
 gsel = 0
-eta0 = 1e1
+eta0 = 1e0
 npwl = 1
 Qpwl = 0
 

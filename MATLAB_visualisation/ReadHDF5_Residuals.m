@@ -2,7 +2,7 @@ clear, close all
 
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
 
-istart = 0
+istart = 1
 ijump  = 1;
 iend   = istart;
 

@@ -22,16 +22,16 @@ path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
 cd(path)
 
 % File
-istart = 1;
+istart = 50;
 ijump  = 5;
-iend   = 1;
+iend   = 50;
 
 %--------------------------------------------------
 % what do you want to plot:
 %--------------------------------------------------
 stress_evol     = 1;
 director_vector = 1;
-fstrain         = 1;
+fstrain         = 0;
 
 
 % Visualisation options
@@ -527,8 +527,8 @@ for istep=istart:ijump:iend
             
             
             figure(91), hold on
-            plot(time/1e3/3600/365/24, mean(sxxd(:)), 'b.')
-            plot(time/1e3/3600/365/24, mean(sxzc(:)), 'r+')
+            plot(time, mean(sxxd(:)), 'b.')
+            plot(time, mean(sxzc(:)), 'r+')
            
             
             short(icount)  =  strain;

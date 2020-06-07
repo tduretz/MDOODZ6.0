@@ -6,7 +6,7 @@ irestart = 0
 writer = 1
 writer_step = 1
 writer_markers = 0
-writer_debug   = 1
+writer_debug   = 0
 
 /**** INPUT FILE FOR PARTICLES ****/
 input_file = setup_r201x201_F40_P20_B20.bin
@@ -51,15 +51,15 @@ shear_heat      = 0
 adiab_heat      = 0
 isPl_soft       = 0
 surf_processes  = 0
-shear_style     = 0 /0:pure shear --- 1: simple shear
+shear_style     = 1 /0:pure shear --- 1: simple shear
 
 /**** ANISOTROPY ****/
 pc_type        = 0
-director_angle = 46.0
+director_angle = 35
 aniso_factor   = 10.0
  
 /**** SETUP DEPENDANT ****/
-EpsBG           = 1e1 /Background strain rate
+EpsBG           = 1 /Background strain rate
 PrBG            = 0
 surf_diff       = 0
 user0           = 0
