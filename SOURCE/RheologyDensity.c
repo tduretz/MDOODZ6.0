@@ -696,16 +696,58 @@ void DeformationGradient ( grid mesh, scale scaling, params model, markers *part
     DoodzFree( pdvdx );
     DoodzFree( pdvdz );
 
-    printf("Updated deformation gradient tensor\n");
+    printf("-----> Deformation gradient tensor Updated\n");
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void FiniteStrainAspectRatio ( grid mesh, scale scaling, params model, markers *particles ) {
+void FiniteStrainAspectRatio ( grid *mesh, scale scaling, params model, markers *particles ) {
     
-    printf("Updated Finite strain aspect ratio\n");
+    int k, l, cp, cu, cv, Nx, Nz;
+    double *FS_AR, CGxx, CGxz, CGzx, CGzz;
+    double Tr, Det, U0xx, U0xz, U0zx, U0zz, s, t, e1, e2;
+    
+    Nx    = mesh->Nx;
+    Nz    = mesh->Nz;
+    FS_AR = DoodzCalloc (particles->Nb_part, sizeof(double));
+
+#pragma omp parallel for shared ( particles ) private ( k, CGxx, CGxz, CGzx, CGzz, Tr, Det, U0xx, U0xz, U0zx, U0zz, s, t, e1, e2  ) schedule( static )
+    for (k=0; k<particles->Nb_part; k++) {
+        
+        // Cauchy-Green
+        CGxx = particles->Fxx[k]*particles->Fxx[k] + particles->Fzx[k]*particles->Fzx[k];
+        CGxz = particles->Fxx[k]*particles->Fxz[k] + particles->Fzx[k]*particles->Fzz[k];
+        CGzx = particles->Fxx[k]*particles->Fxz[k] + particles->Fzx[k]*particles->Fzz[k];
+        CGzz = particles->Fxz[k]*particles->Fxz[k] + particles->Fzz[k]*particles->Fzz[k];
+        
+        // U0 = Sqrt(CG)
+        Tr  = CGxx + CGzz;
+        Det = CGxx*CGzz - CGxz*CGzx;
+        s   = sqrt(Det);
+        t   = sqrt(Tr + 2.0*s);
+        U0xx = 1/t*(CGxx + s);
+        U0xz = 1/t*CGxz;
+        U0zx = 1/t*CGzx;
+        U0zz = 1/t*(CGzz + s);
+        
+        // eigs(U0)
+        Tr   = U0xx + U0zz;
+        Det  = U0xx*U0zz - U0xz*U0zx;
+        e1   = Tr/2.0 + sqrt( Tr*Tr/4.0 - Det );
+        e2   = Tr/2.0 - sqrt( Tr*Tr/4.0 - Det );
+        
+        // aspect ratio
+        FS_AR[k] = e1/e2;
+    }
+    
+    Interp_P2C ( *particles, FS_AR, mesh, mesh->FS_AR_n, mesh->xg_coord, mesh->zg_coord, 1, 0 );
+    Interp_P2N ( *particles, FS_AR, mesh, mesh->FS_AR_s, mesh->xg_coord, mesh->zg_coord, 1, 0, &model );
+    
+    DoodzFree(FS_AR);
+    
+    printf("-----> Finite strain aspect ratio updated\n");
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -720,8 +762,6 @@ void AccumulatedStrain( grid* mesh, scale scaling, params model, markers* partic
 
     Nx = mesh->Nx;
     Nz = mesh->Nz;
-
-    printf("Accumulating strain\n");
 
     // Allocate
     //    exz_n           = DoodzMalloc(sizeof(double)*(Nx-1)*(Nz-1));
@@ -787,137 +827,9 @@ void AccumulatedStrain( grid* mesh, scale scaling, params model, markers* partic
     DoodzFree(strain_inc_lin);
     DoodzFree(strain_inc_gbs);
     DoodzFree(strain_inc_mark);
+    
+    printf("-----> Accumulated strain updated\n");
 }
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-//void RotateStresses( grid mesh, markers* particles, params model, scale *scaling ) {
-//
-//    int k, l, cp, cu, cv, Nx, Nz,type=0;
-//    double dx, dz;
-//    double angle, txx, tzz, txz;
-//    double sxxr, sxzr;
-//
-//    Nx = mesh.Nx;
-//    Nz = mesh.Nz;
-//    dx = mesh.dx;
-//    dz = mesh.dz;
-//
-//    if (type==0) {
-//        // JAUMANN RATE
-//
-//        // Stress correction
-//#pragma omp parallel for shared ( particles ) private ( angle, k, txx, tzz, txz ) firstprivate( model ) schedule( static )
-//        for(k=0; k<particles->Nb_part; k++) {
-//
-//            // Filter out particles that are inactive (out of the box)
-//            if (particles->phase[k] != -1) {
-//
-//                // Angle
-//                angle = model.dt*particles->om_p[k];
-//
-//                txx = particles->sxxd[k];
-//                tzz = particles->szzd[k];
-//                txz = particles->sxz[k];
-//
-//                particles->sxxd[k] = (txx*cos(angle) - txz*sin(angle))*cos(angle) - (txz*cos(angle) - tzz*sin(angle))*sin(angle);
-//                particles->szzd[k] = (txx*sin(angle) + txz*cos(angle))*sin(angle) + (txz*sin(angle) + tzz*cos(angle))*cos(angle);
-//                particles->sxz[k]  = (txx*cos(angle) - txz*sin(angle))*sin(angle) + (txz*cos(angle) - tzz*sin(angle))*cos(angle);
-//
-////                                // Re-belotte:
-////                                double sxxr =   ( cos(angle)*particles->sxxd[k] - sin(angle)*particles->sxz[k] ) * cos(angle) + ( particles->sxz[k]*cos(angle) +  sin(angle)*particles->sxxd[k])*sin(angle) ;
-////                                double sxzr = - ( cos(angle)*particles->sxxd[k] - sin(angle)*particles->sxz[k] ) * sin(angle) + ( particles->sxz[k]*cos(angle) +  sin(angle)*particles->sxxd[k])*cos(angle) ;
-////
-////                                particles->sxxd[k] = sxxr;
-////                                particles->szzd[k] =-sxxr;
-////                                particles->sxz[k]  = sxzr;
-//            }
-//        }
-//    }
-//        else {
-//
-//            // UPPER CONVECTED
-//
-//            double *dudx, *dudz, *dvdx, *dvdz;
-//            DoodzFP *pdudx, *pdudz, *pdvdx, *pdvdz, *VEm;
-//
-//            dudx   = DoodzMalloc ((Nx-1)*(Nz-1)*sizeof(double));
-//            dvdz   = DoodzMalloc ((Nx-1)*(Nz-1)*sizeof(double));
-//            dudz   = DoodzMalloc ((Nx)*(Nz)*sizeof(double));
-//            dvdx   = DoodzMalloc ((Nx)*(Nz)*sizeof(double));
-//            pdudx  = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
-//            pdudz  = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
-//            pdvdx  = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
-//            pdvdz  = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
-//            VEm    = DoodzMalloc (particles->Nb_part*sizeof(DoodzFP));
-//
-//            // Compute dudx and dvdz (cell centers)
-//            for (k=0; k<Nx-1; k++) {
-//                for (l=0; l<Nz-1; l++) {
-//                    cp = k  + l*(Nx-1);
-//                    cu = k  + l*(Nx) + Nx;
-//                    cv = k  + l*(Nx+1) + 1;
-//                    dudx[cp] = 1.0/dx * ( mesh.u_in[cu+1]      - mesh.u_in[cu] );
-//                    dvdz[cp] = 1.0/dz * ( mesh.v_in[cv+(Nx+1)] - mesh.v_in[cv] );
-//                }
-//            }
-//
-//            // Compute dudx and dvdz (cell vertices)
-//            for (k=0; k<Nx; k++) {
-//                for (l=0; l<Nz; l++) {
-//                    cp = k  + l*(Nx-1);
-//                    cu = k  + l*(Nx);
-//                    cv = k  + l*(Nx+1);
-//                    dudz[cu] = 1.0/dz * ( mesh.u_in[cu+Nx] - mesh.u_in[cu] );
-//                    dvdx[cu] = 1.0/dx * ( mesh.v_in[cv+1]  - mesh.v_in[cv] );
-//                }
-//            }
-//
-//            // Interpolate from grid to particles
-//            Interp_Grid2P( *(particles), pdudx, &mesh, dudx, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type  );
-//            Interp_Grid2P( *(particles), pdvdz, &mesh, dvdz, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-//            Interp_Grid2P( *(particles), pdvdx, &mesh, dvdx, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type   );
-//            Interp_Grid2P( *(particles), pdudz, &mesh, dudz, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type   );
-//            Interp_Grid2P( *(particles), VEm, &mesh, mesh.VE_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type  );
-//
-//
-//            // Stress correction
-//    #pragma omp parallel for shared ( particles, model, VEm, pdudx, pdudz, pdvdx, pdvdz, sxxr, sxzr ) private ( k ) schedule( static )
-//            for(k=0; k<particles->Nb_part; k++) {
-//                sxxr = model.dt * VEm[k] * ( -2.0*particles->sxxd[k]*pdudx[k] - 2.0*particles->sxz[k]*pdudz[k]);
-//                sxzr = model.dt * VEm[k] * (      particles->sxxd[k]*pdudz[k] -     particles->sxxd[k]*pdvdx[k] - particles->sxz[k]*(pdudx[k] + pdvdz[k]) );
-////
-////                sxxr = model.dt * VEm[k] * ( -2.0*particles->sxxd[k]*pdudx[k] - 2.0*particles->sxz[k]*pdudz[k]);
-////                sxzr = model.dt * VEm[k] * (      particles->sxxd[k]*pdudz[k] -     particles->sxxd[k]*pdvdx[k] - particles->sxz[k]*(pdudx[k] + pdvdz[k]) );
-//
-//                particles->sxxd[k] -= sxxr;
-//                particles->szzd[k]  =-sxxr;
-//                particles->sxz[k]  -= sxzr;
-//
-////                // Only if explicity
-////                if (model.subgrid_diff==4) particles->sxxd[k] *= VEm[k];
-////                if (model.subgrid_diff==4) particles->sxz[k]  *= VEm[k];
-//            }
-//            MinMaxArray( pdudx,  scaling->E, particles->Nb_part, "dudx p." );
-//            MinMaxArray( pdvdx,  scaling->E, particles->Nb_part, "dvdx p." );
-//            MinMaxArray( pdudz,  scaling->E, particles->Nb_part, "dudz p." );
-//
-//
-//            // clean memory
-//            DoodzFree(dudx);
-//            DoodzFree(dudz);
-//            DoodzFree(dvdx);
-//            DoodzFree(dvdz);
-//            DoodzFree(pdudx);
-//            DoodzFree(pdudz);
-//            DoodzFree(pdvdx);
-//            DoodzFree(pdvdz);
-//            DoodzFree(VEm);
-//        }
-//}
-
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
