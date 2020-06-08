@@ -22,16 +22,16 @@ path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
 cd(path)
 
 % File
-istart = 50;
+istart = 20;
 ijump  = 5;
-iend   = 50;
+iend   = 20;
 
 %--------------------------------------------------
 % what do you want to plot:
 %--------------------------------------------------
-stress_evol     = 1;
+stress_evol     = 0;
 director_vector = 1;
-fstrain         = 0;
+fstrain         = 1;
 
 
 % Visualisation options
@@ -529,8 +529,6 @@ for istep=istart:ijump:iend
             figure(91), hold on
             plot(time, mean(sxxd(:)), 'b.')
             plot(time, mean(sxzc(:)), 'r+')
-           
-            
             short(icount)  =  strain;
             siivec(icount) = sum(sII(:).*(dx*dz))/vol;
             eiivec(icount) = sum(eII(:).*(dx*dz))/vol;
@@ -551,7 +549,7 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         % plot director vectors
         %--------------------------------------------------
-        if(director_vector==1)
+        if (director_vector==1)
             
             VizGrid = PhaseMap_hr( filename, VizGrid );
             Cent.T = hdf5read(filename,'/Centers/T'); Cent.T = cast(Cent.T, 'double');
@@ -586,15 +584,63 @@ for istep=istart:ijump:iend
           
             
             % Director
-            hv=quiver(xc_plot(1:step:end), zc_plot(1:step:end), ndx(1:step:end,1:step:end), ndz(1:step:end,1:step:end));
+            hv=quiver(xc_plot(1:step:end)*0, zc_plot(1:step:end)*0, ndx(1:step:end,1:step:end), ndz(1:step:end,1:step:end));
 %                         hv=quiver(xc_plot(100), zc_plot(100), ndx(100,100), ndz(100,100));
-            set(hv, 'Color', 'k', 'LineWidth', 0.5);
-            set(hv, 'MaxHeadSize',2.0, 'AutoScaleFactor', 2);
+            set(hv, 'Color', 'k', 'LineWidth', 2.0);
+            set(hv, 'MaxHeadSize',2.0, 'AutoScaleFactor', 2/4);
            
-            hv=quiver(xc_plot(1:step:end), zc_plot(1:step:end), ndz(1:step:end,1:step:end), -ndx(1:step:end,1:step:end));
-            set(hv, 'Color', 'w', 'LineWidth', 0.5);
-            set(hv, 'MaxHeadSize',2.0, 'AutoScaleFactor', 2, 'ShowArrowHead', 'off');
-              hold off
+            hv=quiver(xc_plot(1:step:end)*0, zc_plot(1:step:end)*0, ndz(1:step:end,1:step:end), -ndx(1:step:end,1:step:end));
+            set(hv, 'Color', 'w', 'LineWidth', 2.0);
+            set(hv, 'MaxHeadSize',2.0, 'AutoScaleFactor', 2/4, 'ShowArrowHead', 'off');
+            
+              
+            % Finite strain
+            
+            %--------------------------------------------------
+            % plot finite strain
+            %--------------------------------------------------
+            if ( fstrain == 1 )
+                
+                Cent.Fxx  = hdf5read(filename,'/Centers/Fxx'); Cent.Fxx = cast(Cent.Fxx, 'double');
+                Fxx = (reshape(Cent.Fxx,params(4)-1,params(5)-1)');
+                Cent.Fxz  = hdf5read(filename,'/Centers/Fxz'); Cent.Fxz = cast(Cent.Fxz, 'double');
+                Fxz = (reshape(Cent.Fxz,params(4)-1,params(5)-1)');
+                Cent.Fzx  = hdf5read(filename,'/Centers/Fzx'); Cent.Fzx = cast(Cent.Fzx, 'double');
+                Fzx = (reshape(Cent.Fzx,params(4)-1,params(5)-1)');
+                Cent.Fzz  = hdf5read(filename,'/Centers/Fzz'); Cent.Fzz = cast(Cent.Fzz, 'double');
+                Fzz = (reshape(Cent.Fzz,params(4)-1,params(5)-1)');
+                
+                % Cauchy-Green
+                CGxx = Fxx.*Fxx + Fzx.*Fzx;
+                CGxz = Fxx.*Fxz + Fzx.*Fzz;
+                CGzx = Fxx.*Fxz + Fzx.*Fzz;
+                CGzz = Fxz.*Fxz + Fzz.*Fzz;
+                
+                % Stretch tensor = sqrt(CG)
+                [ U0xx,U0xz,U0zx,U0zz]  = Sqrt_2x2( CGxx, CGxz, CGzx, CGzz );
+                [e1,e2,Uxx,Uxz,Uzx,Uzz] = Eigs_2x2( U0xx, U0xz, U0zx, U0zz );
+                [wxx,wxz,wzx,wzz]       =  Inv_2x2( U0xx, U0xz, U0zx, U0zz );
+                [rxx,rxz,rzx,rzz]       =  AxB_2x2( Fxx, Fxz, Fzx, Fzz, wxx, wxz, wzx, wzz );
+                [Uxx,Uxz,Uzx,Uzz]       =  AxB_2x2( rxx, rxz, rzx, rzz, Uxx, Uxz, Uzx, Uzz );
+                n                       = sqrt(Uxx.^2 + Uzx.^2);
+                v11                     = Uxx./n * e1;
+                v12                     = Uzx./n * e1;
+                n                       = sqrt(Uxz.^2 + Uzz.^2);
+                v21                     = Uxz./n * e2;
+                v22                     = Uzz./n * e2;
+                
+                % Plot Thibault ellipse
+                hv = quiver( 0, 0,      mean(v11(:)),      mean(v12(:)) );
+                set(hv, 'Color', 'g', 'LineWidth', 2.0, 'AutoScaleFactor', 1/200, 'ShowArrowHead','off');
+                hv = quiver( 0, 0,     -mean(v11(:)),     -mean(v12(:)) );%,  0.25, 'g', 'AutoScaleFactor', 1/8,  'LineWidth', 3, 'ShowArrowHead','off')
+                set(hv, 'Color', 'g', 'LineWidth', 2.0, 'AutoScaleFactor', 1/200, 'ShowArrowHead','off');
+                hv = quiver( 0, 0,      mean(v21(:)),      mean(v22(:)) );%,  0.25, 'g', 'AutoScaleFactor', 1/8,  'LineWidth', 3, 'ShowArrowHead','off')
+                set(hv, 'Color', 'g', 'LineWidth', 2.0, 'AutoScaleFactor', 1/200, 'ShowArrowHead','off');
+                hv = quiver( 0, 0,     -mean(v21(:)),     -mean(v22(:)) );%,  0.25, 'g', 'AutoScaleFactor', 1/8,  'LineWidth', 3, 'ShowArrowHead','off')
+                set(hv, 'Color', 'g', 'LineWidth', 2.0, 'AutoScaleFactor', 1/160, 'ShowArrowHead','off');
+
+                
+            end
             
             colorbar('Location', 'SouthOutside')
             xlabel(xLabel, 'FontSize', Ftsz), ylabel(zLabel, 'FontSize', Ftsz)
@@ -636,38 +682,7 @@ for istep=istart:ijump:iend
             
         end
         
-        %--------------------------------------------------
-        % plot finite strain
-        %--------------------------------------------------
-        if ( fstrain == 1 )
-            
-            Cent.Fxx  = hdf5read(filename,'/Centers/Fxx'); Cent.Fxx = cast(Cent.Fxx, 'double');
-            Fxx = (reshape(Cent.Fxx,params(4)-1,params(5)-1)');
-            Cent.Fxz  = hdf5read(filename,'/Centers/Fxz'); Cent.Fxz = cast(Cent.Fxz, 'double');
-            Fxz = (reshape(Cent.Fxz,params(4)-1,params(5)-1)');
-            Cent.Fzx  = hdf5read(filename,'/Centers/Fzx'); Cent.Fzx = cast(Cent.Fzx, 'double');
-            Fzx = (reshape(Cent.Fzx,params(4)-1,params(5)-1)');
-            Cent.Fzz  = hdf5read(filename,'/Centers/Fzz'); Cent.Fzz = cast(Cent.Fzz, 'double');
-            Fzz = (reshape(Cent.Fzz,params(4)-1,params(5)-1)');
-            
-            CGxx = zeros(size(Fxx));
-            CGxz = zeros(size(Fxx));
-            CGzx = zeros(size(Fxx));
-            CGzz = zeros(size(Fxx));
-            
-            for i=1:size(Fxx,2)
-                for j=1:size(Fxx,1)
-                    
-                    F     = [Fxx(j,i) Fxz(j,i); Fzx(j,i) Fzz(j,i)];
-                    CG    = F'*F;
-                    CGeig = eigs(CG);
-                    
-                    a=1
-                    
-                end
-            end
-            
-        end
+       
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 
@@ -759,4 +774,57 @@ for j = 1:length(phases)%max(VizGrid.ph(:))-1
     set(hb, 'Color', 'w', 'LineWidth', 0.5);
     
 end
+end
+
+function  [L1,L2,s11,s21,s12,s22] = Eigs_2x2( axx, axz, azx, azz )
+
+% Eigenvalues
+Tr   = axx + azz;
+Det  = axx.*azz - axz.*azx;
+L1   = Tr./2 + sqrt( Tr.^2/4 - Det );
+L2   = Tr./2 - sqrt( Tr.^2/4 - Det );
+
+% Extract principal strain axis 2 -- finite strain
+a22 = azz - L2;
+a21 = azx;
+alp = (a22./a21);    % should be correct for a normal basis vector
+s11 = ones(size(a21)) .* 1./sqrt(alp.^2+1) .* L2;
+s12 = alp             .* s11;
+% s11 = reshape(s11,ny,nx)'; s11 = s11(1:1:size(s11,1), 1:1:size(s11,2));
+% s12 = reshape(s12,ny,nx)'; s12 = s12(1:1:size(s12,1), 1:1:size(s12,2));
+
+% Extract principal strain axis 2 -- finite strain
+a22 = azz - L1;
+a21 = azx;
+alp = (a22./a21);    % should be correct for a normal basis vector
+s21 = ones(size(a21)) .* 1./sqrt(alp.^2+1) .* L1;
+s22 = alp             .* s21;
+% s21 = reshape(s21,1,1)'; s21 = s21(1:1:size(s21,1), 1:1:size(s21,2));
+% s22 = reshape(s22,1,1)'; s22 = s22(1:1:size(s22,1), 1:1:size(s22,2));
+end
+
+function [c11,c12,c21,c22] =  AxB_2x2( a11, a12, a21, a22, b11,b12,b21,b22 )
+c11 = a11.*b11 + a12.*b21;
+c12 = a11.*b12 + a12.*b22;
+c21 = a21.*b11 + a22.*b21;
+c22 = a21.*b12 + a22.*b22;
+end
+
+function [b11,b12,b21,b22] =  Sqrt_2x2( a11, a12, a21, a22 )
+Tr  = a11 + a22;
+Det = a11.*a22 - a12.*a21;
+s   = sqrt(Det);
+t   = sqrt(Tr + 2*s);
+b11 = 1./t.*(a11 + s);
+b12 = 1./t.*a12;
+b21 = 1./t.*a21;
+b22 = 1./t.*(a22 + s);
+end
+
+function  [aixx,aizx,aixz,aizz] = Inv_2x2( axx, axz, azx, azz )
+Det  = axx.*azz - axz.*azx;
+aixx = 1./Det .*azz;
+aixz =-1./Det .*axz;
+aizx =-1./Det .*azx;
+aizz = 1./Det .*axx;
 end
