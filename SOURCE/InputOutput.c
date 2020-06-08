@@ -247,6 +247,11 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
         fread( particles->Fzx         , s3, particles->Nb_part, file);
         fread( particles->Fzz         , s3, particles->Nb_part, file);
     }
+    
+    if (model->aniso == 1) {
+        fread( particles->nx         , s3, particles->Nb_part, file);
+        fread( particles->nz         , s3, particles->Nb_part, file);
+    }
 
     if (model->rec_T_P_x_z == 1) {
         fread( particles->T0         , s3, particles->Nb_part, file);
@@ -670,6 +675,11 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
         fwrite( particles->Fxz         , s3, particles->Nb_part, file);
         fwrite( particles->Fzx         , s3, particles->Nb_part, file);
         fwrite( particles->Fzz         , s3, particles->Nb_part, file);
+    }
+    
+    if (model.aniso == 1) {
+        fwrite( particles->nx         , s3, particles->Nb_part, file);
+        fwrite( particles->nz         , s3, particles->Nb_part, file);
     }
 
     if (model.rec_T_P_x_z == 1) {

@@ -108,7 +108,7 @@ struct _params {
 	int ismechanical, isperiodic_x, isinertial, iselastic, isnonnewtonian, isthermal, ispureshear_ale, free_surf, eqn_state, write_markers, write_debug, write_energies, no_markers;
     double free_surf_stab;
     int dt_constant, moving_front, imp_advection, RK, line_search, thermal_eq, subgrid_diff, adiab_heat, shear_heat, advection, fstrain;
-    int isPl_soft, surf_processes, cpc, surf_remesh, loc_iter, therm_pert, surf_ised1, surf_ised2, MantleID, topografix, aniso;
+    int isPl_soft, surf_processes, cpc, surf_remesh, loc_iter, therm_pert, surf_ised1, surf_ised2, MantleID, topografix;
     double EpsBG, user0, user1, user2, user3, user4, user5, user6, user7, user8;
 	char *input_file;
     int    Nb_phases;
@@ -145,6 +145,9 @@ struct _params {
     double diffusion_length;
     // For Pips
     int ProgReac;
+    // Anisotropy
+    int aniso;
+    double director_angle, aniso_factor;
 };
 
 // Nparams contains numerical parameters of the non-linear solver
@@ -197,7 +200,7 @@ struct _grid {
     double *detadexx_s, *detadezz_s, *detadgxz_s, *detadp_s;
     double *phi_s, *d0_s, *T_s, *P_s;
     
-    double *nx_n, *nz_n, *nx_s, *nz_s;
+    double *nx_n, *nz_n, *nx_s, *nz_s, *FS_AR_n,  *FS_AR_s;
     
     // To remove
     double *exx_pwl_n, *exz_pwl_n, *exx_pwl_s, *exz_pwl_s, *exx_pl, *exz_pl;
@@ -580,3 +583,5 @@ void RheologicalOperators( grid*, params*, scale*, int );
 void ComputeViscosityDerivatives_FD( grid*, mat_prop*, params*, Nparams, scale* );
 void SetUpModel_NoMarkers ( grid*, params*, scale* );
 void Diffuse_X( grid*, params*, scale* );
+void InitialiseDirectorVector (markers*, params*);
+void Print2DArrayDouble( DoodzFP*, int, int, double );

@@ -218,19 +218,6 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 2.0*deta*d0;
                 mesh->D23_n[k] =                     -2.0*deta*d1;
                 mesh->D24_n[k] =                      0.0;
-                
-//                mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 4.0*deta*pow(nx, 2.0)*pow(nz, 2.0);
-//                mesh->D12_n[k] =                      4.0*deta*pow(nx, 2.0)*pow(nz, 2.0);
-//                mesh->D13_n[k] =                      1.0*deta*(pow(nx, 3.0)*nz - pow(nx, 4.0));
-//                mesh->D14_n[k] =                      0.0;
-//
-//                mesh->D21_n[k] =                      4.0*deta*pow(nx, 2.0)*pow(nz, 2.0);
-//                mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 4.0*deta*pow(nx, 2.0)*pow(nz, 2.0);
-//                mesh->D23_n[k] =                      1.0*deta*(-pow(nx, 3.0)*nz + pow(nx, 4.0));
-//                mesh->D24_n[k] =                      0.0;
-                
-//                printf("D23=%2.2e\n",mesh->D23_n[k]);
-                
             }
             else {
                 mesh->D11_n[k] = 0.0;
@@ -268,17 +255,6 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 mesh->D32_s[k] =                 -2.0*deta*d1;
                 mesh->D33_s[k] = mesh->eta_s[k] + 2.0*deta*(d0 - 0.5);
                 mesh->D34_s[k] =                  0.0;
-//                mesh->D31_s[k] =                  2.0*deta*(pow(nx, 3.0)*nz - pow(nx, 4.0));
-//                mesh->D32_s[k] =                  2.0*deta*(-pow(nx, 3.0)*nz + pow(nx, 4.0));
-//                mesh->D33_s[k] = mesh->eta_s[k] + deta*(2.0*pow(nx, 2.0)*pow(nz, 2.0) - 0.5);
-//                mesh->D34_s[k] =                  0.0;
-                
-//                if (k==0 || l == 0) {
-//                    mesh->D31_s[k] = 0.0;
-//                    mesh->D32_s[k] = 0.0;
-//                    mesh->D33_s[k] = mesh->eta_s[k];
-//                }
-                
             }
             else {
                 mesh->D31_s[k] = 0.0;
@@ -700,20 +676,10 @@ void DeformationGradient ( grid mesh, scale scaling, params model, markers *part
         fxz = pdudz[k]*model.dt;
         fzz = 1.0 + pdvdz[k]*model.dt;
         fzx = pdvdx[k]*model.dt;
-
-        if (model.step==1) {
-            fxx_o = 1.0;
-            fxz_o = 0.0;
-            fzx_o = 0.0;
-            fzz_o = 1.0;
-
-        }
-        else {
-            fxx_o = particles->Fxx[k];
-            fxz_o = particles->Fxz[k];
-            fzx_o = particles->Fzx[k];
-            fzz_o = particles->Fzz[k];
-        }
+        fxx_o = particles->Fxx[k];
+        fxz_o = particles->Fxz[k];
+        fzx_o = particles->Fzx[k];
+        fzz_o = particles->Fzz[k];
         particles->Fxx[k] = fxx*fxx_o + fxz*fzx_o;
         particles->Fxz[k] = fxx*fxz_o + fxz*fzz_o;
         particles->Fzx[k] = fzx*fxx_o + fzz*fzx_o;
@@ -733,6 +699,14 @@ void DeformationGradient ( grid mesh, scale scaling, params model, markers *part
     printf("Updated deformation gradient tensor\n");
 }
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+void FiniteStrainAspectRatio ( grid mesh, scale scaling, params model, markers *particles ) {
+    
+    printf("Updated Finite strain aspect ratio\n");
+}
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/

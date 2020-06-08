@@ -219,6 +219,8 @@ void PartAlloc( markers *particles, params* model  ) {
         particles->Fxz        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
         particles->Fzx        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
         particles->Fzz        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+        Initialise1DArrayDouble (particles->Fxx,  particles->Nb_part_max, 1.0 );
+        Initialise1DArrayDouble (particles->Fzz,  particles->Nb_part_max, 1.0 );
     }
 
     if (model->rec_T_P_x_z == 1) {
@@ -565,7 +567,10 @@ void GridAlloc ( grid* mesh, params* model ) {
     if ( model->aniso == 1 ) mesh->nx_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     if ( model->aniso == 1 ) mesh->nz_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     if ( model->aniso == 1 ) mesh->nz_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
-
+    if ( model->aniso == 1 ) mesh->FS_AR_n = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    if ( model->aniso == 1 ) mesh->FS_AR_s = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+    Initialise1DArrayDouble (mesh->FS_AR_n,  (Nx-1)*(Nz-1), 1.0 );
+    Initialise1DArrayDouble (mesh->FS_AR_s,  (Nx-0)*(Nz-0), 1.0 );
 
     // reaction
     mesh->p0_s       = DoodzCalloc ((Nx)*(Nz),sizeof(double));
@@ -838,6 +843,8 @@ void GridFree( grid* mesh, params* model ) {
     if ( model->aniso == 1 ) DoodzFree(mesh->nx_s);
     if ( model->aniso == 1 ) DoodzFree(mesh->nz_n);
     if ( model->aniso == 1 ) DoodzFree(mesh->nz_s);
+    if ( model->aniso == 1 ) DoodzFree(mesh->FS_AR_n);
+    if ( model->aniso == 1 ) DoodzFree(mesh->FS_AR_s);
 
     // reac
     DoodzFree(mesh->Xreac_n);

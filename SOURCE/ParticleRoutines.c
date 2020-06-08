@@ -316,11 +316,11 @@ void PartInit( markers *particles, params* model ) {
         particles->progress[k]   = 0.0;
 
         // Finite strain - deformation gradient tensor
-        if (model->fstrain==1) {
-            particles->Fxx[k]   = 0.0;
+        if ( model->fstrain == 1 ) {
+            particles->Fxx[k]   = 1.0;
             particles->Fxz[k]   = 0.0;
             particles->Fzx[k]   = 0.0;
-            particles->Fzz[k]   = 0.0;
+            particles->Fzz[k]   = 1.0;
         }
     }
 }

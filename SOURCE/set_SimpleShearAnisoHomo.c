@@ -80,22 +80,22 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         if ( pow(particles->x[np],2) + pow(particles->z[np],2) < pow(rad,2) ) {
                         particles->phase[np] = 0;
         }
-        // SE inclusion
-        if ( pow(particles->x[np]-0.5/scaling.L,2) + pow(particles->z[np]+0.5/scaling.L,2) < pow(rad,2) ) {
-            particles->phase[np] = 0;
-        }
-        // NW inclusion
-        if ( pow(particles->x[np]+0.5/scaling.L,2) + pow(particles->z[np]-0.5/scaling.L,2) < pow(rad,2) ) {
-            particles->phase[np] = 0;
-        }
-        // SW inclusion
-        if ( pow(particles->x[np]+0.5/scaling.L,2) + pow(particles->z[np]+0.5/scaling.L,2) < pow(rad,2) ) {
-            particles->phase[np] = 0;
-        }
-        // NE inclusion
-        if ( pow(particles->x[np]-0.5/scaling.L,2) + pow(particles->z[np]-0.5/scaling.L,2) < pow(rad,2) ) {
-            particles->phase[np] = 0;
-        }
+//        // SE inclusion
+//        if ( pow(particles->x[np]-0.5/scaling.L,2) + pow(particles->z[np]+0.5/scaling.L,2) < pow(rad,2) ) {
+//            particles->phase[np] = 0;
+//        }
+//        // NW inclusion
+//        if ( pow(particles->x[np]+0.5/scaling.L,2) + pow(particles->z[np]-0.5/scaling.L,2) < pow(rad,2) ) {
+//            particles->phase[np] = 0;
+//        }
+//        // SW inclusion
+//        if ( pow(particles->x[np]+0.5/scaling.L,2) + pow(particles->z[np]+0.5/scaling.L,2) < pow(rad,2) ) {
+//            particles->phase[np] = 0;
+//        }
+//        // NE inclusion
+//        if ( pow(particles->x[np]-0.5/scaling.L,2) + pow(particles->z[np]-0.5/scaling.L,2) < pow(rad,2) ) {
+//            particles->phase[np] = 0;
+//        }
         
         // phase 1 for visualisation:
         if (particles->phase[np] == 0 && particles->x[np]>0 && particles->z[np]>0) {
