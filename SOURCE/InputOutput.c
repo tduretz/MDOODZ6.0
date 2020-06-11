@@ -982,23 +982,25 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->rec_T_P_x_z     = ReadInt2( fin, "rec_T_P_x_z",     0 );
     model->delete_breakpoints = ReadInt2( fin, "delete_breakpoints",        1 );
     model->topografix      = ReadInt2( fin, "topografix",      0 );
-    model->aniso           = ReadInt2( fin, "aniso",           0 );
-    model->compressible    = ReadInt2( fin, "compressible",    0 );
-    model->GNUplot_residuals = ReadInt2( fin, "GNUplot_residuals",    0 );
+    model->aniso           = ReadInt2( fin, "aniso",           0 ); // turns on anisotropy
+    model->aniso_fstrain   = ReadInt2( fin, "aniso_fstrain",   0 ); // make anisotropy factor dependent on finite strain aspect ratio
+    model->compressible    = ReadInt2( fin, "compressible",    0 ); // turns on compressibility
+    model->GNUplot_residuals = ReadInt2( fin, "GNUplot_residuals",    0 ); // Activate GNU plot residuals visualisation
     model->no_markers      = ReadInt2( fin, "no_markers",    0 );
-    model->shear_style     = ReadInt2( fin, "shear_style",    0 );
-    model->StressRotation  = ReadInt2( fin, "StressRotation", 1 );
-    model->polar           = ReadInt2( fin, "polar",          0 );
-    model->ProgReac        = ReadInt2( fin, "ProgReac",       0 );
-    if (model->shear_style==1) model->isperiodic_x  = 1;
-    if (model->shear_style==0) model->isperiodic_x  = 0;
+    model->shear_style     = ReadInt2( fin, "shear_style",    0 ); // 0: pure shear, 2: periodic simple shear
+    model->StressRotation  = ReadInt2( fin, "StressRotation", 1 ); // 0: no stress rotation, 1: analytic rotation, 2: upper convected rate
+    model->polar           = ReadInt2( fin, "polar",          0 ); // activate polar-Cartesian coordinates
+    model->ProgReac        = ReadInt2( fin, "ProgReac",       0 ); // activate progressive reactions
+    if ( model->shear_style == 1 ) model->isperiodic_x  = 1;
+    if ( model->shear_style == 0 ) model->isperiodic_x  = 0;
+    if ( model->aniso       == 1 ) model->fstrain       = 1;
 
     // Setup dependant
     model->EpsBG           = ReadDou2( fin, "EpsBG",           0.0 ) / scaling->E;
     model->PrBG            = ReadDou2( fin, "PrBG",            0.0 ) / scaling->S;
     // Anisotropy
-    model->director_angle  = ReadDou2( fin, "director_angle",  0.0 )  * M_PI/ 180.0;
-    model->aniso_factor    = ReadDou2( fin, "aniso_factor",    1.0 );
+//    model->director_angle  = ReadDou2( fin, "director_angle",  0.0 )  * M_PI/ 180.0;
+//    model->aniso_factor    = ReadDou2( fin, "aniso_factor",    1.0 );
         // Surface processes
     model->surf_diff       = ReadDou2( fin, "surf_diff",       0.0 ) / (pow(scaling->L,2.0)/scaling->t);
     model->surf_ised1      = ReadInt2( fin, "surf_ised1",      0.0 );
@@ -1089,6 +1091,9 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         // Diffused rheological contrasts
         materials->phase_mix[k]  = (int)ReadMatProps( fin, "phase_mix",k,          0.0  );
         materials->phase_two[k]  = (int)ReadMatProps( fin, "phase_mix",k,    (double)k  );
+        // Anisotropy
+        materials->aniso_factor[k] =      ReadMatProps( fin, "aniso_factor", k,    1.0  );
+        materials->aniso_angle[k]  =      ReadMatProps( fin, "aniso_angle"  ,k,   90.0  )  * M_PI/ 180.0;
         // Check if any flow law is active
         int sum = abs(materials->cstv[k]) + abs(materials->pwlv[k]) + abs(materials->linv[k]) + abs(materials->gbsv[k]) + abs(materials->expv[k]);
         if ( sum == 0 ) {

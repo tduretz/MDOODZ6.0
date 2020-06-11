@@ -496,6 +496,8 @@ firstprivate( model, dx, dz )
                     particles->sxz[k]  -= model.dt * VEA * (      txx*dudzA -     txx*dvdxA - txz*(dudxA + dvdzA) );
                 }
             }
+            
+            if ( model.aniso == 1 ) {
             // Director vector rotation
             nx = particles->nx[k];// = 0.0;
             nz = particles->nz[k];// = 1.0;
@@ -518,6 +520,7 @@ firstprivate( model, dx, dz )
             nz   /= norm;
             particles->nx[k] = nx;
             particles->nz[k] = nz;
+        }
         }
         isoutPart( particles, &model, k );
     }

@@ -569,8 +569,10 @@ void GridAlloc ( grid* mesh, params* model ) {
     if ( model->aniso == 1 ) mesh->nz_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     if ( model->aniso == 1 ) mesh->FS_AR_n = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     if ( model->aniso == 1 ) mesh->FS_AR_s = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
-    Initialise1DArrayDouble (mesh->FS_AR_n,  (Nx-1)*(Nz-1), 1.0 );
-    Initialise1DArrayDouble (mesh->FS_AR_s,  (Nx-0)*(Nz-0), 1.0 );
+    if ( model->aniso == 1 ) Initialise1DArrayDouble (mesh->FS_AR_n,  (Nx-1)*(Nz-1), 1.0 );
+    if ( model->aniso == 1 ) Initialise1DArrayDouble (mesh->FS_AR_s,  (Nx-0)*(Nz-0), 1.0 );
+    if ( model->aniso == 1 ) mesh->aniso_factor_n = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    if ( model->aniso == 1 ) mesh->aniso_factor_s = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
 
     // reaction
     mesh->p0_s       = DoodzCalloc ((Nx)*(Nz),sizeof(double));
@@ -845,6 +847,8 @@ void GridFree( grid* mesh, params* model ) {
     if ( model->aniso == 1 ) DoodzFree(mesh->nz_s);
     if ( model->aniso == 1 ) DoodzFree(mesh->FS_AR_n);
     if ( model->aniso == 1 ) DoodzFree(mesh->FS_AR_s);
+    if ( model->aniso == 1 ) DoodzFree(mesh->aniso_factor_n);
+    if ( model->aniso == 1 ) DoodzFree(mesh->aniso_factor_s);
 
     // reac
     DoodzFree(mesh->Xreac_n);

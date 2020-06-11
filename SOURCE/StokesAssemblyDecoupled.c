@@ -3917,13 +3917,13 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         StokesA->F[eqn] += (mesh->sxz[ixyE]  - mesh->sxz[ixyW]) /dx;
         StokesA->F[eqn] *= -1.0;
         
-        if (mesh->BCv.type[iVzC-1]==-12 && l==2) {
-            printf("inN =%2.2e inS =%2.2e inW=%2.2e inE=%2.2e \n", inN, inS, inW, inE);
-            printf("tzzS=%2.2e tzzN=%2.2e \n", mesh->szzd[iPrS] , mesh->szzd[iPrN] );
-            printf("pS  =%2.2e pN  =%2.2e \n", mesh->p_in[iPrS] , mesh->p_in[iPrN] );
-            printf("txzW=%2.2e txzE=%2.2e \n", mesh->sxz[ixyW] , mesh->sxz[ixyE] );
-            printf("%2.2e \n", StokesA->F[eqn]);
-        }
+//        if (mesh->BCv.type[iVzC-1]==-12 && l==2) {
+//            printf("inN =%2.2e inS =%2.2e inW=%2.2e inE=%2.2e \n", inN, inS, inW, inE);
+//            printf("tzzS=%2.2e tzzN=%2.2e \n", mesh->szzd[iPrS] , mesh->szzd[iPrN] );
+//            printf("pS  =%2.2e pN  =%2.2e \n", mesh->p_in[iPrS] , mesh->p_in[iPrN] );
+//            printf("txzW=%2.2e txzE=%2.2e \n", mesh->sxz[ixyW] , mesh->sxz[ixyE] );
+//            printf("%2.2e \n", StokesA->F[eqn]);
+//        }
         
         StokesA->F[eqn] -= (StokesA->b[eqn]);
         StokesA->F[eqn] *= celvol;

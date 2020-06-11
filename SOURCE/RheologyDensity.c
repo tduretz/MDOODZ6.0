@@ -73,8 +73,8 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
     int Nx, Nz, Ncx, Ncz, k;
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
-
     double nx, nz, deta, d0, d1;
+    int aniso_fstrain = model->aniso_fstrain;
 
     if (Jacobian == 0  && model->aniso == 0) {
 
@@ -197,7 +197,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
         printf("Computing anisotropic viscosity tensor\n");
         
         // Loop on cell centers
-#pragma omp parallel for shared( mesh ) private ( nx, nz ) private ( deta, d0, d1 )
+#pragma omp parallel for shared( mesh ) private ( nx, nz, deta, d0, d1 )  firstprivate ( aniso_fstrain )
         for (k=0; k<Ncx*Ncz; k++) {
             
             // Director
@@ -206,7 +206,8 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
             
             if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
                 // See Anisotropy_v2.ipynb
-                deta =  (mesh->eta_n[k] - mesh->eta_n[k] / model->aniso_factor);
+                if ( aniso_fstrain  == 0 ) deta =  (mesh->eta_n[k] - mesh->eta_n[k] / mesh->aniso_factor_n[k]);
+                if ( aniso_fstrain  == 1 ) deta =  (mesh->eta_n[k] - mesh->eta_n[k] / mesh->FS_AR_n[k]);
                 d0   = 2.0*pow(nx, 2.0)*pow(nz, 2.0);
                 d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
                 mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*deta*d0;
@@ -235,19 +236,17 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
 //        int k, l;
         
         // Loop on cell vertices
-#pragma omp parallel for shared( mesh )  private ( nx, nz ) private ( deta, d0, d1 )
+#pragma omp parallel for shared( mesh )  private ( nx, nz, deta, d0, d1 ) firstprivate ( aniso_fstrain )
         for (k=0; k<Nx*Nz; k++) {
             
             // Director
             nx = mesh->nx_s[k];
             nz = mesh->nz_s[k];
-            
-//            k      = mesh->kp[k];
-//            l      = mesh->lp[k];
-            
+
             if ( mesh->BCg.type[k] != 30 ) {
                 // See Anisotropy_v2.ipynb
-                deta =  (mesh->eta_s[k] - mesh->eta_s[k] / model->aniso_factor);
+                if ( aniso_fstrain  == 0 ) deta =  (mesh->eta_s[k] - mesh->eta_s[k] / mesh->aniso_factor_s[k]);
+                if ( aniso_fstrain  == 1 ) deta =  (mesh->eta_s[k] - mesh->eta_s[k] / mesh->FS_AR_s[k]);
                 d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
                 d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
 
@@ -713,7 +712,7 @@ void FiniteStrainAspectRatio ( grid *mesh, scale scaling, params model, markers 
     Nz    = mesh->Nz;
     FS_AR = DoodzCalloc (particles->Nb_part, sizeof(double));
 
-#pragma omp parallel for shared ( particles ) private ( k, CGxx, CGxz, CGzx, CGzz, Tr, Det, U0xx, U0xz, U0zx, U0zz, s, t, e1, e2  ) schedule( static )
+//#pragma omp parallel for shared ( particles ) private ( k, CGxx, CGxz, CGzx, CGzz, Tr, Det, U0xx, U0xz, U0zx, U0zz, s, t, e1, e2  ) schedule( static )
     for (k=0; k<particles->Nb_part; k++) {
         
         // Cauchy-Green
@@ -3077,19 +3076,24 @@ void ComputeViscosityDerivatives_FD( grid* mesh, mat_prop *materials, params *mo
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void InitialiseDirectorVector (markers* particles, params* model) {
+void InitialiseDirectorVector (markers* particles, params* model, mat_prop* materials ) {
     
     int k;
-    double angle = model->director_angle, norm;
+    double angle, norm;
     
+#pragma omp parallel for shared( particles ) private( angle, norm )
     for (k=0; k<particles->Nb_part; k++) {
+        
+        if ( particles->phase[k] != -1 ) {
 
-        // Set up director vector
-        particles->nx[k] = cos(angle);
-        particles->nz[k] = sin(angle);
-        norm = sqrt(particles->nx[k]*particles->nx[k] + particles->nz[k]*particles->nz[k]);
-        particles->nx[k] /= norm;
-        particles->nz[k] /= norm;
+            // Set up director vector
+            angle             = materials->aniso_angle[particles->phase[k]];
+            particles->nx[k]  = cos(angle);
+            particles->nz[k]  = sin(angle);
+            norm              = sqrt(particles->nx[k]*particles->nx[k] + particles->nz[k]*particles->nz[k]);
+            particles->nx[k] /= norm;
+            particles->nz[k] /= norm;
+        }
     }
 }
 

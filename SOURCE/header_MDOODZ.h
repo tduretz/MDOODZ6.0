@@ -58,6 +58,7 @@ struct _mat_prop {
     DoodzFP Preac[20], treac[20];
     int     Reac[20];
     int     phase_mix[20], phase_two[20];
+    double  aniso_factor[20], aniso_angle[20];
 };
 
 // markers is the particles structure
@@ -146,8 +147,7 @@ struct _params {
     // For Pips
     int ProgReac;
     // Anisotropy
-    int aniso;
-    double director_angle, aniso_factor;
+    int aniso, aniso_fstrain;
 };
 
 // Nparams contains numerical parameters of the non-linear solver
@@ -199,8 +199,7 @@ struct _grid {
     double *detadexx_n, *detadezz_n, *detadgxz_n, *detadp_n;
     double *detadexx_s, *detadezz_s, *detadgxz_s, *detadp_s;
     double *phi_s, *d0_s, *T_s, *P_s;
-    
-    double *nx_n, *nz_n, *nx_s, *nz_s, *FS_AR_n,  *FS_AR_s;
+    double *nx_n, *nz_n, *nx_s, *nz_s, *FS_AR_n, *FS_AR_s, *aniso_factor_n, *aniso_factor_s;
     
     // To remove
     double *exx_pwl_n, *exz_pwl_n, *exx_pwl_s, *exz_pwl_s, *exx_pl, *exz_pl;
@@ -583,5 +582,6 @@ void RheologicalOperators( grid*, params*, scale*, int );
 void ComputeViscosityDerivatives_FD( grid*, mat_prop*, params*, Nparams, scale* );
 void SetUpModel_NoMarkers ( grid*, params*, scale* );
 void Diffuse_X( grid*, params*, scale* );
-void InitialiseDirectorVector (markers*, params*);
+void InitialiseDirectorVector (markers*, params*, mat_prop*);
+void FiniteStrainAspectRatio ( grid*, scale, params, markers* );
 void Print2DArrayDouble( DoodzFP*, int, int, double );

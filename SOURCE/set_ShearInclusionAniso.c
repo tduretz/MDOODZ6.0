@@ -63,7 +63,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     
     double gsbg = 2e-3/scaling.L;
     double Temperature = (model.user0+zeroC)/scaling.T;
-    double rad=0.2337/scaling.L, xc=-0e3/scaling.L, zc=-0e3/scaling.L;
+    double rad=model.user1/scaling.L, xc=-0e3/scaling.L, zc=-0e3/scaling.L;
     double spacing = 5.0e-3/scaling.L;
 
     for( np=0; np<particles->Nb_part; np++ ) {
@@ -96,7 +96,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
 //        if ( pow(particles->x[np]-0.5/scaling.L,2) + pow(particles->z[np]-0.5/scaling.L,2) < pow(rad,2) ) {
 //            particles->phase[np] = 0;
 //        }
-//        
+//
 //        // phase 1 for visualisation:
 //        if (particles->phase[np] == 0 && particles->x[np]>0 && particles->z[np]>0) {
 //            particles->phase[np] = 1;

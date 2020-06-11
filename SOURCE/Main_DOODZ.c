@@ -293,7 +293,7 @@ int main( int nargs, char *args[] ) {
             printf("****** Initialize composition *******\n");
             printf("*************************************\n");
             
-            if (model.diffuse_X == 1) {
+            if ( model.diffuse_X == 1 ) {
                 Interp_P2C ( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
                 Diffuse_X(&mesh, &model, &scaling);
                 Interp_Grid2P( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
@@ -301,7 +301,7 @@ int main( int nargs, char *args[] ) {
                 Interp_P2N ( particles, particles.X, &mesh, mesh.Xreac_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
             }
             
-            if (model.aniso==1) InitialiseDirectorVector (&particles, &model);
+            if ( model.aniso == 1 ) InitialiseDirectorVector ( &particles, &model, &materials );
             
             printf("*************************************\n");
             printf("******* Initialize viscosity ********\n");
@@ -507,6 +507,8 @@ int main( int nargs, char *args[] ) {
                 Interp_P2N ( particles, particles.nx, &mesh, mesh.nx_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
                 Interp_P2N ( particles, particles.nz, &mesh, mesh.nz_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
                 FiniteStrainAspectRatio ( &mesh, scaling, model, &particles );
+                Interp_P2C ( particles, materials.aniso_factor,  &mesh, mesh.aniso_factor_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
+                Interp_P2N ( particles, materials.aniso_factor,  &mesh, mesh.aniso_factor_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
             }
             
             // Diffuse rheological contrasts
@@ -608,6 +610,8 @@ int main( int nargs, char *args[] ) {
         if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nz_s,     1.0,   (mesh.Nx)*(mesh.Nz),     "nz_s    ", mesh.BCg.type );
         if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.FS_AR_n,  1.0,   (mesh.Nx-1)*(mesh.Nz-1), "FS_AR_n ", mesh.BCp.type );
         if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.FS_AR_s,  1.0,   (mesh.Nx)*(mesh.Nz),     "FS_AR_s ", mesh.BCg.type );
+        if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.aniso_factor_n,  1.0,   (mesh.Nx-1)*(mesh.Nz-1), "aniso_factor_n", mesh.BCp.type );
+        if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.aniso_factor_s,  1.0,   (mesh.Nx)*(mesh.Nz),     "aniso_factor_s", mesh.BCg.type );
         
         printf("** Time for particles interpolations I = %lf sec\n",  (double)((double)omp_get_wtime() - t_omp) );
         
@@ -687,11 +691,13 @@ int main( int nargs, char *args[] ) {
                 MinMaxArrayTag( mesh.szzd,      scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "szzd     ", mesh.BCp.type );
                 MinMaxArrayTag( mesh.sxz,       scaling.S, (mesh.Nx-0)*(mesh.Nz-0), "sxz      ", mesh.BCg.type );
                 
-                JacobA.neq = StokesA.neq ;
-                ArrayEqualArray( JacobA.F, StokesA.F, StokesA.neq );
-                ArrayEqualArray( JacobC.F, StokesC.F, StokesC.neq );
-                MinMaxArray(JacobA.F, 1, JacobA.neq, "Fu" );
-                MinMaxArray(JacobA.F, 1, JacobA.neq, "Fp" );
+                if ( model.Newton == 1 ) {
+                    JacobA.neq = StokesA.neq ;
+                    ArrayEqualArray( JacobA.F, StokesA.F, StokesA.neq );
+                    ArrayEqualArray( JacobC.F, StokesC.F, StokesC.neq );
+                    MinMaxArray(JacobA.F, 1, JacobA.neq, "Fu" );
+                    MinMaxArray(JacobA.F, 1, JacobA.neq, "Fp" );
+                }
                 
 //                MinMaxArrayTag( mesh.D11_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "D11_n     ", mesh.BCp.type );
 //                MinMaxArrayTag( mesh.D12_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "D12_n     ", mesh.BCp.type );
