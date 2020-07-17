@@ -1,12 +1,12 @@
 **** RESTART ****/
-istep =00001
+istep =00800
 irestart = 0
 
 /**** OUTPUT FILES ****/
 writer = 1
-writer_step = 1
+writer_step = 10
 writer_markers = 0
-writer_debug   = 1
+writer_debug   = 0
 
 /**** INPUT FILE FOR PARTICLES ****/
 input_file = setup_r201x201_F40_P20_B20.bin
@@ -18,9 +18,9 @@ V   = 1e0
 T   = 1
  
 /**** SPACE-TIME ****/
-Nx   = 11
-Nz   = 11
-Nt   = 1
+Nx   = 101
+Nz   = 101
+Nt   = 800
 xmin = -0.5000000
 zmin = -0.5000000
 xmax =  0.5000000
@@ -51,14 +51,14 @@ shear_heat      = 0
 adiab_heat      = 0
 isPl_soft       = 0
 surf_processes  = 0
-shear_style     = 0
+shear_style     = 1
+fstrain         = 1
 
 /**** ANISOTROPY ****/
-director_angle = 35.0
-aniso_factor   = 10.0
+aniso_fstrain        = 1
  
 /**** SETUP DEPENDANT ****/
-EpsBG           = 1e0 /Background strain rate
+EpsBG           = 0.5 /Background strain rate
 PrBG            = 0
 surf_diff       = 0
 user0           = 0
@@ -97,6 +97,9 @@ gsel = 0
 eta0 = 1e0
 npwl = 1
 Qpwl = 0
+aniso        = 1
+aniso_angle  = 45
+aniso_factor = 10
 
 ID   = 1
 rho  = 2800.00 /inclusions omphacite 1
@@ -119,6 +122,9 @@ gsel = 0
 eta0 = 1e0
 npwl = 1
 Qpwl = 0
+aniso        = 1
+aniso_angle  = 45
+aniso_factor = 10
 
 ID   = 2
 rho  = 3300.00 /matrix garnet
@@ -141,6 +147,9 @@ gsel = 0
 eta0 = 1e0
 npwl = 1
 Qpwl = 0
+aniso        = 1
+aniso_angle  = 45
+aniso_factor = 10
 
 ID   = 3
 rho  = 3300.00 /matrix garnet
@@ -163,6 +172,9 @@ gsel = 0
 eta0 = 1e0
 npwl = 1
 Qpwl = 0
+aniso        = 1
+aniso_angle  = 45
+aniso_factor = 10
 
 /**** DEFMAPS ****/
 def_maps = 0

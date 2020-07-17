@@ -224,6 +224,8 @@ void Xmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
         if (                                mesh->BCu.type[iVxN] == 11  ) StokesA->F[eqn] += 2.0*uN*mesh->BCu.val[iVxN];
         if ( mesh->BCu.type[iVxW]  != 30 ) StokesA->F[eqn] += uW*u[iVxW];
         if ( mesh->BCu.type[iVxE]  != 30 ) StokesA->F[eqn] += uE*u[iVxE];
+        
+
        
         StokesA->F[eqn] -= (StokesA->b[eqn]);// + Stokes->bbc[eqn];
         StokesA->F[eqn] *= celvol;
@@ -3039,8 +3041,6 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
            iVzSWW = iVzSW-1;    iVzNWW = iVzNW-1;
        }
 
-
-
     int Newton = 1;
 
     double  uC=0.0;
@@ -3051,28 +3051,28 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     double D11E = mesh->D11_n[iPrE];
     double D12E = mesh->D12_n[iPrE];
     double D13E = mesh->D13_n[iPrE];
-    double D14E = 0.0;
-    double D15E = mesh->D14_n[iPrE];
+    double D14E = mesh->D14_n[iPrE];
+//    double D15E = mesh->D15_n[iPrE];
 
     double D11W = mesh->D11_n[iPrW];
     double D12W = mesh->D12_n[iPrW];
     double D13W = mesh->D13_n[iPrW];
-    double D14W = 0.0;
-    double D15W = mesh->D14_n[iPrW];
+    double D14W = mesh->D14_n[iPrW];
+//    double D15W = mesh->D15_n[iPrW];
 
     double D31N = mesh->D31_s[ixyN];
     double D32N = mesh->D32_s[ixyN];
     double D33N = mesh->D33_s[ixyN];
-    double D34N = 0.0;
-    double D35N = mesh->D34_s[ixyN];
+    double D34N = mesh->D34_s[ixyN];
+//    double D35N = mesh->D35_s[ixyN];
 
     double D31S = mesh->D31_s[ixyS];
     double D32S = mesh->D32_s[ixyS];
     double D33S = mesh->D33_s[ixyS];
-    double D34S = 0.0;
-    double D35S = mesh->D34_s[ixyS];
-    
-
+    double D34S = mesh->D34_s[ixyS];
+//    double D35S = mesh->D35_s[ixyS];
+//
+//
 //    if ( mesh->BCu.type[iVxN] == 13 ) {D31N = 0.0; D32N = 0.0; D33N = 0.0; D34N = 0.0;}
 //    if ( mesh->BCu.type[iVxS] == 13 ) {D31S = 0.0; D32S = 0.0; D33S = 0.0; D34S = 0.0;}
 
@@ -3108,16 +3108,11 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         if (mesh->BCg.type[ixySE] != 30) inSEv = 1.0;   // modify for periodic
         if (mesh->BCg.type[ixyNE] != 30) inNEv = 1.0;   // modify for periodic
     }
-
+    
     wE = inN + inS + inNEv + inSEv;
     wW = inN + inS + inNWv + inSWv;
     wS = inW + inE + inSWc + inSEc;
     wN = inW + inE + inNWc + inNEc;
-
-//    if(k==0) printf("%2.2e %2.2e %2.2e %2.2e type %d\n", wW, wE, wS, wN, mesh->BCv.type[iVzSW]);
-//    if (k==1)  printf("%d %d\n", mesh->BCv.type[iVzSWW],mesh->BCv.type[iVzNWW]);
-//    if ((k==0) &&  mesh->BCv.type[iVzNWW] == -1) printf("East in\n");
-//    if ((k==1) &&  mesh->BCv.type[iVzNWW] == -1) printf("East out\n");
 
     if (wW>1.0) wW = 1.0/wW;
     if (wE>1.0) wE = 1.0/wE;
@@ -3155,62 +3150,6 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     pSE = ( D34S*inS*inSEc*wS/dz);
     pNW = (-D34N*inN*inNWc*wN/dz);
     pNE = (-D34N*inN*inNEc*wN/dz);
-    
-//    double  wE_N  = inN,  wE_S = inS;
-//    double  wW_N  = inN,  wW_S = inS;
-//    double  wE_NE = inNEv, wE_SE = inSEv;
-//    double  wW_NW = inNWv, wW_SW = inSWv;
-//
-//    double  wN_W  = inW,   wS_W  = inW;
-//    double  wN_E  = inE,   wS_E  = inE;
-//    double  wS_SW = inSWc, wS_SE = inSEc;
-//    double  wN_NW = inNWc, wN_NE = inNEc;
-//
-//    if ( fabs(wS_SW)<1e-13 ) wS_W = 2.0;
-//    if ( fabs(wS_SE)<1e-13 ) wS_E = 2.0;
-//    if ( fabs(wN_NW)<1e-13 ) wN_W = 2.0;
-//    if ( fabs(wN_NE)<1e-13 ) wN_E = 2.0;
-//
-//    double fsxE = 0.0, nsxW = 0.0, fsxW = 0.0, nsxE = 0.0 ;
-//    double fsxN = 0.0, nsxS = 0.0, fsxS = 0.0, nsxN = 0.0 ;
-//
-//    if (mesh->BCu.type[iVxS  ] == 11) nsxS = 1.0;
-//    if (mesh->BCu.type[iVxN  ] == 11) nsxN = 1.0;
-//    if (mesh->BCu.type[iVxS  ] == 13) fsxS = 1.0;
-//    if (mesh->BCu.type[iVxN  ] == 13) fsxN = 1.0;
-//    if (mesh->BCv.type[iVzNWW] == 13) fsxW = 1.0;
-//    if (mesh->BCv.type[iVzNEE] == 13) fsxE = 1.0;
-//    if (mesh->BCv.type[iVzNWW] == 11) nsxW = 1.0;
-//    if (mesh->BCv.type[iVzNEE] == 11) nsxE = 1.0;
-//
-//    uC = -(D31N*(-1.0/6.0*wN_E/dx + 1.0/6.0*wN_W/dx) - D31S*(-1.0/6.0*wS_E/dx + 1.0/6.0*wS_W/dx) + D32N*(1.0/12.0*wN_E/dx - 1.0/12.0*wN_W/dx) - D32S*(1.0/12.0*wS_E/dx - 1.0/12.0*wS_W/dx) + D33N*(1 - fsxN)*(-nsxN - 1)/dz - D33S*(1 - fsxS)*(nsxS + 1)/dz + D34N*(1.0/12.0*wN_E/dx - 1.0/12.0*wN_W/dx) - D34S*(1.0/12.0*wS_E/dx - 1.0/12.0*wS_W/dx))/dz - (-2.0/3.0*D11E/dx - 2.0/3.0*D11W/dx + 1.0/3.0*D12E/dx + 1.0/3.0*D12W/dx + D13E*(0.25*(1 - fsxN)*(-nsxN - 1)/dz + 0.25*(1 - fsxS)*(nsxS + 1)/dz) - D13W*(0.25*(1 - fsxN)*(-nsxN - 1)/dz + 0.25*(1 - fsxS)*(nsxS + 1)/dz) + 1.0/3.0*D14E/dx + 1.0/3.0*D14W/dx)/dx;
-//    uW = -(-1.0/6.0*D31N*wN_W/dx + 1.0/6.0*D31S*wS_W/dx + 1.0/12.0*D32N*wN_W/dx - 1.0/12.0*D32S*wS_W/dx + 1.0/12.0*D34N*wN_W/dx - 1.0/12.0*D34S*wS_W/dx)/dz - (2.0/3.0*D11W/dx - 1.0/3.0*D12W/dx - D13W*(0.25*(1 - fsxN)*(-nsxN - 1)/dz + 0.25*(1 - fsxS)*(nsxS + 1)/dz) - 1.0/3.0*D14W/dx)/dx;
-//    uE = -(1.0/6.0*D31N*wN_E/dx - 1.0/6.0*D31S*wS_E/dx - 1.0/12.0*D32N*wN_E/dx + 1.0/12.0*D32S*wS_E/dx - 1.0/12.0*D34N*wN_E/dx + 1.0/12.0*D34S*wS_E/dx)/dz - (2.0/3.0*D11E/dx - 1.0/3.0*D12E/dx + D13E*(0.25*(1 - fsxN)*(-nsxN - 1)/dz + 0.25*(1 - fsxS)*(nsxS + 1)/dz) - 1.0/3.0*D14E/dx)/dx;
-//    uS = -(-D31S*(-1.0/6.0*wS_SE/dx + 1.0/6.0*wS_SW/dx) - D32S*(1.0/12.0*wS_SE/dx - 1.0/12.0*wS_SW/dx) - D33S*(1 - fsxS)*(nsxS - 1)/dz - D34S*(1.0/12.0*wS_SE/dx - 1.0/12.0*wS_SW/dx))/dz - (0.25*D13E*(1 - fsxS)*(nsxS - 1)/dz - 0.25*D13W*(1 - fsxS)*(nsxS - 1)/dz)/dx;
-//    uN = -(D31N*(-1.0/6.0*wN_NE/dx + 1.0/6.0*wN_NW/dx) + D32N*(1.0/12.0*wN_NE/dx - 1.0/12.0*wN_NW/dx) + D33N*(1 - fsxN)*(1 - nsxN)/dz + D34N*(1.0/12.0*wN_NE/dx - 1.0/12.0*wN_NW/dx))/dz - (0.25*D13E*(1 - fsxN)*(1 - nsxN)/dz - 0.25*D13W*(1 - fsxN)*(1 - nsxN)/dz)/dx;
-//    vSW = -(1.0/12.0*D31N*wN_W/dz - D31S*(-1.0/12.0*wS_SW/dz + 1.0/12.0*wS_W/dz) - 1.0/6.0*D32N*wN_W/dz - D32S*(1.0/6.0*wS_SW/dz - 1.0/6.0*wS_W/dz) + D33S/dx + 1.0/12.0*D34N*wN_W/dz - D34S*(-1.0/12.0*wS_SW/dz + 1.0/12.0*wS_W/dz))/dz - (-1.0/3.0*D11W/dz + 2.0/3.0*D12W/dz - 0.25*D13E/dx - D13W*(0.25*(1 - fsxW)*(nsxW + 1)/dx - 0.25/dx) - 1.0/3.0*D14W/dz)/dx;
-//    vSE = -(1.0/12.0*D31N*wN_E/dz - D31S*(1.0/12.0*wS_E/dz - 1.0/12.0*wS_SE/dz) - 1.0/6.0*D32N*wN_E/dz - D32S*(-1.0/6.0*wS_E/dz + 1.0/6.0*wS_SE/dz) - D33S/dx + 1.0/12.0*D34N*wN_E/dz - D34S*(1.0/12.0*wS_E/dz - 1.0/12.0*wS_SE/dz))/dz - (1.0/3.0*D11E/dz - 2.0/3.0*D12E/dz + D13E*(0.25*(1 - fsxE)*(-nsxE - 1)/dx + 0.25/dx) - 0.25*D13W/dx + 1.0/3.0*D14E/dz)/dx;
-//    vNW = -(D31N*(1.0/12.0*wN_NW/dz - 1.0/12.0*wN_W/dz) + 1.0/12.0*D31S*wS_W/dz + D32N*(-1.0/6.0*wN_NW/dz + 1.0/6.0*wN_W/dz) - 1.0/6.0*D32S*wS_W/dz - D33N/dx + D34N*(1.0/12.0*wN_NW/dz - 1.0/12.0*wN_W/dz) + 1.0/12.0*D34S*wS_W/dz)/dz - (1.0/3.0*D11W/dz - 2.0/3.0*D12W/dz - 0.25*D13E/dx - D13W*(0.25*(1 - fsxW)*(nsxW + 1)/dx - 0.25/dx) + 1.0/3.0*D14W/dz)/dx;
-//    vNE = -(D31N*(-1.0/12.0*wN_E/dz + 1.0/12.0*wN_NE/dz) + 1.0/12.0*D31S*wS_E/dz + D32N*(1.0/6.0*wN_E/dz - 1.0/6.0*wN_NE/dz) - 1.0/6.0*D32S*wS_E/dz + D33N/dx + D34N*(-1.0/12.0*wN_E/dz + 1.0/12.0*wN_NE/dz) + 1.0/12.0*D34S*wS_E/dz)/dz - (-1.0/3.0*D11E/dz + 2.0/3.0*D12E/dz + D13E*(0.25*(1 - fsxE)*(-nsxE - 1)/dx + 0.25/dx) - 0.25*D13W/dx - 1.0/3.0*D14E/dz)/dx;
-//    uSW = 0.25*D13W*(1 - fsxS)*(nsxS - 1)/(dx*dz) - (1.0/6.0*D31S*wS_SW/dx - 1.0/12.0*D32S*wS_SW/dx - 1.0/12.0*D34S*wS_SW/dx)/dz;
-//    uSE = -0.25*D13E*(1 - fsxS)*(nsxS - 1)/(dx*dz) - (-1.0/6.0*D31S*wS_SE/dx + 1.0/12.0*D32S*wS_SE/dx + 1.0/12.0*D34S*wS_SE/dx)/dz;
-//    uNW = 0.25*D13W*(1 - fsxN)*(1 - nsxN)/(dx*dz) - (-1.0/6.0*D31N*wN_NW/dx + 1.0/12.0*D32N*wN_NW/dx + 1.0/12.0*D34N*wN_NW/dx)/dz;
-//    uNE = -0.25*D13E*(1 - fsxN)*(1 - nsxN)/(dx*dz) - (1.0/6.0*D31N*wN_NE/dx - 1.0/12.0*D32N*wN_NE/dx - 1.0/12.0*D34N*wN_NE/dx)/dz;
-//    vSSW = -(-1.0/12.0*D31S*wS_SW/dz + 1.0/6.0*D32S*wS_SW/dz - 1.0/12.0*D34S*wS_SW/dz)/dz;
-//    vSSE = -(-1.0/12.0*D31S*wS_SE/dz + 1.0/6.0*D32S*wS_SE/dz - 1.0/12.0*D34S*wS_SE/dz)/dz;
-//    vSWW = 0.25*D13W*(1 - fsxW)*(nsxW - 1)/pow(dx, 2);
-//    vSEE = -0.25*D13E*(1 - fsxE)*(1 - nsxE)/pow(dx, 2);
-//    vNWW = 0.25*D13W*(1 - fsxW)*(nsxW - 1)/pow(dx, 2);
-//    vNEE = -0.25*D13E*(1 - fsxE)*(1 - nsxE)/pow(dx, 2);
-//    vNNW = -(-1.0/12.0*D31N*wN_NW/dz + 1.0/6.0*D32N*wN_NW/dz - 1.0/12.0*D34N*wN_NW/dz)/dz;
-//    vNNE = -(-1.0/12.0*D31N*wN_NE/dz + 1.0/6.0*D32N*wN_NE/dz - 1.0/12.0*D34N*wN_NE/dz)/dz;
-//    pW = -(0.25*D35N*wN_W - 0.25*D35S*wS_W)/dz - (1 - D15W)/dx;
-//    pE = -(0.25*D35N*wN_E - 0.25*D35S*wS_E)/dz - (D15E - 1)/dx;
-//    pSW = 0.25*D35S*wS_SW/dz;
-//    pSE = 0.25*D35S*wS_SE/dz;
-//    pNW = -0.25*D35N*wN_NW/dz;
-//    pNE = -0.25*D35N*wN_NE/dz;
-    
 
     // Stabilisation with density gradients
     if (stab==1) {
@@ -3231,31 +3170,7 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     if ( mesh->BCv.type[iVzNEE] == 11 ) vNE -= vNEE;
     if ( mesh->BCv.type[iVzSWW] == 11 ) vSW -= vSWW;
     if ( mesh->BCv.type[iVzSEE] == 11 ) vSE -= vSEE;
-    
 
-//    if (eqn==0) {
-//        printf("\n\n\n");
-//        printf("cVxC = %2.3e\n", uC*celvol);
-//        printf("cVxE = %2.3e\n", uE*celvol);
-//        printf("D11E = %2.3e D12E = %2.3e D13E = %2.3e\n", D11E, D12E, D13E);
-//        printf("D31S = %2.2e D31N = %2.2e\n", D31S, D31N );
-//        printf("D32S = %2.2e D32N = %2.2e\n", D32S, D32N );
-////        printf("inW = %2.2e inE = %2.2e inS = %2.2e inN = %2.2e\n", inW, inE, inS, inN);
-//        printf("wS_W = %2.2e wS_E = %2.2e wS_SW = %2.2e wS_SE = %2.2e\n", wS_W, wS_E, wS_SW, wS_SE);
-//        printf("wN_W = %2.2e wN_E = %2.2e wN_NW = %2.2e wN_NE = %2.2e\n", wN_W, wN_E, wN_NW, wN_NE);
-//        printf("fsxW = %2.2e fsxE = %2.2e fsxS = %2.2e fsxN = %2.2e\n", fsxW, fsxE, fsxS, fsxN);
-//        printf("nsxW = %2.2e nsxE = %2.2e nsxS = %2.2e nsxN = %2.2e\n", nsxW, nsxE, nsxS, nsxN);
-//
-//        double  wN_W  = inW,  wS_W  = inW;
-//        double  wN_E  = inE,  wS_E  = inE;
-//        double  wS_SW = inSWc, wS_SE = inSEc;
-//        double  wN_NW = inNWc, wN_NE = inNEc;
-////        printf("inW = %2.2e inE = %2.2e inS = %2.2e inN = %2.2e\n", inW, inE, inS, inN);
-////        printf("wW = %2.2e wE = %2.2e wS = %2.2e wN = %2.2e\n", wW, wE, wS, wN);
-//        printf("\n\n\n");
-//    }
-
-//    exit(1);
 
     if ( Assemble == 1 ) {
         StokesA->b[eqn] *= celvol;
@@ -3389,7 +3304,7 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
 
     }
     else {
-
+        
         // Residual function
         StokesA->F[eqn] = uC*u[iVxC];
         if ( mesh->BCp.type[iPrSW] != 30 && Newton==1 && l>1   )   StokesA->F[eqn] += pSW*p[iPrSW];
@@ -3437,7 +3352,7 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         if ( mesh->BCu.type[iVxW]  != 30 ) StokesA->F[eqn] += uW*u[iVxW];
         if ( mesh->BCu.type[iVxE]  != 30 ) StokesA->F[eqn] += uE*u[iVxE];
         //--------------------
-        
+
         StokesA->F[eqn]  = 0.0;
 //        StokesA->F[eqn] += (inE*mesh->sxxd[iPrE] - inW*mesh->sxxd[iPrW])/dx;
 //        StokesA->F[eqn] -= (inE*mesh->p_in[iPrE] - inW*mesh->p_in[iPrW])/dx;
@@ -3451,7 +3366,7 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         StokesA->F[eqn] -= (StokesA->b[eqn]);
         StokesA->F[eqn] *= celvol;
 //        printf("!!!!!!!!!! Fu[%d] = %2.2e\n", eqn, StokesA->F[eqn] );
-        
+
     }
 }
 
@@ -3528,30 +3443,27 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     double D31W  = mesh->D31_s[ixyW];
     double D32W  = mesh->D32_s[ixyW];
     double D33W  = mesh->D33_s[ixyW];
-    double D34W  = 0.0;
-    double D35W  = mesh->D34_s[ixyW];
+    double D34W  = mesh->D34_s[ixyW];
+//    double D35W  = mesh->D35_s[ixyW];
 
     double D31E  = mesh->D31_s[ixyE];
     double D32E  = mesh->D32_s[ixyE];
     double D33E  = mesh->D33_s[ixyE];
-    double D34E  = 0.0;
-    double D35E  = mesh->D34_s[ixyE];
+    double D34E  = mesh->D34_s[ixyE];
+//    double D35E  = mesh->D35_s[ixyE];
 
     double D21S  = mesh->D21_n[iPrS];
     double D22S  = mesh->D22_n[iPrS];
     double D23S  = mesh->D23_n[iPrS];
-    double D24S  =0.0;
-    double D25S  = mesh->D24_n[iPrS];
+    double D24S  = mesh->D24_n[iPrS];
+//    double D25S  = mesh->D25_n[iPrS];
 
     double D21N  = mesh->D21_n[iPrN];
     double D22N  = mesh->D22_n[iPrN];
     double D23N  = mesh->D23_n[iPrN];
-    double D24N  = 0.0;
-    double D25N  = mesh->D24_n[iPrN];
-
-//    if ( mesh->BCv.type[iVzE] == 13 ) {D31E = 0.0; D32E = 0.0; D33E = 0.0; D34E = 0.0;}
-//    if ( mesh->BCv.type[iVzW] == 13 ) {D31W = 0.0; D32W = 0.0; D33W = 0.0; D34W = 0.0;}
-
+    double D24N  = mesh->D24_n[iPrN];
+//    double D25N  = mesh->D25_n[iPrN];
+    
     double inS=0.0,inN=0.0,inW=0.0, inE = 0.0;
 
     if (mesh->BCp.type[iPrS] == -1) inS = 1.0;

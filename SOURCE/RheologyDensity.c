@@ -75,6 +75,9 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
     Nz = mesh->Nz; Ncz = Nz-1;
     double nx, nz, deta, d0, d1;
     int aniso_fstrain = model->aniso_fstrain;
+    double etae;
+    double yn = 1.0;
+    int el = model->iselastic;
 
     if (Jacobian == 0  && model->aniso == 0) {
 
@@ -108,9 +111,6 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
 
     if (Jacobian == 1  && model->aniso == 0) {
 
-        double etae;
-        double yn = 1.0;
-        int el = model->iselastic;
         // Loop on cell centers
 #pragma omp parallel for shared( mesh ) private ( etae ) firstprivate ( el, yn )
         for (k=0; k<Ncx*Ncz; k++) {
@@ -197,7 +197,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
         printf("Computing anisotropic viscosity tensor\n");
         
         // Loop on cell centers
-#pragma omp parallel for shared( mesh ) private ( nx, nz, deta, d0, d1 )  firstprivate ( aniso_fstrain )
+#pragma omp parallel for shared( mesh ) private ( nx, nz, deta, d0, d1, etae )  firstprivate ( aniso_fstrain, el, yn )
         for (k=0; k<Ncx*Ncz; k++) {
             
             // Director
@@ -231,12 +231,42 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 mesh->D23_n[k] = 0.0;
                 mesh->D24_n[k] = 0.0;
             }
+            
+            if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
+                switch ( el ) {
+                    case 0:
+                        etae = model->dt*mesh->mu_n[k];
+                        mesh->D11_n[k] += 2.0*mesh->eta_n[k] + yn*2.0*mesh->detadexx_n[k]*mesh->exxd[k];
+                        mesh->D12_n[k] +=                      yn*2.0*mesh->detadezz_n[k]*mesh->exxd[k];
+                        mesh->D13_n[k] +=                      yn*2.0*mesh->detadgxz_n[k]*mesh->exxd[k];
+                        mesh->D14_n[k] +=                      yn*2.0*mesh->detadp_n[k]  *mesh->exxd[k];
+                        
+                        mesh->D21_n[k] +=                      yn*2.0*mesh->detadexx_n[k]*mesh->ezzd[k];
+                        mesh->D22_n[k] += 2.0*mesh->eta_n[k] + yn*2.0*mesh->detadezz_n[k]*mesh->ezzd[k];
+                        mesh->D23_n[k] +=                      yn*2.0*mesh->detadgxz_n[k]*mesh->ezzd[k];
+                        mesh->D24_n[k] +=                      yn*2.0*mesh->detadp_n[k]  *mesh->ezzd[k];
+                        
+                        break;
+                    case 1:
+                        etae = model->dt*mesh->mu_n[k];
+                        mesh->D11_n[k] += 2.0*mesh->eta_n[k] + yn*2.0*mesh->detadexx_n[k]*mesh->exxd[k] + mesh->sxxd0[k]*mesh->detadexx_n[k] / etae;
+                        mesh->D12_n[k] +=                      yn*2.0*mesh->detadezz_n[k]*mesh->exxd[k] + mesh->sxxd0[k]*mesh->detadezz_n[k] / etae;
+                        mesh->D13_n[k] +=                      yn*2.0*mesh->detadgxz_n[k]*mesh->exxd[k] + mesh->sxxd0[k]*mesh->detadgxz_n[k] / etae;
+                        mesh->D14_n[k] +=                      yn*2.0*mesh->detadp_n[k]  *mesh->exxd[k] + mesh->sxxd0[k]*mesh->detadp_n[k]   / etae;
+                        
+                        mesh->D21_n[k] +=                      yn*2.0*mesh->detadexx_n[k]*mesh->ezzd[k] + mesh->szzd0[k]*mesh->detadexx_n[k] / etae;
+                        mesh->D22_n[k] += 2.0*mesh->eta_n[k] + yn*2.0*mesh->detadezz_n[k]*mesh->ezzd[k] + mesh->szzd0[k]*mesh->detadezz_n[k] / etae;
+                        mesh->D23_n[k] +=                      yn*2.0*mesh->detadgxz_n[k]*mesh->ezzd[k] + mesh->szzd0[k]*mesh->detadgxz_n[k] / etae;
+                        mesh->D24_n[k] +=                      yn*2.0*mesh->detadp_n[k]  *mesh->ezzd[k] + mesh->szzd0[k]*mesh->detadp_n[k]   / etae;
+                        break;
+                }
+            }
         }
         
 //        int k, l;
         
         // Loop on cell vertices
-#pragma omp parallel for shared( mesh )  private ( nx, nz, deta, d0, d1 ) firstprivate ( aniso_fstrain )
+#pragma omp parallel for shared( mesh )  private ( nx, nz, deta, d0, d1, etae ) firstprivate ( aniso_fstrain, el, yn )
         for (k=0; k<Nx*Nz; k++) {
             
             // Director
@@ -261,7 +291,31 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 mesh->D33_s[k] = 0.0;
                 mesh->D34_s[k] = 0.0;
             }
+            
+            if ( mesh->BCg.type[k] != 30 ) {
+                switch ( el ) {
+                    case 0:
+                        mesh->D31_s[k] +=                  yn*mesh->detadexx_s[k]*2.0*mesh->exz[k];  // Factor 2 is important!!
+                        mesh->D32_s[k] +=                  yn*mesh->detadezz_s[k]*2.0*mesh->exz[k];
+                        mesh->D33_s[k] += mesh->eta_s[k] + yn*mesh->detadgxz_s[k]*2.0*mesh->exz[k];
+                        mesh->D34_s[k] +=                  yn*mesh->detadp_s[k]  *2.0*mesh->exz[k];
+                        break;
+                    case 1:
+                        etae = model->dt*mesh->mu_s[k];
+                        mesh->D31_s[k] +=                  yn*mesh->detadexx_s[k]*2.0*mesh->exz[k] + mesh->sxz0[k]*mesh->detadexx_s[k] / etae;  // Factor 2 is important!!
+                        mesh->D32_s[k] +=                  yn*mesh->detadezz_s[k]*2.0*mesh->exz[k] + mesh->sxz0[k]*mesh->detadezz_s[k] / etae;
+                        mesh->D33_s[k] += mesh->eta_s[k] + yn*mesh->detadgxz_s[k]*2.0*mesh->exz[k] + mesh->sxz0[k]*mesh->detadgxz_s[k] / etae;
+                        mesh->D34_s[k] +=                  yn*mesh->detadp_s[k]  *2.0*mesh->exz[k] + mesh->sxz0[k]*mesh->detadp_s[k]   / etae;
+                        break;
+                }
+                
+            }
+            
+            
         }
+    }
+    if (Jacobian == 1  && model->aniso == 1) {
+        printf("\nShould be here some time !!!!!!\n");
     }
 
 }
@@ -1274,6 +1328,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     if ( dislocation == 1 ) {
         B_pwl = pre_factor * F_pwl * pow(A_pwl,-1.0/n_pwl) * exp( (Ea_pwl + P*Va_pwl)/R/n_pwl/T ) * pow(d, m_pwl/n_pwl) * pow(f_pwl, -r_pwl/n_pwl) * exp(-a_pwl*phi/n_pwl);
         C_pwl = pow(2.0*B_pwl, -n_pwl);
+//        printf("%2.2e %2.6e %2.6e\n",  exp( (Ea_pwl + P*Va_pwl)/R/n_pwl/T ), Ea_pwl*scaling->J,  R*n_pwl*T *scaling->J);
     }
     if ( diffusion == 1 ) {
         if (m_lin>0.0 && d<1e-13/scaling->L){
@@ -1885,13 +1940,13 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 mesh->detadp_n[c0]   *= mesh->eta_n[c0];
             }
             
-            // ACHTUNG!!!! THIS IS HARD-CODED
-            // Anisotropy
-            if (model->aniso==1) {
-                mesh->sxxd[c0] =  mesh->D11_n[c0]*mesh->exxd[c0] + mesh->D12_n[c0]*mesh->ezzd[c0] +  2.0*mesh->D13_n[c0]*mesh->exz_n[c0];
-                mesh->szzd[c0] =  mesh->D21_n[c0]*mesh->exxd[c0] + mesh->D22_n[c0]*mesh->ezzd[c0] +  2.0*mesh->D23_n[c0]*mesh->exz_n[c0];
-//                printf("%2.2e \n", mesh->sxxd[c0]*scaling->S);
-            }
+//            // ACHTUNG!!!! THIS IS HARD-CODED
+//            // Anisotropy
+//            if (model->aniso==1) {
+//                mesh->sxxd[c0] =  mesh->D11_n[c0]*mesh->exxd[c0] + mesh->D12_n[c0]*mesh->ezzd[c0] +  2.0*mesh->D13_n[c0]*mesh->exz_n[c0];
+//                mesh->szzd[c0] =  mesh->D21_n[c0]*mesh->exxd[c0] + mesh->D22_n[c0]*mesh->ezzd[c0] +  2.0*mesh->D23_n[c0]*mesh->exz_n[c0];
+////                printf("%2.2e \n", mesh->sxxd[c0]*scaling->S);
+//            }
 //            printf("eta_n = %2.2e\n", mesh->eta_n[c0]*scaling->eta);
 
         }
@@ -2026,12 +2081,12 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 mesh->detadp_s[c1]   *= mesh->eta_s[c1];
             }
             
-            // ACHTUNG!!!! THIS IS HARD-CODED
-            // Anisotropy
-            if (model->aniso==1) {
-//                printf("Stress computed from anisotropy");
-                mesh->sxz[c1] =  mesh->D31_s[c1]*mesh->exxd_s[c1] + mesh->D32_s[c1]*mesh->ezzd_s[c1] + 2.0*mesh->D33_s[c1]*mesh->exz[c1];
-            }
+//            // ACHTUNG!!!! THIS IS HARD-CODED
+//            // Anisotropy
+//            if (model->aniso==1) {
+////                printf("Stress computed from anisotropy");
+//                mesh->sxz[c1] =  mesh->D31_s[c1]*mesh->exxd_s[c1] + mesh->D32_s[c1]*mesh->ezzd_s[c1] + 2.0*mesh->D33_s[c1]*mesh->exz[c1];
+//            }
 //            if (c1==546) printf("eta_s = %2.2e index = %d\n", etaVE*scaling->eta, c1);
         }
     }
