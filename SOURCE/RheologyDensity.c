@@ -2199,6 +2199,8 @@ void CohesionFrictionGrid( grid* mesh, mat_prop materials, params model, scale s
                             //   printf("Allo 3 - %d!\n", p);
                             phi = materials.phi[p] - (materials.phi[p] - materials.phi_end[p]) * ( strain_acc / (materials.pls_end[p] - materials.pls_start[p]) );
                             C   = materials.C[p]   + (  materials.C_end[p] -   materials.C[p]) * MINV( 1.0, strain_acc /materials.pls_end[p] );
+                            if (C<materials.C_end[p])       C = materials.C_end[p];
+                            if (phi<materials.phi_end[p]) phi = materials.phi_end[p];
                         }
 
                     }
@@ -2271,6 +2273,8 @@ void CohesionFrictionGrid( grid* mesh, mat_prop materials, params model, scale s
                         if (strain_acc >= materials.pls_start[p] && strain_acc < materials.pls_end[p] ) {
                             phi = materials.phi[p] - (materials.phi[p] - materials.phi_end[p]) * ( strain_acc / (materials.pls_end[p] - materials.pls_start[p]) );
                             C   = materials.C[p]   - (  materials.C[p] -   materials.C_end[p]) * ( strain_acc / (materials.pls_end[p] - materials.pls_start[p]) );
+                            if (C<materials.C_end[p])       C = materials.C_end[p];
+                            if (phi<materials.phi_end[p]) phi = materials.phi_end[p];
                         }
                     }
 
