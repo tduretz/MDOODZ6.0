@@ -2446,7 +2446,6 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
 
-
 #pragma omp parallel for shared(mesh,materials) private( NT, NP, iT, iP, TW, PW, iSW, iSE, iNW, iNE, phase_diag, dT, dP, Tgrid, Pgrid, c0, p, rhonew, rho0, alpha, beta, T0, P0, rhop, drho, percT, percP) firstprivate(Ncx, Ncz, model, epsi)
     for ( c0=0; c0<Ncx*Ncz; c0++ ) {
         rhonew = 0.0;
@@ -2479,6 +2478,7 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
                     beta   = materials->bet[p];
                     rhop   = (1.0 -  alpha * (mesh->T[c0] - T0) ) * (1.0 +  beta * (mesh->p_in[c0] - P0) ); // EOS general
                     rhop   = ((1.0-mesh->X[c0])*rho0 + mesh->X[c0]*(rho0+drho))*rhop; // Average density based on X
+//                    printf("rhop = %2.2e\n", rhop*scaling->rho);
                 }
 
                 // T and P dependent density based on phase diagrams
