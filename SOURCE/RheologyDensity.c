@@ -1058,8 +1058,8 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
             if (particles->phase[k] != -1) {
                 p = particles->phase[k];
                 dtm     = materials->Cv[p] * rho_part[k]/ (materials->k[p] * (1.0/dx/dx + 1.0/dz/dz));
-//                dtm     = materials->Cv[p]* particles->rho[k]/ (materials->k[p] * (1.0/dx/dx + 1.0/dz/dz));
-                dTms[k] = -( particles->T[k] - Tm0[k] ) * (1.0-exp(-d*model.dt/dtm));
+                double fac = fmax((1.0-exp(-d*model.dt/dtm)),.0);
+                dTms[k] = -( particles->T[k] - Tm0[k] ) * fac;
             }
         }
 //        MinMaxArray(dTms, scaling.T, particles->Nb_part, "dTms");
@@ -1081,6 +1081,8 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
 
         // Remaining temperature increments grid --> markers
         Interp_Grid2P( *particles, dTmr, mesh, dTgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
+        
+        
 
 //        MinMaxArray(dTmr, scaling.T, particles->Nb_part, "dTmr");
 
@@ -1184,9 +1186,10 @@ void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_pr
                 if (particles->phase[k] != -1) {
                     p         = particles->phase[k];
                     dtaum     = etam[k]/ (materials->mu[p]);
-                    dtxxms[k] = -( particles->sxxd[k] - txxm0[k]) * (1.0 - exp(-d*model->dt/dtaum));
-                    dtzzms[k] = -( particles->szzd[k] - tzzm0[k]) * (1.0 - exp(-d*model->dt/dtaum));
-                    dtxzms[k] = -( particles->sxz[k]  - txzm0[k]) * (1.0 - exp(-d*model->dt/dtaum));
+                    double fac = fmax((1.0-exp(-d*model->dt/dtaum)),.0);
+                    dtxxms[k] = -( particles->sxxd[k] - txxm0[k]) * fac;
+                    dtzzms[k] = -( particles->szzd[k] - tzzm0[k]) * fac;
+                    dtxzms[k] = -( particles->sxz[k]  - txzm0[k]) * fac;
                 }
             }
 
