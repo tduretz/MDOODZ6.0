@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00003
+istep = 00010
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -18,7 +18,7 @@ T   = 20
 /**** SPACE-TIME ****/
 Nx      = 101
 Nz      = 101
-Nt      = 3
+Nt      = 10
 xmin    = -5.000000e-1
 zmin    = -5.000000e-1
 xmax    =  5.000000e-1
@@ -32,7 +32,7 @@ lsolver           = 2
 diag_scaling      = 0
 abs_tol_div       = 1e-11
 rel_tol_div       = 1e-11
-GNUplot_residuals = 0
+GNUplot_residuals = 1
 shear_style       = 1
 pc_type           = 0
 eta_avg           = 1

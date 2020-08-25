@@ -940,7 +940,7 @@ int main( int nargs, char *args[] ) {
                     fprintf(GNUplotPipe, "%s \n", GNUplotCommands[i]); //Send commands to gnuplot one by one.
                 }
                 fclose(temp);
-                fclose(GNUplotPipe);
+                pclose(GNUplotPipe);
             }
             
         }
@@ -971,8 +971,6 @@ int main( int nargs, char *args[] ) {
             Interp_Grid2P( particles, particles.szzd, &mesh, mesh.szzd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
             Interp_Grid2P( particles, particles.sxz,  &mesh, mesh.sxz , mesh.xg_coord,  mesh.zg_coord,  mesh.Nx  , mesh.Nz, mesh.BCg.type   );
         }
-        
-        
         
         //--------------------------------------------------------------------------------------------------------------------------------//
         //        // Update pressure

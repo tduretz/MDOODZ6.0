@@ -104,8 +104,11 @@ for( cc=0; cc<nz*nxvz; cc++) {
 #pragma omp parallel for shared( mesh, dx, Stokes ) private( cc ) firstprivate( alpha, ncx, ncz )
 for( cc=0; cc<ncz*ncx; cc++) {
     
+//    mesh->p_in[cc] = 0.0;
+//    mesh->dp[cc]   = 0.0;
     if ( mesh->BCp.type[cc] != 30 && mesh->BCp.type[cc] != 0  && mesh->BCp.type[cc] != 31 ) {
         mesh->p_in[cc] += alpha*dx[Stokes->eqn_p[cc]];
+        mesh->dp[cc]    = alpha*dx[Stokes->eqn_p[cc]];
     }
 }
 

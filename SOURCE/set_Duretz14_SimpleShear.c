@@ -65,6 +65,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double Temperature = (model.user0+zeroC)/scaling.T;
     double rad=model.user1/scaling.L, xc=-0e3/scaling.L, zc=-0e3/scaling.L;
     double spacing = 5.0e-3/scaling.L;
+    int layer = (int)(model.user2);
 
     for( np=0; np<particles->Nb_part; np++ ) {
         
@@ -76,10 +77,25 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         //----------------------------------
         // INCLUSIONS INCLUSIONS INCLUSIONS
         //----------------------------------
+        
+        if (layer==1) {
+            // Central layer
+            if ( pow(particles->z[np],2) < pow(rad,2) ) {
+                particles->phase[np] = 0;
+            }
+        }
+        else {
         // Central inclusion
-        if ( pow(particles->x[np],2) + pow(particles->z[np],2) < pow(rad,2) ) {
+        if ( pow(particles->x[np]-L/2.0,2) + pow(particles->z[np],2) < pow(rad,2) ) {
                         particles->phase[np] = 0;
         }
+            // Central inclusion
+            if ( pow(particles->x[np]+L/2.0,2) + pow(particles->z[np],2) < pow(rad,2) ) {
+                particles->phase[np] = 0;
+            }
+        }
+        
+        
 //        // SE inclusion
 //        if ( pow(particles->x[np]-0.5/scaling.L,2) + pow(particles->z[np]+0.5/scaling.L,2) < pow(rad,2) ) {
 //            particles->phase[np] = 0;
