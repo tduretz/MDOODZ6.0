@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00003
+istep = 00005
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -10,7 +10,7 @@ writer_debug    = 0
 writer_energies = 0
 
 /**** SCALES ****/
-eta = 1
+eta = 10
 L   = 1
 V   = 1
 T   = 20
@@ -18,7 +18,7 @@ T   = 20
 /**** SPACE-TIME ****/
 Nx      = 101
 Nz      = 101
-Nt      = 3
+Nt      = 5
 xmin    = -5.000000e-1
 zmin    = -5.000000e-1
 xmax    =  5.000000e-1
@@ -39,6 +39,7 @@ eta_avg           = 1
 num_deriv         = 0
 
 /**** SWITCHES ****/
+compressible    = 1
 ismechanical    = 1
 RK              = 4
 isperiodic_x    = 0
@@ -46,7 +47,7 @@ ispureshear_ALE = 0
 isinertial      = 0
 iselastic       = 1
 isthermal       = 0
-line_search     = 1
+line_search     = 0
 free_surf       = 0
 free_surf_stab  = 0
 eqn_state       = 0
@@ -83,9 +84,9 @@ eta_vp = 1e-1
 n_vp   = 1.5
 Slim = 500e9
 alp  = 10.0e-6
-bet  = 1e-11
+bet  = 1e0
 drho = 0
-cstv = 0             / constant visc law
+cstv = 0            / constant visc law
 pwlv = 1            / disloc. creep
 linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
@@ -108,7 +109,7 @@ eta_vp = 1e-1
 n_vp   = 1.5
 Slim = 500e9
 alp  = 10.0e-6
-bet  = 1e-11
+bet  = 1e0
 drho = 0
 cstv = 0             / constant visc law
 pwlv = 1             / disloc. creep

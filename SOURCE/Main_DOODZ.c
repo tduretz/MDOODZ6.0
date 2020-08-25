@@ -381,7 +381,8 @@ int main( int nargs, char *args[] ) {
         }
 #endif
         // Set initial stresses and pressure to zero
-        //        Initialise1DArrayDouble( mesh.p_in,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
+        Initialise1DArrayDouble( particles.P,      particles.Nb_part, 0.0 );
+        Initialise1DArrayDouble( mesh.p_in,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
         Initialise1DArrayDouble( mesh.sxxd,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
         Initialise1DArrayDouble( mesh.szzd,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
         Initialise1DArrayDouble( mesh.sxz,   (mesh.Nx)  *(mesh.Nz)  , 0.0 );
@@ -603,6 +604,7 @@ int main( int nargs, char *args[] ) {
         MinMaxArrayTag( mesh.strain_n,   1.0,       (mesh.Nx-1)*(mesh.Nz-1), "strain_n", mesh.BCp.type );
         MinMaxArrayTag( mesh.T,      scaling.T,     (mesh.Nx-1)*(mesh.Nz-1), "T       ", mesh.BCt.type );
         MinMaxArrayTag( mesh.p_in,   scaling.S,     (mesh.Nx-1)*(mesh.Nz-1), "P       ", mesh.BCt.type );
+        MinMaxArrayI  ( mesh.comp_cells, 1.0, (mesh.Nx-1)*(mesh.Nz-1), "comp_cells" );
         MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part  ");
         if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nx_n,     1.0,   (mesh.Nx-1)*(mesh.Nz-1), "nx_n    ", mesh.BCp.type );
         if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nz_n,     1.0,   (mesh.Nx-1)*(mesh.Nz-1), "nz_n    ", mesh.BCp.type );
@@ -973,8 +975,7 @@ int main( int nargs, char *args[] ) {
         }
         
         //--------------------------------------------------------------------------------------------------------------------------------//
-        //        // Update pressure
-        //        ArrayEqualArray( mesh.p_0, mesh.p_in,  (mesh.Nx-1)*(mesh.Nz-1) );
+        // Update pressure on markers
         UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
         
         MinMaxArray( particles.ttrans,  scaling.t, particles.Nb_part,   "AVANT UPDATE : ttrans. part" );
@@ -983,7 +984,6 @@ int main( int nargs, char *args[] ) {
         MinMaxArrayTag( mesh.ttrans_n,   scaling.t,    (mesh.Nx-1)*(mesh.Nz-1),   "ttrans_n",   mesh.BCp.type );
         
         UpdateParticlettrans( &mesh, &scaling, model, &particles, &materials );
-        //        Interp_Grid2P( particles, particles.Plith,  &mesh, mesh.p_lith, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
         MinMaxArray( particles.ttrans,  scaling.t, particles.Nb_part,   "APRES UPDATE : ttrans. part" );
         MinMaxArray( particles.P,       scaling.S, particles.Nb_part,   "P part"       );
 

@@ -225,8 +225,6 @@ void Xmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
         if ( mesh->BCu.type[iVxW]  != 30 ) StokesA->F[eqn] += uW*u[iVxW];
         if ( mesh->BCu.type[iVxE]  != 30 ) StokesA->F[eqn] += uE*u[iVxE];
         
-
-       
         StokesA->F[eqn] -= (StokesA->b[eqn]);// + Stokes->bbc[eqn];
         StokesA->F[eqn] *= celvol;
 //        if (isnan(StokesA->F[eqn]) ) printf("cuC = %2.2e u[iVxC] = %2.2e, D11W = %2.2e, D11E = %2.2e D33S = %2.2e D33N = %2.2e \n", uC, u[iVxC],  D11W, D11E, D33S, D33N );
@@ -3305,52 +3303,52 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     }
     else {
         
-        // Residual function
-        StokesA->F[eqn] = uC*u[iVxC];
-        if ( mesh->BCp.type[iPrSW] != 30 && Newton==1 && l>1   )   StokesA->F[eqn] += pSW*p[iPrSW];
-        if ( mesh->BCp.type[iPrSE] != 30 && Newton==1 && l>1   )   StokesA->F[eqn] += pSE*p[iPrSE];
-        if ( mesh->BCp.type[iPrW]  != 30 && mesh->BCp.type[iPrE] != 30 ) {
-            StokesA->F[eqn]  += pW*p[iPrW] + pE*p[iPrE];
-        }
-        if ( mesh->BCp.type[iPrNW] != 30 && Newton==1 && l<nz-1)   StokesA->F[eqn] += pNW*p[iPrNW];
-        if ( mesh->BCp.type[iPrNE] != 30 && Newton==1 && l<nz-1)   StokesA->F[eqn] += pNE*p[iPrNE];
-        //--------------------
-        if ( mesh->BCv.type[iVzSE] != 30 )  StokesA->F[eqn] += vSE*v[iVzSE];
-        if ( mesh->BCv.type[iVzSW] != 30 )  StokesA->F[eqn] += vSW*v[iVzSW];
-        if ( mesh->BCv.type[iVzNE] != 30 )  StokesA->F[eqn] += vNE*v[iVzNE];
-        if ( mesh->BCv.type[iVzNW] != 30 )  StokesA->F[eqn] += vNW*v[iVzNW];
-        //--------------------
-        if ( l>1 && mesh->BCv.type[iVzSSW] != 30 ) StokesA->F[eqn] += vSSW*v[iVzSSW]; // vSSW
-        if ( l>1 && mesh->BCv.type[iVzSSE] != 30 ) StokesA->F[eqn] += vSSE*v[iVzSSE]; // vSSE
-        //--------------------
-        if ( mesh->BCv.type[iVzSWW]  == -1 ||  mesh->BCv.type[iVzSWW]  == -12 ) StokesA->F[eqn] +=     vSWW*v[iVzSWW];             // vSWW (Newton)
-        if ( mesh->BCv.type[iVzSWW]  == 11 ) StokesA->F[eqn] += 2.0*vSWW*mesh->BCv.val[iVzSWW];
-        if ( mesh->BCv.type[iVzSEE]  == -1 ||  mesh->BCv.type[iVzSEE]  == -12 ) StokesA->F[eqn] +=     vSEE*v[iVzSEE];             // vSEE (Newton)
-        if ( mesh->BCv.type[iVzSEE]  == 11 ) StokesA->F[eqn] += 2.0*vSEE*mesh->BCv.val[iVzSEE];
-        if ( mesh->BCv.type[iVzNWW]  == -1 || mesh->BCv.type[iVzNWW]  == -12 ) StokesA->F[eqn] +=     vNWW*v[iVzNWW];             // vNWW (Newton)
-        if ( mesh->BCv.type[iVzNWW]  == 11 ) StokesA->F[eqn] += 2.0*vNWW*mesh->BCv.val[iVzNWW];
-        if ( mesh->BCv.type[iVzNEE]  == -1 || mesh->BCv.type[iVzNEE]  == -12 ) StokesA->F[eqn] +=     vNEE*v[iVzNEE];             // vNEE (Newton)
-        if ( mesh->BCv.type[iVzNEE]  == 11 ) StokesA->F[eqn] += 2.0*vNEE*mesh->BCv.val[iVzNEE];
-        //--------------------
-        if ( l<nz-1 && mesh->BCv.type[iVzNNW] != 30 ) StokesA->F[eqn] += vNNW*v[iVzNNW]; // vNNW
-        if ( l<nz-1 && mesh->BCv.type[iVzNNE] != 30 ) StokesA->F[eqn] += vNNE*v[iVzNNE]; // vNNE
-        //--------------------
-        if ( mesh->BCu.type[iVxSW] == -1 || mesh->BCu.type[iVxSW] == -2 || mesh->BCu.type[iVxSW] == -12 ) StokesA->F[eqn] +=      uSW*u[iVxSW];
-        if ( mesh->BCu.type[iVxSW] == 11 ) StokesA->F[eqn] +=  2.0*uSW*mesh->BCu.val[iVxSW];
-        if ( mesh->BCu.type[iVxS ] == -1 || mesh->BCu.type[iVxS ] == -2 || mesh->BCu.type[iVxS ] == -12 ) StokesA->F[eqn] +=      uS *u[iVxS];
-        if ( mesh->BCu.type[iVxS ] == 11 ) StokesA->F[eqn] +=  2.0*uS* mesh->BCu.val[iVxS];
-        if ( mesh->BCu.type[iVxSE] == -1 || mesh->BCu.type[iVxSE] == -2 || mesh->BCu.type[iVxSE] == -12 ) StokesA->F[eqn] +=      uSE*u[iVxSE];
-        if ( mesh->BCu.type[iVxSE] == 11 ) StokesA->F[eqn] +=  2.0*uSE*mesh->BCu.val[iVxSE];
-        //--------------------
-        if ( mesh->BCu.type[iVxNW] == -1 || mesh->BCu.type[iVxNW] == -2 || mesh->BCu.type[iVxNW] == -12 ) StokesA->F[eqn] +=      uNW*u[iVxNW];
-        if ( mesh->BCu.type[iVxNW] == 11 ) StokesA->F[eqn] +=  2.0*uNW*mesh->BCu.val[iVxNW];
-        if ( mesh->BCu.type[iVxN ] == -1 || mesh->BCu.type[iVxN ] == -2 || mesh->BCu.type[iVxN ] == -12 ) StokesA->F[eqn] +=      uN *u[iVxN];
-        if ( mesh->BCu.type[iVxN ] == 11 ) StokesA->F[eqn] +=  2.0*uN *mesh->BCu.val[iVxN];
-        if ( mesh->BCu.type[iVxNE] == -1 || mesh->BCu.type[iVxNE] == -2 || mesh->BCu.type[iVxNE] == -12 ) StokesA->F[eqn] +=      uNE*u[iVxNE];
-        if ( mesh->BCu.type[iVxNE] == 11 ) StokesA->F[eqn] +=  2.0*uNE*mesh->BCu.val[iVxNE];
-        //--------------------
-        if ( mesh->BCu.type[iVxW]  != 30 ) StokesA->F[eqn] += uW*u[iVxW];
-        if ( mesh->BCu.type[iVxE]  != 30 ) StokesA->F[eqn] += uE*u[iVxE];
+//        // Residual function
+//        StokesA->F[eqn] = uC*u[iVxC];
+//        if ( mesh->BCp.type[iPrSW] != 30 && Newton==1 && l>1   )   StokesA->F[eqn] += pSW*p[iPrSW];
+//        if ( mesh->BCp.type[iPrSE] != 30 && Newton==1 && l>1   )   StokesA->F[eqn] += pSE*p[iPrSE];
+//        if ( mesh->BCp.type[iPrW]  != 30 && mesh->BCp.type[iPrE] != 30 ) {
+//            StokesA->F[eqn]  += pW*p[iPrW] + pE*p[iPrE];
+//        }
+//        if ( mesh->BCp.type[iPrNW] != 30 && Newton==1 && l<nz-1)   StokesA->F[eqn] += pNW*p[iPrNW];
+//        if ( mesh->BCp.type[iPrNE] != 30 && Newton==1 && l<nz-1)   StokesA->F[eqn] += pNE*p[iPrNE];
+//        //--------------------
+//        if ( mesh->BCv.type[iVzSE] != 30 )  StokesA->F[eqn] += vSE*v[iVzSE];
+//        if ( mesh->BCv.type[iVzSW] != 30 )  StokesA->F[eqn] += vSW*v[iVzSW];
+//        if ( mesh->BCv.type[iVzNE] != 30 )  StokesA->F[eqn] += vNE*v[iVzNE];
+//        if ( mesh->BCv.type[iVzNW] != 30 )  StokesA->F[eqn] += vNW*v[iVzNW];
+//        //--------------------
+//        if ( l>1 && mesh->BCv.type[iVzSSW] != 30 ) StokesA->F[eqn] += vSSW*v[iVzSSW]; // vSSW
+//        if ( l>1 && mesh->BCv.type[iVzSSE] != 30 ) StokesA->F[eqn] += vSSE*v[iVzSSE]; // vSSE
+//        //--------------------
+//        if ( mesh->BCv.type[iVzSWW]  == -1 ||  mesh->BCv.type[iVzSWW]  == -12 ) StokesA->F[eqn] +=     vSWW*v[iVzSWW];             // vSWW (Newton)
+//        if ( mesh->BCv.type[iVzSWW]  == 11 ) StokesA->F[eqn] += 2.0*vSWW*mesh->BCv.val[iVzSWW];
+//        if ( mesh->BCv.type[iVzSEE]  == -1 ||  mesh->BCv.type[iVzSEE]  == -12 ) StokesA->F[eqn] +=     vSEE*v[iVzSEE];             // vSEE (Newton)
+//        if ( mesh->BCv.type[iVzSEE]  == 11 ) StokesA->F[eqn] += 2.0*vSEE*mesh->BCv.val[iVzSEE];
+//        if ( mesh->BCv.type[iVzNWW]  == -1 || mesh->BCv.type[iVzNWW]  == -12 ) StokesA->F[eqn] +=     vNWW*v[iVzNWW];             // vNWW (Newton)
+//        if ( mesh->BCv.type[iVzNWW]  == 11 ) StokesA->F[eqn] += 2.0*vNWW*mesh->BCv.val[iVzNWW];
+//        if ( mesh->BCv.type[iVzNEE]  == -1 || mesh->BCv.type[iVzNEE]  == -12 ) StokesA->F[eqn] +=     vNEE*v[iVzNEE];             // vNEE (Newton)
+//        if ( mesh->BCv.type[iVzNEE]  == 11 ) StokesA->F[eqn] += 2.0*vNEE*mesh->BCv.val[iVzNEE];
+//        //--------------------
+//        if ( l<nz-1 && mesh->BCv.type[iVzNNW] != 30 ) StokesA->F[eqn] += vNNW*v[iVzNNW]; // vNNW
+//        if ( l<nz-1 && mesh->BCv.type[iVzNNE] != 30 ) StokesA->F[eqn] += vNNE*v[iVzNNE]; // vNNE
+//        //--------------------
+//        if ( mesh->BCu.type[iVxSW] == -1 || mesh->BCu.type[iVxSW] == -2 || mesh->BCu.type[iVxSW] == -12 ) StokesA->F[eqn] +=      uSW*u[iVxSW];
+//        if ( mesh->BCu.type[iVxSW] == 11 ) StokesA->F[eqn] +=  2.0*uSW*mesh->BCu.val[iVxSW];
+//        if ( mesh->BCu.type[iVxS ] == -1 || mesh->BCu.type[iVxS ] == -2 || mesh->BCu.type[iVxS ] == -12 ) StokesA->F[eqn] +=      uS *u[iVxS];
+//        if ( mesh->BCu.type[iVxS ] == 11 ) StokesA->F[eqn] +=  2.0*uS* mesh->BCu.val[iVxS];
+//        if ( mesh->BCu.type[iVxSE] == -1 || mesh->BCu.type[iVxSE] == -2 || mesh->BCu.type[iVxSE] == -12 ) StokesA->F[eqn] +=      uSE*u[iVxSE];
+//        if ( mesh->BCu.type[iVxSE] == 11 ) StokesA->F[eqn] +=  2.0*uSE*mesh->BCu.val[iVxSE];
+//        //--------------------
+//        if ( mesh->BCu.type[iVxNW] == -1 || mesh->BCu.type[iVxNW] == -2 || mesh->BCu.type[iVxNW] == -12 ) StokesA->F[eqn] +=      uNW*u[iVxNW];
+//        if ( mesh->BCu.type[iVxNW] == 11 ) StokesA->F[eqn] +=  2.0*uNW*mesh->BCu.val[iVxNW];
+//        if ( mesh->BCu.type[iVxN ] == -1 || mesh->BCu.type[iVxN ] == -2 || mesh->BCu.type[iVxN ] == -12 ) StokesA->F[eqn] +=      uN *u[iVxN];
+//        if ( mesh->BCu.type[iVxN ] == 11 ) StokesA->F[eqn] +=  2.0*uN *mesh->BCu.val[iVxN];
+//        if ( mesh->BCu.type[iVxNE] == -1 || mesh->BCu.type[iVxNE] == -2 || mesh->BCu.type[iVxNE] == -12 ) StokesA->F[eqn] +=      uNE*u[iVxNE];
+//        if ( mesh->BCu.type[iVxNE] == 11 ) StokesA->F[eqn] +=  2.0*uNE*mesh->BCu.val[iVxNE];
+//        //--------------------
+//        if ( mesh->BCu.type[iVxW]  != 30 ) StokesA->F[eqn] += uW*u[iVxW];
+//        if ( mesh->BCu.type[iVxE]  != 30 ) StokesA->F[eqn] += uE*u[iVxE];
         //--------------------
 
         StokesA->F[eqn]  = 0.0;
@@ -3539,63 +3537,6 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     pSE = (-D34E*inE*inSEc*wE/dx);
     pNW = (D34W*inNWc*inW*wW/dx);
     pNE = (-D34E*inE*inNEc*wE/dx);
-    
-    
-//    double  wE_N  = inN,  wE_S = inS;
-//    double  wW_N  = inN,  wW_S = inS;
-//    double  wE_NE = inNEc, wE_SE = inSEc;
-//    double  wW_NW = inNWc, wW_SW = inSWc;
-//
-//    double  wN_W  = inW,   wS_W  = inW;
-//    double  wN_E  = inE,   wS_E  = inE;
-//    double  wS_SW = inSWv, wS_SE = inSEv;
-//    double  wN_NW = inNWv, wN_NE = inNEv;
-//
-//    if ( fabs(wW_SW)<1e-13 ) wW_S = 2.0;
-//    if ( fabs(wW_NW)<1e-13 ) wW_N = 2.0;
-//    if ( fabs(wE_SE)<1e-13 ) wE_S = 2.0;
-//    if ( fabs(wE_NE)<1e-13 ) wE_N = 2.0;
-//
-//
-//    double fsyE = 0.0, nsyW = 0.0, fsyW = 0.0, nsyE = 0.0 ;
-//    double fsyN = 0.0, nsyS = 0.0, fsyS = 0.0, nsyN = 0.0 ;
-//
-//    if (mesh->BCv.type[iVzW  ] == 11) nsyW = 1.0;
-//    if (mesh->BCv.type[iVzE  ] == 11) nsyE = 1.0;
-//    if (mesh->BCv.type[iVzW  ] == 13) fsyW = 1.0;
-//    if (mesh->BCv.type[iVzE  ] == 13) fsyE = 1.0;
-//    if (mesh->BCu.type[iVxSSE] == 13) fsyS = 1.0;
-//    if (mesh->BCu.type[iVxNNE] == 13) fsyN = 1.0;
-//    if (mesh->BCu.type[iVxSSE] == 11) nsyS = 1.0;
-//    if (mesh->BCu.type[iVxNNE] == 11) nsyN = 1.0;
-//
-//    vC = -(1.0/3.0*D21N/dz + 1.0/3.0*D21S/dz - 2.0/3.0*D22N/dz - 2.0/3.0*D22S/dz + D23N*(0.25*wN_E*(1 - fsyE)*(-nsyE - 1)/dx + 0.25*wN_W*(1 - fsyW)*(nsyW + 1)/dx) - D23S*(0.25*wS_E*(1 - fsyE)*(-nsyE - 1)/dx + 0.25*wS_W*(1 - fsyW)*(nsyW + 1)/dx) + 1.0/3.0*D24N/dz + 1.0/3.0*D24S/dz)/dz - (D31E*(1.0/12.0*wE_N/dz - 1.0/12.0*wE_S/dz) - D31W*(1.0/12.0*wW_N/dz - 1.0/12.0*wW_S/dz) + D32E*(-1.0/6.0*wE_N/dz + 1.0/6.0*wE_S/dz) - D32W*(-1.0/6.0*wW_N/dz + 1.0/6.0*wW_S/dz) + D33E*(1 - fsyE)*(-nsyE - 1)/dx - D33W*(1 - fsyW)*(nsyW + 1)/dx + D34E*(1.0/12.0*wE_N/dz - 1.0/12.0*wE_S/dz) - D34W*(1.0/12.0*wW_N/dz - 1.0/12.0*wW_S/dz))/dx;
-//    vW = -(0.25*D23N*wN_W*(1 - fsyW)*(nsyW - 1)/dx - 0.25*D23S*wS_W*(1 - fsyW)*(nsyW - 1)/dx)/dz - (-D31W*(1.0/12.0*wW_NW/dz - 1.0/12.0*wW_SW/dz) - D32W*(-1.0/6.0*wW_NW/dz + 1.0/6.0*wW_SW/dz) - D33W*(1 - fsyW)*(nsyW - 1)/dx - D34W*(1.0/12.0*wW_NW/dz - 1.0/12.0*wW_SW/dz))/dx;
-//    vE = -(0.25*D23N*wN_E*(1 - fsyE)*(1 - nsyE)/dx - 0.25*D23S*wS_E*(1 - fsyE)*(1 - nsyE)/dx)/dz - (D31E*(1.0/12.0*wE_NE/dz - 1.0/12.0*wE_SE/dz) + D32E*(-1.0/6.0*wE_NE/dz + 1.0/6.0*wE_SE/dz) + D33E*(1 - fsyE)*(1 - nsyE)/dx + D34E*(1.0/12.0*wE_NE/dz - 1.0/12.0*wE_SE/dz))/dx;
-//    vS = (1.0/3.0*D21S/dz - 2.0/3.0*D22S/dz + D23S*(0.25*wS_SE*(1 - fsyE)*(-nsyE - 1)/dx + 0.25*wS_SW*(1 - fsyW)*(nsyW + 1)/dx) + 1.0/3.0*D24S/dz)/dz - (1.0/12.0*D31E*wE_S/dz - 1.0/12.0*D31W*wW_S/dz - 1.0/6.0*D32E*wE_S/dz + 1.0/6.0*D32W*wW_S/dz + 1.0/12.0*D34E*wE_S/dz - 1.0/12.0*D34W*wW_S/dz)/dx;
-//    vN = -(-1.0/3.0*D21N/dz + 2.0/3.0*D22N/dz + D23N*(0.25*wN_NE*(1 - fsyE)*(-nsyE - 1)/dx + 0.25*wN_NW*(1 - fsyW)*(nsyW + 1)/dx) - 1.0/3.0*D24N/dz)/dz - (-1.0/12.0*D31E*wE_N/dz + 1.0/12.0*D31W*wW_N/dz + 1.0/6.0*D32E*wE_N/dz - 1.0/6.0*D32W*wW_N/dz - 1.0/12.0*D34E*wE_N/dz + 1.0/12.0*D34W*wW_N/dz)/dx;
-//    uSW = -(2.0/3.0*D21S/dx - 1.0/3.0*D22S/dx - 0.25*D23N*wN_W/dz - D23S*(0.25*wS_SW*(1 - fsyS)*(nsyS + 1)/dz - 0.25*wS_W/dz) - 1.0/3.0*D24S/dx)/dz - (-1.0/6.0*D31E*wE_S/dx - D31W*(-1.0/6.0*wW_S/dx + 1.0/6.0*wW_SW/dx) + 1.0/12.0*D32E*wE_S/dx - D32W*(1.0/12.0*wW_S/dx - 1.0/12.0*wW_SW/dx) + D33W/dz + 1.0/12.0*D34E*wE_S/dx - D34W*(1.0/12.0*wW_S/dx - 1.0/12.0*wW_SW/dx))/dx;
-//    uSE = -(-2.0/3.0*D21S/dx + 1.0/3.0*D22S/dx - 0.25*D23N*wN_E/dz - D23S*(-0.25*wS_E/dz + 0.25*wS_SE*(1 - fsyS)*(nsyS + 1)/dz) + 1.0/3.0*D24S/dx)/dz - (D31E*(1.0/6.0*wE_S/dx - 1.0/6.0*wE_SE/dx) - 1.0/6.0*D31W*wW_S/dx + D32E*(-1.0/12.0*wE_S/dx + 1.0/12.0*wE_SE/dx) + 1.0/12.0*D32W*wW_S/dx - D33E/dz + D34E*(-1.0/12.0*wE_S/dx + 1.0/12.0*wE_SE/dx) + 1.0/12.0*D34W*wW_S/dx)/dx;
-//    uNW = -(-2.0/3.0*D21N/dx + 1.0/3.0*D22N/dx + D23N*(0.25*wN_NW*(1 - fsyN)*(-nsyN - 1)/dz + 0.25*wN_W/dz) - 0.25*D23S*wS_W/dz + 1.0/3.0*D24N/dx)/dz - (-1.0/6.0*D31E*wE_N/dx - D31W*(-1.0/6.0*wW_N/dx + 1.0/6.0*wW_NW/dx) + 1.0/12.0*D32E*wE_N/dx - D32W*(1.0/12.0*wW_N/dx - 1.0/12.0*wW_NW/dx) - D33W/dz + 1.0/12.0*D34E*wE_N/dx - D34W*(1.0/12.0*wW_N/dx - 1.0/12.0*wW_NW/dx))/dx;
-//    uNE = -(2.0/3.0*D21N/dx - 1.0/3.0*D22N/dx + D23N*(0.25*wN_E/dz + 0.25*wN_NE*(1 - fsyN)*(-nsyN - 1)/dz) - 0.25*D23S*wS_E/dz - 1.0/3.0*D24N/dx)/dz - (D31E*(1.0/6.0*wE_N/dx - 1.0/6.0*wE_NE/dx) - 1.0/6.0*D31W*wW_N/dx + D32E*(-1.0/12.0*wE_N/dx + 1.0/12.0*wE_NE/dx) + 1.0/12.0*D32W*wW_N/dx + D33E/dz + D34E*(-1.0/12.0*wE_N/dx + 1.0/12.0*wE_NE/dx) + 1.0/12.0*D34W*wW_N/dx)/dx;
-//    vSW = 0.25*D23S*wS_SW*(1 - fsyW)*(nsyW - 1)/(dx*dz) - (-1.0/12.0*D31W*wW_SW/dz + 1.0/6.0*D32W*wW_SW/dz - 1.0/12.0*D34W*wW_SW/dz)/dx;
-//    vSE = 0.25*D23S*wS_SE*(1 - fsyE)*(1 - nsyE)/(dx*dz) - (1.0/12.0*D31E*wE_SE/dz - 1.0/6.0*D32E*wE_SE/dz + 1.0/12.0*D34E*wE_SE/dz)/dx;
-//    vNW = -0.25*D23N*wN_NW*(1 - fsyW)*(nsyW - 1)/(dx*dz) - (1.0/12.0*D31W*wW_NW/dz - 1.0/6.0*D32W*wW_NW/dz + 1.0/12.0*D34W*wW_NW/dz)/dx;
-//    vNE = -0.25*D23N*wN_NE*(1 - fsyE)*(1 - nsyE)/(dx*dz) - (-1.0/12.0*D31E*wE_NE/dz + 1.0/6.0*D32E*wE_NE/dz - 1.0/12.0*D34E*wE_NE/dz)/dx;
-//    uSSW = 0.25*D23S*wS_SW*(1 - fsyS)*(nsyS - 1)/pow(dz, 2);
-//    uSSE = 0.25*D23S*wS_SE*(1 - fsyS)*(nsyS - 1)/pow(dz, 2);
-//    uSWW = -(1.0/6.0*D31W*wW_SW/dx - 1.0/12.0*D32W*wW_SW/dx - 1.0/12.0*D34W*wW_SW/dx)/dx;
-//    uSEE = -(1.0/6.0*D31E*wE_SE/dx - 1.0/12.0*D32E*wE_SE/dx - 1.0/12.0*D34E*wE_SE/dx)/dx;
-//    uNWW = -(1.0/6.0*D31W*wW_NW/dx - 1.0/12.0*D32W*wW_NW/dx - 1.0/12.0*D34W*wW_NW/dx)/dx;
-//    uNEE = -(1.0/6.0*D31E*wE_NE/dx - 1.0/12.0*D32E*wE_NE/dx - 1.0/12.0*D34E*wE_NE/dx)/dx;
-//    uNNW = -0.25*D23N*wN_NW*(1 - fsyN)*(1 - nsyN)/pow(dz, 2);
-//    uNNE = -0.25*D23N*wN_NE*(1 - fsyN)*(1 - nsyN)/pow(dz, 2);
-//    pS = (D25S - 1)/dz - (0.25*D35E*wE_S - 0.25*D35W*wW_S)/dx;
-//    pN = -(D25N - 1)/dz - (0.25*D35E*wE_N - 0.25*D35W*wW_N)/dx;
-//    pSW = 0.25*D35W*wW_SW/dx;
-//    pSE = -0.25*D35E*wE_SE/dx;
-//    pNW = 0.25*D35W*wW_NW/dx;
-//    pNE = -0.25*D35E*wE_NE/dx;
 
     // Stabilisation with density gradients
     if (stab==1) {
@@ -3773,74 +3714,60 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     }
     else {
 
-        // Residual
-        StokesA->F[eqn] = vC*v[iVzC];
-        //--------------------
-        if ( mesh->BCp.type[iPrSW] != 30 && Newton==1 && k>1    ) StokesA->F[eqn]  += pSW*p[iPrSW];
-        if ( mesh->BCp.type[iPrSE] != 30 && Newton==1 && k<nx-1 ) StokesA->F[eqn]  += pSE*p[iPrSE];
-        if ( mesh->BCp.type[iPrS  ] != 30 && mesh->BCp.type[iPrN ] != 30 ) {
-            StokesA->F[eqn]  += pS*p[iPrS] + pN*p[iPrN];
-        }
-        if ( mesh->BCp.type[iPrNW] != 30 && Newton==1 && k>1    ) StokesA->F[eqn]  += pNW*p[iPrNW];
-        if ( mesh->BCp.type[iPrNE] != 30 && Newton==1 && k<nx-1 ) StokesA->F[eqn]  += pNE*p[iPrNE];
-        //--------------------
-        if ( mesh->BCu.type[iVxSSW] == -1 )  StokesA->F[eqn] +=     uSSW*u[iVxSSW];
-        if ( mesh->BCu.type[iVxSSW] == 11 )  StokesA->F[eqn] += 2.0*uSSW*mesh->BCu.val[iVxSSW];
-        if ( mesh->BCu.type[iVxSSE] == -1 )  StokesA->F[eqn] +=     uSSE*u[iVxSSE];
-        if ( mesh->BCu.type[iVxSSE] == 11 )  StokesA->F[eqn] += 2.0*uSSE*mesh->BCu.val[iVxSSE];
-        if ( (k>1 )    || (k==1    && mesh->BCu.type[iVxSWW]==-1) ) StokesA->F[eqn] += uSWW*u[iVxSWW];
-        if ( (k<nx-1 ) || (k==nx-1 && mesh->BCu.type[iVxSEE]==-1) ) StokesA->F[eqn] += uSEE*u[iVxSEE];
-        if ( (k>1    ) || (k==1    && mesh->BCu.type[iVxNWW]==-1) ) StokesA->F[eqn] += uNWW*u[iVxNWW];
-        if ( (k<nx-1 ) || (k==nx-1 && mesh->BCu.type[iVxNEE]==-1) ) StokesA->F[eqn] += uNEE*u[iVxNEE];
-        if ( mesh->BCu.type[iVxNNW] == -1 )  StokesA->F[eqn] +=     uNNW*u[iVxNNW];
-        if ( mesh->BCu.type[iVxNNW] == 11 )  StokesA->F[eqn] += 2.0*uNNW*mesh->BCu.val[iVxNNW];
-        if ( mesh->BCu.type[iVxNNE] == -1 )  StokesA->F[eqn] +=     uNNE*u[iVxNNE];
-        if ( mesh->BCu.type[iVxNNE] == 11 )  StokesA->F[eqn] += 2.0*uNNE*mesh->BCu.val[iVxNNE];
-        if ( mesh->BCu.type[iVxSW] != 30 ) StokesA->F[eqn] += uSW*u[iVxSW];
-        if ( mesh->BCu.type[iVxSE] != 30 ) StokesA->F[eqn] += uSE*u[iVxSE];
-        if ( mesh->BCu.type[iVxNW] != 30 ) StokesA->F[eqn] += uNW*u[iVxNW];
-        if ( mesh->BCu.type[iVxNE] != 30 ) StokesA->F[eqn] += uNE*u[iVxNE];
-        //--------------------
-        if ( mesh->BCv.type[iVzSW] == -1  && mesh->BCv.type[iVzSW] != 11 ) StokesA->F[eqn] +=     vSW*v[iVzSW];
-        if (                                    mesh->BCv.type[iVzSW] == 11 ) StokesA->F[eqn] += 2.0*vSW*mesh->BCv.val[iVzSW];
-        if ( mesh->BCv.type[iVzW ] == -1  && mesh->BCv.type[iVzW ] != 11 ) StokesA->F[eqn] +=     vW*v[iVzW];
-        if (                                    mesh->BCv.type[iVzW ] == 11 ) StokesA->F[eqn] += 2.0*vW*mesh->BCv.val[iVzW];
-        if ( mesh->BCv.type[iVzNW] == -1 && mesh->BCv.type[iVzNW] != 11 ) StokesA->F[eqn] +=     vNW*v[iVzNW];
-        if (                                    mesh->BCv.type[iVzNW] == 11 ) StokesA->F[eqn] += 2.0*vNW*mesh->BCv.val[iVzNW];
-        //--------------------
-        if ( mesh->BCv.type[iVzSE] == -1 ) StokesA->F[eqn] +=     vSE*v[iVzSE];
-        if ( mesh->BCv.type[iVzSE] == 11 ) StokesA->F[eqn] += 2.0*vSE*mesh->BCv.val[iVzSE];
-        if ( mesh->BCv.type[iVzE ] == -1 ) StokesA->F[eqn] +=     vE*v[iVzE ];
-        if ( mesh->BCv.type[iVzE ] == 11 ) StokesA->F[eqn] += 2.0*vE*mesh->BCv.val[iVzE ];
-        if ( mesh->BCv.type[iVzNE] == -1 ) StokesA->F[eqn] +=     vNE*v[iVzNE];
-        if ( mesh->BCv.type[iVzNE] == 11 ) StokesA->F[eqn] += 2.0*vNE*mesh->BCv.val[iVzNE];
-        //--------------------
-        if ( mesh->BCv.type[iVzS] != 30 ) StokesA->F[eqn] += vS*v[iVzS];
-        if ( mesh->BCv.type[iVzN] != 30 ) StokesA->F[eqn] += vN*v[iVzN];
-        // --------------------
-       
-        
+//        // Residual
+//        StokesA->F[eqn] = vC*v[iVzC];
+//        //--------------------
+//        if ( mesh->BCp.type[iPrSW] != 30 && Newton==1 && k>1    ) StokesA->F[eqn]  += pSW*p[iPrSW];
+//        if ( mesh->BCp.type[iPrSE] != 30 && Newton==1 && k<nx-1 ) StokesA->F[eqn]  += pSE*p[iPrSE];
+//        if ( mesh->BCp.type[iPrS  ] != 30 && mesh->BCp.type[iPrN ] != 30 ) {
+//            StokesA->F[eqn]  += pS*p[iPrS] + pN*p[iPrN];
+//        }
+//        if ( mesh->BCp.type[iPrNW] != 30 && Newton==1 && k>1    ) StokesA->F[eqn]  += pNW*p[iPrNW];
+//        if ( mesh->BCp.type[iPrNE] != 30 && Newton==1 && k<nx-1 ) StokesA->F[eqn]  += pNE*p[iPrNE];
+//        //--------------------
+//        if ( mesh->BCu.type[iVxSSW] == -1 )  StokesA->F[eqn] +=     uSSW*u[iVxSSW];
+//        if ( mesh->BCu.type[iVxSSW] == 11 )  StokesA->F[eqn] += 2.0*uSSW*mesh->BCu.val[iVxSSW];
+//        if ( mesh->BCu.type[iVxSSE] == -1 )  StokesA->F[eqn] +=     uSSE*u[iVxSSE];
+//        if ( mesh->BCu.type[iVxSSE] == 11 )  StokesA->F[eqn] += 2.0*uSSE*mesh->BCu.val[iVxSSE];
+//        if ( (k>1 )    || (k==1    && mesh->BCu.type[iVxSWW]==-1) ) StokesA->F[eqn] += uSWW*u[iVxSWW];
+//        if ( (k<nx-1 ) || (k==nx-1 && mesh->BCu.type[iVxSEE]==-1) ) StokesA->F[eqn] += uSEE*u[iVxSEE];
+//        if ( (k>1    ) || (k==1    && mesh->BCu.type[iVxNWW]==-1) ) StokesA->F[eqn] += uNWW*u[iVxNWW];
+//        if ( (k<nx-1 ) || (k==nx-1 && mesh->BCu.type[iVxNEE]==-1) ) StokesA->F[eqn] += uNEE*u[iVxNEE];
+//        if ( mesh->BCu.type[iVxNNW] == -1 )  StokesA->F[eqn] +=     uNNW*u[iVxNNW];
+//        if ( mesh->BCu.type[iVxNNW] == 11 )  StokesA->F[eqn] += 2.0*uNNW*mesh->BCu.val[iVxNNW];
+//        if ( mesh->BCu.type[iVxNNE] == -1 )  StokesA->F[eqn] +=     uNNE*u[iVxNNE];
+//        if ( mesh->BCu.type[iVxNNE] == 11 )  StokesA->F[eqn] += 2.0*uNNE*mesh->BCu.val[iVxNNE];
+//        if ( mesh->BCu.type[iVxSW] != 30 ) StokesA->F[eqn] += uSW*u[iVxSW];
+//        if ( mesh->BCu.type[iVxSE] != 30 ) StokesA->F[eqn] += uSE*u[iVxSE];
+//        if ( mesh->BCu.type[iVxNW] != 30 ) StokesA->F[eqn] += uNW*u[iVxNW];
+//        if ( mesh->BCu.type[iVxNE] != 30 ) StokesA->F[eqn] += uNE*u[iVxNE];
+//        //--------------------
+//        if ( mesh->BCv.type[iVzSW] == -1  && mesh->BCv.type[iVzSW] != 11 ) StokesA->F[eqn] +=     vSW*v[iVzSW];
+//        if (                                    mesh->BCv.type[iVzSW] == 11 ) StokesA->F[eqn] += 2.0*vSW*mesh->BCv.val[iVzSW];
+//        if ( mesh->BCv.type[iVzW ] == -1  && mesh->BCv.type[iVzW ] != 11 ) StokesA->F[eqn] +=     vW*v[iVzW];
+//        if (                                    mesh->BCv.type[iVzW ] == 11 ) StokesA->F[eqn] += 2.0*vW*mesh->BCv.val[iVzW];
+//        if ( mesh->BCv.type[iVzNW] == -1 && mesh->BCv.type[iVzNW] != 11 ) StokesA->F[eqn] +=     vNW*v[iVzNW];
+//        if (                                    mesh->BCv.type[iVzNW] == 11 ) StokesA->F[eqn] += 2.0*vNW*mesh->BCv.val[iVzNW];
+//        //--------------------
+//        if ( mesh->BCv.type[iVzSE] == -1 ) StokesA->F[eqn] +=     vSE*v[iVzSE];
+//        if ( mesh->BCv.type[iVzSE] == 11 ) StokesA->F[eqn] += 2.0*vSE*mesh->BCv.val[iVzSE];
+//        if ( mesh->BCv.type[iVzE ] == -1 ) StokesA->F[eqn] +=     vE*v[iVzE ];
+//        if ( mesh->BCv.type[iVzE ] == 11 ) StokesA->F[eqn] += 2.0*vE*mesh->BCv.val[iVzE ];
+//        if ( mesh->BCv.type[iVzNE] == -1 ) StokesA->F[eqn] +=     vNE*v[iVzNE];
+//        if ( mesh->BCv.type[iVzNE] == 11 ) StokesA->F[eqn] += 2.0*vNE*mesh->BCv.val[iVzNE];
+//        //--------------------
+//        if ( mesh->BCv.type[iVzS] != 30 ) StokesA->F[eqn] += vS*v[iVzS];
+//        if ( mesh->BCv.type[iVzN] != 30 ) StokesA->F[eqn] += vN*v[iVzN];
+//        // --------------------
+
         StokesA->F[eqn]  = 0.0;
-//        StokesA->F[eqn] += (inN*mesh->szzd[iPrN] - inS*mesh->szzd[iPrS])/dz;
-//        StokesA->F[eqn] -= (inN*mesh->p_in[iPrN] - inS*mesh->p_in[iPrS])/dz;
-//        StokesA->F[eqn] += (inE*mesh->sxz[ixyE]  - inW*mesh->sxz[ixyW]) /dx;
         StokesA->F[eqn] += (mesh->szzd[iPrN] - mesh->szzd[iPrS])/dz;
         StokesA->F[eqn] -= (mesh->p_in[iPrN] - mesh->p_in[iPrS])/dz;
         StokesA->F[eqn] += (mesh->sxz[ixyE]  - mesh->sxz[ixyW]) /dx;
         StokesA->F[eqn] *= -1.0;
         
-//        if (mesh->BCv.type[iVzC-1]==-12 && l==2) {
-//            printf("inN =%2.2e inS =%2.2e inW=%2.2e inE=%2.2e \n", inN, inS, inW, inE);
-//            printf("tzzS=%2.2e tzzN=%2.2e \n", mesh->szzd[iPrS] , mesh->szzd[iPrN] );
-//            printf("pS  =%2.2e pN  =%2.2e \n", mesh->p_in[iPrS] , mesh->p_in[iPrN] );
-//            printf("txzW=%2.2e txzE=%2.2e \n", mesh->sxz[ixyW] , mesh->sxz[ixyE] );
-//            printf("%2.2e \n", StokesA->F[eqn]);
-//        }
-        
         StokesA->F[eqn] -= (StokesA->b[eqn]);
         StokesA->F[eqn] *= celvol;
-        
-
     }
 }
 

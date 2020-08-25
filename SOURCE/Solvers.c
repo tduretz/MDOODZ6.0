@@ -739,7 +739,6 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
             // Here Dcm0 is the inverse of the pressure block
             if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i] *= penalty; // Should be /celvol
             if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k]; // Should be /celvol
-            //          printf("%2.2e %2.2e %2.2e %2.2e\n", mesh->bet[k]/model.dt, penalty, mesh->bet[k]*(1/scaling.S), model.dt*scaling.t);
         }
     }
     
@@ -919,7 +918,6 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
         cholmod_sdmult ( Ccm, 0, mone, one, u, fp, &c);
         cholmod_sdmult ( D1cm0, 0, mone, one, p, fp, &c) ;
         
-        
         cholmod_sdmult ( Dcm, 0, one, zero, fp, pdum, &c) ;   // pdum <-- D * fp
         copy_cholmod_dense_to_cholmod_dense( udum, fu );      // udum <-- fu
         cholmod_sdmult ( Bcm, 0, mone, one, pdum, udum, &c) ; // udum <-- bu - B*(D*fp)
@@ -933,14 +931,14 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
         //        //        printf( "substitution: %lf s\n", (double)((double)omp_get_wtime() - t_omp));
         //
         copy_cholmod_dense_to_cholmod_dense( pdum, fp );      // pdum <-- bp
-        cholmod_sdmult ( Ccm, 0, mone, one, du, pdum, &c);    // pdum <-- bp - C*u
-        cholmod_sdmult ( Dcm, 0, one, zero, pdum, dp, &c) ;   // dp <-- D*(bp - C*u)
+        cholmod_sdmult ( Ccm, 0, mone,  one,   du, pdum, &c);    // pdum <-- bp - C*u
+        cholmod_sdmult ( Dcm, 0,  one, zero, pdum,   dp, &c) ;   // dp <-- D*(bp - C*u)
         
         cholmod_dense_plus_cholmod_dense( u, du );
         cholmod_dense_plus_cholmod_dense( p, dp );
         
         copy_cholmod_dense_to_cholmod_dense( fp, bp );
-        cholmod_sdmult ( Ccm, 0, mone, one, u, fp, &c) ;
+        cholmod_sdmult ( Ccm,   0, mone, one, u, fp, &c) ;
         cholmod_sdmult ( D1cm0, 0, mone, one, p, fp, &c) ;
         if (k>0) maxdivit = maxdiv;
         MinMaxArrayVal( fp->x, matC->neq, &mindiv, &maxdiv );
@@ -2181,7 +2179,6 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
 
     int pc_type = model.pc_type;
 
-
     cholmod_common c ;
     cholmod_sparse *Lcm, *Kcm, *Lcml, *Acm, *Bcm, *Ccm, *Dcm; //, *A1
     cholmod_sparse *AcmJ, *BcmJ, *CcmJ;
@@ -2217,13 +2214,17 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     for( k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
         if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31 ) {
             i = Stokes->eqn_p[k] - matA->neq;
+            
+//            ((double*)D1cm0->x)[i] *= 0.0;
+//            ((double*)Dcm0->x)[i]  *= penalty; // Should be /celvol
+            
             // Here Dcm0 is the pressure block - This relates to physics (0 is incompressible, Beta/dt is compressible)
             if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[i] *= 0.0;
-            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i]  = mesh->bet[k] / model.dt * celvol * matD->d[k]*matD->d[k];
-            // Here Dcm0 is the inverse of the pressure block - THis relates to numerics in this incompressible case (penalty) or physics in the compressible case (dt/Beta)
-            if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i] *= penalty;
-            if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k];
-//            if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k];
+            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i] *= mesh->bet[k] / model.dt * celvol * matD->d[k]*matD->d[k];
+            // Here Dcm0 is the inverse of the pressure block - This relates to numerics in this incompressible case (penalty) or physics in the compressible case (dt/Beta)
+            if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i]  *= penalty;
+            if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  *= 1.0 /  ((double*)D1cm0->x)[k];
+
         }
     }
 
@@ -2234,7 +2235,7 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     F  = DoodzCalloc(matA->neq+matC->neq, sizeof(double));
     u0 = DoodzCalloc( matA->neq, sizeof(double) );
     p0 = DoodzCalloc( matC->neq, sizeof(double) );
-    //    BuildInitialSolutions( u0, p0, mesh );
+//        BuildInitialSolutions( u0, p0, mesh );
 
     //------------------------------------------------------------------------------------------------//
 
@@ -2243,7 +2244,6 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     A.nz    = matA->nnz;
     A.m     = matA->neq;
     A.n     = A.m;
-    //    printf( "A.nzmax = %d\n", matA->nnz );
     A.p     = DoodzCalloc( A.nzmax, sizeof(int) );
     A.i     = DoodzCalloc( A.nzmax, sizeof(int) );
     A.x     = DoodzCalloc( A.nzmax, sizeof(double) );
@@ -2289,7 +2289,6 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     D.x     = DoodzCalloc( D.nzmax, sizeof(double) );
     copy_cholmod_to_cs_matrix( Dcm0, &D );
     Dc  = cs_di_compress( &D );
-
 
     //------------------------------------------------------------------------------------------------//
 
@@ -2447,14 +2446,16 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     copy_vec_to_cholmod_dense( bu, rhs_mom );
     copy_vec_to_cholmod_dense( bp, rhs_cont );
 
-    printf("Initial residual:\n");
+    // ------- U, V ------- //
     copy_cholmod_dense_to_cholmod_dense( fu, bu );       // fu = bu
-    cholmod_sdmult ( AcmJ, 0, mone, one, du, fu, &c) ;   // fu -= A*u
-    cholmod_sdmult ( BcmJ, 0, mone, one, dp, fu, &c) ;   // fu -= B*p
+    cholmod_sdmult (  AcmJ, 0, mone, one, du, fu, &c) ;  // fu -= A*u
+    cholmod_sdmult (  BcmJ, 0, mone, one, dp, fu, &c) ;  // fu -= B*p
+    // ------- P ------- //
     copy_cholmod_dense_to_cholmod_dense( fp, bp );       // fp = bp
-    cholmod_sdmult ( CcmJ, 0, mone, one, du, fp, &c) ;   // fp -= C*u
+    cholmod_sdmult (  CcmJ, 0, mone, one, du, fp, &c) ;  // fp -= C*u
     cholmod_sdmult ( D1cm0, 0, mone, one, dp, fp, &c) ;  // fp -= D*p
 
+    printf("Initial residual:\n");
     MinMaxArrayVal( fu->x, matA->neq, &minru0, &maxru0 );
     NormResidualCholmod( &ru, &rp, fu, fp, matA->neq, matC->neq, model, scaling, 0 );
 
@@ -2463,22 +2464,25 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
         cholmod_sdmult ( Dcm, 0, one, zero, bp, pdum, &c) ;    // pdum <-- D * fp
         copy_cholmod_dense_to_cholmod_dense( udum, bu );       // udum <-- fu
         cholmod_sdmult ( BcmJ, 0, mone, one, pdum, udum, &c) ; // udum <-- bu - B*(D*fp)
-        cholmod_sdmult ( BcmJ, 0, mone, one,   dp, udum, &c) ; // udum <-- bu - B*(D*fp) - B*dp
+        
+        if (model.compressible==0) cholmod_sdmult ( BcmJ, 0, mone, one,   dp, udum, &c) ; // udum <-- bu - B*(D*fp) - B*dp          !!!!!!! needed?
 
         //        cholmod_free_dense( &du, &c );
         //        du = cholmod_solve (CHOLMOD_A, Lfact, udum, &c);
-
 
         kspgcr( Kcm, udum, du, Lfact, matA->neq, &c, model.rel_tol_KSP, noisy, &its_KSP);
         its_KSP_tot += its_KSP;
 
         copy_cholmod_dense_to_cholmod_dense( pdum, bp );       // pdum <-- bp
         cholmod_sdmult ( CcmJ, 0, mone, one, du, pdum, &c);    // pdum <-- bp - C*u
+        cholmod_sdmult ( D1cm0, 0, mone, one, dp, pdum, &c) ;  // fp -= D*p
         cholmod_sdmult ( Dcm , 0,  one, one, pdum, dp, &c) ;   // dp <-- dp + D*(bp - C*u)
 
+        // ------- U, V ------- //
         copy_cholmod_dense_to_cholmod_dense( fu, bu );       // fu = bu
-        cholmod_sdmult ( AcmJ, 0, mone, one, du, fu, &c) ;   // fu -= A*u
-        cholmod_sdmult ( BcmJ, 0, mone, one, dp, fu, &c) ;   // fu -= B*p
+        cholmod_sdmult (  AcmJ, 0, mone, one, du, fu, &c) ;  // fu -= A*u
+        cholmod_sdmult (  BcmJ, 0, mone, one, dp, fu, &c) ;  // fu -= B*p
+        // ------- P ------- //
         copy_cholmod_dense_to_cholmod_dense( fp, bp );       // fp = bp
         cholmod_sdmult (  CcmJ, 0, mone, one, du, fp, &c) ;  // fp -= C*u
         cholmod_sdmult ( D1cm0, 0, mone, one, dp, fp, &c) ;  // fp -= D*p
