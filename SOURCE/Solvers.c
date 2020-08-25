@@ -48,6 +48,19 @@
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+
+void ArrayTimesArray( double* arr1, int* scalar, double* arr2, int size ) {
+    int k;
+#pragma omp parallel for shared( arr1, arr2, scalar) private(k) schedule( static )
+    for(k=0;k<size;k++) {
+        arr1[k] *= (double)scalar[k]*arr2[k];
+    }
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 void kspgcr( cholmod_sparse *M, cholmod_dense *b, cholmod_dense *x, cholmod_factor *Lfact, int N, cholmod_common *c, double eps, int noisy, int *its_tot) {
     
     // Initialise KSP
@@ -2461,11 +2474,14 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
 
     for ( k=0; k<nitmax; k++) {
 
-        cholmod_sdmult ( Dcm, 0, one, zero, bp, pdum, &c) ;    // pdum <-- D * fp
+        cholmod_sdmult ( Dcm, 0, one, zero, bp, pdum, &c);     // pdum <-- D * fp
         copy_cholmod_dense_to_cholmod_dense( udum, bu );       // udum <-- fu
-        cholmod_sdmult ( BcmJ, 0, mone, one, pdum, udum, &c) ; // udum <-- bu - B*(D*fp)
+        cholmod_sdmult ( BcmJ, 0, mone, one, pdum, udum, &c);  // udum <-- bu - B*(D*fp)
         
-        if (model.compressible==0) cholmod_sdmult ( BcmJ, 0, mone, one,   dp, udum, &c) ; // udum <-- bu - B*(D*fp) - B*dp          !!!!!!! needed?
+//        copy_cholmod_dense_to_cholmod_dense( pdum, dp );
+//        ArrayTimesArray( pdum->x, mesh->comp_cells, pdum, int size )
+        
+        if ( model.compressible == 0 ) cholmod_sdmult ( BcmJ, 0, mone, one,   dp, udum, &c); // udum <-- bu - B*(D*fp) - B*dp          !!!!!!! needed?
 
         //        cholmod_free_dense( &du, &c );
         //        du = cholmod_solve (CHOLMOD_A, Lfact, udum, &c);
@@ -2473,10 +2489,10 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
         kspgcr( Kcm, udum, du, Lfact, matA->neq, &c, model.rel_tol_KSP, noisy, &its_KSP);
         its_KSP_tot += its_KSP;
 
-        copy_cholmod_dense_to_cholmod_dense( pdum, bp );       // pdum <-- bp
-        cholmod_sdmult ( CcmJ, 0, mone, one, du, pdum, &c);    // pdum <-- bp - C*u
-        cholmod_sdmult ( D1cm0, 0, mone, one, dp, pdum, &c) ;  // fp -= D*p
-        cholmod_sdmult ( Dcm , 0,  one, one, pdum, dp, &c) ;   // dp <-- dp + D*(bp - C*u)
+        copy_cholmod_dense_to_cholmod_dense( pdum, bp );         // pdum <-- bp
+        cholmod_sdmult ( CcmJ,  0, mone, one,   du, pdum, &c);   // pdum <-- bp - C*u
+        cholmod_sdmult ( D1cm0, 0, mone, one,   dp, pdum, &c) ;  // fp -= D*p
+        cholmod_sdmult ( Dcm ,  0,  one, one, pdum,   dp, &c) ;  // dp <-- dp + D*(bp - C*u)
 
         // ------- U, V ------- //
         copy_cholmod_dense_to_cholmod_dense( fu, bu );       // fu = bu
