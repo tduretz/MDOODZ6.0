@@ -310,7 +310,7 @@ int main( int nargs, char *args[] ) {
             if ( model.iselastic == 1 ) ShearModulusGrid( &mesh, materials, model, scaling );
             
             // Compute cohesion and friction angle on the grid
-            CohesionFrictionGrid( &mesh, materials, model, scaling );
+            CohesionFrictionDilationGrid( &mesh, materials, model, scaling );
             Interp_Grid2P( particles, particles.P,    &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
             Interp_Grid2P( particles, particles.T,    &mesh, mesh.T,    mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type );
             NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
@@ -557,7 +557,7 @@ int main( int nargs, char *args[] ) {
             }
             
             // Compute cohesion and friction angle on the grid
-            CohesionFrictionGrid( &mesh, materials, model, scaling );
+            CohesionFrictionDilationGrid( &mesh, materials, model, scaling );
             
             // Detect compressible cells
             if (model.compressible == 1) DetectCompressibleCells ( &mesh, &model );
@@ -583,7 +583,7 @@ int main( int nargs, char *args[] ) {
             
             ShearModulusGrid( &mesh, materials, model, scaling );
             
-            CohesionFrictionGrid( &mesh, materials, model, scaling );
+            CohesionFrictionDilationGrid( &mesh, materials, model, scaling );
             
         }
         
@@ -600,6 +600,8 @@ int main( int nargs, char *args[] ) {
         MinMaxArrayTag( mesh.C_n,      scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "C_n     ", mesh.BCp.type );
         MinMaxArrayTag( mesh.fric_s,   180.0/M_PI,  (mesh.Nx)*(mesh.Nz),     "fric_s  ", mesh.BCg.type );
         MinMaxArrayTag( mesh.fric_n,   180.0/M_PI,  (mesh.Nx-1)*(mesh.Nz-1), "fric_n  ", mesh.BCp.type );
+        MinMaxArrayTag( mesh.dil_s,    180.0/M_PI,  (mesh.Nx)*(mesh.Nz),     "dil_s   ", mesh.BCg.type );
+        MinMaxArrayTag( mesh.dil_n,    180.0/M_PI,  (mesh.Nx-1)*(mesh.Nz-1), "dil_n   ", mesh.BCp.type );
         MinMaxArrayTag( mesh.strain_s,   1.0,       (mesh.Nx)*(mesh.Nz),     "strain_s", mesh.BCg.type );
         MinMaxArrayTag( mesh.strain_n,   1.0,       (mesh.Nx-1)*(mesh.Nz-1), "strain_n", mesh.BCp.type );
         MinMaxArrayTag( mesh.T,      scaling.T,     (mesh.Nx-1)*(mesh.Nz-1), "T       ", mesh.BCt.type );

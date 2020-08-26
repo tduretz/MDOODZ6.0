@@ -1054,6 +1054,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         materials->Qr[k]   = ReadMatProps( fin, "Qr",  k,   1.0e-30)  / (scaling->W / pow(scaling->L,3.0));
         materials->C[k]    = ReadMatProps( fin, "C",   k,   1.0e7  )  / scaling->S;
         materials->phi[k]  = ReadMatProps( fin, "phi", k,    30.0  )  * M_PI/ 180.0;
+        materials->psi[k]  = ReadMatProps( fin, "psi", k,     0.0  )  * M_PI/ 180.0;
         materials->Slim[k] = ReadMatProps( fin, "Slim",k,   1.0e10 )  / scaling->S;
         materials->alp[k]  = ReadMatProps( fin, "alp", k,      0.0)  / (1.0/scaling->T);
         materials->bet[k]  = ReadMatProps( fin, "bet", k,  1.0e-40 )  / (1.0/scaling->S);
@@ -1076,6 +1077,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         // Strain softening
         materials->C_end[k]     = ReadMatProps( fin, "Ce",     k,    1.0e7  )  / scaling->S;
         materials->phi_end[k]   = ReadMatProps( fin, "phie",   k,     30.0  )  / 1.0 * M_PI / 180.0;
+        materials->psi_end[k]   = ReadMatProps( fin, "phie",   k,      0.0  )  / 1.0 * M_PI / 180.0;
         materials->pls_start[k] = ReadMatProps( fin, "plss",   k,    1.0e6  );
         materials->pls_end[k]   = ReadMatProps( fin, "plse",   k,    1.0e6  );
         // Reaction stuff

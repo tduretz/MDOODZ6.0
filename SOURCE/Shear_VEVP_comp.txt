@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00010
+istep = 00002
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -80,6 +80,7 @@ k    = 2.5
 Qr   = 0
 C    = 2.35e0
 phi  = 30
+psi  = 5
 eta_vp = 1e-1
 n_vp   = 1.5
 Slim = 500e9
