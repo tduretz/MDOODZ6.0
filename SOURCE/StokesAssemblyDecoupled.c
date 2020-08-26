@@ -68,7 +68,7 @@ void Continuity_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesC, Spar
         pc = 0.0;
     }
     else {
-        pc = mesh->bet[c2]/model.dt;
+        pc = mesh->bet_n[c2]/model.dt;
     }
 
     // div u

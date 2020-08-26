@@ -81,9 +81,9 @@ void Continuity_InnerNodes( SparseMat *Stokes, int Assemble, int lev, int stab, 
     }
     // dt/Beta * div u
     else {
-        uW = -model.dt/mesh->bet[c2]*one_dx;
+        uW = -model.dt/mesh->bet_n[c2]*one_dx;
         uE = -uW;
-        vS = -model.dt/mesh->bet[c2]*one_dz;
+        vS = -model.dt/mesh->bet_n[c2]*one_dz;
         vN = -vS;
     }
 

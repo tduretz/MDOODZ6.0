@@ -179,7 +179,7 @@ struct _grid {
 	double *ru, *rv, *rp;
 	double *rhs_u, *rhs_v, *rhs_p, *rhs_t, *gx, *gz;
 	double p_scale;
-    double *alp, *bet, *p_lith, *dp, *Qrho;
+    double *alp, *bet_n, *bet_s, *p_lith, *dp, *Qrho;
     double *VxVz, *VzVx;
     int    *P2N, *P2C;
     int    *kvx, *lvx, *kvz, *lvz, *kp, *lp, *kn, *ln;
@@ -196,8 +196,9 @@ struct _grid {
     double *D11_n, *D12_n, *D13_n, *D14_n;
     double *D21_n, *D22_n, *D23_n, *D24_n;
     double *D31_s, *D32_s, *D33_s, *D34_s;
-    double *detadexx_n, *detadezz_n, *detadgxz_n, *detadp_n;
-    double *detadexx_s, *detadezz_s, *detadgxz_s, *detadp_s;
+    double *detadexx_n,  *detadezz_n,  *detadgxz_n,  *detadp_n;
+    double *ddivpdexx_n, *ddivpdezz_n, *ddivpdgxz_n, *ddivpdp_n;
+    double *detadexx_s,  *detadezz_s,  *detadgxz_s,  *detadp_s;
     double *phi_s, *d0_s, *T_s, *P_s;
     // For anisotropy
     double *nx_n, *nz_n, *nx_s, *nz_s, *FS_AR_n, *FS_AR_s, *aniso_factor_n, *aniso_factor_s;

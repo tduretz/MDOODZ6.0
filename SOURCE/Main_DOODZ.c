@@ -465,7 +465,8 @@ int main( int nargs, char *args[] ) {
             }
             
             Interp_P2C ( particles, materials.alp, &mesh, mesh.alp,      mesh.xg_coord, mesh.zg_coord, 0, 0 );
-            Interp_P2C ( particles, materials.bet, &mesh, mesh.bet,      mesh.xg_coord, mesh.zg_coord, 0, 0 );
+            Interp_P2C ( particles, materials.bet, &mesh, mesh.bet_n,    mesh.xg_coord, mesh.zg_coord, 0, 0 );
+            Interp_P2N ( particles, materials.bet, &mesh, mesh.bet_s,    mesh.xg_coord, mesh.zg_coord, 0, 0, &model );
             // Get X on the cell centers
             Interp_P2C ( particles, particles.X, &mesh, mesh.X, mesh.xg_coord, mesh.zg_coord, 1, 0 );
             

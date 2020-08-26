@@ -57,7 +57,7 @@ void DetectCompressibleCells ( grid* mesh, params *model ) {
          
          if ( mesh->BCp.type[cc] != 30 ) {
              
-             if ( mesh->bet[cc] > 1e-13 ) {
+             if ( mesh->bet_n[cc] > 1e-13 ) {
                  mesh->comp_cells[cc] = 1;
                  kk++;
              }
@@ -961,7 +961,7 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                 
                 if (model.compressible ==1 ) {
                     if (mesh->comp_cells[c] == 1) {
-                        mesh->rhs_p[c] += mesh->p_start[c]*mesh->bet[c]/model.dt;
+                        mesh->rhs_p[c] += mesh->p_start[c]*mesh->bet_n[c]/model.dt;
                     }
                 }
                 

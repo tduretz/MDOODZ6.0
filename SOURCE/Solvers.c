@@ -748,7 +748,7 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
             i = Stokes->eqn_p[k] - matA->neq;
             // Here Dcm0 is the pressure block
             if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[i] *= 0.0;
-            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i]  = mesh->bet[k] / model.dt * celvol * matD->d[k]*matD->d[k];
+            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i]  = mesh->bet_n[k] / model.dt * celvol * matD->d[k]*matD->d[k];
             // Here Dcm0 is the inverse of the pressure block
             if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i] *= penalty; // Should be /celvol
             if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k]; // Should be /celvol
@@ -1142,7 +1142,7 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
             i = Stokes->eqn_p[k] - matA->neq;
             // Here Dcm0 is the pressure block
             if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[i] *= 0.0;
-            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i]  = mesh->bet[k] / model.dt * celvol * matD->d[k]*matD->d[k];
+            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i]  = mesh->bet_n[k] / model.dt * celvol * matD->d[k]*matD->d[k];
             // Here Dcm0 is the inverse of the pressure block
             if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i] *= penalty; // Should be /celvol
             if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k]; // Should be /celvol
@@ -2230,7 +2230,7 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
             i = Stokes->eqn_p[k] - matA->neq;
             // Here Dcm0 is the pressure block - This relates to physics (0 is incompressible, Beta/dt is compressible)
             if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[i] *= 0.0;
-            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i] *= mesh->bet[k] / model.dt * celvol * matD->d[k]*matD->d[k];
+            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i] *= mesh->bet_n[k] / model.dt * celvol * matD->d[k]*matD->d[k];
             // Here Dcm0 is the inverse of the pressure block - This relates to numerics in this incompressible case (penalty) or physics in the compressible case (dt/Beta)
             if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i]  *= penalty;
             if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  *= 1.0 /  ((double*)D1cm0->x)[k];

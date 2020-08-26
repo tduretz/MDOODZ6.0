@@ -445,7 +445,8 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->p_lith   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->dp       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->alp      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    mesh->bet      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->bet_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->bet_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
 
     // Grid indices
     mesh->kvx       = DoodzCalloc (Nx*NzVx,sizeof(int));
@@ -554,6 +555,11 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->detadezz_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->detadgxz_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->detadp_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    
+    mesh->ddivpdexx_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->ddivpdezz_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->ddivpdgxz_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->ddivpdp_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
 
     mesh->detadexx_s  = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->detadezz_s  = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
@@ -714,7 +720,8 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->p_lith);
     DoodzFree(mesh->dp);
     DoodzFree(mesh->alp);
-    DoodzFree(mesh->bet);
+    DoodzFree(mesh->bet_n);
+    DoodzFree(mesh->bet_s);
 
     // Grid indices
     DoodzFree( mesh->kvx );
@@ -834,6 +841,11 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->detadezz_n);
     DoodzFree(mesh->detadgxz_n);
     DoodzFree(mesh->detadp_n);
+    
+    DoodzFree(mesh->ddivpdexx_n);
+    DoodzFree(mesh->ddivpdezz_n);
+    DoodzFree(mesh->ddivpdgxz_n);
+    DoodzFree(mesh->ddivpdp_n);
 
     DoodzFree(mesh->detadexx_s);
     DoodzFree(mesh->detadezz_s);
