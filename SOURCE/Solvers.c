@@ -2195,7 +2195,7 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     cholmod_common c ;
     cholmod_sparse *Lcm, *Kcm, *Lcml, *Acm, *Bcm, *Ccm, *Dcm; //, *A1
     cholmod_sparse *AcmJ, *BcmJ, *CcmJ;
-    cholmod_sparse *Dcm0, *D1cm0; //, *BDC, *DC, *Lcm0, *Lcml0, *Acm0, *Bcm0, *Ccm0
+    cholmod_sparse *Dcm0, *D1cm0, *whos_incompressible; //, *BDC, *DC, *Lcm0, *Lcml0, *Acm0, *Bcm0, *Ccm0
     cholmod_factor *Lfact ;
     cholmod_sparse *M, *AB, *CD, *Iu, *Ip, *D_zero; // *bs, *bus, *bps, *M0
     cholmod_dense *b, *x, *f, *val, *s, *v;
@@ -2212,10 +2212,11 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
 
     // ************** D ************** //
     SuiteSparse_long rsize;
-    double gamma  = model.penalty, penalty;//1e12;//1e10*model.Nx*model.Nz;
-    rsize = Stokes->neq_cont;
-    Dcm0  = cholmod_speye (rsize, rsize, CHOLMOD_REAL, &c );
-    D1cm0 = cholmod_speye (rsize, rsize, CHOLMOD_REAL, &c );
+    double gamma        = model.penalty, penalty;//1e12;//1e10*model.Nx*model.Nz;
+    rsize               = Stokes->neq_cont;
+    Dcm0                = cholmod_speye( rsize, rsize, CHOLMOD_REAL, &c );
+    D1cm0               = cholmod_speye( rsize, rsize, CHOLMOD_REAL, &c );
+    whos_incompressible = cholmod_speye( rsize, rsize, CHOLMOD_REAL, &c );
 
     penalty = gamma / celvol;
     printf("Penalty factor = %2.2e\n", penalty);
@@ -2223,21 +2224,18 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
 //    printf("-gamma*celvol = %2.2e %2.2e %2.2e %d %d\n", -gamma*celvol, model.dx*scaling.L, model.dz*scaling.L, model.Nx, model.Nz);
 
 
-#pragma omp parallel for shared(D1cm0, Dcm0, mesh, Stokes, matA, matD ) private( i ) firstprivate( model, celvol )
+#pragma omp parallel for shared( whos_incompressible, D1cm0, Dcm0, mesh, Stokes, matA, matD ) private( i ) firstprivate( model, celvol )
     for( k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
         if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31 ) {
             i = Stokes->eqn_p[k] - matA->neq;
-            
-//            ((double*)D1cm0->x)[i] *= 0.0;
-//            ((double*)Dcm0->x)[i]  *= penalty; // Should be /celvol
-            
             // Here Dcm0 is the pressure block - This relates to physics (0 is incompressible, Beta/dt is compressible)
             if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[i] *= 0.0;
             if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i] *= mesh->bet[k] / model.dt * celvol * matD->d[k]*matD->d[k];
             // Here Dcm0 is the inverse of the pressure block - This relates to numerics in this incompressible case (penalty) or physics in the compressible case (dt/Beta)
             if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i]  *= penalty;
             if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  *= 1.0 /  ((double*)D1cm0->x)[k];
-
+            // Detect cell which are compressible
+            if (mesh->comp_cells[k]==1) ((double*)whos_incompressible->x)[i] *= 0.0;
         }
     }
 
@@ -2477,11 +2475,14 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
         cholmod_sdmult ( Dcm, 0, one, zero, bp, pdum, &c);     // pdum <-- D * fp
         copy_cholmod_dense_to_cholmod_dense( udum, bu );       // udum <-- fu
         cholmod_sdmult ( BcmJ, 0, mone, one, pdum, udum, &c);  // udum <-- bu - B*(D*fp)
+        cholmod_sdmult ( whos_incompressible, 0, one, zero, dp, pdum, &c);     // pdum <-- whos_compressible * dp
         
 //        copy_cholmod_dense_to_cholmod_dense( pdum, dp );
 //        ArrayTimesArray( pdum->x, mesh->comp_cells, pdum, int size )
         
-        if ( model.compressible == 0 ) cholmod_sdmult ( BcmJ, 0, mone, one,   dp, udum, &c); // udum <-- bu - B*(D*fp) - B*dp          !!!!!!! needed?
+        cholmod_sdmult ( BcmJ, 0, mone, one,   pdum, udum, &c); // udum <-- bu - B*(D*fp) - B*dp          !!!!!!! needed?
+        
+//        if ( model.compressible == 0 ) cholmod_sdmult ( BcmJ, 0, mone, one,   dp, udum, &c); // udum <-- bu - B*(D*fp) - B*dp          !!!!!!! needed?
 
         //        cholmod_free_dense( &du, &c );
         //        du = cholmod_solve (CHOLMOD_A, Lfact, udum, &c);
@@ -2634,6 +2635,7 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     cholmod_free_sparse( &Dcm, &c );
     cholmod_free_sparse( &Dcm0, &c );
     cholmod_free_sparse( &D1cm0, &c );
+    cholmod_free_sparse( &whos_incompressible, &c );
 
     cholmod_free_sparse( &AcmJ, &c );
     cholmod_free_sparse( &BcmJ, &c );
