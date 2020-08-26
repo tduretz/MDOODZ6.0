@@ -47,14 +47,14 @@ typedef struct _mat_prop mat_prop;
 struct _mat_prop {
 	int    Nb_phases;
     DoodzFP R;
-    DoodzFP eta0[20], rho[20], mu[20], Cv[20], k[20], Qr[20], C[20], phi[20], Slim[20], n[20], A[20], Ea[20], Va[20], alp[20], bet[20], Qm[20], T0[20], P0[20], drho[20], k_eff[20];
+    DoodzFP eta0[20], rho[20], mu[20], Cv[20], k[20], Qr[20], C[20], phi[20], psi[20], Slim[20], n[20], A[20], Ea[20], Va[20], alp[20], bet[20], Qm[20], T0[20], P0[20], drho[20], k_eff[20];
     DoodzFP tpwl[20], Qpwl[20], Vpwl[20], npwl[20], mpwl[20], Apwl[20], apwl[20], fpwl[20], rpwl[20], Fpwl[20], pref_pwl[20];
     DoodzFP texp[20], Qexp[20], Vexp[20], Sexp[20], Eexp[20], Gexp[20], aexp[20], fexp[20], rexp[20], qexp[20], nexp[20];
     DoodzFP tlin[20], Qlin[20], Vlin[20], nlin[20], mlin[20], Alin[20], alin[20], flin[20], rlin[20], Flin[20];
     DoodzFP tgbs[20], Qgbs[20], Vgbs[20], ngbs[20], mgbs[20], Agbs[20], agbs[20], fgbs[20], rgbs[20], Fgbs[20];
     DoodzFP ppzm[20], Kpzm[20], Qpzm[20], Gpzm[20], cpzm[20], Lpzm[20], gs_ref[20];
     int     gs[20], cstv[20], pwlv[20], linv[20], expv[20], gbsv[20], phase_diagram[20], density_model[20];
-    DoodzFP C_end[20], phi_end[20], pls_start[20], pls_end[20], eta_vp[20], n_vp[20];
+    DoodzFP C_end[20], phi_end[20], psi_end[20], pls_start[20], pls_end[20], eta_vp[20], n_vp[20];
     DoodzFP Preac[20], treac[20];
     int     Reac[20];
     int     phase_mix[20], phase_two[20];
@@ -199,13 +199,14 @@ struct _grid {
     double *detadexx_n, *detadezz_n, *detadgxz_n, *detadp_n;
     double *detadexx_s, *detadezz_s, *detadgxz_s, *detadp_s;
     double *phi_s, *d0_s, *T_s, *P_s;
+    // For anisotropy
     double *nx_n, *nz_n, *nx_s, *nz_s, *FS_AR_n, *FS_AR_s, *aniso_factor_n, *aniso_factor_s;
     
     // To remove
     double *exx_pwl_n, *exz_pwl_n, *exx_pwl_s, *exz_pwl_s, *exx_pl, *exz_pl;
     
     double *cell_min_z, *cell_max_z, *vert_min_z, *vert_max_z;
-    double *fric_n, *fric_s, *C_n, *C_s;
+    double *dil_n, *dil_s, *fric_n, *fric_s, *C_n, *C_s;
     double *rhoUe0;
     double *exz_n_el, *exz_n_diss, *exz_n_pl;
 };
@@ -393,57 +394,43 @@ void SolveStokesDefect( SparseMat*, DirectSolver*, Nparams*, grid*, params*, mar
 void DirectStokes( SparseMat*, DirectSolver*, double* , double* );
 void ExtractSolutions( SparseMat*, grid*, params* );
 void InitialiseSolutionVector( grid*, SparseMat*, params* );
-//
-//// Viscoelastoplasticity
+
+// Viscoelastoplasticity
 void RotateStresses( grid, markers*, params, scale* );
 void UpdateParticleStress( grid*, markers*, params*, mat_prop*, scale* );
 void ShearModulusGrid( grid*, mat_prop, params, scale );
-void CohesionFrictionGrid( grid* , mat_prop, params, scale  );
-//
-//// Non-Newtonian rheology
-//double Viscosity( int, double, double, double, double, double, double, double, double, double, double, double, mat_prop*, params*, scale*, int, double*, double*, double*, double* , double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double* , double, double, double );
-//double ViscosityPlast( int, double, double, double, double, double, double, double, double, double, double, double, mat_prop*, params*, scale*, int, double*, double*, double*, double* , double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double* ,double);
+void CohesionFrictionDilationGrid( grid* , mat_prop, params, scale  );
+
+// Non-Newtonian rheology
 void UpdateNonLinearity( grid*, markers*, markers*, surface*, mat_prop, params*, Nparams*, scale, int, double );
 double LineSearch( SparseMat*, double*, grid*, params*, Nparams*, markers*, markers*, surface*, mat_prop, scale );
-//void StressStrainRateInvariantsMarkers( markers*, grid*, scale );
-//void StressStrainRateInvariantsGrid( grid*, scale );
-////void NonNewtonianViscosityMarkers( markers*, mat_prop, paramsOutputSparseMatrix , scale, int );
 void NonNewtonianViscosityGrid( grid*, mat_prop*, params*, Nparams, scale* );
-//void NonNewtonianViscosityGridPart( grid*, markers*, mat_prop*, params*OutputSparseMatrix , scale*, int );
 void StrainRateComponents( grid*, scale, params* );
 void GenerateDeformationMaps( grid*, mat_prop*, params*, Nparams, scale*);
 void UpdateParticleGrainSize( grid*, scale, params, markers*, mat_prop* );
 void UpdateParticleDensity( grid*, scale, params, markers*, mat_prop* );
-//
 // Advection
 void DefineInitialTimestep( params*, grid*, markers, mat_prop, scale );
 void EvaluateCourantCriterion( double*, double*, params*, scale, grid*, int);
 void Check_dt_for_advection( double*, double*, params*, scale, grid*, int);
-//void EvaluateCourantCriterionParticles( markers, params*, scale);
 void RogerGunther( markers*, params, grid, int, scale );
 void isout( markers*, params );
 void isoutPart( markers*, params*, int );
 void CountPartCell    ( markers*, grid* , params, surface, surface, int, scale );
 void CountPartCell_Old( markers*, grid* , params, surface, int, scale );
-//void CountPartVertex ( markers*, grid*, params );
 void AccumulatedStrain( grid*, scale , params, markers* );
 void PureShearALE( params*,  grid*, markers*, scale );
 void VelocitiesOnCenters( double*, double*, double*, double*, int, int, scale );
-//void VelocitiesOnVertices( double*, double*, double*, double*, int, int, scale );
-//void FirstOrderUpwindAdvection( double*, double*, double*, double*, grid*, int, int, params, scale, int );
 void VelocitiesToParticles( grid*, markers*, DoodzFP*, DoodzFP*, params, scale );
 void DeformationGradient ( grid, scale, params , markers * );
-//
-//
-//// Energy
+
+
+// Energy
 void UpdateParticleEnergy( grid*, scale, params, markers*, mat_prop* );
-//void UpdateParticleVelocity( grid*, scaleOutputSparseMatrix , params, markers* );
 void EnergyDirectSolve( grid*, params, double*, double*, double*, double*, markers*, double, int, int, scale, int );
 cholmod_factor* FactorEnergyCHOLMOD( cholmod_common*, cs_di*, double*, int*, int*, int, int, int );
 cs_di* TransposeA( cholmod_common*, double*, int*, int*, int, int );
-
 void SolveEnergyCHOLMOD( cholmod_common*, cs_di*, cholmod_factor*, double*, double*, int, int, int );
-//void EnergyTemperatureConvertPart( double*, markers*, mat_prop, params );
 void ThermalSteps( grid*, params, double*, double*, double*, double*, markers*, double, scale );
 void Energies( grid*, params, scale );
 void SetThermalPert( grid*, params, scale );
@@ -456,19 +443,16 @@ void AllocateMarkerChain( surface*, markers*, params );
 void FreeMarkerChain( surface*, markers* );
 void CellFlagging( grid*, params, surface, scale );
 void ProjectTopography( surface*, markers*, params, grid, scale, double*, int );
-//double TopoFun( double, int, surface, scale );
 void MarkerChainPolyFit( surface*, markers*, params, grid );
 void CleanUpSurfaceParticles( markers*, grid*, surface, scale );
 void RemeshMarkerChain( markers*, surface*, params, scale, grid*, int );
 void SurfaceDensityCorrection( grid*, params, surface, scale);
 void SurfaceVelocity( grid*, params, surface*, markers*, scale );
 void UpdateDensity( grid*, markers*, mat_prop*, params*, scale* );
-//void AdvectFreeSurf( markers*, params, scale );
-//void PhaseGrowth( markers*, params, grid* );
 void DiffuseAlongTopography( grid*, params, scale, double*, int, double, double );
 void AddPartSed( markers *, mat_prop , markers *, surface *, params , scale , grid *);
 void CorrectTopoIni( markers *, mat_prop , markers *, surface *, params , scale , grid *);
-//
+
 // Decoupled solver
 void KillerSolver( SparseMat*,  SparseMat*,  SparseMat*,  SparseMat*, DirectSolver*, double*, double*, double*, params, grid*, scale, SparseMat*, SparseMat*, SparseMat*,  SparseMat*,  SparseMat* );
 void KSPStokesDecoupled( SparseMat*,  SparseMat*,  SparseMat*,  SparseMat*, DirectSolver*, double*, double*, double*, params, grid*, scale, SparseMat*, SparseMat*, SparseMat*,  SparseMat*,  SparseMat* );
