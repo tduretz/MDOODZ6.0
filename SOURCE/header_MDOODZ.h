@@ -165,7 +165,7 @@ typedef struct _grid grid;
 struct _grid {
 	int    Nx, Nz, NN, NC;
 	double dx,dz;
-	double *roger_x, *roger_z, *div_u, *u_in, *v_in, *p_in, *sxxd, *szzd, *sxz, *exxd, *ezzd, *exz, *VE_s, *VE_n, *sxxd0, *szzd0, *sxz0, *mu_s, *mu_n, *u_adv, *v_adv, *eta_phys_n, *kx, *kz, *Cv, *Qr, *eta_phys_s, *u_start, *v_start, *p_start;
+	double *roger_x, *roger_z, *div_u, *u_in, *v_in, *p_in, *p_corr, *sxxd, *szzd, *sxz, *exxd, *ezzd, *exz, *VE_s, *VE_n, *sxxd0, *szzd0, *sxz0, *mu_s, *mu_n, *u_adv, *v_adv, *eta_phys_n, *kx, *kz, *Cv, *Qr, *eta_phys_s, *u_start, *v_start, *p_start;
 	int    *iter_smooth;
 	int    *nb_part_cell, *nb_part_vert;
 	BC     BCu, BCv, BCp;
@@ -459,7 +459,7 @@ void KillerSolver( SparseMat*,  SparseMat*,  SparseMat*,  SparseMat*, DirectSolv
 void KSPStokesDecoupled( SparseMat*,  SparseMat*,  SparseMat*,  SparseMat*, DirectSolver*, double*, double*, double*, params, grid*, scale, SparseMat*, SparseMat*, SparseMat*,  SparseMat*,  SparseMat* );
 double LineSearchDecoupled( SparseMat*, SparseMat*, SparseMat*, SparseMat*, SparseMat*, double*, grid*, params*, Nparams*, markers*, markers*, surface*, mat_prop, scale );
 void EvaluateStokesResidualDecoupled( SparseMat*, SparseMat*, SparseMat*, SparseMat*, SparseMat*, Nparams*, grid*, params, scale, int );
-void BuildStokesOperatorDecoupled( grid*, params,int, double*, double*, double*, SparseMat*, SparseMat*, SparseMat*, SparseMat*, SparseMat*, int );
+void BuildStokesOperatorDecoupled( grid*, params,int, double*, double*, double*, double*, SparseMat*, SparseMat*, SparseMat*, SparseMat*, SparseMat*, int );
 void SolveStokesDecoupled( SparseMat*, SparseMat*, SparseMat*,  SparseMat*, SparseMat*, DirectSolver*, params, grid*, scale );
 void SolveStokesDefectDecoupled( SparseMat*, SparseMat*, SparseMat*, SparseMat*, SparseMat*, DirectSolver*, Nparams*, grid*, params*, markers*, markers*, surface*, mat_prop, scale, SparseMat*, SparseMat*, SparseMat* );
 void AddCoeff2( int*, double*, int, int, int*, double, int, double, double* );
@@ -476,7 +476,7 @@ void ScaleBackD         (double*, double , int );
 //void DoubleToFloat      (double*,  float*, int );
 //
 // Newton
-void BuildJacobianOperatorDecoupled( grid*, params,int, double*, double*, double*, SparseMat*, SparseMat*, SparseMat*, SparseMat*, SparseMat*, int );
+void BuildJacobianOperatorDecoupled( grid*, params, int, double*, double*, double*, double*, SparseMat*, SparseMat*, SparseMat*, SparseMat*, SparseMat*, int );
 //
 //
 // Flow law Database

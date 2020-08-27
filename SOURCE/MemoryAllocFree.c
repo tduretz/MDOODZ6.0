@@ -380,6 +380,7 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->u_in       = DoodzCalloc (Nx*NzVx,sizeof(double));
     mesh->v_in       = DoodzCalloc (NxVz*Nz,sizeof(double));
     mesh->p_in       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->p_corr    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
 
     mesh->u_start    = DoodzCalloc (Nx*NzVx,sizeof(double));
     mesh->v_start    = DoodzCalloc (NxVz*Nz,sizeof(double));
@@ -618,6 +619,7 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->u_in);
     DoodzFree(mesh->v_in);
     DoodzFree(mesh->p_in);
+    DoodzFree(mesh->p_corr);
 
     DoodzFree(mesh->u_start);
     DoodzFree(mesh->v_start);

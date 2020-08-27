@@ -48,6 +48,118 @@
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+void ApplyBC( grid* mesh, params* model ) {
+    
+    int nx=model->Nx, nz=model->Nz, nzvx=nz+1, nxvz=nx+1;
+    int i, j;
+    
+    // Vx Neumann
+    for( i=0; i<nx; i++) {
+        // South
+        if ( mesh->BCu.type[i] == 13 ) {
+            mesh->u_in[i] = mesh->u_in[i+nx];
+        }
+        // North
+        if ( mesh->BCu.type[i + (nzvx-1)*nx] == 13 ) {
+            mesh->u_in[i + (nzvx-1)*nx] = mesh->u_in[i + (nzvx-2)*nx];
+        }
+    }
+    
+    // Vx Dirichlet
+    for( i=0; i<nx; i++) {
+        // South
+        if ( mesh->BCu.type[i] == 11 ) {
+            mesh->u_in[i] = 2.0*mesh->BCu.val[i] - mesh->u_in[i+nx];
+        }
+        // North
+        if ( mesh->BCu.type[i + (nzvx-1)*nx] == 11 ) {
+            mesh->u_in[i + (nzvx-1)*nx] = 2.0*mesh->BCu.val[i + (nzvx-1)*nx] - mesh->u_in[i + (nzvx-2)*nx];
+        }
+    }
+    
+    // Vz Neumann
+    for( j=0; j<nz; j++) {
+        // West
+        if ( mesh->BCv.type[j*nxvz] == 13 ) {
+            mesh->v_in[j*nxvz] = mesh->v_in[j*nxvz + 1];
+        }
+        // East
+        if ( mesh->BCv.type[j*nxvz+(nxvz-1)] == 13 ) {
+            mesh->v_in[j*nxvz+(nxvz-1)] = mesh->v_in[j*nxvz+(nxvz-1) -1];
+        }
+    }
+    
+    // Vz Dirichlet
+    for( j=0; j<nz; j++) {
+        // West
+        if ( mesh->BCv.type[j*nxvz] == 11 ) {
+            mesh->v_in[j*nxvz] = 2.0*mesh->BCv.val[j*nxvz] - mesh->v_in[j*nxvz + 1];
+        }
+        // East
+        if ( mesh->BCv.type[j*nxvz+(nxvz-1)] == 11 ) {
+            mesh->v_in[j*nxvz + (nxvz-1)] = 2.0*mesh->BCv.val[j*nxvz+(nxvz-1)] - mesh->v_in[j*nxvz + (nxvz-1) -1];
+        }
+    }
+    
+    // Vz Periodic
+    for( j=0; j<nz; j++) {
+        // West
+        if ( mesh->BCv.type[j*nxvz] == -12 ) {
+            mesh->v_in[j*nxvz] = mesh->v_in[j*nxvz + (nxvz-1) -1];
+        }
+        // East
+        if ( mesh->BCv.type[j*nxvz+(nxvz-1)] == -12 ) {
+            mesh->v_in[j*nxvz+(nxvz-1)] = mesh->v_in[j*nxvz+1];
+        }
+    }
+    
+    // Vx Periodic
+    for( j=0; j<nzvx; j++) {
+        if ( mesh->BCu.type[j*nx + nx-1] == -12 ) {
+            mesh->u_in[j*nx + nx-1] = mesh->u_in[j*nx];
+        }
+    }
+    
+    //    printf("Vx\n");
+    //    Print2DArrayDouble( mesh->u_in, nx, nzvx, 1.0 );
+    //    printf("Vz\n");
+    //    Print2DArrayDouble( mesh->v_in, nxvz, nz, 1.0 );
+    //    printf("p\n");
+    //    Print2DArrayDouble( mesh->p_in, nx-1, nz-1, 1.0 );
+}
+
+
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+void UpdateNonLinearity( grid* mesh, markers* particles, markers* topo_chain, surface *topo, mat_prop materials, params *model, Nparams *Nmodel, scale scaling, int mode, double h_contin ) {
+    
+    // Strain rate component evaluation
+    StrainRateComponents( mesh, scaling, model );
+    //    MinMaxArrayTag( mesh->exxd,      scaling.E, (mesh->Nx-1)*(mesh->Nz-1),     "exx     ", mesh->BCp.type );
+    
+    //-----------------------------------------------//
+    
+    NonNewtonianViscosityGrid ( mesh, &materials, model, *Nmodel, &scaling );
+    
+    //-----------------------------------------------//
+    
+    // Evaluate right hand side
+    EvaluateRHS( mesh, *model, scaling, materials.rho[0] );
+    
+    //-----------------------------------------------//
+    
+    // Fill up the rheological matrices arrays
+    RheologicalOperators( mesh, model, &scaling, 0 );
+    
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 void DetectCompressibleCells ( grid* mesh, params *model ) {
     
     int cc, nx=model->Nx, nz=model->Nz, nzvx=nz+1, nxvz=nx+1, ncx=nx-1, ncz=nz-1, kk=0;
@@ -108,6 +220,7 @@ for( cc=0; cc<ncz*ncx; cc++) {
 //    mesh->dp[cc]   = 0.0;
     if ( mesh->BCp.type[cc] != 30 && mesh->BCp.type[cc] != 0  && mesh->BCp.type[cc] != 31 ) {
         mesh->p_in[cc] += alpha*dx[Stokes->eqn_p[cc]];
+//        mesh->p_in[cc]  = mesh->p_trial[cc] + alpha*dx[Stokes->eqn_p[cc]];
         mesh->dp[cc]    = alpha*dx[Stokes->eqn_p[cc]];
     }
 }
@@ -375,6 +488,8 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
             // Apply Bc to Vx and Vz
             ApplyBC( mesh, model );
             
+//            ArrayEqualArray( mesh->p_trial, mesh->p_in, ncx*ncz );
+            
 //            MinMaxArray( mesh->u_in, 1, nx*nzvx, "u in");
 //            SumArray( mesh->u_in, 1, nx*nzvx, "u in");
             
@@ -382,7 +497,7 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
             
             // Some stuff to be put on vertices                       < ---------------------- get P from centroids to vertices
             InterpCentroidsToVerticesDouble( mesh->T,    mesh->T_s,   mesh, model, &scaling );
-            InterpCentroidsToVerticesDouble( mesh->p_in, mesh->P_s,   mesh, model, &scaling );
+//            InterpCentroidsToVerticesDouble( mesh->p_in, mesh->P_s,   mesh, model, &scaling );
             InterpCentroidsToVerticesDouble( mesh->d0,   mesh->d0_s,  mesh, model, &scaling );
             InterpCentroidsToVerticesDouble( mesh->phi,  mesh->phi_s, mesh, model, &scaling );
             
@@ -705,10 +820,9 @@ void EvaluateStokesResidualDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
     double resp = 0.0;
     
     // Function evaluation
-    if ( model.aniso == 0 ) BuildStokesOperatorDecoupled( mesh, model, 0, mesh->p_in,  mesh->u_in,  mesh->v_in, Stokes, StokesA, StokesB, StokesC, StokesD, 0 );
-    if ( model.aniso == 1 ) BuildJacobianOperatorDecoupled( mesh, model, 0, mesh->p_in,  mesh->u_in,  mesh->v_in, Stokes, StokesA, StokesB, StokesC, StokesD, 0 );
+    if ( model.aniso == 0 ) BuildStokesOperatorDecoupled( mesh, model, 0, mesh->p_corr, mesh->p_in,  mesh->u_in,  mesh->v_in, Stokes, StokesA, StokesB, StokesC, StokesD, 0 );
+    if ( model.aniso == 1 ) BuildJacobianOperatorDecoupled( mesh, model, 0, mesh->p_corr, mesh->p_in,  mesh->u_in,  mesh->v_in, Stokes, StokesA, StokesB, StokesC, StokesD, 0 );
     
-//    BuildStokesOperatorDecoupled( mesh, model, 0, mesh->p_in,  mesh->u_in,  mesh->v_in, Stokes, StokesA, StokesB, StokesC, StokesD, 0 );
     
     // Integrate residuals
 #pragma omp parallel for shared( mesh, Stokes, StokesA ) private( cc ) firstprivate( nx, nzvx ) reduction(+:resx,ndofx)
@@ -954,7 +1068,7 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                 // Heat equation
                 mesh->rhs_t[c] = mesh->T[c];
                 mesh->rhs_p[c] = 0.0;
-                mesh->Qrho[c] = 0.0;
+                mesh->Qrho[c]  = 0.0;
                 
                 // Continuity equation
                 mesh->rhs_p[c] = 0.0;
@@ -962,18 +1076,12 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                 if (model.compressible ==1 ) {
                     if (mesh->comp_cells[c] == 1) {
                         mesh->rhs_p[c] += mesh->p_start[c]*mesh->bet_n[c]/model.dt;
+
                     }
                 }
-                
-//                mesh->Qrho[c]   = ( mesh->p_in[c] - mesh->p_start[c])*mesh->bet[c]/model.dt;
-
-                
             }
         }
     }
-    
-//    DoodzFree( exx_pl );
-//    DoodzFree( exz_pl );
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
