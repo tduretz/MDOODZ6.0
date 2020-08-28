@@ -14,6 +14,9 @@ path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Compression/'
 % path = '/Users/tduretz/REPO_GIT/TEST/SOURCE/'
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Shear_periodic_VEVP/'
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
+% path = '/Users/tduretz/REPO_GIT/MDOODZ6.0_debug/SOURCE/'
+% path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/ShearInclusionFiniteStrain/'
+% path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/ShearLayerFiniteStrain/'
 % path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/RUNS/SubInit_Cart_MR/'
 % path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/RUNS/Pauline_600x800_6its/'
 % path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/RUNS/Pauline_200x300_Eulerian_markers/'
@@ -22,9 +25,9 @@ path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
 cd(path)
 
 % File
-istart = 1;
+istart = 30;
 ijump  = 1;
-iend   = 1;
+iend   = 30;
 
 %--------------------------------------------------
 % what do you want to plot:
@@ -35,7 +38,7 @@ eta_plot        = 0;
 rho_plot        = 0;
 phase_on_grid   = 0;
 phase_temp2     = 0;
-vel_plot        = 1;
+vel_plot        = 0;
 vel_vectors     = 0;
 vel_divergence  = 0;
 pre_plot        = 0;
@@ -59,7 +62,7 @@ topo_SR_plot    = 0;
 topo_maps       = 0;
 phases_uplift   = 0;
 dt_time         = 0;
-srate_add       = 0;
+srate_add       = 1;
 acc_strain_add  = 0;
 phase_temp      = 0;
 srate_add_perc  = 0;
@@ -109,6 +112,9 @@ maxRho = 3600;
 % Colorbar limits
 minTxx = -11e0;
 maxTxx =  0.642;
+
+minStr = 0.2;
+maxStr = 0.7;
 
 % minPdyn = -1e9;
 % maxPdyn =  1e9;
@@ -1365,6 +1371,7 @@ for istep=istart:ijump:iend
         if ( stress_evol == 1 )
             
             Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
+            Cent.P     = hdf5read(filename,'/Centers/P');    Cent.P    = cast(Cent.P, 'double');
             Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
             Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
             Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
@@ -1379,6 +1386,7 @@ for istep=istart:ijump:iend
             %         sII = 2*eII.*eta;
             
             sxxd = (reshape(Cent.sxxd,params(4)-1,params(5)-1)');
+            P    = (reshape(Cent.P,params(4)-1,params(5)-1)');
             szzd = -sxxd;
             sxz  = (reshape(Vert.sxz, params(4)  ,params(5)  )');
             sII  = sqrt( 0.5*(2*sxxd.^2 + 0.5*(sxz(1:end-1,1:end-1).^2 + sxz(2:end,1:end-1).^2 + sxz(1:end-1,2:end).^2 + sxz(2:end,2:end).^2 ) ) );
@@ -1404,7 +1412,8 @@ for istep=istart:ijump:iend
             figure(91), hold on
             plot(time/1e3/3600/365/24, mean(sxxd(:)), 'b.')
             plot(time/1e3/3600/365/24, mean(sxzc(:)), 'r+')
-           
+            plot(time/1e3/3600/365/24, mean(P(:)), 'sb')
+            plot(time/1e3/3600/365/24, max(P(:)), ' sr')
             
             short(icount)  =  strain;
             siivec(icount) = sum(sII(:).*(dx*dz))/vol;
@@ -2237,7 +2246,7 @@ for istep=istart:ijump:iend
             imagesc( xc_plot, zc_plot, (log10(strain)), 'Visible', 'off' );
             shading flat,axis xy image, colorbar;
             hold off
-            caxis([-3 2])
+            if exist('minStr', 'var') caxis([minStr maxStr]); end
             if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
 
             xlabel(xLabel, 'FontSize', 15), ylabel(zLabel, 'FontSize', 15)

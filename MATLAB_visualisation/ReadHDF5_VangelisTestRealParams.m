@@ -73,6 +73,10 @@ for istep=istart:ijump:iend
         figure(10),
         eta_layer = 1e21;
         beta      = 1e-10;
+%         G         = 1e10;
+%         dt        = 1e11;
+%         tmax      = 1/(1/eta_layer + 1/(G*dt))*beta;
+
         tmax      = eta_layer*beta;
         dmus      = etac(fix(nz/2),1) - etac(1,1);
         ffs       = abs( 2*exx(fix(nz/2),1)* dmus);
