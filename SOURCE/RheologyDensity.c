@@ -1264,7 +1264,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     double f1=0.0, f2=0.0;
 
     // Flow law parameters from input file
-    double Tyield=0.0, F_trial = 0.0, F_corr = 0.0, gdot = 0.0, dQdtxx = 0.0, dQdtzz= 0.0, dQdtxz= 0.0;
+    double Tyield=0.0, F_trial = 0.0, F_corr = 0.0, gdot = 0.0, dQdtxx = 0.0, dQdtyy = 0.0, dQdtzz= 0.0, dQdtxz= 0.0;
     int    is_pl = 0;
     double Ea_pwl = materials->Qpwl[phase], Va_pwl = materials->Vpwl[phase], n_pwl  = materials->npwl[phase], m_pwl  = materials->mpwl[phase], r_pwl  = materials->rpwl[phase], A_pwl  = materials->Apwl[phase], f_pwl = materials->fpwl[phase], a_pwl = materials->apwl[phase], F_pwl  = materials->Fpwl[phase], pre_factor = materials->pref_pwl[phase], t_pwl  = materials->tpwl[phase];
     double Ea_lin = materials->Qlin[phase], Va_lin = materials->Vlin[phase], n_lin  = materials->nlin[phase], m_lin  = materials->mlin[phase], r_lin  = materials->rlin[phase], A_lin  = materials->Alin[phase], f_lin = materials->flin[phase], a_lin = materials->alin[phase], F_lin  = materials->Flin[phase];
@@ -1325,7 +1325,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     if ( model->gz>0.0 && P<0.0     ) { P = 0.0; printf("Aie aie aie P < 0 !!!\n"); exit(122);}
 
     // Visco-plastic limit
-    if ( elastic==0                 ) G = 10.0;
+    if ( elastic==0                 ) { G = 10.0; K = 10.0;};
 
     // Zero C limit
     if ( T< zeroC/scaling->T        ) T = zeroC/scaling->T;
@@ -1520,7 +1520,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
 
     // Initial guess
     eta_ve                  = 0.5*(eta_up+eta_lo);
-
+    
     // Local iterations
     for (it=0; it<nitmax; it++) {
 
@@ -1538,7 +1538,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         // Residual check
         res = fabs(r_eta_ve/Eii);
         if (it==0) res0 = res;
-        if (noisy==1) printf("It. %02d, r abs. = %2.2e r rel. = %2.2e tol = %2.2e eta_ve = %2.2e eta_lo = %2.2e eta_up = %2.2e eta_lin = %2.2e eta_pwl = %2.2e eta_exp = %2.2e %d\n", it, res, res/res0, tol, eta_ve, eta_lo, eta_up, eta_lin, eta_pwl, eta_exp, nitmax);
+        if (noisy>=1) printf("It. %02d, r abs. = %2.2e r rel. = %2.2e tol = %2.2e eta_ve = %2.2e eta_lo = %2.2e eta_up = %2.2e eta_lin = %2.2e eta_pwl = %2.2e eta_exp = %2.2e %d\n", it, res, res/res0, tol, eta_ve, eta_lo, eta_up, eta_lin, eta_pwl, eta_exp, nitmax);
         if (res < tol) break;
         
         // Analytical derivative of function
@@ -1555,11 +1555,14 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
 
     // Recalculate stress components
     Txx                  = 2.0*eta_ve*Exx;
+    Tyy                  = 2.0*eta_ve*Eyy;  // out-of-plane
     Tzz                  = 2.0*eta_ve*Ezz;
     Txz                  = 2.0*eta_ve*Exz;
     Tii                  = 2.0*eta_ve*Eii;
+    
+//    printf("%2.10e %2.10e\n", Tii, sqrt(0.5*(Txx*Txx + Tyy*Tyy + Tzz*Tzz) +Txz*Txz) );
 
-    // Partial derivatives VE
+    // Partial derivatives VE --> GLOBAL NEWTON ITERATION
     deta     = 0.0;
     if (dislocation == 1) deta += -C_pwl * pow(Tii, n_pwl    - 3.0)*(n_pwl    - 1.0);
     if (peierls     == 1) deta += -C_exp * pow(Tii, n_exp+ST - 3.0)*(n_exp+ST - 1.0);
@@ -1572,18 +1575,23 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     deta_ve_dExz = detadTxz * 2.0*eta_ve / (1.0 - 2.0*(detadTxx*Exx + detadTzz*Ezz + detadTxz*Exz));
     deta_ve_dP   = 0.0;
     
+    //------------------------------------------------------------------------//
+    
     // Check yield stress
     F_trial = Tii - Tyield;
+
     double F_trial0 = F_trial;
+    double dFdgdot, divp=0.0, Pc;
 
     if (F_trial > 1e-17) {
-        is_pl   = 1;
-        double dFdgdot, divp=0.0, Pc;
+        
         // Initial guess - eta_vp = 0
-        eta_vp  = eta_vp0;
-        gdot    = F_trial / ( eta_ve + eta_vp + K*dt*sin(fric)*sin(dil) );
-        dQdtxx  = (2.0*Txx + Tzz)/2.0/Tii;       //        dQdtxx  = Txx/2.0/Tii;
-        dQdtzz  = (2.0*Tzz + Txx)/2.0/Tii;       //        dQdtzz  = Tzz/2.0/Tii;
+        is_pl   = 1;
+        eta_vp  = eta_vp0 * pow(eII, 1.0/n_vp - 1);
+        gdot    = F_trial / ( eta_ve + eta_vp + K*dt*sin(fric)*sin(dil));
+        dQdtxx  = Txx/2.0/Tii;
+        dQdtyy  = Tyy/2.0/Tii;
+        dQdtzz  = Tzz/2.0/Tii;
         dQdtxz  = Txz/1.0/Tii;
         dQdP    = -sin(dil); //printf("%2.2e %2.2e\n", dQdP, K*scaling->S);
         res0    = F_trial;
@@ -1591,13 +1599,8 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         // Return mapping --> find plastic multiplier rate (gdot)
         for (it=0; it<nitmax; it++) {
 
-//            Txx     = 2.0*eta_ve*(Exx - gdot*dQdtxx    );
-//            Tzz     = 2.0*eta_ve*(Ezz - gdot*dQdtzz    );
-//            Tyy     = -(Txx + Tzz);
-//            Txz     = 2.0*eta_ve*(Exz - gdot*dQdtxz/2.0);
-//            Tii     = sqrt( 0.5*( pow(Txx,2.0) + pow(Tzz,2.0) + pow(Tyy,2.0) ) + pow(Txz,2.0)  );
             divp    = -gdot*dQdP;
-            Pc      = P + K*dt*divp;
+            Pc      = P + K*dt*divp; // P0 - k*dt*(div-divp) = P + k*dt*divp
             eta_vp  = eta_vp0 * pow(fabs(gdot), 1.0/n_vp - 1);
             Tyield  = C*cos(fric) +  ( Pc + model->PrBG )*sin(fric) +  gdot*eta_vp;
             F_trial = Tii - eta_ve*gdot - Tyield;
@@ -1612,8 +1615,9 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         }
 
         Txx     = 2.0*eta_ve*(Exx - gdot*dQdtxx    );
+        Tyy     = 2.0*eta_ve*(Eyy - gdot*dQdtyy    ); // Tyy     = -(Txx+Tzz);
         Tzz     = 2.0*eta_ve*(Ezz - gdot*dQdtzz    );
-        Tyy     = -(Txx+Tzz);
+//        printf("%2.6e %2.6e\n", Tyy,  2.0*eta_ve*(Eyy - gdot*dQdtyy    ) );
         Txz     = 2.0*eta_ve*(Exz - gdot*dQdtxz/2.0);
         Tii     = sqrt( 0.5*( pow(Txx,2.0) + pow(Tzz,2.0) + pow(Tyy,2.0) ) + pow(Txz,2.0)  );
         eta_vep = Tii / (2.0*Eii);
@@ -1670,21 +1674,18 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         (*detadexz)   = deta_vep_dExz;
         (*detadp)     = deta_vep_dP;
         (*etaVE)      = eta_vep;
-//        (*ddivpdexx)  = -dQdP*(2*dlamdExx+dlamdEzz);
-//        (*ddivpdezz)  = -dQdP*(2*dlamdEzz+dlamdExx);
         (*ddivpdexx)  = -dQdP*dlamdExx;
         (*ddivpdezz)  = -dQdP*dlamdEzz;
         (*ddivpdexz)  = -dQdP*dlamdExz;
         (*ddivpdp)    = -dQdP*dlamdP;
         inv_eta_diss += 1.0/eta_vep;
     }
+
+
+    /*----------------------------------------------------*/
+    /*----------------------------------------------------*/
+    /*----------------------------------------------------*/
     
-
-
-    /*----------------------------------------------------*/
-    /*----------------------------------------------------*/
-    /*----------------------------------------------------*/
-
     eta_pwl  = pow(2.0*C_pwl,-1.0) * pow(Tii, 1.0-n_pwl);
     *Exx_el =  (double)elastic*(Txx-Txx0)/2.0/eta_el;
     *Ezz_el =  (double)elastic*(Tzz-Tzz0)/2.0/eta_el;
@@ -1709,11 +1710,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     eta        = 1.0/(inv_eta_diss);//Tii/2.0/Eii_vis;
     *VEcoeff   = eta_ve/eta_el;//1.0 / (1.0 + G*model->dt/eta); //eta_ve/eta_el;//  //
     if (elastic==0) *VEcoeff = 0.0;
-
-//    printf("%2.2e\n",*etaVE*scaling->eta );
-
-
-
+    
     // Override viscosty at step 0 (100% visco-plastic)
     if ( model->step == 0 ) *etaVE = eta;
     *txxn = Txx;
@@ -2272,7 +2269,7 @@ void CohesionFrictionDilationGrid( grid* mesh, mat_prop materials, params model,
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void ShearModulusGrid( grid* mesh, mat_prop materials, params model, scale scaling ) {
+void ShearModCompExpGrid( grid* mesh, mat_prop materials, params model, scale scaling ) {
 
     int p, k, l, Nx, Nz, Ncx, Ncz, c0, c1;
     int average = 1;//%model.eta_avg; // SHOULD NOT BE ALLOWED TO BE ELSE THAN 1
@@ -2290,7 +2287,9 @@ void ShearModulusGrid( grid* mesh, mat_prop materials, params model, scale scali
             c0 = k  + l*(Ncx);
 
             // First - initialize to 0
-            mesh->mu_n[c0] = 0.0;
+            mesh->mu_n[c0]  = 0.0;
+            mesh->bet_n[c0] = 0.0;
+            mesh->alp[c0]   = 0.0;
 
             // Compute only if below free surface
             if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
@@ -2299,8 +2298,8 @@ void ShearModulusGrid( grid* mesh, mat_prop materials, params model, scale scali
                 for ( p=0; p<model.Nb_phases; p++) {
 
                     // Arithmetic
-                    if (average ==0) {
-                        mesh->mu_n[c0] += mesh->phase_perc_n[p][c0] * materials.mu[p];
+                    if (average == 0) {
+                        mesh->mu_n[c0]  += mesh->phase_perc_n[p][c0] * materials.mu[p];
                     }
                     // Harmonic
                     if (average == 1) {
@@ -2310,11 +2309,16 @@ void ShearModulusGrid( grid* mesh, mat_prop materials, params model, scale scali
                     if (average == 2) {
                         mesh->mu_n[c0] += mesh->phase_perc_n[p][c0] *  log(materials.mu[p]);
                     }
+                    
+                    // Standard arithmetic interpolation
+                    mesh->bet_n[c0] += mesh->phase_perc_n[p][c0] * materials.bet[p];
+                    mesh->alp  [c0] += mesh->phase_perc_n[p][c0] * materials.alp[p];
+                    
                 }
                 // Post-process for geometric/harmonic averages
                 if ( average==1 ) mesh->mu_n[c0] = 1.0/mesh->mu_n[c0];
                 if ( average==2 ) mesh->mu_n[c0] = exp(mesh->mu_n[c0]);
-
+                
             }
         }
     }
@@ -2329,6 +2333,7 @@ void ShearModulusGrid( grid* mesh, mat_prop materials, params model, scale scali
 
             // First - initialize to 0
             mesh->mu_s[c1] = 0.0;
+            mesh->bet_s[c1] = 0.0;
 
             // Compute only if below free surface
             if ( mesh->BCg.type[c1] != 30 ) {
@@ -2337,7 +2342,7 @@ void ShearModulusGrid( grid* mesh, mat_prop materials, params model, scale scali
                 for ( p=0; p<model.Nb_phases; p++) {
 
                     // Arithmetic
-                    if (average ==0) {
+                    if (average == 0) {
                         mesh->mu_s[c1] += mesh->phase_perc_s[p][c1] * materials.mu[p];
                     }
                     // Harmonic
@@ -2348,10 +2353,14 @@ void ShearModulusGrid( grid* mesh, mat_prop materials, params model, scale scali
                     if (average == 2) {
                         mesh->mu_s[c1] += mesh->phase_perc_s[p][c1] *  log(materials.mu[p]);
                     }
+                    
+                    // Standard arithmetic interpolation
+                    mesh->bet_s[c1] += mesh->phase_perc_s[p][c1] * materials.bet[p];
+                    
                 }
 
                 if ( isinf(1.0/mesh->mu_s[c1]) ) {
-                    printf("Aaaaargh...!! %2.2e %2.2e %2.2e \n", mesh->phase_perc_s[0][c1], mesh->phase_perc_s[1][c1], mesh->phase_perc_s[2][c1]);
+                    printf("Aaaaargh...!! %2.2e %2.2e ----> ShearModulusCompressibilityExpansivityGrid\n", mesh->phase_perc_s[0][c1], mesh->phase_perc_s[1][c1]);
                 }
 
                 // Post-process for geometric/harmonic averages

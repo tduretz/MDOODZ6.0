@@ -273,14 +273,14 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
             
             
             if ( mesh->BCu.type[c] != 30 ) {
-
+                
                 if (model->step==0) {
+                    
                     // Initial velocity field (zero or pure shear)
                     if (model->EpsBG == 0) mesh->u_in[c]  = 0.0;
                     // Pure shear
                     else mesh->u_in[c]  = -mesh->xg_coord[k]*model->EpsBG;
-                    // Simple shear
-                    if (model->isperiodic_x == 1) mesh->u_in[c] = 2.0*mesh->zvx_coord[l]*model->EpsBG;
+                    if (model->isperiodic_x == 1) mesh->u_in[c] = 2.0*mesh->zvx_coord[l]*model->EpsBG; // Simple shear
                 }
                 // Force Dirichlets
                 if (mesh->BCu.type[c] == 0) mesh->u_in[c]  = mesh->BCu.val[c];
@@ -293,9 +293,6 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
         for( k=0; k<nxvz; k++) {
             
             c = k + l*nxvz;
-            
-//            mesh->v_in[c]  = 0.0;
-//            if (mesh->BCv.type[c] == 0) mesh->v_in[c]  = mesh->BCv.val[c];
             
             if ( mesh->BCv.type[c] == 30 )  mesh->v_in[c]  = 0.0;
             
@@ -600,6 +597,7 @@ void SetUpModel_NoMarkers ( grid* mesh, params *model, scale *scaling ) {
     int k, l, Nx, Nz, Ncx, Ncz, k1, c0, c1;
     double x, z;
     double radius = model->user1/scaling->L;
+    double z0     = 0.5*(model->zmax + model->zmin );
     
     Nx = mesh->Nx;
     Nz = mesh->Nz;
@@ -616,7 +614,7 @@ void SetUpModel_NoMarkers ( grid* mesh, params *model, scale *scaling ) {
         c0 = k + l*(Ncx);
         
         x = mesh->xc_coord[k];
-        z = mesh->zc_coord[l];
+        z = mesh->zc_coord[l] - z0;
         
         mesh->T[k1] = 0.05;
         
