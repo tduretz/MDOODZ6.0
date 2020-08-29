@@ -29,7 +29,8 @@ dt_constant       = 1
 Courant           = 0.3
 
 /**** SWITCHES ****/
-no_markers      = 0
+no_markers      = 1
+noisy           = 0
 compressible    = 1
 ismechanical    = 1
 RK              = 4

@@ -948,8 +948,8 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->pc_type         = ReadInt2( fin, "pc_type",       0 );
     model->num_deriv       = ReadInt2( fin, "num_deriv",     0 );
     model->safe_mode       = ReadInt2( fin, "safe_mode",     0 );
-    model->nstagmax        = ReadInt2( fin, "nstagmax",      3 );
-    
+    model->nstagmax        = ReadInt2( fin, "nstagmax",      3 );  
+    model->noisy           = ReadInt2( fin, "noisy",         1 );  // prints a lot of info to standard output
 
     // Switches
     model->initial_noise   = ReadInt2( fin, "initial_noise",   0 );

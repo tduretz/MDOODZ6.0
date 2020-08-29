@@ -104,7 +104,7 @@ struct _params {
 	double  xmin, zmin, xmax, zmax, time, dx, dz, dt, dt0, dt_start, L0;
     double  xmin0, zmin0, xmax0, zmax0;
 	double gx, gz;
-	int Nx, Nz, Nt, step, nit, Newton;
+	int Nx, Nz, Nt, step, nit, Newton, noisy;
 	int eta_avg;
 	int ismechanical, isperiodic_x, isinertial, iselastic, isnonnewtonian, isthermal, ispureshear_ale, free_surf, eqn_state, write_markers, write_debug, write_energies, no_markers;
     double free_surf_stab;

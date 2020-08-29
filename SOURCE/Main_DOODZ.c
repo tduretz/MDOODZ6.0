@@ -270,9 +270,7 @@ int main( int nargs, char *args[] ) {
             // Grain size
             Interp_P2C ( particles, particles.d,  &mesh, mesh.d, mesh.xg_coord,  mesh.zg_coord, 1, 0 );
             ArrayEqualArray( mesh.d0, mesh.d,  (mesh.Nx-1)*(mesh.Nz-1) );
-            MinMaxArrayTag( mesh.d0,         scaling.L,   (mesh.Nx-1)*(mesh.Nz-1), "d0        ", mesh.BCp.type );
-            MinMaxArrayTag( mesh.d,          scaling.L,   (mesh.Nx-1)*(mesh.Nz-1), "d         ", mesh.BCp.type );
-
+            
             printf("*************************************\n");
             printf("******** Initialize density *********\n");
             printf("*************************************\n");
@@ -323,25 +321,29 @@ int main( int nargs, char *args[] ) {
             SetBCs( &mesh, &model, scaling , &particles, &materials );
             ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 0 );
             NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
+        }
+    
+        printf("Number of phases : %d\n", model.Nb_phases);
+        if ( model.noisy == 1 ) {
+            MinMaxArrayTag( mesh.d0,         scaling.L,   (mesh.Nx-1)*(mesh.Nz-1), "d0        ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.d,          scaling.L,   (mesh.Nx-1)*(mesh.Nz-1), "d         ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.p_lith,     scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P litho   ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.p_in,       scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P initial ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.T,          scaling.T,   (mesh.Nx-1)*(mesh.Nz-1), "T         ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.d,          scaling.L,   (mesh.Nx-1)*(mesh.Nz-1), "d         ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.mu_s,       scaling.S,   (mesh.Nx)*(mesh.Nz),     "mu_s      ", mesh.BCg.type );
+            MinMaxArrayTag( mesh.mu_n,       scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "mu_n      ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.eta_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "eta_s     ", mesh.BCg.type );
+            MinMaxArrayTag( mesh.eta_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_n     ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.eta_phys_s, scaling.eta, (mesh.Nx)*(mesh.Nz),     "eta_phys_s", mesh.BCg.type );
+            MinMaxArrayTag( mesh.eta_phys_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_phys_n", mesh.BCp.type );
+            MinMaxArrayTag( mesh.rho_s,      scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s     ", mesh.BCg.type );
+            MinMaxArrayTag( mesh.rho_n,      scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n     ", mesh.BCp.type );
             MinMaxArrayTag( mesh.phase_perc_n[0],          1.0,   (mesh.Nx-1)*(mesh.Nz-1), "ph 0         ", mesh.BCp.type );
             MinMaxArrayTag( mesh.phase_perc_n[1],          1.0,   (mesh.Nx-1)*(mesh.Nz-1), "ph 1         ", mesh.BCp.type );
             MinMaxArrayTag( mesh.phase_perc_s[0],          1.0,   (mesh.Nx)*(mesh.Nz),     "ph 0         ", mesh.BCg.type );
             MinMaxArrayTag( mesh.phase_perc_s[1],          1.0,   (mesh.Nx)*(mesh.Nz),     "ph 1         ", mesh.BCg.type );
         }
-    
-        printf("Number of phases : %d\n", model.Nb_phases);
-        MinMaxArrayTag( mesh.p_lith,     scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P litho   ", mesh.BCp.type );
-        MinMaxArrayTag( mesh.p_in,       scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P initial ", mesh.BCp.type );
-        MinMaxArrayTag( mesh.T,          scaling.T,   (mesh.Nx-1)*(mesh.Nz-1), "T         ", mesh.BCp.type );
-        MinMaxArrayTag( mesh.d,          scaling.L,   (mesh.Nx-1)*(mesh.Nz-1), "d         ", mesh.BCp.type );
-        MinMaxArrayTag( mesh.mu_s,       scaling.S,   (mesh.Nx)*(mesh.Nz),     "mu_s      ", mesh.BCg.type );
-        MinMaxArrayTag( mesh.mu_n,       scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "mu_n      ", mesh.BCp.type );
-        MinMaxArrayTag( mesh.eta_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "eta_s     ", mesh.BCg.type );
-        MinMaxArrayTag( mesh.eta_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_n     ", mesh.BCp.type );
-        MinMaxArrayTag( mesh.eta_phys_s, scaling.eta, (mesh.Nx)*(mesh.Nz),     "eta_phys_s", mesh.BCg.type );
-        MinMaxArrayTag( mesh.eta_phys_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_phys_n", mesh.BCp.type );
-        MinMaxArrayTag( mesh.rho_s,      scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s     ", mesh.BCg.type );
-        MinMaxArrayTag( mesh.rho_n,      scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n     ", mesh.BCp.type );
         
         printf("*************************************\n");
         printf("******** Initialize timestep ********\n");
@@ -526,12 +528,6 @@ int main( int nargs, char *args[] ) {
             Interp_P2C ( particles, particles.ttrans, &mesh, mesh.ttrans0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
             Interp_P2N ( particles, particles.ttrans, &mesh, mesh.ttrans0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
 
-            MinMaxArray   ( particles.ttrans,  scaling.t,          particles.Nb_part,   "ttrans. part" );
-            MinMaxArrayTag( mesh.ttrans0_s,    scaling.t,        (mesh.Nx)*(mesh.Nz),   "ttrans0_s",   mesh.BCg.type    );
-            MinMaxArrayTag( mesh.ttrans0_n,    scaling.t,    (mesh.Nx-1)*(mesh.Nz-1),   "ttrans0_n",   mesh.BCp.type );
-
-            MinMaxArrayTag( mesh.p0_s,   scaling.S,    (mesh.Nx)*(mesh.Nz),       "p0_s",   mesh.BCg.type    );
-            MinMaxArrayTag( mesh.p0_n,   scaling.S,    (mesh.Nx-1)*(mesh.Nz-1),   "p0_n",   mesh.BCp.type );
             //-------------------------------------------------------------------------------------------------------------
 
             if (model.isPl_soft == 1) {
@@ -545,7 +541,6 @@ int main( int nargs, char *args[] ) {
             // Detect compressible cells
             if (model.compressible == 1) DetectCompressibleCells ( &mesh, &model );
 
-            MinMaxArray(particles.rho, scaling.rho, particles.Nb_part, "rho part  ");
             Interp_P2C ( particles,   particles.rho, &mesh, mesh.rho0_n,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
         }
         else {
@@ -565,36 +560,40 @@ int main( int nargs, char *args[] ) {
         }
     
         // Min/Max interpolated fields
-        MinMaxArrayTag( mesh.rho0_n,   scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho0_n  ", mesh.BCp.type );
-        MinMaxArrayTag( mesh.rho_s,    scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s   ", mesh.BCg.type );
-        MinMaxArrayTag( mesh.rho_n,    scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n   ", mesh.BCp.type );
-        MinMaxArrayTag( mesh.sxz0,     scaling.S,   (mesh.Nx)*(mesh.Nz),     "sxz0    ", mesh.BCg.type );
-        MinMaxArrayTag( mesh.sxxd0,    scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "sxx0    ", mesh.BCp.type );
-        MinMaxArrayTag( mesh.szzd0,    scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "szz0    ", mesh.BCp.type );
-        MinMaxArrayTag( mesh.mu_s,     scaling.S,   (mesh.Nx)*(mesh.Nz),     "mu_s    ", mesh.BCg.type );
-        MinMaxArrayTag( mesh.mu_n,     scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "mu_n    ", mesh.BCp.type );
-        MinMaxArrayTag( mesh.C_s,      scaling.S,   (mesh.Nx)*(mesh.Nz),     "C_s     ", mesh.BCg.type );
-        MinMaxArrayTag( mesh.C_n,      scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "C_n     ", mesh.BCp.type );
-        MinMaxArrayTag( mesh.fric_s,   180.0/M_PI,  (mesh.Nx)*(mesh.Nz),     "fric_s  ", mesh.BCg.type );
-        MinMaxArrayTag( mesh.fric_n,   180.0/M_PI,  (mesh.Nx-1)*(mesh.Nz-1), "fric_n  ", mesh.BCp.type );
-        MinMaxArrayTag( mesh.dil_s,    180.0/M_PI,  (mesh.Nx)*(mesh.Nz),     "dil_s   ", mesh.BCg.type );
-        MinMaxArrayTag( mesh.dil_n,    180.0/M_PI,  (mesh.Nx-1)*(mesh.Nz-1), "dil_n   ", mesh.BCp.type );
-        MinMaxArrayTag( mesh.strain_s,   1.0,       (mesh.Nx)*(mesh.Nz),     "strain_s", mesh.BCg.type );
-        MinMaxArrayTag( mesh.strain_n,   1.0,       (mesh.Nx-1)*(mesh.Nz-1), "strain_n", mesh.BCp.type );
-        MinMaxArrayTag( mesh.bet_s,    scaling.S,   (mesh.Nx)*(mesh.Nz),     "beta_s  ", mesh.BCg.type );
-        MinMaxArrayTag( mesh.bet_n,    scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "beta_n  ", mesh.BCp.type );
-        MinMaxArrayTag( mesh.T,        scaling.T,   (mesh.Nx-1)*(mesh.Nz-1), "T       ", mesh.BCt.type );
-        MinMaxArrayTag( mesh.p_in,     scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P       ", mesh.BCt.type );
-        MinMaxArrayI  ( mesh.comp_cells, 1.0, (mesh.Nx-1)*(mesh.Nz-1), "comp_cells" );
-        MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part  ");
-        if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nx_n,     1.0,   (mesh.Nx-1)*(mesh.Nz-1), "nx_n    ", mesh.BCp.type );
-        if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nz_n,     1.0,   (mesh.Nx-1)*(mesh.Nz-1), "nz_n    ", mesh.BCp.type );
-        if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nx_s,     1.0,   (mesh.Nx)*(mesh.Nz),     "nx_s    ", mesh.BCg.type );
-        if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nz_s,     1.0,   (mesh.Nx)*(mesh.Nz),     "nz_s    ", mesh.BCg.type );
-        if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.FS_AR_n,  1.0,   (mesh.Nx-1)*(mesh.Nz-1), "FS_AR_n ", mesh.BCp.type );
-        if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.FS_AR_s,  1.0,   (mesh.Nx)*(mesh.Nz),     "FS_AR_s ", mesh.BCg.type );
-        if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.aniso_factor_n,  1.0,   (mesh.Nx-1)*(mesh.Nz-1), "aniso_factor_n", mesh.BCp.type );
-        if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.aniso_factor_s,  1.0,   (mesh.Nx)*(mesh.Nz),     "aniso_factor_s", mesh.BCg.type );
+        if ( model.noisy == 1 ) {
+            MinMaxArray(particles.rho, scaling.rho, particles.Nb_part, "rho part  ");
+            MinMaxArray(particles.T,   scaling.T,   particles.Nb_part, "T part    ");
+            MinMaxArrayTag( mesh.p0_n,         scaling.S,    (mesh.Nx-1)*(mesh.Nz-1),   "p0_n",   mesh.BCp.type );
+            MinMaxArrayTag( mesh.rho0_n,   scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho0_n  ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.rho_s,    scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s   ", mesh.BCg.type );
+            MinMaxArrayTag( mesh.rho_n,    scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n   ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.sxz0,     scaling.S,   (mesh.Nx)*(mesh.Nz),     "sxz0    ", mesh.BCg.type );
+            MinMaxArrayTag( mesh.sxxd0,    scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "sxx0    ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.szzd0,    scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "szz0    ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.mu_s,     scaling.S,   (mesh.Nx)*(mesh.Nz),     "mu_s    ", mesh.BCg.type );
+            MinMaxArrayTag( mesh.mu_n,     scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "mu_n    ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.C_s,      scaling.S,   (mesh.Nx)*(mesh.Nz),     "C_s     ", mesh.BCg.type );
+            MinMaxArrayTag( mesh.C_n,      scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "C_n     ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.fric_s,   180.0/M_PI,  (mesh.Nx)*(mesh.Nz),     "fric_s  ", mesh.BCg.type );
+            MinMaxArrayTag( mesh.fric_n,   180.0/M_PI,  (mesh.Nx-1)*(mesh.Nz-1), "fric_n  ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.dil_s,    180.0/M_PI,  (mesh.Nx)*(mesh.Nz),     "dil_s   ", mesh.BCg.type );
+            MinMaxArrayTag( mesh.dil_n,    180.0/M_PI,  (mesh.Nx-1)*(mesh.Nz-1), "dil_n   ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.strain_s,   1.0,       (mesh.Nx)*(mesh.Nz),     "strain_s", mesh.BCg.type );
+            MinMaxArrayTag( mesh.strain_n,   1.0,       (mesh.Nx-1)*(mesh.Nz-1), "strain_n", mesh.BCp.type );
+            MinMaxArrayTag( mesh.bet_s,    scaling.S,   (mesh.Nx)*(mesh.Nz),     "beta_s  ", mesh.BCg.type );
+            MinMaxArrayTag( mesh.bet_n,    scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "beta_n  ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.T,        scaling.T,   (mesh.Nx-1)*(mesh.Nz-1), "T       ", mesh.BCt.type );
+            MinMaxArrayTag( mesh.p_in,     scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P       ", mesh.BCt.type );
+            MinMaxArrayI  ( mesh.comp_cells, 1.0, (mesh.Nx-1)*(mesh.Nz-1), "comp_cells" );
+            if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nx_n,     1.0,   (mesh.Nx-1)*(mesh.Nz-1), "nx_n    ", mesh.BCp.type );
+            if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nz_n,     1.0,   (mesh.Nx-1)*(mesh.Nz-1), "nz_n    ", mesh.BCp.type );
+            if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nx_s,     1.0,   (mesh.Nx)*(mesh.Nz),     "nx_s    ", mesh.BCg.type );
+            if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nz_s,     1.0,   (mesh.Nx)*(mesh.Nz),     "nz_s    ", mesh.BCg.type );
+            if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.FS_AR_n,  1.0,   (mesh.Nx-1)*(mesh.Nz-1), "FS_AR_n ", mesh.BCp.type );
+            if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.FS_AR_s,  1.0,   (mesh.Nx)*(mesh.Nz),     "FS_AR_s ", mesh.BCg.type );
+            if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.aniso_factor_n,  1.0,   (mesh.Nx-1)*(mesh.Nz-1), "aniso_factor_n", mesh.BCp.type );
+            if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.aniso_factor_s,  1.0,   (mesh.Nx)*(mesh.Nz),     "aniso_factor_s", mesh.BCg.type );
+        }
         
         printf("** Time for particles interpolations I = %lf sec\n",  (double)((double)omp_get_wtime() - t_omp) );
         
@@ -662,44 +661,26 @@ int main( int nargs, char *args[] ) {
                 RheologicalOperators( &mesh, &model, &scaling, 0 );
                 NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
                 
-                MinMaxArrayTag( mesh.exxd,      scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "exxd      ", mesh.BCp.type );
-                MinMaxArrayTag( mesh.ezzd,      scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "ezzd      ", mesh.BCp.type );
-                MinMaxArrayTag( mesh.exz,       scaling.E, (mesh.Nx-0)*(mesh.Nz-0), "exz       ", mesh.BCg.type );
-                MinMaxArrayTag( mesh.sxxd,      scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "sxxd      ", mesh.BCp.type );
-                MinMaxArrayTag( mesh.szzd,      scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "szzd      ", mesh.BCp.type );
-                MinMaxArrayTag( mesh.sxz,       scaling.S, (mesh.Nx-0)*(mesh.Nz-0), "sxz       ", mesh.BCg.type );
-                
-//                if ( model.Newton == 1 ) {
-//                    JacobA.neq = StokesA.neq ;
-//                    ArrayEqualArray( JacobA.F, StokesA.F, StokesA.neq );
-//                    ArrayEqualArray( JacobC.F, StokesC.F, StokesC.neq );
-//                    MinMaxArray(JacobA.F, 1, JacobA.neq, "Fu" );
-//                    MinMaxArray(JacobA.F, 1, JacobA.neq, "Fp" );
-//                }
-                
-//                MinMaxArrayTag( mesh.D11_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "D11_n     ", mesh.BCp.type );
-//                MinMaxArrayTag( mesh.D12_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "D12_n     ", mesh.BCp.type );
-//                MinMaxArrayTag( mesh.D13_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "D13_n     ", mesh.BCp.type );
-//                MinMaxArrayTag( mesh.D21_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "D21_n     ", mesh.BCp.type );
-//                MinMaxArrayTag( mesh.D22_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "D22_n     ", mesh.BCp.type );
-//                MinMaxArrayTag( mesh.D23_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "D23_n     ", mesh.BCp.type );
-//                MinMaxArrayTag( mesh.D31_s,      scaling.eta, (mesh.Nx-0)*(mesh.Nz-0), "D31_s     ", mesh.BCg.type );
-//                MinMaxArrayTag( mesh.D32_s,      scaling.eta, (mesh.Nx-0)*(mesh.Nz-0), "D32_s     ", mesh.BCg.type );
-//                MinMaxArrayTag( mesh.D33_s,      scaling.eta, (mesh.Nx-0)*(mesh.Nz-0), "D33_s     ", mesh.BCg.type );
-//                Print2DArrayDouble(mesh.u_in, mesh.Nx, mesh.Nz+1, 1.0);
+                if ( model.noisy == 1 ) {
+                    MinMaxArrayTag( mesh.exxd,      scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "exxd      ", mesh.BCp.type );
+                    MinMaxArrayTag( mesh.ezzd,      scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "ezzd      ", mesh.BCp.type );
+                    MinMaxArrayTag( mesh.exz,       scaling.E, (mesh.Nx-0)*(mesh.Nz-0), "exz       ", mesh.BCg.type );
+                    MinMaxArrayTag( mesh.sxxd,      scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "sxxd      ", mesh.BCp.type );
+                    MinMaxArrayTag( mesh.szzd,      scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "szzd      ", mesh.BCp.type );
+                    MinMaxArrayTag( mesh.sxz,       scaling.S, (mesh.Nx-0)*(mesh.Nz-0), "sxz       ", mesh.BCg.type );
+                    MinMaxArrayTag( mesh.eta_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "eta_s     ", mesh.BCg.type );
+                    MinMaxArrayTag( mesh.eta_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_n     ", mesh.BCp.type );
+                    MinMaxArrayTag( mesh.eta_phys_s, scaling.eta, (mesh.Nx)*(mesh.Nz),     "eta_phys_s", mesh.BCg.type );
+                    MinMaxArrayTag( mesh.eta_phys_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_phys_n", mesh.BCp.type );
+                    MinMaxArrayTag( mesh.rho_s,      scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s     ", mesh.BCg.type );
+                    MinMaxArrayTag( mesh.rho_n,      scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n     ", mesh.BCp.type );
+                    MinMaxArrayTag( mesh.rho0_n,     scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho0_n    ", mesh.BCp.type );
+                }
                 
                 if ( model.write_debug == 1 ) {
                     WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, model, "Output_BeforeSolve", materials, scaling );
                     WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particles_BeforeSolve", materials, scaling );
                 }
-                
-                MinMaxArrayTag( mesh.eta_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "eta_s     ", mesh.BCg.type );
-                MinMaxArrayTag( mesh.eta_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_n     ", mesh.BCp.type );
-                MinMaxArrayTag( mesh.eta_phys_s, scaling.eta, (mesh.Nx)*(mesh.Nz),     "eta_phys_s", mesh.BCg.type );
-                MinMaxArrayTag( mesh.eta_phys_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_phys_n", mesh.BCp.type );
-                MinMaxArrayTag( mesh.rho_s,      scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s     ", mesh.BCg.type );
-                MinMaxArrayTag( mesh.rho_n,      scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n     ", mesh.BCp.type );
-                MinMaxArrayTag( mesh.rho0_n,     scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho0_n    ", mesh.BCp.type );
                 
                 // Build discrete system of equations - MATRIX
                 if ( model.decoupled_solve == 0 ) BuildStokesOperator           ( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, 1 );
@@ -946,15 +927,8 @@ int main( int nargs, char *args[] ) {
         //--------------------------------------------------------------------------------------------------------------------------------//
         // Update pressure on markers
         UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
-//        Interp_Grid2P( particles, particles.P, &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
         
-        MinMaxArray( particles.ttrans,  scaling.t, particles.Nb_part,   "AVANT UPDATE : ttrans. part" );
-        MinMaxArrayTag( mesh.ttrans0_s,   scaling.t,    (mesh.Nx)*(mesh.Nz),       "ttrans0_s",   mesh.BCg.type    );
-        MinMaxArrayTag( mesh.ttrans0_n,   scaling.t,    (mesh.Nx-1)*(mesh.Nz-1),   "ttrans0_n",   mesh.BCp.type );
-        MinMaxArrayTag( mesh.ttrans_n,   scaling.t,    (mesh.Nx-1)*(mesh.Nz-1),   "ttrans_n",   mesh.BCp.type );
-
         UpdateParticlettrans( &mesh, &scaling, model, &particles, &materials );
-        MinMaxArray( particles.ttrans,  scaling.t, particles.Nb_part,   "APRES UPDATE : ttrans. part" );
         MinMaxArray( particles.P,       scaling.S, particles.Nb_part,   "P part"       );
 
         //------------------------------------------------------------------------------------------------------------------------------//
@@ -1111,18 +1085,12 @@ int main( int nargs, char *args[] ) {
                     WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particlesx", materials, scaling );
                 }
 #endif
-                //                    MinMaxArray( topo_chain.z,      scaling.L, topo_chain.Nb_part,       "z surf." );
-                //                    MinMaxArray( topo_chain_ini.z,  scaling.L, topo_chain_ini.Nb_part,   "z surf. ini." );
 
                 // Remesh free surface II
                 RemeshMarkerChain( &topo_chain,     &topo,     model, scaling, &mesh, 2 );
                 RemeshMarkerChain( &topo_chain_ini, &topo_ini, model, scaling, &mesh, 2 );
                 CorrectTopoIni( &particles, materials, &topo_chain_ini, &topo, model, scaling, &mesh);
                 MarkerChainPolyFit( &topo_ini, &topo_chain_ini, model, mesh );
-
-
-                //                    MinMaxArray( topo_chain.z,      scaling.L, topo_chain.Nb_part,       "z surf." );
-                //                    MinMaxArray( topo_chain_ini.z,  scaling.L, topo_chain_ini.Nb_part,   "z surf. ini." );
 
                 // Remove particles that are above the surface
                 CleanUpSurfaceParticles( &particles, &mesh, topo, scaling );
@@ -1139,8 +1107,6 @@ int main( int nargs, char *args[] ) {
                 WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particlesxx", materials, scaling );
             }
 #endif
-            // MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T1 part  ");
-
             // Count the number of particle per cell
             printf("Before re-seeding : number of particles = %d\n", particles.Nb_part);
             t_omp = (double)omp_get_wtime();
@@ -1157,8 +1123,6 @@ int main( int nargs, char *args[] ) {
 
             printf("After re-seeding : number of particles = %d\n", particles.Nb_part);
             printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
-
-            // MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T2 part  ");
 
             // Remove particles that would be above the surface
             if ( model.free_surf == 1 ) {
