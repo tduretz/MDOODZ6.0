@@ -304,8 +304,8 @@ The results can also be reproduced using the M2Di example:
 M2Di2_PowerLaw_Newton_PureShear_MDOODZ.m
 \end{verbatim}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Visco-elasticity with power-law rheology: Pure and simple shear}
-
 
 setup file:
 \begin{verbatim} 
@@ -351,6 +351,7 @@ Pure shear model results can also be reproduced using the M2Di example:
 M2Di2_PowerLawVE_Newton_PureShear_LocIt_MDOODZ.m
 \end{verbatim}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Visco-elasticity-viscoplasticity with power-law rheology: Pure and simple shear}
 
 setup file:
@@ -385,6 +386,7 @@ eta_vp = 1e-1
 \label{PeriodicSimpleShearVEVP_MDOODZ}
 \end{figure}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Visco-elasticity-viscoplasticity with power-law rheology: Crustal-scale model}
 
 Setup file:
@@ -406,6 +408,19 @@ and extension \begin{verbatim} EpsBG>0 \end{verbatim}
 \label{Extension_Compression_MDOODZ}
 \end{figure}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Ideal elasticity-plasticity: Duretz et al., (2018) benchmark test 1}
+
+Setup file:
+\begin{verbatim} 
+VEP_Duretz18.txt
+\end{verbatim}
+
+\begin{figure}[ht!]
+\centerline{\includegraphics[height=3.0in]{./Figures/VEP_Duretz18_MDOODZ.png}}
+\caption{Colourmap: Pressure field after 30 time steps. Models were run with and without marker interpolations.}
+\label{VEP_Duretz18}
+\end{figure}
 
 
 %---------------------------------------------------------------------------------------------------------------%
