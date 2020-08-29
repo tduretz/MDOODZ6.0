@@ -1081,8 +1081,15 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
     P_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
 
     // Interp increments to particles
-    Interp_Grid2P( *particles, P_inc_mark, mesh, mesh->dp, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
-
+    //Interp_Grid2P( *particles, P_inc_mark, mesh, mesh->dp, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
+    for (k=0;k<Ncx*Ncz;k++) {
+        mesh->dp[k] =0.0;
+        if (mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
+            mesh->dp[k] = mesh->p_in[k] - mesh->p0_n[k];
+        }
+    }
+    Interp_Grid2P( *particles, P_inc_mark, mesh, mesh->dp, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
+    
     // Increment pressure on particles
     ArrayPlusArray( particles->P, P_inc_mark, particles->Nb_part );
 
