@@ -2366,9 +2366,6 @@ void ShearModCompExpGrid( grid* mesh, mat_prop materials, params model, scale sc
                 // Post-process for geometric/harmonic averages
                 if ( average==1 ) mesh->mu_s[c1] = 1.0/mesh->mu_s[c1];
                 if ( average==2 ) mesh->mu_s[c1] = exp(mesh->mu_s[c1]);
-
-
-
             }
         }
     }
