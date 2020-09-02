@@ -72,10 +72,10 @@ void Continuity_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesC, Spar
     }
 
     // div u
-    if ( mesh->BCu.type[c1     ] != 13 ) uW = -one_dx;
-    if ( mesh->BCu.type[c1+1   ] != 13 ) uE =  one_dx;
-    if ( mesh->BCv.type[c3     ] != 13 ) vS = -one_dz;
-    if ( mesh->BCv.type[c3+nxvz] != 13 ) vN =  one_dz;
+    if ( mesh->BCu.type[c1     ] != 13 ) uW = -one_dx * 1e0;
+    if ( mesh->BCu.type[c1+1   ] != 13 ) uE =  one_dx * 1e0;
+    if ( mesh->BCv.type[c3     ] != 13 ) vS = -one_dz * 1e0;
+    if ( mesh->BCv.type[c3+nxvz] != 13 ) vN =  one_dz * 1e0;
 
     // Stencil assembly / residual
     if ( Assemble == 1 ) {
@@ -172,8 +172,8 @@ void Xmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
 
     // Pressure gradient
     if ( mesh->BCp.type[iPrE] != 30 && mesh->BCp.type[iPrW] != 30 ) {
-        pW  =  -one_dx;
-        pE  =   one_dx;
+        pW  =  -one_dx * 1e0;
+        pE  =   one_dx * 1e0;
     }
 
     if ( Assemble == 1 ) {
@@ -857,8 +857,8 @@ void Zmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
 
     // Pressure gradient
     if ( mesh->BCp.type[c2] != 30 && mesh->BCp.type[c2+ncx] != 30 ) {
-        pS  =  -one_dz;
-        pN  =   one_dz;
+        pS  =  -one_dz * 1e0;
+        pN  =   one_dz * 1e0;
     }
 
 //    uSW=-uSW, uSE=-uSE, uNW=-uNW, uNE=-uNE, vS=-vS, vW=-vW, vC=-vC, vE=-vE, vN=-vN, pN=-pN, pS=-pS;

@@ -2223,6 +2223,8 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     //    for (k=0;k<Dcm0->nzmax;k++) ((double*)Dcm0->x)[k] *= gamma*celvol;
 //    printf("-gamma*celvol = %2.2e %2.2e %2.2e %d %d\n", -gamma*celvol, model.dx*scaling.L, model.dz*scaling.L, model.Nx, model.Nz);
 
+//    MinMaxArray(matD->d, 1, matD->neq, "diag. D" );
+//    exit(1);
 
 #pragma omp parallel for shared( whos_incompressible, D1cm0, Dcm0, mesh, Stokes, matA, matD ) private( i ) firstprivate( model, celvol )
     for( k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
@@ -2230,12 +2232,15 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
             i = Stokes->eqn_p[k] - matA->neq;
             // Here Dcm0 is the pressure block - This relates to physics (0 is incompressible, Beta/dt is compressible)
             if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[i] *= 0.0;
-            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i] *= mesh->bet_n[k] / model.dt * celvol * matD->d[k]*matD->d[k];
+            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i]  = mesh->bet_n[k] / model.dt * celvol * matD->d[i]*matD->d[i]  * 1e0;
             // Here Dcm0 is the inverse of the pressure block - This relates to numerics in this incompressible case (penalty) or physics in the compressible case (dt/Beta)
             if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i]  *= penalty;
-            if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  *= 1.0 /  ((double*)D1cm0->x)[k];
+            if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]   = 1.0 /  ((double*)D1cm0->x)[i];
+//            if (mesh->comp_cells[k]==1)  printf("%2.2e %2.2e %2.2e %d\n",((double*)Dcm0->x)[i], mesh->bet_n[k], matD->d[i], mesh->BCp.type[k]);
             // Detect cell which are compressible
             if (mesh->comp_cells[k]==1) ((double*)whos_incompressible->x)[i] *= 0.0;
+//            ((double*)Dcm0->x)[i]  *= penalty*10000;
+//            ((double*)D1cm0->x)[i] *= 0*mesh->bet_n[k] / model.dt * celvol * matD->d[k]*matD->d[k];
         }
     }
 

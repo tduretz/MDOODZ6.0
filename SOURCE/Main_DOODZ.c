@@ -209,6 +209,10 @@ int main( int nargs, char *args[] ) {
                 Interp_P2N ( particles, materials.rho,  &mesh, mesh.rho_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
                 Interp_P2C ( particles, materials.rho,  &mesh, mesh.rho_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
             }
+            
+            MinMaxArray( mesh.u_in,  scaling.V, (mesh.Nx)*(mesh.Nz+1),   "Vx. grid" );
+            MinMaxArray( mesh.v_in,  scaling.V, (mesh.Nx+1)*(mesh.Nz),   "Vz. grid" );
+            MinMaxArray( mesh.p_in,  scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "       P" );
 
             // Initial solution fields (Fine mesh)
 #ifdef _NEW_INPUT_
@@ -217,6 +221,10 @@ int main( int nargs, char *args[] ) {
             SetBCs( &mesh, &model, scaling , &particles, &materials );
 #endif
             InitialiseSolutionFields( &mesh, &model );
+            
+            MinMaxArray( mesh.u_in,  scaling.V, (mesh.Nx)*(mesh.Nz+1),   "Vx. grid" );
+            MinMaxArray( mesh.v_in,  scaling.V, (mesh.Nx+1)*(mesh.Nz),   "Vz. grid" );
+            MinMaxArray( mesh.p_in,  scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "       P" );
 
             printf("*************************************\n");
             printf("****** Initialize temperature *******\n");
@@ -372,8 +380,8 @@ int main( int nargs, char *args[] ) {
         }
 #endif
         // Set initial stresses and pressure to zero
-        Initialise1DArrayDouble( particles.P,      particles.Nb_part, 0.0 );
-        Initialise1DArrayDouble( mesh.p_in,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
+//        Initialise1DArrayDouble( particles.P,      particles.Nb_part, 0.0 );
+//        Initialise1DArrayDouble( mesh.p_in,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
         Initialise1DArrayDouble( mesh.sxxd,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
         Initialise1DArrayDouble( mesh.szzd,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
         Initialise1DArrayDouble( mesh.sxz,   (mesh.Nx)  *(mesh.Nz)  , 0.0 );
@@ -580,8 +588,10 @@ int main( int nargs, char *args[] ) {
             MinMaxArrayTag( mesh.dil_n,    180.0/M_PI,  (mesh.Nx-1)*(mesh.Nz-1), "dil_n   ", mesh.BCp.type );
             MinMaxArrayTag( mesh.strain_s,   1.0,       (mesh.Nx)*(mesh.Nz),     "strain_s", mesh.BCg.type );
             MinMaxArrayTag( mesh.strain_n,   1.0,       (mesh.Nx-1)*(mesh.Nz-1), "strain_n", mesh.BCp.type );
-            MinMaxArrayTag( mesh.bet_s,    scaling.S,   (mesh.Nx)*(mesh.Nz),     "beta_s  ", mesh.BCg.type );
-            MinMaxArrayTag( mesh.bet_n,    scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "beta_n  ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.bet_s,    1.0/scaling.S,   (mesh.Nx)*(mesh.Nz),     "beta_s  ", mesh.BCg.type );
+            MinMaxArrayTag( mesh.bet_n,    1.0/scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "beta_n  ", mesh.BCp.type );
+             IsInfArray2DFP(mesh.bet_n, Nx*Nz);
+            IsNanArray2DFP(mesh.bet_n, Nx*Nz);
             MinMaxArrayTag( mesh.T,        scaling.T,   (mesh.Nx-1)*(mesh.Nz-1), "T       ", mesh.BCt.type );
             MinMaxArrayTag( mesh.p_in,     scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P       ", mesh.BCt.type );
             MinMaxArrayI  ( mesh.comp_cells, 1.0, (mesh.Nx-1)*(mesh.Nz-1), "comp_cells" );
@@ -714,7 +724,6 @@ int main( int nargs, char *args[] ) {
                 if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
                 if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
                 printf("---- Non-linear residual ----\n");
-                
 
                 if ( model.Newton == 1 && model.aniso == 0 ) {
                     ArrayEqualArray( JacobA.F, StokesA.F,  StokesA.neq );
@@ -748,6 +757,7 @@ int main( int nargs, char *args[] ) {
                     }
                     break;
                 }
+                
 
                 // Direct solve
                 t_omp = (double)omp_get_wtime();
@@ -881,7 +891,7 @@ int main( int nargs, char *args[] ) {
                 //        char *GNUplotCommands[] = {"set title sprintf(a)", "set logscale y", "plot 'F_x'"};
                 
                 int NumCommands = 4;
-                char *GNUplotCommands[] = {"set title \"Non-linear residuals\"", "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3", "plot 'F_x' with linespoints ls 1"};
+                char *GNUplotCommands[] = { "set term x11 1 noraise", "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3", "plot 'F_x' with linespoints ls 1"};
                 FILE *temp = fopen("F_x", "w");
                 FILE *GNUplotPipe = popen ("gnuplot -persistent", "w");
                 for (i=0; i< Nmodel.nit+1; i++) {

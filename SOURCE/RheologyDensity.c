@@ -1075,25 +1075,90 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
 
     DoodzFP *P_inc_mark;
     int Nx, Nz, Ncx, Ncz, k, c0, p;
+    double d=1.0, dtm;
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
 
-    P_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-
-    // Interp increments to particles
-    //Interp_Grid2P( *particles, P_inc_mark, mesh, mesh->dp, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
+    // Compute increment
     for (k=0;k<Ncx*Ncz;k++) {
         mesh->dp[k] =0.0;
         if (mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
             mesh->dp[k] = mesh->p_in[k] - mesh->p0_n[k];
         }
     }
-    Interp_Grid2P( *particles, P_inc_mark, mesh, mesh->dp, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
     
-    // Increment pressure on particles
-    ArrayPlusArray( particles->P, P_inc_mark, particles->Nb_part );
+    
+    if ( model.subgrid_diff >= 1 ) {
+        
+        printf("Subgrid diffusion for pressure update\n");
+//        Pg0  = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+        double *dPgs = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+        double *dPgr = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+        double *Pm0  = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        double *dPms = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        double *dPmr = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        double *etam = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        
+        Interp_Grid2P( *particles, etam,  mesh, mesh->eta_phys_s, mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type);
+        
+//        // Old Pressure grid
+//#pragma omp parallel for shared(mesh, Pg0) private(c0) firstprivate(Ncx,Ncz)
+//        for ( c0=0; c0<Ncx*Ncz; c0++ ) {
+//            if (mesh->BCt.type[c0] != 30) Pg0[c0] = mesh->P[c0] - mesh->dp[c0];
+//        }
+        
+        // Old temperature grid --> markers
+        Interp_Grid2P( *particles, Pm0, mesh, mesh->p0_n, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
+        
+        // Compute subgrid temperature increments on markers
+#pragma omp parallel for shared(particles,Pm0,dPms) private(k,p,dtm) firstprivate(materials,model,d)
+        for ( k=0; k<particles->Nb_part; k++ ) {
+            if (particles->phase[k] != -1) {
+                p         = particles->phase[k];
+                dtm       = etam[k]/ (materials->bet[p]);
+                dPms[k]   = -( particles->P[k] - Pm0[k]) * (1.0 - exp(-d*model.dt/dtm));
+            }
+        }
+        
+        // Subgrid temperature increments markers --> grid
+        Interp_P2C ( *particles, dPms, mesh, dPgs, mesh->xg_coord, mesh->zg_coord, 1, 0 );
+        
+        
+        // Remaining temperature increments on the grid
+#pragma omp parallel for shared(mesh, dPgs, dPgr) private(c0) firstprivate(Ncx,Ncz)
+        for ( c0=0; c0<Ncx*Ncz; c0++ ) {
+            if (mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) dPgr[c0] = mesh->dp[c0] - dPgs[c0];
+        }
+        
+        // Remaining temperature increments grid --> markers
+        Interp_Grid2P( *particles, dPmr, mesh, dPgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
+        
+        // Final temperature update on markers
+#pragma omp parallel for shared(particles,dPms,dPmr) private(k)
+        for ( k=0; k<particles->Nb_part; k++ ) {
+            if (particles->phase[k] != -1) particles->P[k] += dPms[k] + dPmr[k];
+        }
+//        DoodzFree(Pg0);
+        DoodzFree(Pm0);
+        DoodzFree(dPms);
+        DoodzFree(dPmr);
+        DoodzFree(dPgs);
+        DoodzFree(dPgr);
+        DoodzFree(etam);
+    }
+    else {
+        
+        P_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        
+        // Interp increments to particles
+        Interp_Grid2P( *particles, P_inc_mark, mesh, mesh->dp, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
+        
+        // Increment pressure on particles
+        ArrayPlusArray( particles->P, P_inc_mark, particles->Nb_part );
+        
+        DoodzFree(P_inc_mark);
 
-    DoodzFree(P_inc_mark);
+    }
 
 }
 
@@ -1264,7 +1329,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     // Parameters for deformation map calculations
     int    local_iter = model->loc_iter, it, nitmax = 20, noisy = 0;
     int    constant=0, dislocation=0, peierls=0, diffusion=0, gbs=0, elastic = model->iselastic;
-    double tol = 1.0e-12, res=0.0, res0=0.0, dfdeta=0.0, Txx=0.0, Tzz=0.0, Txz=0.0, Tii=0.0, ieta_sum=0.0, Tii0 = sqrt(Txx0*Txx0 + Txz0*Txz0);
+    double tol = 1.0e-11, res=0.0, res0=0.0, dfdeta=0.0, Txx=0.0, Tzz=0.0, Txz=0.0, Tii=0.0, ieta_sum=0.0, Tii0 = sqrt(Txx0*Txx0 + Txz0*Txz0);
     double eta_up=0.0, eta_lo=0.0, eta_ve=0.0, eta_p=0.0, r_eta_pl=0.0, r_eta_ve=0.0, r_eta_p=0.0;
     double eta_pwl=0.0, eta_exp=0.0, eta_vep=0.0, eta_lin=0.0, eta_el=0.0, eta_gbs=0.0, eta_cst=0.0, eta_step=0.0;
     double Exx=0.0, Ezz=0.0, Exz=0.0, Eii_vis=0.0, Eii= 0.0, eII=0.0;
@@ -1300,7 +1365,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     double sig  = 1.0/6.0*time_reaction;
     
     if (model->diffuse_X==0) constant_mix  = 0;
-
+    
     //------------------------------------------------------------------------//
 
     // Initialise strain rate invariants to 0
@@ -1545,7 +1610,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         // Residual check
         res = fabs(r_eta_ve/Eii);
         if (it==0) res0 = res;
-        if (noisy>=1) printf("It. %02d, r abs. = %2.2e r rel. = %2.2e tol = %2.2e eta_ve = %2.2e eta_lo = %2.2e eta_up = %2.2e eta_lin = %2.2e eta_pwl = %2.2e eta_exp = %2.2e %d\n", it, res, res/res0, tol, eta_ve, eta_lo, eta_up, eta_lin, eta_pwl, eta_exp, nitmax);
+        if (noisy>=1) printf("Visco-Elastic iterations It. %02d, r abs. = %2.2e r rel. = %2.2e tol = %2.2e eta_ve = %2.2e eta_lo = %2.2e eta_up = %2.2e eta_lin = %2.2e eta_pwl = %2.2e eta_exp = %2.2e %d\n", it, res, res/res0, tol, eta_ve, eta_lo, eta_up, eta_lin, eta_pwl, eta_exp, nitmax);
         if (res < tol) break;
         
         // Analytical derivative of function
@@ -1559,6 +1624,8 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         // Update viscosity
         eta_ve -= r_eta_ve / dfdeta;
     }
+    
+    if ( it==nitmax-1 && res > tol ) { printf("Visco-Elastic iterations failed!\n"); exit(0);}
 
     // Recalculate stress components
     Txx                  = 2.0*eta_ve*Exx;
@@ -1596,6 +1663,8 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         is_pl   = 1;
         eta_vp  = eta_vp0 * pow(eII, 1.0/n_vp - 1);
         gdot    = F_trial / ( eta_ve + eta_vp + K*dt*sin(fric)*sin(dil));
+        gdot    = F_trial / ( eta_ve + K*dt*sin(fric)*sin(dil) ); // neglect visco-plastic viscosity for initial guess
+        gdot    = eII;
         dQdtxx  = Txx/2.0/Tii;
         dQdtyy  = Tyy/2.0/Tii;
         dQdtzz  = Tzz/2.0/Tii;
@@ -1620,6 +1689,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
             dFdgdot  = - eta_ve - eta_vp/n_vp - K*dt*sin(fric)*sin(dil);
             gdot    -= F_trial / dFdgdot;
         }
+        if ( it==nitmax-1 && (res > tol || res/F_trial0 > tol)  ) { printf("Visco-Plastic iterations failed!\n"); exit(0);}
 
         Txx     = 2.0*eta_ve*(Exx - gdot*dQdtxx    );
         Tyy     = 2.0*eta_ve*(Eyy - gdot*dQdtyy    ); // Tyy     = -(Txx+Tzz);

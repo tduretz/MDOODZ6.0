@@ -1033,9 +1033,12 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->dz              = (model->zmax - model->zmin) / (model->Nz - 1);
     model->dt0             = model->dt;
     model->dt_start        = model->dt;
-    model->eta_avg         = ReadInt2( fin, "eta_avg",       0 ); // 0 : arithmetic mean
-    model->diffuse_X       = ReadInt2( fin, "diffuse_X",     0 ); // 0 or 1
-    model->diffuse_avg     = ReadInt2( fin, "diffuse_avg",   0 ); // 0 : arithmetic mean
+    model->dt_max          = ReadDou2( fin, "dt_max",     1e20 ) / scaling->t; // maximum allowed time step
+    model->eta_avg         = ReadInt2( fin, "eta_avg",       0 );              // 0 : arithmetic mean
+   
+    // For Cindy's setup
+    model->diffuse_X       = ReadInt2( fin, "diffuse_X",     0 );              // 0 or 1
+    model->diffuse_avg     = ReadInt2( fin, "diffuse_avg",   0 );              // 0 : arithmetic mean
     model->diffusion_length= ReadDou2( fin, "diffusion_length",  0.0 ) / scaling->L;
 
     // Gravity
