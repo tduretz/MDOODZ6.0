@@ -25,9 +25,9 @@ path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
 cd(path)
 
 % File
-istart = 30;
-ijump  = 1;
-iend   = 30;
+istart = 60;
+ijump  = 10;
+iend   = 60;
 
 %--------------------------------------------------
 % what do you want to plot:
@@ -35,18 +35,18 @@ iend   = 30;
 X_plot          = 0;
 eta_sym         = 0;
 eta_plot        = 0;
-rho_plot        = 0;
+rho_plot        = 1;
 phase_on_grid   = 0;
 phase_temp2     = 0;
 vel_plot        = 0;
 vel_vectors     = 0;
-vel_divergence  = 0;
+vel_divergence  = 1;
 pre_plot        = 0;
 dyna_pre        = 0;
-stress_inv      = 1;
+stress_inv      = 0;
 stress_evol     = 0;
 stress_plot     = 0;
-srate_plot      = 0;
+srate_plot      = 1;
 acc_strain      = 0;
 temperature     = 0;
 temp_evol       = 0;
@@ -122,8 +122,8 @@ maxStr = 0.7;
 % minEta = 19;
 % maxEta = 25;
 
-% minEii = -16;
-% maxEii = -13.5;
+minEii = -16;
+maxEii = -13.5;
 
 % minSii = 1e6;
 % maxSii = 400e6;
@@ -1284,13 +1284,15 @@ for istep=istart:ijump:iend
             Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
             Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
             Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
+            Cent.ezzd  = hdf5read(filename,'/Centers/ezzd'); Cent.ezzd = cast(Cent.ezzd, 'double');
             Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
             Vert.eta_s = hdf5read(filename,'/Vertices/eta_s'); Vert.eta_s = cast(Vert.eta_s, 'double');
             eta = reshape(Vert.eta_s,params(4),params(5))';
             eta = 0.25*(eta(1:end-1,1:end-1) + eta(2:end,1:end-1) + eta(1:end-1,2:end) + eta(2:end,2:end));
             
             exx = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
-            ezz = -exx;
+            ezz = (reshape(Cent.ezzd,params(4)-1,params(5)-1)');
+            
             exz = (reshape(Vert.exz, params(4)  ,params(5)  )');
             eII = sqrt( 0.5*( 2*exx.^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ) );
             %         sII = 2*eII.*eta;
@@ -1332,7 +1334,6 @@ for istep=istart:ijump:iend
             title(['eII at' TimeLabel, ' min = ', num2str((min(eII(:))), '%2.2e'  ), ' s^{-1}', ' max = ', num2str((max(eII(:))), '%2.2e'  ), ' s^{-1}' ])
             if exist('minEii', 'var') caxis([minEii maxEii]); end
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-            if exist('minEii', 'var') caxis([(minEii) (maxEii)]); end
             if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
             axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
             
@@ -1654,7 +1655,7 @@ for istep=istart:ijump:iend
         if ( srate_plot == 1 )
             
             Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Cent.ezzd  = -Cent.exxd;
+            Cent.ezzd  = hdf5read(filename,'/Centers/ezzd'); Cent.ezzd = cast(Cent.ezzd, 'double');
             %         Cent.ezzd  = hdf5read(filename,'/Centers/ezzd'); Cent.ezzd = cast(Cent.ezzd, 'double');
             Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
             

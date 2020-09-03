@@ -165,7 +165,7 @@ typedef struct _grid grid;
 struct _grid {
 	int    Nx, Nz, NN, NC;
 	double dx,dz;
-	double *roger_x, *roger_z, *div_u, *u_in, *v_in, *p_in, *p_corr, *sxxd, *szzd, *sxz, *exxd, *ezzd, *exz, *VE_s, *VE_n, *sxxd0, *szzd0, *sxz0, *mu_s, *mu_n, *u_adv, *v_adv, *eta_phys_n, *kx, *kz, *Cv, *Qr, *eta_phys_s, *u_start, *v_start, *p_start;
+	double *roger_x, *roger_z, *div_u, *div_u_s, *div_u_el, *div_u_pl, *u_in, *v_in, *p_in, *p_corr, *sxxd, *szzd, *sxz, *exxd, *ezzd, *exz, *VE_s, *VE_n, *sxxd0, *szzd0, *sxz0, *mu_s, *mu_n, *u_adv, *v_adv, *eta_phys_n, *kx, *kz, *Cv, *Qr, *eta_phys_s, *u_start, *v_start, *p_start;
 	int    *iter_smooth;
 	int    *nb_part_cell, *nb_part_vert;
 	BC     BCu, BCv, BCp;
@@ -188,8 +188,8 @@ struct _grid {
     double *rho0_n;
     double Ut, Ue, W, *Work, *Uelastic, *Uthermal, *Time, *Short;
     double *T, *dT, *d, *d0, *phi, *X;
-    double *eII_el, *eII_pl, *eII_pl_s, *eII_pwl, *eII_exp, *eII_lin, *eII_gbs, *eII_cst, *A2_pwl_n, *eii_n, *eii_s, *tii0_n, *tii0_s;
-    double *eII_pwl_s, *A2_pwl_s;
+    double *eII_el, *eII_pl, *eII_pl_s, *eII_pwl, *eII_exp, *eII_lin, *eII_gbs, *eII_cst;
+    double *eII_pwl_s;
     double *exx_el, *ezz_el, *exz_el, *exx_diss, *ezz_diss, *exz_diss;
     int   *comp_cells;
     // For Newton iterations
@@ -202,9 +202,6 @@ struct _grid {
     double *phi_s, *d0_s, *T_s, *P_s;
     // For anisotropy
     double *nx_n, *nz_n, *nx_s, *nz_s, *FS_AR_n, *FS_AR_s, *aniso_factor_n, *aniso_factor_s;
-    
-    // To remove
-    double *exx_pwl_n, *exz_pwl_n, *exx_pwl_s, *exz_pwl_s, *exx_pl, *exz_pl;
     
     double *cell_min_z, *cell_max_z, *vert_min_z, *vert_max_z;
     double *dil_n, *dil_s, *fric_n, *fric_s, *C_n, *C_s;

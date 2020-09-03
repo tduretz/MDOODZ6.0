@@ -374,6 +374,9 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->roger_x    = DoodzCalloc (Nx*(Nz+1),sizeof(double));
     mesh->roger_z    = DoodzCalloc ((Nx+1)*Nz,sizeof(double));
     mesh->div_u      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->div_u_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+    mesh->div_u_el   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->div_u_pl   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->Qrho       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
 
     // Solution arrays
@@ -493,23 +496,23 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->comp_cells = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
 
     // To remove
-    mesh->exx_pl     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    mesh->exz_pl     = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
-    mesh->exx_pwl_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    mesh->exz_pwl_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    mesh->A2_pwl_n   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    mesh->exx_pwl_s  = DoodzCalloc ((Nx)*(Nz),sizeof(double));
-    mesh->exz_pwl_s  = DoodzCalloc ((Nx)*(Nz),sizeof(double));
-    mesh->eII_pwl_s  = DoodzCalloc ((Nx)*(Nz),sizeof(double));
-    mesh->A2_pwl_s   = DoodzCalloc ((Nx)*(Nz),sizeof(double));
-    mesh->eii_s      = DoodzCalloc ((Nx)*(Nz),sizeof(double));
-    mesh->eii_n      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    mesh->tii0_s     = DoodzCalloc ((Nx)*(Nz),sizeof(double));
-    mesh->tii0_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    mesh->exz_n_pl   = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+//    mesh->exx_pl     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+//    mesh->exz_pl     = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+//    mesh->exx_pwl_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+//    mesh->exz_pwl_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+//    mesh->A2_pwl_n   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+//    mesh->exx_pwl_s  = DoodzCalloc ((Nx)*(Nz),sizeof(double));
+//    mesh->exz_pwl_s  = DoodzCalloc ((Nx)*(Nz),sizeof(double));
+//    mesh->eII_pwl_s  = DoodzCalloc ((Nx)*(Nz),sizeof(double));
+//    mesh->A2_pwl_s   = DoodzCalloc ((Nx)*(Nz),sizeof(double));
+//    mesh->eii_s      = DoodzCalloc ((Nx)*(Nz),sizeof(double));
+//    mesh->eii_n      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+//    mesh->tii0_s     = DoodzCalloc ((Nx)*(Nz),sizeof(double));
+//    mesh->tii0_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+//    mesh->exz_n_pl   = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
 
     mesh->eII_pl     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    mesh->eII_pl_s   = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+//    mesh->eII_pl_s   = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->eII_pwl    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->eII_exp    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->eII_lin    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
@@ -613,6 +616,9 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->roger_x);
     DoodzFree(mesh->roger_z);
     DoodzFree(mesh->div_u);
+    DoodzFree(mesh->div_u_s);
+    DoodzFree(mesh->div_u_el);
+    DoodzFree(mesh->div_u_pl);
     DoodzFree(mesh->Qrho);
 
 	// Solution arrays
@@ -669,7 +675,6 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->BCu.type);
     DoodzFree(mesh->BCv.type);
     DoodzFree(mesh->BCp.type);
-    // Previously multigrid structures
 
     // Viscoelasticity
     DoodzFree(mesh->mu_s);
@@ -775,7 +780,7 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->exz_diss);
 
     DoodzFree(mesh->eII_pl);
-    DoodzFree(mesh->eII_pl_s);
+//    DoodzFree(mesh->eII_pl_s);
     DoodzFree(mesh->eII_pwl);
     DoodzFree(mesh->eII_exp);
     DoodzFree(mesh->eII_lin);
@@ -783,22 +788,6 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->eII_cst);
 
     DoodzFree( mesh->comp_cells );
-
-    // To remove
-    DoodzFree(mesh->A2_pwl_n);
-    DoodzFree(mesh->exx_pl);
-    DoodzFree(mesh->exz_pl);
-    DoodzFree(mesh->exx_pwl_n);
-    DoodzFree(mesh->exz_pwl_n);
-    DoodzFree(mesh->exx_pwl_s);
-    DoodzFree(mesh->exz_pwl_s);
-    DoodzFree(mesh->eII_pwl_s);
-    DoodzFree(mesh->A2_pwl_s);
-    DoodzFree(mesh->eii_n);
-    DoodzFree(mesh->tii0_n);
-    DoodzFree(mesh->eii_s);
-    DoodzFree(mesh->tii0_s);
-    DoodzFree(mesh->exz_n_pl);
 
     DoodzFree(mesh->exz_n_el);
     DoodzFree(mesh->exz_n_diss);

@@ -240,7 +240,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     double A[8], E[5];
     int k;
     double *strain, *strain_el, *strain_pl, *strain_pwl, *strain_exp, *strain_lin, *strain_gbs, *X;
-    float *Crho_s, *Crho_n, *Ceta_s, *Ceta_n, *CVx, *CVz, *CP, *Csxxd, *Csxz, *Cexxd, *Cexz, *Cstrain, *Cstrain_el, *Cstrain_pl, *Cstrain_pwl, *Cstrain_exp, *Cstrain_lin, *Cstrain_gbs, *CT, *Cd;
+    float *Crho_s, *Crho_n, *Ceta_s, *Ceta_n, *CVx, *CVz, *CP, *Csxxd, *Cszzd, *Csxz, *Cexxd, *Cezzd, *Cexz, *Cstrain, *Cstrain_el, *Cstrain_pl, *Cstrain_pwl, *Cstrain_exp, *Cstrain_lin, *Cstrain_gbs, *CT, *Cd;
     float *Cxg_coord, *Czg_coord, *Cxc_coord, *Czc_coord, *Czvx_coord, *Cxvz_coord;
     float *CeII_el, *CeII_pl, *CeII_pwl, *CeII_exp, *CeII_lin, *CeII_gbs, *CX;
     double *Fxx, *Fxz, *Fzx, *Fzz, *nx, *nz;
@@ -248,7 +248,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     double *T0, *P0, *x0, *z0, *Tmax, *Pmax;
     float *CT0, *CP0, *Cx0, *Cz0, *CTmax, *CPmax;
     float *CXreac;
-    float *COverS;
+    float *COverS, *Cdivu, *Cdivu_el, *Cdivu_pl;
 
     int    res_fact = 1;
     int    nxviz, nzviz, nxviz_hr, nzviz_hr;
@@ -330,6 +330,10 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     Csxxd  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( mesh->sxxd, Csxxd, (model.Nx-1)*(model.Nz-1) );
     ScaleBack( Csxxd, scaling.S, (model.Nx-1)*(model.Nz-1) );
+    
+    Cszzd  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->szzd, Cszzd, (model.Nx-1)*(model.Nz-1) );
+    ScaleBack( Cszzd, scaling.S, (model.Nx-1)*(model.Nz-1) );
 
     Csxz  = DoodzMalloc( sizeof(float)*model.Nx*model.Nz);
     DoubleToFloat( mesh->sxz, Csxz, model.Nx*model.Nz );
@@ -338,6 +342,10 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     Cexxd  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( mesh->exxd, Cexxd, (model.Nx-1)*(model.Nz-1) );
     ScaleBack( Cexxd, scaling.E, (model.Nx-1)*(model.Nz-1) );
+    
+    Cezzd  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->ezzd, Cezzd, (model.Nx-1)*(model.Nz-1) );
+    ScaleBack( Cezzd, scaling.E, (model.Nx-1)*(model.Nz-1) );
 
     Cexz  = DoodzMalloc( sizeof(float)*model.Nx*model.Nz);
     DoubleToFloat( mesh->exz, Cexz, model.Nx*model.Nz );
@@ -377,6 +385,18 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     COverS        = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( mesh->OverS_n, COverS, (model.Nx-1)*(model.Nz-1) );
     ScaleBack( COverS, scaling.S, (model.Nx-1)*(model.Nz-1) );
+    
+    Cdivu        = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->div_u, Cdivu, (model.Nx-1)*(model.Nz-1) );
+    ScaleBack( Cdivu, scaling.E, (model.Nx-1)*(model.Nz-1) );
+    
+    Cdivu_el     = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->div_u_el, Cdivu_el, (model.Nx-1)*(model.Nz-1) );
+    ScaleBack( Cdivu_el, scaling.E, (model.Nx-1)*(model.Nz-1) );
+    
+    Cdivu_pl     = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->div_u_pl, Cdivu_pl, (model.Nx-1)*(model.Nz-1) );
+    ScaleBack( Cdivu_pl, scaling.E, (model.Nx-1)*(model.Nz-1) );
 
     //---------------------------------------------------
     CT  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
@@ -679,6 +699,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     AddFieldToGroup_generic( _TRUE_, name, "VzNodes" , "Vz"   , 'f', (model.Nx+1)*model.Nz,     CVz, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "P"    , 'f', (model.Nx-1)*(model.Nz-1), CP, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "sxxd" , 'f', (model.Nx-1)*(model.Nz-1), Csxxd, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "szzd" , 'f', (model.Nx-1)*(model.Nz-1), Cszzd, 1 );
 
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "strain",    'f', (model.Nx-1)*(model.Nz-1), Cstrain, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "strain_el", 'f', (model.Nx-1)*(model.Nz-1), Cstrain_el, 1 );
@@ -690,6 +711,10 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "T",     'f', (model.Nx-1)*(model.Nz-1), CT, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Vertices", "sxz"  , 'f', model.Nx*model.Nz,         Csxz, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "exxd" , 'f', (model.Nx-1)*(model.Nz-1), Cexxd, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "ezzd" , 'f', (model.Nx-1)*(model.Nz-1), Cezzd, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "divu" , 'f', (model.Nx-1)*(model.Nz-1), Cdivu, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "divu_el" , 'f', (model.Nx-1)*(model.Nz-1), Cdivu_el, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "divu_pl" , 'f', (model.Nx-1)*(model.Nz-1), Cdivu_pl, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Vertices", "exz"  , 'f', model.Nx*model.Nz,         Cexz, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "eII_el" , 'f', (model.Nx-1)*(model.Nz-1), CeII_el, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "eII_pl" , 'f', (model.Nx-1)*(model.Nz-1), CeII_pl, 1 );
@@ -759,8 +784,10 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     DoodzFree( CVz );
     DoodzFree( CP );
     DoodzFree( Csxxd );
+    DoodzFree( Cszzd );
     DoodzFree( Csxz );
     DoodzFree( Cexxd );
+    DoodzFree( Cezzd );
     DoodzFree( Cexz );
     DoodzFree( CeII_el  );
     DoodzFree( CeII_pl  );
@@ -800,7 +827,9 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     DoodzFree( Cd );
     DoodzFree( CXreac );
     DoodzFree( COverS );
-
+    DoodzFree( Cdivu  );
+    DoodzFree( Cdivu_el );
+    DoodzFree( Cdivu_pl );
 
     if ( model.free_surf == 1 ) {
         DoodzFree( Cxtopo );

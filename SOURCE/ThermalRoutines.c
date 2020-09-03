@@ -86,6 +86,7 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
     double Hr = 1.0, zero_celsius, ks, mink, maxk;
     double aW=0.0, aE=0.0;
     double yW, yE, xn, zn, tet;
+    double syyd, eyyd, eyyd_el, eyyd_diss;
 
     // Pre-calculate FD coefs
     double one_dx_dx = 1.0/mesh->dx/mesh->dx;
@@ -108,6 +109,7 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
     cs_di *At;
 
     double *Hs, *Ha, dexz_th, dexz_el, dexz_tot, dexx_th, dexx_el, dexx_tot, diss_limit=1.0e-8/(scaling.S*scaling.E);
+    double dezz_el, dezz_th, dezz_tot, deyy_el, deyy_th, deyy_tot;
     int neq, nnz, it;
 
     // Number of equations
@@ -139,7 +141,7 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
         //----------------------------------------------------//
 
         // Build right-hand side
-#pragma omp parallel for shared ( b, Hs, Ha, eqn_t, mesh ) private ( l, k, c1, c2, c3, eqn, rhoCp, dexx_el, dexx_th, dexx_tot, dexz_el, dexz_th, dexz_tot, Wth, Wel, Wtot  ) firstprivate ( nx, ncx, nxvz, shear_heating, adiab_heating, model, transient, dt, Hr, diss_limit, scaling ) reduction( +:dUe, dW )
+#pragma omp parallel for shared ( b, Hs, Ha, eqn_t, mesh ) private ( l, k, c1, c2, c3, eqn, rhoCp, dexx_el, dexx_th, dexx_tot, dezz_el, dezz_th, dezz_tot, deyy_el, deyy_th, deyy_tot, dexz_el, dexz_th, dexz_tot, Wth, Wel, Wtot, syyd, eyyd, eyyd_el, eyyd_diss  ) firstprivate ( nx, ncx, nxvz, shear_heating, adiab_heating, model, transient, dt, Hr, diss_limit, scaling ) reduction( +:dUe, dW )
         for( c2=0; c2<ncz*ncx; c2++) {
                 k   = mesh->kp[c2];
                 l   = mesh->lp[c2];
@@ -186,19 +188,31 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
                         // Contribution from normal dissipation
                         dexx_tot  =  mesh->sxxd[c2]*mesh->exxd[c2];
                         dexx_el   =  mesh->sxxd[c2]*mesh->exx_el[c2];
-                        dexx_th   =  mesh->sxxd[c2]*(mesh->exx_diss[c2]);
+                        dexx_th   =  mesh->sxxd[c2]*mesh->exx_diss[c2];
+                        
+                        dezz_tot  =  mesh->szzd[c2]*mesh->ezzd[c2];
+                        dezz_el   =  mesh->szzd[c2]*mesh->ezz_el[c2];
+                        dezz_th   =  mesh->szzd[c2]*mesh->ezz_diss[c2];
+                        
+                        syyd      = -( mesh->sxxd[c2]     + mesh->szzd[c2]     );
+                        eyyd      = -( mesh->exxd[c2]     + mesh->ezzd[c2]     );
+                        eyyd_el   = -( mesh->exx_el[c2]   + mesh->ezz_el[c2]   );
+                        eyyd_diss = -( mesh->exx_diss[c2] + mesh->ezz_diss[c2] );
+                        deyy_tot  =  syyd*eyyd;
+                        deyy_el   =  syyd*eyyd_el;
+                        deyy_th   =  syyd*eyyd_diss;
 
                         if ( model.iselastic == 1 ) {
                             // Elastic strain energy
-                            Wel  = 2.0*dexx_el + 2.0*dexz_el;
+                            Wel  = 1.0*dexx_el + 1.0*dezz_el + 1.0*deyy_el + 2.0*dexz_el;
                             dUe += Wel*model.dx*model.dz*dt;
                         }
 
                         // Total dissipation
-                        Wtot = 2.0*dexx_tot + 2.0*dexz_tot;
+                        Wtot = 1.0*dexx_tot + 1.0*dezz_tot + 1.0*deyy_tot + 2.0*dexz_tot;
 
                         // Heat contribution - remove elastic components
-                        Wth  = 2.0*dexx_th  + 2.0*dexz_th;
+                        Wth  = 1.0*dexx_th + 1.0*dezz_th + 1.0*deyy_th  + 2.0*dexz_th;
 
                         if (dexx_th < 0.0 && fabs(dexx_th) > diss_limit ) {
                             printf("Normal component:\n");

@@ -11,8 +11,8 @@ DEBUG = 0;
 MarkSize=1e0 ;
 
 
-path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
-M2Di_EP = load('./BENCHMARKS/DataM2Di_EP_test01');
+path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE//'
+M2Di_EP = load('./BENCHMARKS_data/DataM2Di_EP_test01');
 
 
 cd(path)
@@ -26,9 +26,10 @@ iend   = 30;
 % what do you want to plot:
 %--------------------------------------------------
 vel_divergence  = 0;
-pre_plot        = 1;
-stress_inv      = 0;
+pre_plot        = 0;
+stress_inv      = 1;
 stress_evol     = 0;
+divergence      = 1;
 
 % Visualisation options
 printfig      = 0;
@@ -69,47 +70,15 @@ lim.xmax   =  175;
 lim.zmin   = -175;
 lim.zmax   =  175;
 
-% In order to calculate lithostatic pressure
-gz = -9.81;
-
 % Arrays
-dt_vec = zeros(10000,1);
-E_kin  = zeros(10000,1);
 t_vec  = zeros(10000,1);
-gamma  = zeros(10000,1);
-error  = zeros(10000,1);
-etapp  = zeros(10000,1);
-mxtopo = zeros(10000,1);
 icount = 0;
 time   = 0;
-Ws     = 0;
-Es     = 0;
 
-SbThickYuri = zeros( 10000,1);
-SbThick     = zeros( 10000,1);
-SbDT        = zeros( 10000,1);
-SbDTY       = zeros( 10000,1);
-SbAngle     = zeros( 10000,1);
-SbEiiFact   = zeros( 10000,1);
 short       = zeros( 10000,1);
 siivec      = zeros( 10000,1);
 eiivec      = zeros( 10000,1);
 eiimaxvec   = zeros( 10000,1);
-T_postrift  = zeros( 10000,1);
-T_prerift   = zeros( 10000,1);
-timevec     = zeros( 10000,1);
-
-strainvec    = zeros( 10000,1);
-neck_thick   = zeros( 10000,1);
-swell_thick  = zeros( 10000,1);
-neck_stress  = zeros( 10000,1);
-swell_stress = zeros( 10000,1);
-neck_gs      = zeros( 10000,1);
-swell_gs     = zeros( 10000,1);
-neck_srate   = zeros( 10000,1);
-swell_srate  = zeros( 10000,1);
-neck_T       = zeros( 10000,1);
-swell_T      = zeros( 10000,1);
 
 %--------------------------------------------------
 % Define RGB colormaps for composition figures:
@@ -588,35 +557,35 @@ for istep=istart:ijump:iend
                 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-       %--------------------------------------------------
+        %--------------------------------------------------
         % plot stress and strain rate invariants
         %--------------------------------------------------
         if ( stress_inv == 1 )
             
-            Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
-            Vert.eta_s = hdf5read(filename,'/Vertices/eta_s'); Vert.eta_s = cast(Vert.eta_s, 'double');
-            eta = reshape(Vert.eta_s,params(4),params(5))';
-            eta = 0.25*(eta(1:end-1,1:end-1) + eta(2:end,1:end-1) + eta(1:end-1,2:end) + eta(2:end,2:end));
+            sxxd = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            szzd = hdf5read(filename,'/Centers/szzd'); szzd = cast(szzd, 'double');
+            sxz  = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz,  'double');
+            exxd = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            ezzd = hdf5read(filename,'/Centers/ezzd'); ezzd = cast(ezzd, 'double');
+            exz  = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz,  'double');
             
-            exx = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
-            ezz = -exx;
-            exz = (reshape(Vert.exz, params(4)  ,params(5)  )');
-            eII = sqrt( 0.5*( 2*exx.^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ) );
-            %         sII = 2*eII.*eta;
+            exxd = reshape(exxd,params(4)-1,params(5)-1)';
+            ezzd = reshape(ezzd,params(4)-1,params(5)-1)';
+            eyyd = -(exxd + ezzd);
+            exz  = (reshape(exz, params(4)  ,params(5)  )');
+            exzc = 0.25*(exz(1:end-1,1:end-1) + exz(2:end,1:end-1) + exz(1:end-1,2:end) + exz(2:end,2:end));
+            eII  = sqrt( 1/2*(exxd.^2 + eyyd.^2 + ezzd.^2) + exzc.^2);
             
-            sxxd = (reshape(Cent.sxxd,params(4)-1,params(5)-1)');
-            szzd = -sxxd;
-            sxz  = (reshape(Vert.sxz, params(4)  ,params(5)  )');
-            sII  = sqrt( 0.5*(2*sxxd.^2 + 0.5*(sxz(1:end-1,1:end-1).^2 + sxz(2:end,1:end-1).^2 + sxz(1:end-1,2:end).^2 + sxz(2:end,2:end).^2 ) ) );
+            sxxd = (reshape(sxxd,params(4)-1,params(5)-1)');
+            szzd = (reshape(szzd,params(4)-1,params(5)-1)');
+            syyd = -(sxxd + szzd);
+            sxz  = (reshape(sxz, params(4)  ,params(5)  )');
+            sxzc = 0.25*(sxz(1:end-1,1:end-1) + sxz(2:end,1:end-1) + sxz(1:end-1,2:end) + sxz(2:end,2:end));
+            sII  = sqrt( 1/2*(sxxd.^2 + syyd.^2 + szzd.^2) + sxzc.^2);
             
             exzc = 0.25*(exz(1:end-1,1:end-1) + exz(2:end,1:end-1) + exz(1:end-1,2:end) + exz(2:end,2:end));
             sxzc = 0.25*(sxz(1:end-1,1:end-1) + sxz(2:end,1:end-1) + sxz(1:end-1,2:end) + sxz(2:end,2:end));
-            HSc = 2*sxzc.*exzc + sxxd.*exx + szzd.*ezz;
-            minHS=min(HSc(:));
-            maxHS=max(HSc(:));
+            Hs   = 2*sxzc.*exzc + sxxd.*exxd + szzd.*ezzd + syyd.*eyyd;
             
             load('roma.mat')
             
@@ -629,9 +598,9 @@ for istep=istart:ijump:iend
                         
             % eII
             if ( H>L )
-                subplot(1,2,1)
+                subplot(1,3,1)
             else
-                subplot(2,1,1)
+                subplot(3,1,1)
             end
 %             colormap(flipud(roma));
             imagesc( xc_plot, zc_plot, log10(eII) )
@@ -650,9 +619,9 @@ for istep=istart:ijump:iend
             
             % sII
             if ( H>L )
-                subplot(1,2,2)
+                subplot(1,3,2)
             else
-                subplot(2,1,2)
+                subplot(3,1,2)
             end
             imagesc( xc_plot, zc_plot, (sII) )
             shading flat,axis xy image, colorbar;
@@ -667,11 +636,115 @@ for istep=istart:ijump:iend
             if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
             axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
             
-%                         colormap('parula')
-
+            % Hs
+            if ( H>L )
+                subplot(1,3,3)
+            else
+                subplot(3,1,3)
+            end
+            imagesc( xc_plot, zc_plot, Hs )
+            shading flat,axis xy image, colorbar;
+            hold on
+            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+            imagesc( xc_plot, zc_plot, Hs, 'visible', 'off' )
+            hold off
+            xlabel(xLabel), ylabel(zLabel);
+            title(['Hs at' TimeLabel, ' min = ', num2str((min(Hs(:))), '%2.2e' ), ' Pa/s', ' max = ', num2str((max(Hs(:))), '%2.2e' ), ' Pa/s' ])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+%             if exist('minSii', 'var') caxis([(minSii) (maxSii)]); end
+            if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
+            axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
             
             if printfig == 1
                 print([path,'./Fig_Stress_StrainRate/Fig_Stress_StrainRate',num2str(istep,'%05d'),file_suffix], format, res)
+                close all
+                
+            end
+        end
+        
+        %--------------------------------------------------
+        % plot stress and strain rate invariants
+        %--------------------------------------------------
+        if ( divergence == 1 )
+            
+            div_tot = hdf5read(filename,'/Centers/divu'   ); div_tot = cast(div_tot, 'double'); div_tot = reshape(div_tot,params(4)-1,params(5)-1)';
+            div_el  = hdf5read(filename,'/Centers/divu_el'); div_el  = cast(div_el , 'double'); div_el  = reshape(div_el ,params(4)-1,params(5)-1)';
+            div_pl  = hdf5read(filename,'/Centers/divu_pl'); div_pl  = cast(div_pl , 'double'); div_pl  = reshape(div_pl ,params(4)-1,params(5)-1)';
+            
+            load('roma.mat')
+            
+            if print2screen == 1
+                figCount = figCount +1;
+                figure(figCount), clf
+            else
+                figure('Visible', 'Off')
+            end
+                        
+            % div_tot
+            if ( H>L )
+                subplot(1,3,1)
+            else
+                subplot(3,1,1)
+            end
+%             colormap(flipud(roma));
+            imagesc( xc_plot, zc_plot, div_tot )
+            hold on
+            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+            imagesc( xc_plot, zc_plot, div_tot, 'visible', 'off' )
+            hold off
+            shading flat,axis xy image, colorbar;
+            xlabel(xLabel), ylabel(zLabel);
+            title(['div_{tot} at' TimeLabel, ' min = ', num2str((min(div_tot(:))), '%2.2e'  ), ' s^{-1}', ' max = ', num2str((max(div_tot(:))), '%2.2e'  ), ' s^{-1}' ])
+%             if exist('minEii', 'var') caxis([minEii maxEii]); end
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
+            axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
+            
+            % div_el
+            if ( H>L )
+                subplot(1,3,2)
+            else
+                subplot(3,1,2)
+            end
+%             colormap(flipud(roma));
+            imagesc( xc_plot, zc_plot, div_el  )
+            hold on
+            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+            imagesc( xc_plot, zc_plot, div_el , 'visible', 'off' )
+            hold off
+            shading flat,axis xy image, colorbar;
+            xlabel(xLabel), ylabel(zLabel);
+            title(['div_{el}  at' TimeLabel, ' min = ', num2str((min(div_el(:))), '%2.2e'  ), ' s^{-1}', ' max = ', num2str((max(div_el(:))), '%2.2e'  ), ' s^{-1}' ])
+%             if exist('minEii', 'var') caxis([minEii maxEii]); end
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
+            axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
+            
+            % div_pl
+            if ( H>L )
+                subplot(1,3,3)
+            else
+                subplot(3,1,3)
+            end
+%             colormap(flipud(roma));
+            imagesc( xc_plot, zc_plot, div_pl  )
+            hold on
+            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+            imagesc( xc_plot, zc_plot, div_pl , 'visible', 'off' )
+            hold off
+            shading flat,axis xy image, colorbar;
+            xlabel(xLabel), ylabel(zLabel);
+            title(['div_{pl}  at' TimeLabel, ' min = ', num2str((min(div_pl(:))), '%2.2e'  ), ' s^{-1}', ' max = ', num2str((max(div_pl(:))), '%2.2e'  ), ' s^{-1}' ])
+%             if exist('minEii', 'var') caxis([minEii maxEii]); end
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
+            axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
+            
+            figure(22),
+            imagesc( xc_plot, zc_plot, div_tot - div_el - div_pl  ), colorbar
+            
+            if printfig == 1
+                print([path,'./Fig_Stress_StrainRate/Fig_Divergences',num2str(istep,'%05d'),file_suffix], format, res)
                 close all
                 
             end
@@ -682,9 +755,7 @@ for istep=istart:ijump:iend
     end
 end
 
-if  gs_stefan == 1
-    save('GS_transient_1e-14_MR','icount','strainvec','swell_thick','neck_thick','swell_srate','neck_srate','swell_gs','neck_gs','swell_stress','neck_stress','swell_T','neck_T')
-end
+% print('PressureNoMarkers', '-dpng', '-r300')
 
 end
 
