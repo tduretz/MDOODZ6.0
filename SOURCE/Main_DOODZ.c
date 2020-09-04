@@ -452,7 +452,7 @@ int main( int nargs, char *args[] ) {
 
                 // Get T and dTdt from previous step from particles
                 Interp_P2C ( particles, particles.T,    &mesh, mesh.T,    mesh.xg_coord, mesh.zg_coord,  1, 0 );
-                Interp_P2C ( particles, particles.dTdt, &mesh, mesh.dTdt, mesh.xg_coord, mesh.zg_coord,  1, 0 );
+                Interp_P2C ( particles, particles.div_u_th, &mesh, mesh.div_u_th, mesh.xg_coord, mesh.zg_coord,  1, 0 );
             }
 
             // Get physical properties that are constant throughout each timestep

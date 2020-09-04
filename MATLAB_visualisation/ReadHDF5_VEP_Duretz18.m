@@ -18,9 +18,9 @@ M2Di_EP = load('./BENCHMARKS_data/DataM2Di_EP_test01');
 cd(path)
 
 % File
-istart = 30;
+istart = 40;
 ijump  = 1
-iend   = 30;
+iend   = 40;
 
 %--------------------------------------------------
 % what do you want to plot:
@@ -61,6 +61,9 @@ maxRho = 3600;
 % Colorbar limits
 minP = -6e6;
 maxP =  4e6;
+
+minEii = -16;
+maxEii = -13;
 
 % Size of the window
 crop       = 0;
@@ -670,7 +673,8 @@ for istep=istart:ijump:iend
             div_tot = hdf5read(filename,'/Centers/divu'   ); div_tot = cast(div_tot, 'double'); div_tot = reshape(div_tot,params(4)-1,params(5)-1)';
             div_el  = hdf5read(filename,'/Centers/divu_el'); div_el  = cast(div_el , 'double'); div_el  = reshape(div_el ,params(4)-1,params(5)-1)';
             div_pl  = hdf5read(filename,'/Centers/divu_pl'); div_pl  = cast(div_pl , 'double'); div_pl  = reshape(div_pl ,params(4)-1,params(5)-1)';
-            
+            div_th  = hdf5read(filename,'/Centers/divu_th'); div_th  = cast(div_th , 'double'); div_th  = reshape(div_th ,params(4)-1,params(5)-1)';
+
             load('roma.mat')
             
             if print2screen == 1
@@ -682,9 +686,9 @@ for istep=istart:ijump:iend
                         
             % div_tot
             if ( H>L )
-                subplot(1,3,1)
+                subplot(2,2,1)
             else
-                subplot(3,1,1)
+                subplot(2,2,1)
             end
 %             colormap(flipud(roma));
             imagesc( xc_plot, zc_plot, div_tot )
@@ -702,9 +706,9 @@ for istep=istart:ijump:iend
             
             % div_el
             if ( H>L )
-                subplot(1,3,2)
+                subplot(2,2,2)
             else
-                subplot(3,1,2)
+                subplot(2,2,2)
             end
 %             colormap(flipud(roma));
             imagesc( xc_plot, zc_plot, div_el  )
@@ -722,9 +726,9 @@ for istep=istart:ijump:iend
             
             % div_pl
             if ( H>L )
-                subplot(1,3,3)
+                subplot(2,2,3)
             else
-                subplot(3,1,3)
+                subplot(2,2,3)
             end
 %             colormap(flipud(roma));
             imagesc( xc_plot, zc_plot, div_pl  )
@@ -740,8 +744,28 @@ for istep=istart:ijump:iend
             if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
             axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
             
+            % div_th
+            if ( H>L )
+                subplot(2,2,4)
+            else
+                subplot(2,2,4)
+            end
+%             colormap(flipud(roma));
+            imagesc( xc_plot, zc_plot, div_th  )
+            hold on
+            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+            imagesc( xc_plot, zc_plot, div_th , 'visible', 'off' )
+            hold off
+            shading flat,axis xy image, colorbar;
+            xlabel(xLabel), ylabel(zLabel);
+            title(['div_{th}  at' TimeLabel, ' min = ', num2str((min(div_th(:))), '%2.2e'  ), ' s^{-1}', ' max = ', num2str((max(div_th(:))), '%2.2e'  ), ' s^{-1}' ])
+%             if exist('minEii', 'var') caxis([minEii maxEii]); end
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
+            axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
+            
             figure(22),
-            imagesc( xc_plot, zc_plot, div_tot - div_el - div_pl  ), colorbar
+            imagesc( xc_plot, zc_plot, div_tot - div_el - div_pl - div_th ), shading flat,axis xy image, colorbar;
             
             if printfig == 1
                 print([path,'./Fig_Stress_StrainRate/Fig_Divergences',num2str(istep,'%05d'),file_suffix], format, res)

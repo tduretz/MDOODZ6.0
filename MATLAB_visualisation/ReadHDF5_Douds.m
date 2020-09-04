@@ -25,9 +25,9 @@ path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
 cd(path)
 
 % File
-istart = 60;
+istart = 40;
 ijump  = 10;
-iend   = 60;
+iend   = 40;
 
 %--------------------------------------------------
 % what do you want to plot:
@@ -35,18 +35,18 @@ iend   = 60;
 X_plot          = 0;
 eta_sym         = 0;
 eta_plot        = 0;
-rho_plot        = 1;
+rho_plot        = 0;
 phase_on_grid   = 0;
 phase_temp2     = 0;
 vel_plot        = 0;
-vel_vectors     = 0;
+vel_vectors     = 1;
 vel_divergence  = 1;
 pre_plot        = 0;
 dyna_pre        = 0;
-stress_inv      = 0;
+stress_inv      = 1;
 stress_evol     = 0;
 stress_plot     = 0;
-srate_plot      = 1;
+srate_plot      = 0;
 acc_strain      = 0;
 temperature     = 0;
 temp_evol       = 0;
@@ -62,7 +62,7 @@ topo_SR_plot    = 0;
 topo_maps       = 0;
 phases_uplift   = 0;
 dt_time         = 0;
-srate_add       = 1;
+srate_add       = 0;
 acc_strain_add  = 0;
 phase_temp      = 0;
 srate_add_perc  = 0;
@@ -1163,6 +1163,9 @@ for istep=istart:ijump:iend
             dVxdx = (Vx(:,2:end) - Vx(:,1:end-1)) ./ (xc_coord(2)-xc_coord(1));
             dVzdz = (Vz(2:end,:) - Vz(1:end-1,:)) ./ (zc_coord(2)-zc_coord(1));
             divV  = abs(dVxdx(2:end-1,:) + dVzdz(:,2:end-1));
+
+            divV = hdf5read(filename,'/Centers/divu');  divV = cast(divV, 'double'); divV = reshape(divV,params(4)-1,params(5)-1)';
+
             
             if crop == 1
                 [divV, xc_plot, zc_plot] = CropCellArray( divV, xc_plot, zc_plot, lim );
@@ -1174,11 +1177,12 @@ for istep=istart:ijump:iend
             else
                 figure('Visible', 'Off')
             end
-            imagesc( xc_plot, zc_plot, log10(divV) )
+            imagesc( xc_plot, zc_plot, divV )
             shading flat,axis xy image, colorbar;
             xlabel('X'), ylabel('Z')
             title(['Velocity divergence at' TimeLabel])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            caxis([-0.25e-14 0.25e-14])
             
             if printfig == 1
                 print([path, './Fig_VelocityDivergence/Fig_VelocityDivergence', num2str(istep,'%05d'),file_suffix], format, res)

@@ -248,7 +248,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     double *T0, *P0, *x0, *z0, *Tmax, *Pmax;
     float *CT0, *CP0, *Cx0, *Cz0, *CTmax, *CPmax;
     float *CXreac;
-    float *COverS, *Cdivu, *Cdivu_el, *Cdivu_pl;
+    float *COverS, *Cdivu, *Cdivu_el, *Cdivu_pl, *Cdivu_th;
 
     int    res_fact = 1;
     int    nxviz, nzviz, nxviz_hr, nzviz_hr;
@@ -397,6 +397,10 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     Cdivu_pl     = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( mesh->div_u_pl, Cdivu_pl, (model.Nx-1)*(model.Nz-1) );
     ScaleBack( Cdivu_pl, scaling.E, (model.Nx-1)*(model.Nz-1) );
+    
+    Cdivu_th     = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->div_u_th, Cdivu_th, (model.Nx-1)*(model.Nz-1) );
+    ScaleBack( Cdivu_th, scaling.E, (model.Nx-1)*(model.Nz-1) );
 
     //---------------------------------------------------
     CT  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
@@ -715,6 +719,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "divu" , 'f', (model.Nx-1)*(model.Nz-1), Cdivu, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "divu_el" , 'f', (model.Nx-1)*(model.Nz-1), Cdivu_el, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "divu_pl" , 'f', (model.Nx-1)*(model.Nz-1), Cdivu_pl, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "divu_th" , 'f', (model.Nx-1)*(model.Nz-1), Cdivu_th, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Vertices", "exz"  , 'f', model.Nx*model.Nz,         Cexz, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "eII_el" , 'f', (model.Nx-1)*(model.Nz-1), CeII_el, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "eII_pl" , 'f', (model.Nx-1)*(model.Nz-1), CeII_pl, 1 );
@@ -830,6 +835,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     DoodzFree( Cdivu  );
     DoodzFree( Cdivu_el );
     DoodzFree( Cdivu_pl );
+    DoodzFree( Cdivu_th );
 
     if ( model.free_surf == 1 ) {
         DoodzFree( Cxtopo );

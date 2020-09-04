@@ -215,7 +215,7 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
     particles->strain_lin[new_ind]    = particles->strain_lin[min_index];
     particles->strain_gbs[new_ind]    = particles->strain_gbs[min_index];
     particles->d[new_ind]             = particles->d[min_index];
-    particles->dTdt[new_ind]          = particles->dTdt[min_index];
+    particles->div_u_th[new_ind]      = particles->div_u_th[min_index];
     particles->T[new_ind]             = particles->T[min_index];
     particles->P[new_ind]             = particles->P[min_index];
 

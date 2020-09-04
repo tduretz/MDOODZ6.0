@@ -72,7 +72,7 @@ struct _p_markers {
     int    *intag;
     double *rhoUe0;
     double *Fxx, *Fxz, *Fzx, *Fzz, *nx, *nz;
-    double *T0, *P0, *x0, *z0, *Tmax, *Pmax, *dTdt;
+    double *T0, *P0, *x0, *z0, *Tmax, *Pmax, *div_u_th;
 };
 
 // BC is a boundary condition structure for the mechanical solver
@@ -165,7 +165,7 @@ typedef struct _grid grid;
 struct _grid {
 	int    Nx, Nz, NN, NC;
 	double dx,dz;
-	double *roger_x, *roger_z, *div_u, *div_u_s, *div_u_el, *div_u_pl, *u_in, *v_in, *p_in, *p_corr, *sxxd, *szzd, *sxz, *exxd, *ezzd, *exz, *VE_s, *VE_n, *sxxd0, *szzd0, *sxz0, *mu_s, *mu_n, *u_adv, *v_adv, *eta_phys_n, *kx, *kz, *Cv, *Qr, *eta_phys_s, *u_start, *v_start, *p_start, *dTdt;
+	double *roger_x, *roger_z, *div_u, *div_u_s, *div_u_el, *div_u_pl, *u_in, *v_in, *p_in, *p_corr, *sxxd, *szzd, *sxz, *exxd, *ezzd, *exz, *VE_s, *VE_n, *sxxd0, *szzd0, *sxz0, *mu_s, *mu_n, *u_adv, *v_adv, *eta_phys_n, *kx, *kz, *Cv, *Qr, *eta_phys_s, *u_start, *v_start, *p_start, *div_u_th;
 	int    *iter_smooth;
 	int    *nb_part_cell, *nb_part_vert;
 	BC     BCu, BCv, BCp;
