@@ -195,6 +195,7 @@ void PartAlloc( markers *particles, params* model  ) {
     particles->generation = DoodzCalloc( particles->Nb_part_max,sizeof(int));
     particles->progress   = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
 
+    particles->dTdt       = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->rho        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->rhoUe0     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->T          = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
@@ -258,6 +259,7 @@ void PartFree( markers *particles, params* model ) {
     DoodzFree(particles->progress);
     DoodzFree(particles->generation);
 
+    DoodzFree(particles->dTdt);
     DoodzFree(particles->rho);
     DoodzFree(particles->rhoUe0);
     DoodzFree(particles->T);
@@ -482,6 +484,7 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->Short      = DoodzCalloc (model->Nt,sizeof(double));
 
     mesh->T          = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->dTdt       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->dT         = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->eII_el     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->exx_el     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
@@ -770,6 +773,7 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->Short);
 
     DoodzFree(mesh->T);
+    DoodzFree(mesh->dTdt);
     DoodzFree(mesh->dT);
     DoodzFree(mesh->eII_el);
     DoodzFree(mesh->exx_el);
