@@ -40,6 +40,149 @@
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
+
+// Old deviatoric stress field and pressure
+void  OldDeviatoricStressesPressure( grid* mesh, markers* particles, scale scaling, params* model ) {
+
+    int k, l, c0, c1, c2, Nx, Nz, Ncx, Ncz, k1;
+    double *sxx0,  *syy0, *szz0, *sxz0;
+    
+    Nx  = mesh->Nx;
+    Nz  = mesh->Nz;
+    Ncx = Nx-1;
+    Ncz = Nz-1;
+    
+    sxx0 = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+    syy0 = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+    szz0 = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+    sxz0 = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+    
+    Interp_P2C ( *particles, particles->sxxd, mesh, sxx0, mesh->xg_coord, mesh->zg_coord, 1, 0 );
+    Interp_P2C ( *particles, particles->szzd, mesh, szz0, mesh->xg_coord, mesh->zg_coord, 1, 0 );
+    Interp_P2C ( *particles, particles->syy,  mesh, syy0, mesh->xg_coord, mesh->zg_coord, 1, 0 );
+    Interp_P2N ( *particles, particles->sxz , mesh, mesh->sxz0, mesh->xg_coord, mesh->zg_coord, 1, 0, model );
+    
+    
+#pragma omp parallel for shared( mesh, sxx0, syy0, szz0 ) private( k, k1, l, c0, c1, c2 ) firstprivate( Nx, Ncx, Ncz )
+    for ( k1=0; k1<Ncx*Ncz; k1++ ) {
+        k  = mesh->kp[k1];
+        l  = mesh->lp[k1];
+        c0 = k  + l*(Nx-1);
+        c1 = k  + l*(Nx);
+        c2 = k  + l*(Nx+1);
+        
+        if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
+            mesh->p0_n[c0]       = -1.0/3.0*(sxx0[c0] + syy0[c0] + szz0[c0] );
+            mesh->sxxd0[c0]      =  mesh->p0_n[c0] + sxx0[c0];
+            mesh->szzd0[c0]      =  mesh->p0_n[c0] + szz0[c0];
+        }
+    }
+    
+    
+    //-------------
+//    ArrayEqualArray(  mesh->p0_n,   mesh->p_in, Ncx*Ncz );
+    
+    
+    
+    
+    
+    InterpCentroidsToVerticesDouble( mesh->sxxd0,  mesh->sxxd0_s, mesh, model, &scaling );
+    InterpCentroidsToVerticesDouble( mesh->szzd0,  mesh->szzd0_s, mesh, model, &scaling );
+    InterpCentroidsToVerticesDouble( mesh->p0_n,   mesh->p0_s,    mesh, model, &scaling );
+    InterpVerticesToCentroidsDouble( mesh->sxz0_n, mesh->sxz0,    mesh, model, &scaling );
+    
+    
+    
+    DoodzFree( sxx0 );
+    DoodzFree( szz0 );
+    DoodzFree( sxz0 );
+    
+    
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+// Total stress field
+void  TotalStresses( grid* mesh, markers* particles, scale scaling, params* model ) {
+    
+    int k, l, c0, c1, c2, Nx, Nz, Ncx, Ncz, k1;
+    double *dsxx, *dsyy, *dszz, *dsxz, sxx, syy, szz, tyy, tyy0, sxx0, syy0, szz0;
+    double *mdsxx, *mdszz, *mdsyy, *mdsxz;
+    
+    Nx  = mesh->Nx;
+    Nz  = mesh->Nz;
+    Ncx = Nx-1;
+    Ncz = Nz-1;
+    
+    dsxx = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+    dsyy = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+    dszz = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+    dsxz = DoodzCalloc(Nx *Nz , sizeof(DoodzFP));
+    
+    mdsxx = DoodzCalloc(particles->Nb_part,sizeof(DoodzFP));
+    mdsyy = DoodzCalloc(particles->Nb_part,sizeof(DoodzFP));
+    mdszz = DoodzCalloc(particles->Nb_part,sizeof(DoodzFP));
+    mdsxz = DoodzCalloc(particles->Nb_part,sizeof(DoodzFP));
+
+    
+#pragma omp parallel for shared( mesh, dsxx, dsyy, dszz ) private( k, k1, l, c0, c1, c2, sxx, syy, szz, tyy, tyy0, sxx0, syy0, szz0  ) firstprivate( Nx, Ncx, Ncz )
+    for ( k1=0; k1<Ncx*Ncz; k1++ ) {
+        k  = mesh->kp[k1];
+        l  = mesh->lp[k1];
+        c0 = k  + l*(Nx-1);
+        c1 = k  + l*(Nx);
+        c2 = k  + l*(Nx+1);
+        
+        if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
+            tyy      = -(mesh->sxxd[c0]  + mesh->szzd[c0]);
+            tyy0     = -(mesh->sxxd0[c0] + mesh->szzd0[c0]);
+            sxx0     = -mesh->p0_n[c0] + mesh->sxxd0[c0];
+            szz0     = -mesh->p0_n[c0] + mesh->szzd0[c0];
+            syy0     = -mesh->p0_n[c0] + tyy0;
+            sxx      = -mesh->p_in[c0] + mesh->sxxd[c0];
+            szz      = -mesh->p_in[c0] + mesh->szzd[c0];
+            syy      = -mesh->p_in[c0] + tyy;
+            dsxx[c0] = sxx - sxx0;
+            dsyy[c0] = syy - syy0;
+            dszz[c0] = szz - szz0;
+        }
+    }
+    
+    // Vertex: shear stress change
+    for (k=0; k<Nx; k++) {
+        for (l=0; l<Nz; l++) {
+            c1 = k  + l*(Nx);
+            if (mesh->BCg.type[c1] !=30 ) dsxz[c1] =  mesh->sxz[c1] - mesh->sxz0[c1];
+        }
+    }
+    
+    // Interpolate stress changes to markers
+    Interp_Grid2P( *particles, mdsxx,  mesh, dsxx, mesh->xc_coord,  mesh->zc_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type  );
+    Interp_Grid2P( *particles, mdszz,  mesh, dszz, mesh->xc_coord,  mesh->zc_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type  );
+    Interp_Grid2P( *particles, mdsyy,  mesh, dsyy, mesh->xc_coord,  mesh->zc_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type  );
+    Interp_Grid2P( *particles, mdsxz,  mesh, dsxz, mesh->xg_coord,  mesh->zg_coord,  mesh->Nx,   mesh->Nz,   mesh->BCg.type  );
+    
+    // Update marker stresses
+    ArrayPlusArray( particles->sxxd, mdsxx, particles->Nb_part );
+    ArrayPlusArray( particles->szzd, mdszz, particles->Nb_part );
+    ArrayPlusArray( particles->syy , mdsyy, particles->Nb_part );
+    ArrayPlusArray( particles->sxz,  mdsxz, particles->Nb_part );
+    
+    DoodzFree( dsxx );
+    DoodzFree( dsyy );
+    DoodzFree( dszz );
+    DoodzFree( dsxz );
+    DoodzFree(mdsxx);
+    DoodzFree(mdszz);
+    DoodzFree(mdsyy);
+    DoodzFree(mdsxz);
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
 double UpdateReactionProgress ( double ttrans0, double Pold, double Pc, double treac, double Preac, double dt ,scale *scaling) {
 
     double ttrans= 0.0;
@@ -1060,6 +1203,7 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
         DoodzFree(T_inc_mark);
     }
     
+     if (model.adiab_heat > 0 ) {
     // Compute temperature rate on markers
 #pragma omp parallel for shared(particles,Tm0) private(k) firstprivate(model,materials)
     for ( k=0; k<particles->Nb_part; k++ ) {
@@ -1068,6 +1212,7 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
             particles->div_u_th[k] = materials->alp[p]*(particles->T[k] - Tm0[k]) /  model.dt;
         }
     }
+     }
     
     DoodzFree(Tg0);
     DoodzFree(Tm0);
@@ -1087,9 +1232,9 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
 
     // Compute increment
     for (k=0;k<Ncx*Ncz;k++) {
-        mesh->dp[k] =0.0;
+        mesh->dp[k] = 0.0;
         if (mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
-            mesh->dp[k] = mesh->p_in[k] - mesh->p0_n[k];
+            mesh->dp[k] = (mesh->p_in[k] - 0.0*mesh->p_lith[k] ) - mesh->p0_n[k];
         }
     }
     
@@ -2367,24 +2512,28 @@ void ShearModCompExpGrid( grid* mesh, mat_prop materials, params model, scale sc
                     // Arithmetic
                     if (average == 0) {
                         mesh->mu_n[c0]  += mesh->phase_perc_n[p][c0] * materials.mu[p];
+                        mesh->bet_n[c0] += mesh->phase_perc_n[p][c0] * materials.bet[p];
                     }
                     // Harmonic
                     if (average == 1) {
-                        mesh->mu_n[c0] += mesh->phase_perc_n[p][c0] *  1.0/materials.mu[p];
+                        mesh->mu_n[c0]  += mesh->phase_perc_n[p][c0] *  1.0/materials.mu[p];
+                        mesh->bet_n[c0] += mesh->phase_perc_n[p][c0] *  1.0/materials.bet[p];
                     }
                     // Geometric
                     if (average == 2) {
-                        mesh->mu_n[c0] += mesh->phase_perc_n[p][c0] *  log(materials.mu[p]);
+                        mesh->mu_n[c0]  += mesh->phase_perc_n[p][c0] *  log(materials.mu[p]);
+                        mesh->bet_n[c0] += mesh->phase_perc_n[p][c0] *  log(materials.bet[p]);
                     }
                     
                     // Standard arithmetic interpolation
-                    mesh->bet_n[c0] += mesh->phase_perc_n[p][c0] * materials.bet[p];
                     mesh->alp  [c0] += mesh->phase_perc_n[p][c0] * materials.alp[p];
                     
                 }
                 // Post-process for geometric/harmonic averages
                 if ( average==1 ) mesh->mu_n[c0] = 1.0/mesh->mu_n[c0];
                 if ( average==2 ) mesh->mu_n[c0] = exp(mesh->mu_n[c0]);
+                if ( average==1 ) mesh->bet_n[c0] = 1.0/mesh->bet_n[c0];
+                if ( average==2 ) mesh->bet_n[c0] = exp(mesh->bet_n[c0]);
                 
             }
         }
@@ -2399,7 +2548,7 @@ void ShearModCompExpGrid( grid* mesh, mat_prop materials, params model, scale sc
             c1 = k + l*Nx;
 
             // First - initialize to 0
-            mesh->mu_s[c1] = 0.0;
+            mesh->mu_s[c1]  = 0.0;
             mesh->bet_s[c1] = 0.0;
 
             // Compute only if below free surface
@@ -2410,20 +2559,20 @@ void ShearModCompExpGrid( grid* mesh, mat_prop materials, params model, scale sc
 
                     // Arithmetic
                     if (average == 0) {
-                        mesh->mu_s[c1] += mesh->phase_perc_s[p][c1] * materials.mu[p];
+                        mesh->mu_s[c1]  += mesh->phase_perc_s[p][c1] * materials.mu[p];
+                        mesh->bet_s[c1] += mesh->phase_perc_s[p][c1] * materials.bet[p];
                     }
                     // Harmonic
                     if (average == 1) {
-                        mesh->mu_s[c1] += mesh->phase_perc_s[p][c1] *  1.0/materials.mu[p];
+                        mesh->mu_s[c1]  += mesh->phase_perc_s[p][c1] *  1.0/materials.mu[p];
+                        mesh->bet_s[c1] += mesh->phase_perc_s[p][c1] *  1.0/materials.bet[p];
                     }
                     // Geometric
                     if (average == 2) {
-                        mesh->mu_s[c1] += mesh->phase_perc_s[p][c1] *  log(materials.mu[p]);
+                        mesh->mu_s[c1]  += mesh->phase_perc_s[p][c1] *  log(materials.mu[p]);
+                        mesh->bet_s[c1] += mesh->phase_perc_s[p][c1] *  log(materials.bet[p]);
                     }
-                    
-                    // Standard arithmetic interpolation
-                    mesh->bet_s[c1] += mesh->phase_perc_s[p][c1] * materials.bet[p];
-                    
+
                 }
 
                 if ( isinf(1.0/mesh->mu_s[c1]) ) {
@@ -2431,8 +2580,10 @@ void ShearModCompExpGrid( grid* mesh, mat_prop materials, params model, scale sc
                 }
 
                 // Post-process for geometric/harmonic averages
-                if ( average==1 ) mesh->mu_s[c1] = 1.0/mesh->mu_s[c1];
-                if ( average==2 ) mesh->mu_s[c1] = exp(mesh->mu_s[c1]);
+                if ( average==1 ) mesh->mu_s[c1]  = 1.0/mesh->mu_s[c1];
+                if ( average==2 ) mesh->mu_s[c1]  = exp(mesh->mu_s[c1]);
+                if ( average==1 ) mesh->bet_s[c1] = 1.0/mesh->bet_s[c1];
+                if ( average==2 ) mesh->bet_s[c1] = exp(mesh->bet_s[c1]);
             }
         }
     }
@@ -2494,11 +2645,11 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
 
                 // Constant density
                 if ( materials->density_model[p] == 3 ) {
+                    
                     rho0   = materials->rho[p];
-                    P0     = 0;//materials->P0 [p];
                     beta   = materials->bet[p];
-                    rhop   = rho0 * (1.0 +  beta * (mesh->p_in[c0] - P0) );
-                    rhop   = rho0*exp(beta * mesh->p_in[c0] );
+                    alpha  = materials->alp[p];
+                    rhop   = rho0*exp(beta * mesh->p_in[c0] - alpha * mesh->T[c0]);
 //                    rhop   = rho0*(1 + beta * mesh->p_in[c0] );
 //                    rhop   = rho0;
 //                    rhop   = rho0*(1.0 +  beta * (mesh->p_in[c0] - P0));
@@ -2507,7 +2658,7 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
 
                 // T and P dependent density based on EOS
                 if ( materials->density_model[p] == 1 ) {
-
+                    
                     rho0   = materials->rho [p];
                     drho   = materials->drho[p];
                     T0     = materials->T0 [p];

@@ -226,6 +226,7 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
     particles->sxxd[new_ind]          = particles->sxxd[min_index];
     particles->szzd[new_ind]          = particles->szzd[min_index];
     particles->sxz[new_ind]           = particles->sxz[min_index];
+    particles->syy[new_ind]           = particles->syy[min_index];
     particles->ttrans[new_ind]        = particles->ttrans[min_index];
     
     if (model->fstrain == 1) {

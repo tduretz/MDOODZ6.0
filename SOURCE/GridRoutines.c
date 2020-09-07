@@ -375,15 +375,15 @@ void ComputeLithostaticPressure( grid *mesh, params *model, double RHO_REF, scal
         }
     }
     
-    // + eps
-    // Cell center arrays
-    for( l=0; l<ncz; l++) {
-        for( k=0; k<ncx; k++) {            
-            c  = k + l*ncx;
-            mesh->p_lith[c] += eps;
-            mesh->p[c]       = mesh->p_in[c];
-        }
-    }
+//    // + eps
+//    // Cell center arrays
+//    for( l=0; l<ncz; l++) {
+//        for( k=0; k<ncx; k++) {            
+//            c  = k + l*ncx;
+//            mesh->p_lith[c] += eps;
+//            mesh->p[c]       = mesh->p_in[c];
+//        }
+//    }
     
 
 }

@@ -396,9 +396,6 @@ int main( int nargs, char *args[] ) {
         SetGridCoordinates( &mesh, &model, model.Nx, model.Nz ); // Overwrite previous grid
     }
     
-//    // Evaluate rhs functions
-//    EvaluateRHS( &mesh, model, scaling, materials.rho[0] );
-    
     //------------------------------------------------------------------------------------------------------------------------------//
     //------------------------------------------------------------------------------------------------------------------------------//
     //                                             TIME LOOP : en avant les Doud'series !
@@ -481,6 +478,8 @@ int main( int nargs, char *args[] ) {
 
             // Elasticity - interpolate advected/rotated stresses
             if  ( model.iselastic == 1 ) {
+                
+//                OldDeviatoricStressesPressure( &mesh, &particles, scaling, &model );
 
                 // Get old stresses from particles
                 Interp_P2C ( particles, particles.sxxd, &mesh, mesh.sxxd0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
@@ -525,13 +524,12 @@ int main( int nargs, char *args[] ) {
             // Interpolate Melt fraction
             Interp_P2C ( particles, particles.phi, &mesh, mesh.phi,  mesh.xg_coord, mesh.zg_coord, 1, 0 );
 
-//            // Interpolate pressure: not necessary
-//            Interp_P2C ( particles, particles.P, &mesh, mesh.p_in,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
             
             //-----------------------------------------------------------------------------------------------------------
             // Interp P --> p0_n , p0_s
 //            ArrayEqualArray(  mesh.p0_n,   mesh.p_in, Ncx*Ncz );
             Interp_P2C ( particles, particles.P, &mesh, mesh.p0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+//            ArrayPlusArray(  mesh.p0_n,   mesh.p_lith, Ncx*Ncz );
 
             // Interp ttrans --> ttrans0_n , ttrans0_s
             Interp_P2C ( particles, particles.ttrans, &mesh, mesh.ttrans0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
@@ -924,7 +922,9 @@ int main( int nargs, char *args[] ) {
             MinMaxArray( topo_chain_ini.Vx,  scaling.V, topo_chain_ini.Nb_part,   "Vx surf. ini." );
             MinMaxArray( topo_chain_ini.Vz,  scaling.V, topo_chain_ini.Nb_part,   "Vz surf. ini." );
         }
-
+        
+//        TotalStresses( &mesh, &particles, scaling, &model );
+        
         // Update stresses on markers
         if (model.iselastic == 1 ) {
             UpdateParticleStress(  &mesh, &particles, &model, &materials, &scaling );
@@ -939,50 +939,50 @@ int main( int nargs, char *args[] ) {
         // Update pressure on markers
         UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
         
-        UpdateParticlettrans( &mesh, &scaling, model, &particles, &materials );
-        MinMaxArray( particles.P,       scaling.S, particles.Nb_part,   "P part"       );
+//        Interp_Grid2P( particles, particles.P, &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+
 
         //------------------------------------------------------------------------------------------------------------------------------//
 
-        if (model.isthermal == 1 ) {
-
-            printf("*************************************\n");
-            printf("*********** Thermal solver **********\n");
-            printf("*************************************\n");
-
-            t_omp = (double)omp_get_wtime();
-
-            // Matrix assembly and direct solve
-            EnergyDirectSolve( &mesh, model,  mesh.T,  mesh.dT,  mesh.rhs_t, mesh.T, &particles, model.dt, model.shear_heat, model.adiab_heat, scaling, 1 );
-            MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. before UpdateParticleEnergy");
-
-            // Update energy on particles
-            UpdateParticleEnergy( &mesh, scaling, model, &particles, &materials );
-            MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. after UpdateParticleEnergy");
-
-            if ( model.iselastic == 1 ) Interp_Grid2P( particles, particles.rhoUe0, &mesh, mesh.rhoUe0, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-
-            // Calculate energies
-            if ( model.write_energies == 1 ) Energies( &mesh, model, scaling );
-
-            printf("** Time for Thermal solver = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
-        }
-
-        //------------------------------------------------------------------------------------------------------------------------------//
-
-        // Grain size evolution
-        UpdateParticleGrainSize( &mesh, scaling, model, &particles, &materials );
-        MinMaxArrayTag( mesh.d0    , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d0", mesh.BCp.type );
-        MinMaxArrayTag( mesh.d     , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d ", mesh.BCp.type );
-        MinMaxArrayPart( particles.d, scaling.L, particles.Nb_part, "d on markers", particles.phase ) ;
-
-        // Update density on the particles
-        UpdateParticleDensity( &mesh, scaling, model, &particles, &materials );
-
-        //------------------------------------------------------------------------------------------------------------------------------//
-
-        // Update maximum pressure and temperature on markers
-        if ( model.rec_T_P_x_z == 1 )  UpdateMaxPT( scaling, model, &particles );
+//        if (model.isthermal == 1 ) {
+//
+//            printf("*************************************\n");
+//            printf("*********** Thermal solver **********\n");
+//            printf("*************************************\n");
+//
+//            t_omp = (double)omp_get_wtime();
+//
+//            // Matrix assembly and direct solve
+//            EnergyDirectSolve( &mesh, model,  mesh.T,  mesh.dT,  mesh.rhs_t, mesh.T, &particles, model.dt, model.shear_heat, model.adiab_heat, scaling, 1 );
+//            MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. before UpdateParticleEnergy");
+//
+//            // Update energy on particles
+//            UpdateParticleEnergy( &mesh, scaling, model, &particles, &materials );
+//            MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. after UpdateParticleEnergy");
+//
+//            if ( model.iselastic == 1 ) Interp_Grid2P( particles, particles.rhoUe0, &mesh, mesh.rhoUe0, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+//
+//            // Calculate energies
+//            if ( model.write_energies == 1 ) Energies( &mesh, model, scaling );
+//
+//            printf("** Time for Thermal solver = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
+//        }
+//
+//        //------------------------------------------------------------------------------------------------------------------------------//
+//
+//        // Grain size evolution
+//        UpdateParticleGrainSize( &mesh, scaling, model, &particles, &materials );
+//        MinMaxArrayTag( mesh.d0    , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d0", mesh.BCp.type );
+//        MinMaxArrayTag( mesh.d     , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d ", mesh.BCp.type );
+//        MinMaxArrayPart( particles.d, scaling.L, particles.Nb_part, "d on markers", particles.phase ) ;
+//
+//        // Update density on the particles
+//        UpdateParticleDensity( &mesh, scaling, model, &particles, &materials );
+//
+//        //------------------------------------------------------------------------------------------------------------------------------//
+//
+//        // Update maximum pressure and temperature on markers
+//        if ( model.rec_T_P_x_z == 1 )  UpdateMaxPT( scaling, model, &particles );
 
         //------------------------------------------------------------------------------------------------------------------------------//
 
