@@ -699,7 +699,7 @@ for istep=istart:ijump:iend
             shading flat,axis xy image, colorbar;
             xlabel(xLabel), ylabel(zLabel);
             title(['div_{tot} at' TimeLabel, ' min = ', num2str((min(div_tot(:))), '%2.2e'  ), ' s^{-1}', ' max = ', num2str((max(div_tot(:))), '%2.2e'  ), ' s^{-1}' ])
-%             if exist('minEii', 'var') caxis([minEii maxEii]); end
+            caxis([-0.25e-14 0.25e-14])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
             axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
@@ -719,7 +719,7 @@ for istep=istart:ijump:iend
             shading flat,axis xy image, colorbar;
             xlabel(xLabel), ylabel(zLabel);
             title(['div_{el}  at' TimeLabel, ' min = ', num2str((min(div_el(:))), '%2.2e'  ), ' s^{-1}', ' max = ', num2str((max(div_el(:))), '%2.2e'  ), ' s^{-1}' ])
-%             if exist('minEii', 'var') caxis([minEii maxEii]); end
+            caxis([-0.25e-14 0.25e-14])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
             axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
@@ -739,7 +739,7 @@ for istep=istart:ijump:iend
             shading flat,axis xy image, colorbar;
             xlabel(xLabel), ylabel(zLabel);
             title(['div_{pl}  at' TimeLabel, ' min = ', num2str((min(div_pl(:))), '%2.2e'  ), ' s^{-1}', ' max = ', num2str((max(div_pl(:))), '%2.2e'  ), ' s^{-1}' ])
-%             if exist('minEii', 'var') caxis([minEii maxEii]); end
+            caxis([-0.25e-14 0.25e-14])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
             axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
@@ -759,7 +759,7 @@ for istep=istart:ijump:iend
             shading flat,axis xy image, colorbar;
             xlabel(xLabel), ylabel(zLabel);
             title(['div_{th}  at' TimeLabel, ' min = ', num2str((min(div_th(:))), '%2.2e'  ), ' s^{-1}', ' max = ', num2str((max(div_th(:))), '%2.2e'  ), ' s^{-1}' ])
-%             if exist('minEii', 'var') caxis([minEii maxEii]); end
+            caxis([-0.25e-14 0.25e-14])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
             axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
