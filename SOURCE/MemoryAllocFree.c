@@ -196,7 +196,7 @@ void PartAlloc( markers *particles, params* model  ) {
     particles->generation = DoodzCalloc( particles->Nb_part_max,sizeof(int));
     particles->progress   = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
 
-    particles->div_u_th       = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+    particles->div_u_th   = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->rho        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->rhoUe0     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->T          = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
@@ -452,6 +452,7 @@ void GridAlloc ( grid* mesh, params* model ) {
 
     // Volumetric deformation
     mesh->p_lith   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->p_lith0  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->dp       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->alp      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->bet_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
@@ -731,6 +732,7 @@ void GridFree( grid* mesh, params* model ) {
 
     // Volumetric deformation
     DoodzFree(mesh->p_lith);
+    DoodzFree(mesh->p_lith0);
     DoodzFree(mesh->dp);
     DoodzFree(mesh->alp);
     DoodzFree(mesh->bet_n);

@@ -269,7 +269,8 @@ int main( int nargs, char *args[] ) {
             // Lithostatic pressure for initial visco-plastic viscosity field
             ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 0 );
             Interp_Grid2P( particles, particles.P,    &mesh, mesh.p_lith, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-            ArrayEqualArray( mesh.p_in, mesh.p_lith,  (mesh.Nx-1)*(mesh.Nz-1) );
+            Interp_P2C ( particles, particles.P, &mesh, mesh.p_in, mesh.xg_coord, mesh.zg_coord,  1, 0 );
+//            ArrayEqualArray( mesh.p_in, mesh.p_lith,  (mesh.Nx-1)*(mesh.Nz-1) );
 
             printf("*************************************\n");
             printf("******* Initialize grain size *******\n");
@@ -312,8 +313,8 @@ int main( int nargs, char *args[] ) {
 
             // Compute cohesion and friction angle on the grid
             CohesionFrictionDilationGrid( &mesh, materials, model, scaling );
-            Interp_Grid2P( particles, particles.P,    &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-            Interp_Grid2P( particles, particles.T,    &mesh, mesh.T,    mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type );
+//            Interp_Grid2P( particles, particles.P,    &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+//            Interp_Grid2P( particles, particles.T,    &mesh, mesh.T,    mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type );
             NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
 
         } // end of no_markers --- debug
@@ -380,7 +381,7 @@ int main( int nargs, char *args[] ) {
         }
 #endif
         // Set initial stresses and pressure to zero
-//        Initialise1DArrayDouble( particles.P,      particles.Nb_part, 0.0 );
+        Initialise1DArrayDouble( particles.P,      particles.Nb_part, 0.0 ); // now dynamic pressure...
 //        Initialise1DArrayDouble( mesh.p_in,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
         Initialise1DArrayDouble( mesh.sxxd,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
         Initialise1DArrayDouble( mesh.szzd,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
@@ -474,6 +475,7 @@ int main( int nargs, char *args[] ) {
             }
 
             // Lithostatic pressure
+            ArrayEqualArray(  mesh.p_lith0,   mesh.p_lith, Ncx*Ncz );
             ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 1 );
 
             // Elasticity - interpolate advected/rotated stresses
@@ -524,12 +526,10 @@ int main( int nargs, char *args[] ) {
             // Interpolate Melt fraction
             Interp_P2C ( particles, particles.phi, &mesh, mesh.phi,  mesh.xg_coord, mesh.zg_coord, 1, 0 );
 
-            
             //-----------------------------------------------------------------------------------------------------------
             // Interp P --> p0_n , p0_s
-//            ArrayEqualArray(  mesh.p0_n,   mesh.p_in, Ncx*Ncz );
             Interp_P2C ( particles, particles.P, &mesh, mesh.p0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-//            ArrayPlusArray(  mesh.p0_n,   mesh.p_lith, Ncx*Ncz );
+            ArrayPlusArray(  mesh.p0_n,   mesh.p_lith, Ncx*Ncz ); // Add back lithostatic component
 
             // Interp ttrans --> ttrans0_n , ttrans0_s
             Interp_P2C ( particles, particles.ttrans, &mesh, mesh.ttrans0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
