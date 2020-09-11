@@ -1,10 +1,10 @@
 **** RESTART ****/
-istep =00030
+istep =00010
 irestart = 0
 
 /**** OUTPUT FILES ****/
 writer         = 1
-writer_step    = 1
+writer_step    = 10
 writer_markers = 0
 writer_debug   = 0
 
@@ -18,9 +18,9 @@ V   = 1e-9
 T   = 100
  
 /**** SPACE-TIME ****/
-Nx   = 101
-Nz   = 51
-Nt   = 30
+Nx   = 201
+Nz   = 101
+Nt   = 100
 xmin    = -15e3
 xmax    =  15e3
 zmin    = -7.5e3
@@ -53,6 +53,9 @@ num_deriv       = 0
 lsolver         = 0
 penalty         = 1e5
 diag_scaling    = 0
+abs_tol_div     = 1e-11
+rel_tol_div     = 1e-11
+noisy           = 0
 
 /**** ANISOTROPY ****/
 pc_type        = 0
