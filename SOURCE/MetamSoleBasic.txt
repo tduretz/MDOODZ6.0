@@ -1,5 +1,5 @@
 **** RESTART ****/
-istep =00010
+istep =00020
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -20,7 +20,7 @@ T   = 100
 /**** SPACE-TIME ****/
 Nx   = 201
 Nz   = 101
-Nt   = 100
+Nt   = 20
 xmin    = -15e3
 xmax    =  15e3
 zmin    = -7.5e3
@@ -55,17 +55,17 @@ penalty         = 1e5
 diag_scaling    = 0
 abs_tol_div     = 1e-11
 rel_tol_div     = 1e-11
-noisy           = 0
+noisy           = 1
+pc_type         = 1
 
 /**** ANISOTROPY ****/
-pc_type        = 0
 aniso          = 0
  
 /**** SETUP DEPENDANT ****/
-EpsBG           = 2e-14 /Background strain rate
+EpsBG           = 4e-14 /Background strain rate
 PrBG            = 5e8
 surf_diff       = 0
-user0           = 700
+user0           = 725
 user1           = 0.3e3 /radius
 user2           = 0 /0:circle 1:layer 
 user3           = 0
@@ -88,7 +88,7 @@ k    = 2.3
 Qr   = 0
 C    = 5e7
 phi  = 32
-eta_vp = 2e20
+eta_vp = 1e20
 n_vp = 1.0
 Slim = 500e9
 alp  = 10.0e-6
@@ -115,7 +115,7 @@ k    = 2.3
 Qr   = 0
 C    = 5e7
 phi  = 32
-eta_vp = 2e20
+eta_vp = 1e20
 n_vp = 1.0
 Slim = 500e9
 alp  = 10.0e-6
@@ -142,7 +142,7 @@ k    = 3.0
 Qr   = 0
 C    = 5e7
 phi  = 32
-eta_vp = 2e20
+eta_vp = 1e20
 n_vp = 1.0
 Slim = 500e9
 alp  = 10.0e-6
@@ -169,7 +169,7 @@ k    = 3.0
 Qr   = 0
 C    = 5e7
 phi  = 32
-eta_vp = 2e20
+eta_vp = 1e20
 n_vp = 1.0
 Slim = 500e9
 alp  = 10.0e-6
