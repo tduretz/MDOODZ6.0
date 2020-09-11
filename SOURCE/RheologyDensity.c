@@ -1121,10 +1121,11 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
     
-    // Old temperatures
-    
-    Tm0  = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-    Tg0  = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+    // Allocations
+    Tm0        = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+    Tg0        = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+    T_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+
     // Old temperature grid
 #pragma omp parallel for shared(mesh, Tg0) private(c0) firstprivate(Ncx,Ncz)
     for ( c0=0; c0<Ncx*Ncz; c0++ ) {
@@ -1133,8 +1134,7 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
     Interp_Grid2P( *particles, Tm0, mesh, Tg0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
 
     // SUBGRID
-
-    if ( model.subgrid_diff >= 1 ) {
+    if ( model.subgrid_diff >= 1 ) { /* CASE WITH SUBGRID DIFFUSION */
 
         printf("Subgrid diffusion for temperature update\n");
         dTgs = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
@@ -1152,18 +1152,12 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
             if (particles->phase[k] != -1) {
                 p = particles->phase[k];
                 dtm     = materials->Cv[p] * rho_part[k]/ (materials->k[p] * (1.0/dx/dx + 1.0/dz/dz));
-//                dtm     = materials->Cv[p]* particles->rho[k]/ (materials->k[p] * (1.0/dx/dx + 1.0/dz/dz));
                 dTms[k] = -( particles->T[k] - Tm0[k] ) * (1.0-exp(-d*model.dt/dtm));
             }
         }
-//        MinMaxArray(dTms, scaling.T, particles->Nb_part, "dTms");
-
 
         // Subgrid temperature increments markers --> grid
         Interp_P2C ( *particles, dTms, mesh, dTgs, mesh->xg_coord, mesh->zg_coord, 1, 0 );
-
-//        MinMaxArrayTag( dTgs,   scaling.T,    (mesh->Nx)*(mesh->Nz),       "dTgs",   mesh->BCp.type    );
-
 
         // Remaining temperature increments on the grid
 #pragma omp parallel for shared(mesh, dTgs, dTgr) private(c0) firstprivate(Ncx,Ncz)
@@ -1171,18 +1165,14 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
             if (mesh->BCt.type[c0] != 30) dTgr[c0] = mesh->dT[c0] - dTgs[c0];
         }
 
-//        MinMaxArrayTag( dTgr,   scaling.T,    (mesh->Nx)*(mesh->Nz),       "dTgr",   mesh->BCp.type    );
-
         // Remaining temperature increments grid --> markers
         Interp_Grid2P( *particles, dTmr, mesh, dTgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
 
-//        MinMaxArray(dTmr, scaling.T, particles->Nb_part, "dTmr");
-
-
         // Final temperature update on markers
-#pragma omp parallel for shared(particles,dTms,dTmr) private(k)
+#pragma omp parallel for shared(particles,dTms,dTmr,T_inc_mark) private(k)
         for ( k=0; k<particles->Nb_part; k++ ) {
-            if (particles->phase[k] != -1) particles->T[k] += dTms[k] + dTmr[k];
+            if (particles->phase[k] != -1) T_inc_mark[k]    = dTms[k] + dTmr[k];
+            if (particles->phase[k] != -1) particles->T[k] += T_inc_mark[k];
         }
         DoodzFree(dTms);
         DoodzFree(dTmr);
@@ -1190,32 +1180,32 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
         DoodzFree(dTgr);
         DoodzFree(rho_part);
     }
-    else {
-
-        T_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-
+    else {  /* CASE WITHOUT SUBGRID DIFFUSION: INTERPOLATE INCREMENT DIRECTLY */
+        
         // Interp increments to particles
         Interp_Grid2P( *particles, T_inc_mark, mesh, mesh->dT, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
 
         // Increment temperature on particles
         ArrayPlusArray( particles->T, T_inc_mark, particles->Nb_part );
-
-        DoodzFree(T_inc_mark);
     }
     
-     if (model.adiab_heat > 0 ) {
+    /* CONTRIBUTION OF ADIABATIC HEATING TO DIVERGENCE */
+    
+    if (model.adiab_heat > 0 ) {
     // Compute temperature rate on markers
-#pragma omp parallel for shared(particles,Tm0) private(k) firstprivate(model,materials)
-    for ( k=0; k<particles->Nb_part; k++ ) {
-        if (particles->phase[k] != -1) {
-            p = particles->phase[k];
-            particles->div_u_th[k] = materials->alp[p]*(particles->T[k] - Tm0[k]) /  model.dt;
+#pragma omp parallel for shared(particles,T_inc_mark) private(k) firstprivate(model,materials)
+        for ( k=0; k<particles->Nb_part; k++ ) {
+            if (particles->phase[k] != -1) {
+                p = particles->phase[k];
+                particles->div_u_th[k] = materials->alp[p] * T_inc_mark[k] /  model.dt;
+            }
         }
     }
-     }
     
+    // Freedom
     DoodzFree(Tg0);
     DoodzFree(Tm0);
+    DoodzFree(T_inc_mark);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -1234,7 +1224,7 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
     for (k=0; k<Ncx*Ncz; k++) {
         mesh->dp[k] = 0.0;
         if (mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
-            mesh->dp[k] = (mesh->p_in[k] - mesh->p_lith[k]) - (mesh->p0_n[k]-mesh->p_lith0[k]) ;
+            mesh->dp[k] = (mesh->p_in[k] - mesh->p_lith[k]) - (mesh->p0_n[k]-mesh->p_lith0[k]); // dp dynamic pressure
         }
     }
 

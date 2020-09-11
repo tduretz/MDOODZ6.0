@@ -944,45 +944,45 @@ int main( int nargs, char *args[] ) {
 
         //------------------------------------------------------------------------------------------------------------------------------//
 
-//        if (model.isthermal == 1 ) {
-//
-//            printf("*************************************\n");
-//            printf("*********** Thermal solver **********\n");
-//            printf("*************************************\n");
-//
-//            t_omp = (double)omp_get_wtime();
-//
-//            // Matrix assembly and direct solve
-//            EnergyDirectSolve( &mesh, model,  mesh.T,  mesh.dT,  mesh.rhs_t, mesh.T, &particles, model.dt, model.shear_heat, model.adiab_heat, scaling, 1 );
-//            MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. before UpdateParticleEnergy");
-//
-//            // Update energy on particles
-//            UpdateParticleEnergy( &mesh, scaling, model, &particles, &materials );
-//            MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. after UpdateParticleEnergy");
-//
-//            if ( model.iselastic == 1 ) Interp_Grid2P( particles, particles.rhoUe0, &mesh, mesh.rhoUe0, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-//
-//            // Calculate energies
-//            if ( model.write_energies == 1 ) Energies( &mesh, model, scaling );
-//
-//            printf("** Time for Thermal solver = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
-//        }
-//
-//        //------------------------------------------------------------------------------------------------------------------------------//
-//
-//        // Grain size evolution
-//        UpdateParticleGrainSize( &mesh, scaling, model, &particles, &materials );
-//        MinMaxArrayTag( mesh.d0    , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d0", mesh.BCp.type );
-//        MinMaxArrayTag( mesh.d     , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d ", mesh.BCp.type );
-//        MinMaxArrayPart( particles.d, scaling.L, particles.Nb_part, "d on markers", particles.phase ) ;
-//
-//        // Update density on the particles
-//        UpdateParticleDensity( &mesh, scaling, model, &particles, &materials );
-//
-//        //------------------------------------------------------------------------------------------------------------------------------//
-//
-//        // Update maximum pressure and temperature on markers
-//        if ( model.rec_T_P_x_z == 1 )  UpdateMaxPT( scaling, model, &particles );
+        if (model.isthermal == 1 ) {
+
+            printf("*************************************\n");
+            printf("*********** Thermal solver **********\n");
+            printf("*************************************\n");
+
+            t_omp = (double)omp_get_wtime();
+
+            // Matrix assembly and direct solve
+            EnergyDirectSolve( &mesh, model,  mesh.T,  mesh.dT,  mesh.rhs_t, mesh.T, &particles, model.dt, model.shear_heat, model.adiab_heat, scaling, 1 );
+            MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. before UpdateParticleEnergy");
+
+            // Update energy on particles
+            UpdateParticleEnergy( &mesh, scaling, model, &particles, &materials );
+            MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. after UpdateParticleEnergy");
+
+            if ( model.iselastic == 1 ) Interp_Grid2P( particles, particles.rhoUe0, &mesh, mesh.rhoUe0, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+
+            // Calculate energies
+            if ( model.write_energies == 1 ) Energies( &mesh, model, scaling );
+
+            printf("** Time for Thermal solver = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
+        }
+
+        //------------------------------------------------------------------------------------------------------------------------------//
+
+        // Grain size evolution
+        UpdateParticleGrainSize( &mesh, scaling, model, &particles, &materials );
+        MinMaxArrayTag( mesh.d0    , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d0", mesh.BCp.type );
+        MinMaxArrayTag( mesh.d     , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d ", mesh.BCp.type );
+        MinMaxArrayPart( particles.d, scaling.L, particles.Nb_part, "d on markers", particles.phase ) ;
+
+        // Update density on the particles
+        UpdateParticleDensity( &mesh, scaling, model, &particles, &materials );
+
+        //------------------------------------------------------------------------------------------------------------------------------//
+
+        // Update maximum pressure and temperature on markers
+        if ( model.rec_T_P_x_z == 1 )  UpdateMaxPT( scaling, model, &particles );
 
         //------------------------------------------------------------------------------------------------------------------------------//
 
