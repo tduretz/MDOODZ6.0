@@ -1474,7 +1474,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
 
     // Parameters for deformation map calculations
     int    local_iter = model->loc_iter, it, nitmax = 20, noisy = 0;
-    int    constant=0, dislocation=0, peierls=0, diffusion=0, gbs=0, elastic = model->iselastic;
+    int    constant=0, dislocation=0, peierls=0, diffusion=0, gbs=0, elastic = model->iselastic, comp = model->compressible;
     double tol = 1.0e-11, res=0.0, res0=0.0, dfdeta=0.0, Txx=0.0, Tzz=0.0, Txz=0.0, Tii=0.0, ieta_sum=0.0, Tii0 = sqrt(Txx0*Txx0 + Txz0*Txz0);
     double eta_up=0.0, eta_lo=0.0, eta_ve=0.0, eta_p=0.0, r_eta_pl=0.0, r_eta_ve=0.0, r_eta_p=0.0;
     double eta_pwl=0.0, eta_exp=0.0, eta_vep=0.0, eta_lin=0.0, eta_el=0.0, eta_gbs=0.0, eta_cst=0.0, eta_step=0.0;
@@ -1519,7 +1519,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
 
     // Initialise strain rate invariants to 0
     *Eii_exp = 0.0; *Eii_lin = 0.0; *Eii_pl = 0.0; *Eii_pwl = 0.0; *Eii_el = 0.0, *Eii_gbs=0, *Eii_cst=0.0;
-    *txxn=0.0; *txzn=0.0; *etaVE=0.0; *VEcoeff=0.0, *Exx_el=0.0, *Ezz_el=0.0, *Exz_el=0.0, *Exx_diss=0.0, *Ezz_diss=0.0, *Exz_diss=0.0, *d1=0.0;
+    *txxn=0.0; *tzzn=0.0; *txzn=0.0; *etaVE=0.0; *VEcoeff=0.0, *Exx_el=0.0, *Ezz_el=0.0, *Exz_el=0.0, *Exx_diss=0.0, *Ezz_diss=0.0, *Exz_diss=0.0, *d1=0.0;
     *detadexx=0.0;  *detadezz=0.0;  *detadexz=0.0;  *detadp=0.0;
     *ddivpdexx=0.0; *ddivpdezz=0.0; *ddivpdexz=0.0; *ddivpdp=0.0;
     *Xreac=0.0; *ttrans=0.0;
@@ -1582,7 +1582,8 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         B_exp = 0.5*pow(C_exp, -1./(n_exp+ST) );
     }
 
-    Tyield                      = C*cos(fric) +  ( P + model->PrBG)*sin(fric);
+    if ( comp == 0 ) Tyield     = C*cos(fric) + ( P + model->PrBG)*sin(fric);  // need to shift the yield since pressure is shifted
+    if ( comp == 1 ) Tyield     = C*cos(fric) + P*sin(fric);                   // no need to shift yield if compressible: set initial pressure Pconf
     Tyield                      = MINV( Tyield, materials->Slim[phase] );
 
     //------------------------------------------------------------------------//
@@ -1824,7 +1825,8 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
             divp    = -gdot*dQdP;
             Pc      = P + K*dt*divp; // P0 - k*dt*(div-divp) = P + k*dt*divp
             eta_vp  = eta_vp0 * pow(fabs(gdot), 1.0/n_vp - 1);
-            Tyield  = C*cos(fric) +  ( Pc + model->PrBG )*sin(fric) +  gdot*eta_vp;
+            if ( comp == 0 ) Tyield     = C*cos(fric) + ( Pc + model->PrBG)*sin(fric) +  gdot*eta_vp;  // need to shift the yield since pressure is shifted
+            if ( comp == 1 ) Tyield     = C*cos(fric) + Pc*sin(fric) +  gdot*eta_vp;                   // no need to shift yield if compressible: set initial pressure
             F_trial = Tii - eta_ve*gdot - Tyield;
             
             // Residual check
@@ -1991,7 +1993,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
     InterpCentroidsToVerticesDouble( mesh->phi,     mesh->phi_s,   mesh, model, scaling ); // ACHTUNG NOT FRICTION ANGLE
 
     // Evaluate cell center viscosities
-#pragma omp parallel for shared( mesh  ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, d1, exx_el, exz_el, exx_diss, exz_diss, detadexx, detadezz, detadexz, detadp, Xreac, ttrans, OverS, X, ddivpdexx, ddivpdezz, ddivpdexz, ddivpdp, Pcorr, div_el, div_pl ) firstprivate( materials, scaling, average, model, Ncx, Ncz )
+#pragma omp parallel for shared( mesh  ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, d1, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, detadexx, detadezz, detadexz, detadp, Xreac, ttrans, OverS, X, ddivpdexx, ddivpdezz, ddivpdexz, ddivpdp, Pcorr, div_el, div_pl ) firstprivate( materials, scaling, average, model, Ncx, Ncz )
     for ( k1=0; k1<Ncx*Ncz; k1++ ) {
 
         //    for ( l=0; l<Ncz; l++ ) {
@@ -2158,7 +2160,6 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
             }
 
         }
-        //if (mesh->eta_n[c0]<1e-8) exit(1);
     }
     ;
 

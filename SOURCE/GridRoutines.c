@@ -322,8 +322,8 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
             if ( mesh->BCp.type[c] != 30 ||  mesh->BCp.type[c] != 31) {
                 if (model->step==0) {
                     // Initial pressure field
-                    if (model->num_deriv==0) mesh->p_in[c]  = 0.0;//eps;
-                    if (model->num_deriv==1) mesh->p_in[c]  = eps;
+                    if (model->num_deriv==0) mesh->p_in[c]  = 0.0 + model->PrBG;
+                    if (model->num_deriv==1) mesh->p_in[c]  = eps + model->PrBG;
                 }
             }
             
@@ -374,6 +374,15 @@ void ComputeLithostaticPressure( grid *mesh, params *model, double RHO_REF, scal
             }
         }
     }
+    
+    // Add confining pressure
+    for( l=0; l<ncz; l++) {
+        for( k=0; k<ncx; k++) {
+            c  = k + l*ncx;
+            if ( mesh->BCp.type[c] != 30 && mesh->BCp.type[c] != 31 ) mesh->p_lith[c] += model->PrBG;
+        }
+    }
+    
     
 //    // + eps
 //    // Cell center arrays

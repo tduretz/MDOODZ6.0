@@ -168,7 +168,7 @@ void DetectCompressibleCells ( grid* mesh, params *model ) {
      for( cc=0; cc<ncx*ncz; cc++) {
          
          if ( mesh->BCp.type[cc] != 30 ) {
-             
+                          
              if ( mesh->bet_n[cc] > 1e-13 ) {
                  mesh->comp_cells[cc] = 1;
                  kk++;
