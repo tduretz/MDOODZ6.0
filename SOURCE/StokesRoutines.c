@@ -520,29 +520,29 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
             
         }
         
-                // Look for the minimum predicted residuals
-                minx  = rz[0];
-                ix = 0;
-                for( k=1; k<ntry[niter]; k++ ) {
-                    if(rz[k]<minx) {
-                        minx = rz[k];
-                        ix = k;
-                    }
-                }
-                alpha = alphav[ix];
+//                // Look for the minimum predicted residuals
+//                minx  = rz[0];
+//                ix = 0;
+//                for( k=1; k<ntry[niter]; k++ ) {
+//                    if(rz[k]<minx) {
+//                        minx = rz[k];
+//                        ix = k;
+//                    }
+//                }
+//                alpha = alphav[ix];
         
-//        // Look for the minimum predicted residuals
-//        double r;
-//        minx  = sqrt( pow( rx[0],2 ) + pow( rz[0],2 ) );
-//        ix = 0;
-//        for( k=1; k<ntry[niter]; k++ ) {
-//            r = sqrt( pow( rx[k],2 ) + pow( rz[k],2 ) );
-//            if( r < minx ) {
-//                minx = r;
-//                ix = k;
-//            }
-//        }
-//        alpha = alphav[ix];
+        // Look for the minimum predicted residuals
+        double r;
+        minx  = sqrt( pow( rx[0],2 ) + pow( rz[0],2 ) );
+        ix = 0;
+        for( k=1; k<ntry[niter]; k++ ) {
+            r = sqrt( pow( rx[k],2 ) + pow( rz[k],2 ) );
+            if( r < minx ) {
+                minx = r;
+                ix = k;
+            }
+        }
+        alpha = alphav[ix];
         
         // if the minmimun residuals are lower than starting ones, then success
         if ( rx[ix] < frac*Nmodel->resx_f || rz[ix]<frac*Nmodel->resz_f  ) { //|| rp[ix]<frac*Nmodel->resp
@@ -653,7 +653,6 @@ void SolveStokesDecoupled( SparseMat *StokesA, SparseMat *StokesB, SparseMat *St
     
     // Call direct solver
     t_omp = (double)omp_get_wtime();
-//   KSPStokesDecoupled       ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->b, StokesC->b, Stokes->x, model, mesh, scaling, Stokes, Stokes, StokesA, StokesB, StokesC );
     
     if (model.lsolver== 0) DirectStokesDecoupled    ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->b, StokesC->b, Stokes->x, model, mesh, scaling, Stokes );
     if (model.lsolver== 1) KSPStokesDecoupled       ( StokesA, StokesB, StokesC, StokesD, PardisoStokes, StokesA->b, StokesC->b, Stokes->x, model, mesh, scaling, Stokes, Stokes, StokesA, StokesB, StokesC );
@@ -674,12 +673,18 @@ void SolveStokesDefectDecoupled( SparseMat *StokesA, SparseMat *StokesB, SparseM
     printf("---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = %d ----\n", model->lsolver);
     
     double alpha = -1.0;
-    double *dx, *fu, *fp;
+    double *dx;//, *fu, *fp;
     clock_t t_omp;
     
     dx = DoodzCalloc( Stokes->neq,      sizeof(double));
-    fu = DoodzCalloc( Stokes->neq_mom,  sizeof(double));
-    fp = DoodzCalloc( Stokes->neq_cont, sizeof(double));
+//    fu = DoodzCalloc( Stokes->neq_mom,  sizeof(double));
+//    fp = DoodzCalloc( Stokes->neq_cont, sizeof(double));
+    
+//    printf("NEQ %d \n", StokesA->neq );
+//    for (int i =0;i<StokesA->neq;i++) {
+//        if (fabs(StokesA->F[i])>1e5) printf("%2.2e \n", StokesA->F[i]);
+////        printf("%2.2e \n", StokesA->b[i]);
+//    }
     
     // Call direct solver
     t_omp = (double)omp_get_wtime();
@@ -721,8 +726,8 @@ void SolveStokesDefectDecoupled( SparseMat *StokesA, SparseMat *StokesB, SparseM
 //    exit(1);
 
     DoodzFree(dx);
-    DoodzFree(fu);
-    DoodzFree(fp);
+//    DoodzFree(fu);
+//    DoodzFree(fp);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -832,6 +837,7 @@ void EvaluateStokesResidualDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
             resx                          += StokesA->F[Stokes->eqn_u[cc]]*StokesA->F[Stokes->eqn_u[cc]];
             mesh->ru[cc]                   = StokesA->F[Stokes->eqn_u[cc]];
             StokesA->F[Stokes->eqn_u[cc]] *= StokesA->d[Stokes->eqn_u[cc]]; // Need to scale the residual here for Defect Correction formulation (F is the RHS)
+//            if ( fabs(StokesA->F[Stokes->eqn_u[cc]]) > 1e5 ) printf( "%2.2e %2.2e %2.2e\n", StokesA->F[Stokes->eqn_u[cc]], StokesA->d[Stokes->eqn_u[cc]], mesh->ru[cc] );
         }
     }
     Nmodel->resx = resx;
@@ -1194,7 +1200,7 @@ void ExtractDiagonalScale(SparseMat *StokesA, SparseMat *StokesB, SparseMat *Sto
 int i, j, locNNZ;
 int I1, J1;
     
-#pragma omp parallel for shared(StokesA,StokesB) private(I1,J1, i, j, locNNZ )
+#pragma omp parallel for shared(StokesA, StokesB) private(I1, J1, i, j, locNNZ )
     for (i=0;i<StokesA->neq; i++) {
         I1     = StokesA->Ic[i];
         locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
@@ -1204,6 +1210,9 @@ int I1, J1;
         }
         StokesB->d[i] = StokesA->d[i] ;
     }
+    
+//for (i=0;i<StokesA->neq; i++)
+//    if (fabs(StokesA->d[i])>1e5) printf("WTF %2.2e\n", StokesA->d[i] );
 //    // Extract Diagonal of D - Pressure block
 //#pragma omp parallel for shared(StokesD) private(i)
 //    for (i=0;i<StokesD->neq; i++) {

@@ -192,33 +192,6 @@ void BuildInitialSolutions( double* u0, double* p0, grid* mesh ) {
 
 void BackToSolutionVector( cholmod_dense* u, cholmod_dense* p, double* x, grid* mesh, SparseMat* Stokes ) {
     
-    // This was simply wrong in case of a free surface problem!
-//    int  kk;
-//
-//    // Get Vx
-//#pragma omp parallel for shared(mesh, u, x, Stokes)
-//        for( kk=0; kk<(mesh->Nz+1)*mesh->Nx; kk++) {
-//            if ( mesh->BCu.type[kk] != 0 && mesh->BCu.type[kk] != 30 && mesh->BCu.type[kk] != 13 && mesh->BCu.type[kk] != 11 && mesh->BCu.type[kk] != -12) {
-//                x[Stokes->eqn_u[kk]] = ((double*)u->x)[Stokes->eqn_u[kk]];
-//            }
-//    }
-//
-//    // Get Vz
-//#pragma omp parallel for shared(mesh, u, x, Stokes)
-//        for( kk=0; kk<mesh->Nz*(mesh->Nx+1); kk++) {
-//            if ( mesh->BCv.type[kk] != 0  && mesh->BCv.type[kk] != 30 && mesh->BCv.type[kk] != 13  && mesh->BCv.type[kk] != 11 && mesh->BCv.type[kk] != -12  ) {
-//                x[Stokes->eqn_v[kk]] = ((double*)u->x)[Stokes->eqn_v[kk]];
-//            }
-//    }
-//
-//    // Get P
-//#pragma omp parallel for shared(mesh, p, x, Stokes)
-//        for( kk=0; kk<(mesh->Nz-1)*(mesh->Nx-1); kk++) {
-//            if ( mesh->BCp.type[kk] == -1 ) {
-//                x[Stokes->eqn_p[kk]] = ((double*)p->x)[kk];
-//            }
-//    }
-    
     int inc = 0, k, l, kk, inc_tot=0;
     
     // Get Vx

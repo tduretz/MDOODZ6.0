@@ -708,6 +708,21 @@ int main( int nargs, char *args[] ) {
                     }
                 }
                 
+//                MinMaxArrayTag( mesh.detadexx_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "detadexx_n     ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.detadezz_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "detadezz_n     ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.detadexx_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "detadgxz_n     ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.detadexx_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "detadexx_s     ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.detadezz_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "detadezz_s     ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.detadgxz_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "detadgxz_s     ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.D11_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "D21_n     ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.D12_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "D22_n     ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.D13_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "D23_n     ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.D14_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "D24_n     ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.D31_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "D31_s     ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.D32_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "D32_s     ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.D33_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "D33_s     ", mesh.BCg.type );
+//                MinMaxArrayTag( mesh.D34_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "D34_s     ", mesh.BCg.type );
+                
                 // Diagonal scaling
                 if ( model.diag_scaling ) {
                     if ( model.Newton          == 0 )  ExtractDiagonalScale( &StokesA, &StokesB, &StokesC, &StokesD );

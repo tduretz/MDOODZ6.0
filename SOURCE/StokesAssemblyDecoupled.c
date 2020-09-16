@@ -3200,6 +3200,16 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         // uC
         AddCoeff2( JtempA[ith], AtempA[ith], eqn, eqn,                  &(nnzc2A[ith]), uC*celvol, mesh->BCu.type[iVxC],    mesh->BCu.val[iVxC],    StokesA->bbc);
 
+        
+//        if (fabs(uC*celvol)>1e6) {
+//            printf("Rhooooo uC=%2.2e celvol = %2.2e inS = %2.2e\n", uC , celvol, inS);
+//            printf("D11W=%2.2e, D12W=%2.2e, D13W=%2.2e, D14W=%2.2e\n", D11W, D12W, D13W, D14W);
+//            printf("D11E=%2.2e, D12E=%2.2e, D13E=%2.2e, D14E=%2.2e\n", D11E, D12E, D13E, D14E);
+//            printf("D31S=%2.2e, D32S=%2.2e, D33S=%2.2e, D34S=%2.2e\n", D31S, D32S, D33S, D34S);
+//            printf("D31N=%2.2e, D32N=%2.2e, D33N=%2.2e, D34N=%2.2e\n", D31N, D32N, D33N, D34N);
+//
+//        }
+        
         // uE
         if (mesh->BCu.type[iVxE]  != 30)     AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_u[iVxE],  &(nnzc2A[ith]), uE*celvol, mesh->BCu.type[iVxE],  mesh->BCu.val[iVxE],  StokesA->bbc);
 
@@ -4200,7 +4210,7 @@ void BuildJacobianOperatorDecoupled( grid *mesh, params model, int lev, double *
 //        }
 //
 //        MinMaxArray(StokesA->d, 1, StokesA->neq, "diag. A" );
-
+//
 //        printf("\n");
 //
 //            MinMaxArray(StokesA->A, 1, StokesA->nnz, "A" );

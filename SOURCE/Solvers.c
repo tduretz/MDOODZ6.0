@@ -44,6 +44,42 @@
 #define printf(...) printf("")
 #endif
 
+void CheckArrays( cholmod_dense* fu, cholmod_dense* fp, cholmod_dense* bu, cholmod_dense* bp, grid* mesh, SparseMat* Stokes ) {
+    
+    int inc = 0, k, l, kk, inc_tot=0;
+    
+    // Get Vx
+    for( l=0; l<mesh->Nz+1; l++) {
+        for( k=0; k<mesh->Nx; k++) {
+            kk = k + l*mesh->Nx;
+            if ( mesh->BCu.type[kk] != 0 && mesh->BCu.type[kk] != 30 && mesh->BCu.type[kk] != 13 && mesh->BCu.type[kk] != 11 && mesh->BCu.type[kk] != -12) {
+                if ( fabs( ((double*)fu->x)[inc]) > 1e5 ) {
+                    printf("CHK X --- %2.2e --- %2.2e\n", ((double*)fu->x)[inc], ((double*)bu->x)[inc]);
+                }
+
+//                x[inc_tot] = ((double*)u->x)[inc];
+                inc++;
+                inc_tot++;
+            }
+        }
+    }
+    
+    // Get Vz
+    for( l=0; l<mesh->Nz; l++) {
+        for( k=0; k<mesh->Nx+1; k++) {
+            kk = k + l*(mesh->Nx+1);
+            if ( mesh->BCv.type[kk] != 0  && mesh->BCv.type[kk] != 30 && mesh->BCv.type[kk] != 13  && mesh->BCv.type[kk] != 11 && mesh->BCv.type[kk] != -12  ) {
+                if ( fabs( ((double*)fu->x)[inc]) > 1e5 ) {
+                    printf("CHK Y --- %2.2e --- %2.2e\n\n", ((double*)fu->x)[inc], ((double*)bu->x)[inc]);
+                }
+//                x[inc_tot] = ((double*)u->x)[inc];
+                inc++;
+                inc_tot++;
+            }
+        }
+    }
+}
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -2206,6 +2242,11 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     c     = pardi->c;
 
     // --------------- Pre-process--------------- //
+    
+//    printf("NEQ %d \n", matA->neq );
+//    for (i =0;i<matA->neq;i++) {
+//        if (fabs(rhs_mom[i])>1e5) printf("%2.2e \n", rhs_mom[i]);
+//    }
 
     printf("Killer solver...\n");
     printf("Preparing Matrices...\n");
@@ -2244,6 +2285,10 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
         }
     }
 
+//    MinMaxArray( (double*)Dcm0->x, 1.0, (int)matC->neq, "PP");
+//    IsNanArray2DFP( (double*)Dcm0->x, (int)matC->neq );
+//    IsInfArray2DFP( (double*)Dcm0->x, (int)matC->neq );
+    
     clock_t t_omp;
     t_omp = (double)omp_get_wtime();
 
@@ -2474,6 +2519,8 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     printf("Initial residual:\n");
     MinMaxArrayVal( fu->x, matA->neq, &minru0, &maxru0 );
     NormResidualCholmod( &ru, &rp, fu, fp, matA->neq, matC->neq, model, scaling, 0 );
+    
+//    CheckArrays( fu, fp, bu, bp, mesh, Stokes );
 
     for ( k=0; k<nitmax; k++) {
 

@@ -1,6 +1,6 @@
 /**** RESTART ****/
-istep = 00001
-irestart = 0
+istep = 00024
+irestart = 1
 
 /**** OUTPUT FILES ****/
 writer          = 1
@@ -18,16 +18,13 @@ T   = 3.3197e+04
 /**** SPACE-TIME ****/
 Nx      = 101
 Nz      = 101
-Nt      = 1
+Nt      = 50
 xmin    = -25.000000e3
 zmin    = -25.000000e3
 xmax    =  25.000000e3
 zmax    =  25.000000e3
 dt      = 1.2623e+11
 Courant = 0.3
-penalty = 1e5
-lsolver = -1
-pc_type = 0
 
 /**** SWITCHES ****/
 ismechanical    = 1
@@ -48,6 +45,8 @@ shear_heat      = 1
 adiab_heat      = 0
 fstrain         = 1
 diag_scaling    = 1
+penalty         = 1e5
+pc_type         = 0
 
 /**** SETUP DEPENDANT ****/
 EpsBG           =-5e-14

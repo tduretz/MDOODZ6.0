@@ -332,8 +332,8 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 mesh->D33_s[k] = 0.0;
                 mesh->D34_s[k] = 0.0;
             }
-            if (isnan(mesh->D34_s[k])) exit(1);
-            if (isinf(mesh->D34_s[k])) exit(1);
+            if (isnan(mesh->D34_s[k])) { printf("EXIT: D34 is NAN!\n"); exit(1); }
+            if (isinf(mesh->D34_s[k])) { printf("EXIT: D34 is INF!\n"); exit(1); }
 
         }
 
@@ -1584,7 +1584,13 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
 
     if ( comp == 0 ) Tyield     = C*cos(fric) + ( P + model->PrBG)*sin(fric);  // need to shift the yield since pressure is shifted
     if ( comp == 1 ) Tyield     = C*cos(fric) + P*sin(fric);                   // no need to shift yield if compressible: set initial pressure Pconf
-    Tyield                      = MINV( Tyield, materials->Slim[phase] );
+    
+    // Von-Mises cut-off
+    if (materials->Slim[phase] < Tyield) {
+        fric   = 0.0;
+        C      = materials->Slim[phase];
+        Tyield = materials->Slim[phase];
+    }
 
     //------------------------------------------------------------------------//
     // Reaction stuff: 1. Update reaction progress
@@ -1803,6 +1809,9 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     
     // Check yield stress
     F_trial = Tii - Tyield;
+    
+    double Tyield_trial = Tyield;
+    double F_trial_trial = F_trial;
 
     if (F_trial > 1e-17) {
         
@@ -1905,8 +1914,14 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         (*ddivpdp)    = -dQdP*dlamdP;
         inv_eta_diss += 1.0/eta_vep;
     }
-
-
+    
+//    if ( fabs(*detadexx) >1e10 ) {
+//        printf("Viscosity: deta_ve_dExx %2.2e deta_vep_dExx %2.2e\n", deta_ve_dExx, deta_vep_dExx);
+//        printf("exx = %2.2e Exx = %2.2e Tyield = %2.2e, ccos = %2.2e, psin=%2.2e, overS = %2.2e, fric = %2.2e, C = %2.2e\n", exx, Exx, Tyield, C*cos(fric)*scaling->S, Pc*sin(fric)*scaling->S, gdot*eta_vp*scaling->S, fric, C*scaling->S);
+//        printf("Ft =%2.2e Tyt = %2.2e\n", F_trial_trial*scaling->S, Tyield_trial*scaling->S);
+//        exit(1);
+//    }
+    
     /*----------------------------------------------------*/
     /*----------------------------------------------------*/
     /*----------------------------------------------------*/
@@ -2196,7 +2211,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
 
                 if ( cond == 1 ) {
 
-                    eta =  Viscosity( p, mesh->mu_s[c1], mesh->T_s[c1], mesh->P_s[c1], mesh->d0_s[c1], mesh->phi_s[c1], X, mesh->exxd_s[c1], mesh->ezzd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->szzd0_s[c1], mesh->sxz0[c1], materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &d1s, mesh->strain_s[c1], mesh->dil_s[c1], mesh->fric_s[c1], mesh->C_s[c1], &detadexx, &detadezz, &detadexz, &detadp,mesh->p0_s[c1], mesh->ttrans0_s[c1], &Xreac, &ttrans, &OverS, &ddivpdexx, &ddivpdezz, &ddivpdexz, &ddivpdp, &Pcorr, mesh->bet_s[c1], mesh->div_u_s[c1], &div_el, &div_pl );
+                    eta =  Viscosity( p, mesh->mu_s[c1], mesh->T_s[c1], mesh->P_s[c1], mesh->d0_s[c1], mesh->phi_s[c1], X, mesh->exxd_s[c1], mesh->ezzd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->szzd0_s[c1], mesh->sxz0[c1], materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &d1s, mesh->strain_s[c1], mesh->dil_s[c1], mesh->fric_s[c1], mesh->C_s[c1], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_s[c1], mesh->ttrans0_s[c1], &Xreac, &ttrans, &OverS, &ddivpdexx, &ddivpdezz, &ddivpdexz, &ddivpdp, &Pcorr, mesh->bet_s[c1], mesh->div_u_s[c1], &div_el, &div_pl );
                     
                 }
 
@@ -2207,6 +2222,8 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                     if ( cond == 1 ) mesh->detadezz_s[c1] += mesh->phase_perc_s[p][c1] * detadezz;
                     if ( cond == 1 ) mesh->detadgxz_s[c1] += mesh->phase_perc_s[p][c1] * detadexz/2.0;
                     if ( cond == 1 ) mesh->detadp_s[c1]   += mesh->phase_perc_s[p][c1] * detadp;
+                    
+//                    if (fabs(mesh->detadexx_s[c1])>1e10 ) printf("%d %2.2e %2.2e %2.2e\n", p, mesh->detadexx_s[c1], mesh->phase_perc_s[p][c1], detadexx );
                 }
                 if (average ==0 || average==2) {
                     if ( cond == 1 ) mesh->sxz[c1]    += mesh->phase_perc_s[p][c1] * txz1;
