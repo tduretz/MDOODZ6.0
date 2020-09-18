@@ -2316,23 +2316,25 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void CohesionFrictionDilationGrid( grid* mesh, mat_prop materials, params model, scale scaling ) {
+void CohesionFrictionDilationGrid( grid* mesh, markers* particles, mat_prop materials, params model, scale scaling ) {
 
     int p, k, l, Nx, Nz, Ncx, Ncz, c0, c1;
     int average = 0;
-    double fric, dil, C, strain_acc;
+    double fric, dil, C, strain_acc, fric0, dil0, C0, mu_strain;
+    double dstrain, dfric, dcoh, ddil, *strain_pl;
 
     Nx = mesh->Nx;
     Nz = mesh->Nz;
     Ncx = Nx-1;
     Ncz = Nz-1;
+    
+    // Plastic strain
+    strain_pl  = DoodzCalloc((model.Nx-1)*(model.Nz-1), sizeof(double));
+    Interp_P2C ( *particles,  particles->strain_pl, mesh, strain_pl, mesh->xg_coord, mesh->zg_coord, 1, 0 );
 
     // Calculate cell centers cohesion and friction
-    for ( l=0; l<Ncz; l++ ) {
-        for ( k=0; k<Ncx; k++ ) {
-
-            // Cell center index
-            c0 = k  + l*(Ncx);
+#pragma omp parallel for shared( mesh, strain_pl ) private( p, c0, strain_acc, fric, dil, C, fric0, dil0, C0, dstrain, ddil, dcoh, dfric, mu_strain ) firstprivate( model, materials, average, Ncx, Ncz )
+    for ( c0=0; c0<Ncx*Ncz; c0++ ) {
 
             // First - initialize to 0
             mesh->fric_n[c0] = 0.0;
@@ -2343,7 +2345,7 @@ void CohesionFrictionDilationGrid( grid* mesh, mat_prop materials, params model,
             if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
 
                 // Retrieve accumulated plastic strain
-                strain_acc = mesh->strain_n[c0];
+                strain_acc = strain_pl[c0];
 
                 // Loop on phases
                 for ( p=0; p<model.Nb_phases; p++) {
@@ -2353,29 +2355,32 @@ void CohesionFrictionDilationGrid( grid* mesh, mat_prop materials, params model,
                     C    = materials.C[p];
 
                     // Apply strain softening
-                    if ( model.isPl_soft == 1 ) {
-
-                        // If we are below the lower strain limit
-                        if (strain_acc < materials.pls_start[p]) {
-                            fric = materials.phi[p];
-                            dil  = materials.psi[p];
-                            C    = materials.C[p];
-                        }
-                        // If we are above the upper strain limit
-                        if (strain_acc >= materials.pls_end[p]) {
-                            fric = materials.phi_end[p];
-                            dil  = materials.psi_end[p];
-                            C    = materials.C_end[p];
-                        }
-                        
-                        // If we are in the softening strain range
-                        if (strain_acc >= materials.pls_start[p] && strain_acc < materials.pls_end[p] ) {
-                            fric = materials.phi[p] - (materials.phi[p] - materials.phi_end[p]) * ( strain_acc / (materials.pls_end[p] - materials.pls_start[p]) );
-                            dil  = materials.psi[p] - (materials.psi[p] - materials.psi_end[p]) * ( strain_acc / (materials.pls_end[p] - materials.pls_start[p]) );
-                            C    = materials.C[p]   - (materials.C[p]   - materials.C_end[p]  ) * ( strain_acc / (materials.pls_end[p] - materials.pls_start[p]) );
-//                            C    = materials.C[p]   + (  materials.C_end[p] -   materials.C[p]) * MINV( 1.0, strain_acc /materials.pls_end[p] );
-                        }
+                    dstrain   = materials.pls_end[p] - materials.pls_start[p];
+                    mu_strain = 0.5*(materials.pls_end[p] + materials.pls_start[p]);
+                    
+                    if (materials.phi_soft[p] == 1) {
+                        dfric     = materials.phi[p]     - materials.phi_end[p];
+                        fric      = materials.phi[p]     - dfric/2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.phi_end[p];
+                        fric0     = materials.phi[p]     - dfric/2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.phi_end[p];
+                        fric      = fric * dfric / fric0 + materials.phi_end[p];
                     }
+                    
+                    if (materials.psi_soft[p] == 1) {
+                        ddil      = materials.psi[p]     - materials.psi_end[p];
+                        dil       = materials.psi[p]     - ddil /2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.psi_end[p];
+                        dil0      = materials.psi[p]     - ddil /2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.psi_end[p];
+                        dil       = dil * ddil  / dil0  + materials.psi_end[p];
+                    }
+                    
+                    if (materials.coh_soft[p] == 1) {
+                        dcoh      = materials.C[p]       - materials.C_end[p];
+                        C         = materials.C[p]       - dcoh /2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.C_end[p];
+                        C0        = materials.C[p]       - dcoh /2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.C_end[p];
+                        C         = C * dcoh /C0 + materials.C_end[p];
+                    }
+                    
+//                    printf("%d C = %2.2e Cs = %2.2e Ce = %2.2e mu_strain=%2.2e dstrain=%2.2e\n", p, C*scaling.S, materials.C[p]*scaling.S,  materials.C_end[p]*scaling.S, mu_strain, dstrain);
+                    
 
                     // Arithmetic
                     if (average ==0) {
@@ -2407,15 +2412,17 @@ void CohesionFrictionDilationGrid( grid* mesh, mat_prop materials, params model,
 
             }
         }
-    }
+    
+    // Freedom
+    DoodzFree( strain_pl );
+    
+    // Plastic strain
+    strain_pl  = DoodzCalloc((model.Nx-0)*(model.Nz-0), sizeof(double));
+    Interp_P2N ( *particles,  particles->strain_pl, mesh, strain_pl, mesh->xg_coord, mesh->zg_coord, 1, 0, &model );
 
-
+#pragma omp parallel for shared( mesh, strain_pl ) private( p, c1, strain_acc, fric, dil, C, fric0, dil0, C0, dstrain, ddil, dcoh, dfric, mu_strain ) firstprivate( model, materials, average, Nx, Nz )
     // Calculate vertices cohesion and friction
-    for ( l=0; l<Nz; l++ ) {
-        for ( k=0; k<Nx; k++ ) {
-
-            // Vertex index
-            c1 = k + l*Nx;
+    for ( c1=0; c1<Nx*Nz; c1++ ) {
 
             // First - initialize to 0
             mesh->fric_s[c1] = 0.0;
@@ -2426,7 +2433,7 @@ void CohesionFrictionDilationGrid( grid* mesh, mat_prop materials, params model,
             if ( mesh->BCg.type[c1] != 30 ) {
 
                 // Retrieve accumulated plastic strain
-                strain_acc = mesh->strain_s[c1];
+                strain_acc = strain_pl[c1];
 
                 // Loop on phases
                 for ( p=0; p<model.Nb_phases; p++) {
@@ -2436,30 +2443,32 @@ void CohesionFrictionDilationGrid( grid* mesh, mat_prop materials, params model,
                     C    = materials.C[p];
 
                     // Apply strain softening
-                    if ( model.isPl_soft == 1 ) {
-
-                        // If we are below the lower strain limit
-                        if (strain_acc < materials.pls_start[p]) {
-                            fric = materials.phi[p];
-                            dil  = materials.psi[p];
-                            C    = materials.C[p];
-                        }
-                        // If we are above the upper strain limit
-                        if (strain_acc >= materials.pls_end[p]) {
-                            fric = materials.phi_end[p];
-                            dil  = materials.psi_end[p];
-                            C    = materials.C_end[p];
-                        }
-                        // If we are in the softening strain range
-                        if (strain_acc >= materials.pls_start[p] && strain_acc < materials.pls_end[p] ) {
-                            fric = materials.phi[p] - (materials.phi[p] - materials.phi_end[p]) * ( strain_acc / (materials.pls_end[p] - materials.pls_start[p]) );
-                            dil  = materials.psi[p] - (materials.psi[p] - materials.psi_end[p]) * ( strain_acc / (materials.pls_end[p] - materials.pls_start[p]) );
-                            C    = materials.C[p]   - (  materials.C[p] -   materials.C_end[p]) * ( strain_acc / (materials.pls_end[p] - materials.pls_start[p]) );
-                        }
+                    dstrain   = materials.pls_end[p] - materials.pls_start[p];
+                    mu_strain = 0.5*(materials.pls_end[p] + materials.pls_start[p]);
+                    
+                    if (materials.phi_soft[p] == 1) {
+                        dfric     = materials.phi[p]     - materials.phi_end[p];
+                        fric      = materials.phi[p]     - dfric/2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.phi_end[p];
+                        fric0     = materials.phi[p]     - dfric/2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.phi_end[p];
+                        fric      = fric * dfric / fric0 + materials.phi_end[p];
+                    }
+                    
+                    if (materials.psi_soft[p] == 1) {
+                        ddil      = materials.psi[p]     - materials.psi_end[p];
+                        dil       = materials.psi[p]     - ddil /2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.psi_end[p];
+                        dil0      = materials.psi[p]     - ddil /2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.psi_end[p];
+                        dil       = dil * ddil  / dil0  + materials.psi_end[p];
+                    }
+                    
+                    if (materials.coh_soft[p] == 1) {
+                        dcoh      = materials.C[p]       - materials.C_end[p];
+                        C         = materials.C[p]       - dcoh /2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.C_end[p];
+                        C0        = materials.C[p]       - dcoh /2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.C_end[p];
+                        C         = C * dcoh /C0 + materials.C_end[p];
                     }
 
                     // Arithmetic
-                    if (average ==0) {
+                    if (average == 0) {
                         mesh->fric_s[c1] += mesh->phase_perc_s[p][c1] * fric;
                         mesh->dil_s[c1]  += mesh->phase_perc_s[p][c1] * dil;
                         mesh->C_s[c1]    += mesh->phase_perc_s[p][c1] * C;
@@ -2473,7 +2482,7 @@ void CohesionFrictionDilationGrid( grid* mesh, mat_prop materials, params model,
                     // Geometric
                     if (average == 2) {
                         mesh->fric_s[c1] += mesh->phase_perc_s[p][c1] *  log(fric);
-                        mesh->dil_s[c1] += mesh->phase_perc_s[p][c1] *  log(dil);
+                        mesh->dil_s[c1]  += mesh->phase_perc_s[p][c1] *  log(dil);
                         mesh->C_s[c1]    += mesh->phase_perc_s[p][c1] *  log(C);
                     }
                 }
@@ -2486,7 +2495,10 @@ void CohesionFrictionDilationGrid( grid* mesh, mat_prop materials, params model,
                 if ( average==2 ) mesh->C_s[c1]    = exp(mesh->C_s[c1]);
             }
         }
-    }
+    
+    // Freedom
+    DoodzFree( strain_pl );
+    
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/

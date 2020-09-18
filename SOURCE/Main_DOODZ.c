@@ -312,7 +312,7 @@ int main( int nargs, char *args[] ) {
             if ( model.iselastic == 1 ) ShearModCompExpGrid( &mesh, materials, model, scaling );
 
             // Compute cohesion and friction angle on the grid
-            CohesionFrictionDilationGrid( &mesh, materials, model, scaling );
+            CohesionFrictionDilationGrid( &mesh, &particles, materials, model, scaling );
 //            Interp_Grid2P( particles, particles.P,    &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
 //            Interp_Grid2P( particles, particles.T,    &mesh, mesh.T,    mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type );
             NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
@@ -537,13 +537,8 @@ int main( int nargs, char *args[] ) {
 
             //-------------------------------------------------------------------------------------------------------------
 
-            if (model.isPl_soft == 1) {
-                Interp_P2C ( particles, particles.strain_pl, &mesh, mesh.strain_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                Interp_P2N ( particles, particles.strain_pl, &mesh, mesh.strain_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-            }
-
             // Compute cohesion and friction angle on the grid
-            CohesionFrictionDilationGrid( &mesh, materials, model, scaling );
+            CohesionFrictionDilationGrid( &mesh, &particles, materials, model, scaling );
 
             // Detect compressible cells
             if (model.compressible == 1) DetectCompressibleCells ( &mesh, &model );
@@ -561,7 +556,7 @@ int main( int nargs, char *args[] ) {
             InterpVerticesToCentroidsDouble( mesh.sxz0_n,  mesh.sxz0,  &mesh, &model, &scaling );
 
             ShearModCompExpGrid( &mesh, materials, model, scaling );
-            CohesionFrictionDilationGrid( &mesh, materials, model, scaling );
+            CohesionFrictionDilationGrid( &mesh, &particles, materials, model, scaling );
             // Detect compressible cells
             if (model.compressible == 1) DetectCompressibleCells ( &mesh, &model );
         }

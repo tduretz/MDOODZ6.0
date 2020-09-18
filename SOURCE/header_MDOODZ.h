@@ -55,6 +55,7 @@ struct _mat_prop {
     DoodzFP ppzm[20], Kpzm[20], Qpzm[20], Gpzm[20], cpzm[20], Lpzm[20], gs_ref[20];
     int     gs[20], cstv[20], pwlv[20], linv[20], expv[20], gbsv[20], phase_diagram[20], density_model[20];
     DoodzFP C_end[20], phi_end[20], psi_end[20], pls_start[20], pls_end[20], eta_vp[20], n_vp[20];
+    int     phi_soft[20], psi_soft[20], coh_soft[20];
     DoodzFP Preac[20], treac[20];
     int     Reac[20];
     int     phase_mix[20], phase_two[20];
@@ -109,7 +110,7 @@ struct _params {
 	int ismechanical, isperiodic_x, isinertial, iselastic, isnonnewtonian, isthermal, ispureshear_ale, free_surf, eqn_state, write_markers, write_debug, write_energies, no_markers;
     double free_surf_stab;
     int dt_constant, moving_front, imp_advection, RK, line_search, thermal_eq, subgrid_diff, adiab_heat, shear_heat, advection, fstrain;
-    int isPl_soft, surf_processes, cpc, surf_remesh, loc_iter, therm_pert, surf_ised1, surf_ised2, MantleID, topografix;
+    int surf_processes, cpc, surf_remesh, loc_iter, therm_pert, surf_ised1, surf_ised2, MantleID, topografix;
     double EpsBG, user0, user1, user2, user3, user4, user5, user6, user7, user8;
 	char *input_file;
     int    Nb_phases;
@@ -397,7 +398,7 @@ void InitialiseSolutionVector( grid*, SparseMat*, params* );
 void RotateStresses( grid, markers*, params, scale* );
 void UpdateParticleStress( grid*, markers*, params*, mat_prop*, scale* );
 void ShearModCompExpGrid( grid*, mat_prop, params, scale );
-void CohesionFrictionDilationGrid( grid* , mat_prop, params, scale  );
+void CohesionFrictionDilationGrid( grid*, markers*, mat_prop, params, scale  );
 
 // Non-Newtonian rheology
 void UpdateNonLinearity( grid*, markers*, markers*, surface*, mat_prop, params*, Nparams*, scale, int, double );

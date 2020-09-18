@@ -1,5 +1,5 @@
 **** RESTART ****/
-istep = 00380
+istep = 00200
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -20,7 +20,7 @@ T   = 400
 /**** SPACE-TIME ****/
 Nx   = 401
 Nz   = 41
-Nt   = 1600
+Nt   = 800
 xmin = -280.000000e3
 zmin =  0.000000e3
 xmax =  0.000000e3
@@ -74,7 +74,7 @@ Qr   = 1e-20
 C    = 5e7
 phi  = 30
 psi  = 5
-eta_vp = 5e20
+eta_vp = 1e21
 n_vp   = 1.0
 Slim = 500e6
 alp  = 0.0
@@ -89,10 +89,12 @@ gsel = 0
 eta0 = 1e23
 npwl = 1.0
 Qpwl = 0
-plss = 0.1
-plse = 1.1
-phie = 10.0
-Ce   = 1.0e7
+coh_soft = 1
+Ce       = 25e6
+phi_soft = 1
+phie     = 15
+plss = 0.5
+plse = 1.0
 
 ID   = 1
 rho  = 2500.00 / viscous sediments
@@ -100,8 +102,8 @@ mu   = 2e10
 Cv   = 1050
 k    = 2.5
 Qr   = 1e-20
-C    = 1e60
-phi  = 50
+C    = 1e20
+phi  = 30
 Slim = 500e6
 alp  = 0.0
 bet  = 3e-11

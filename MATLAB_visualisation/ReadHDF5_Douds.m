@@ -3,7 +3,7 @@ function Main
 
 clear
 clear all
-close all
+% close all
 clc
 
 DEBUG = 0;
@@ -11,23 +11,18 @@ DEBUG = 0;
 MarkSize=1e0 ;
 
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Compression/'
-% path = '/Users/tduretz/REPO_GIT/TEST/SOURCE/'
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Shear_periodic_VEVP/'
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
-% path = '/Users/tduretz/REPO_GIT/MDOODZ6.0_debug/SOURCE/'
-% path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/ShearInclusionFiniteStrain/'
-% path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/ShearLayerFiniteStrain/'
-% path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/RUNS/SubInit_Cart_MR/'
-% path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/RUNS/Pauline_600x800_6its/'
-% path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/RUNS/Pauline_200x300_Eulerian_markers/'
-% path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/RUNS/SubInit_Cart_MR_InflowCheck0/'
-
+path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/'
+% path = '/Volumes/Seagate4TB/Wedge_MD6/HR/'
+% path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/RUN_MetamSoleLitho_09/'
+% 
 cd(path)
 
 % File
-istart = 40;
+istart = 200;
 ijump  = 10;
-iend   = 40;
+iend   = 200;
 
 %--------------------------------------------------
 % what do you want to plot:
@@ -39,15 +34,15 @@ rho_plot        = 0;
 phase_on_grid   = 0;
 phase_temp2     = 0;
 vel_plot        = 0;
-vel_vectors     = 1;
-vel_divergence  = 1;
+vel_vectors     = 0;
+vel_divergence  = 0;
 pre_plot        = 0;
 dyna_pre        = 0;
 stress_inv      = 1;
 stress_evol     = 0;
 stress_plot     = 0;
 srate_plot      = 0;
-acc_strain      = 0;
+acc_strain      = 1;
 temperature     = 0;
 temp_evol       = 0;
 Stefan          = 0;
@@ -78,7 +73,8 @@ fstrain          = 0;
 shear_heating    = 0;
 princi_stress    = 0;
 director_vector  = 0;
-
+Pl_soft          = 1;
+Sole             = 0;
 
 % Visualisation options
 printfig      = 0;
@@ -116,14 +112,14 @@ maxTxx =  0.642;
 minStr = 0.2;
 maxStr = 0.7;
 
-% minPdyn = -1e9;
-% maxPdyn =  1e9;
+minPdyn = -1e8;
+maxPdyn =  5e8;
 
 % minEta = 19;
 % maxEta = 25;
 
 minEii = -16;
-maxEii = -13.5;
+maxEii = -12;
 
 % minSii = 1e6;
 % maxSii = 400e6;
@@ -1406,7 +1402,7 @@ for istep=istart:ijump:iend
             if istep == 0
                 stress = 0;
             end
-            figure(90)
+            figure(90), 
             hold on
             %         plot(strain, (stress), '.')
 %             s_anal = 2*1e-14*1e21*(1-exp(-time*1e10/1e21));
@@ -1414,11 +1410,11 @@ for istep=istart:ijump:iend
             plot(time/1e3/3600/365/24, (stress), 'k.')
             
             
-            figure(91), hold on
-            plot(time/1e3/3600/365/24, mean(sxxd(:)), 'b.')
-            plot(time/1e3/3600/365/24, mean(sxzc(:)), 'r+')
-            plot(time/1e3/3600/365/24, mean(P(:)), 'sb')
-            plot(time/1e3/3600/365/24, max(P(:)), ' sr')
+%             figure(91), hold on
+%             plot(time/1e3/3600/365/24, mean(sxxd(:)), 'b.')
+%             plot(time/1e3/3600/365/24, mean(sxzc(:)), 'r+')
+%             plot(time/1e3/3600/365/24, mean(P(:)), 'sb')
+%             plot(time/1e3/3600/365/24, max(P(:)), ' sr')
             
             short(icount)  =  strain;
             siivec(icount) = sum(sII(:).*(dx*dz))/vol;
@@ -1830,49 +1826,51 @@ for istep=istart:ijump:iend
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             if exist('minPdyn', 'var') caxis([minPdyn maxPdyn]); end
             
-            if print2screen == 1
-                figCount = figCount +1;
-                figure(figCount), clf
-            else
-                figure('Visible', 'Off')
-            end
-            
-            imagesc( xc_plot, zc_plot, Plith )
-            shading flat,axis xy image, colorbar;
-            hold on
-            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
-            imagesc( xc_plot, zc_plot, Pdyn, 'Visible', 'off' )
-            hold off
-            xlabel(xLabel), ylabel(zLabel)
-            title(['Lithostatic pressure at' TimeLabel])
-            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-            
             if printfig == 1
                 print([path,'./Fig_DynamicPressure/Fig_DynamicPressure',num2str(istep,'%05d'),file_suffix], format, res)
                 close all
             end
+
             
-            if print2screen == 1
-                figCount = figCount +1;
-                figure(figCount), clf
-            else
-                figure('Visible', 'Off')
-            end
+%             if print2screen == 1
+%                 figCount = figCount +1;
+%                 figure(figCount), clf
+%             else
+%                 figure('Visible', 'Off')
+%             end
+%             
+%             imagesc( xc_plot, zc_plot, Plith )
+%             shading flat,axis xy image, colorbar;
+%             hold on
+%             if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+%             imagesc( xc_plot, zc_plot, Pdyn, 'Visible', 'off' )
+%             hold off
+%             xlabel(xLabel), ylabel(zLabel)
+%             title(['Lithostatic pressure at' TimeLabel])
+%             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+%             
             
-            imagesc( xc_plot, 0.5*(zc_plot(2:end)+zc_plot(1:end-1)), diff(Plith,1,1)/dz*1e-5/1000*1000 )
-            
-            hold on
-            %         if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
-            imagesc( xc_plot, 0.5*(zc_plot(2:end)+zc_plot(1:end-1)), diff(Plith,1,1)/dz*1e-5/1000*1000, 'Visible', 'off' )
-            hold off
-            xlabel(xLabel), ylabel(zLabel)
-            title(['dPlith/dz [Pa/m] at' TimeLabel])
-            shading flat,axis xy image, colorbar; caxis([[-0.2757 -0.2747]])
-            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-            if printfig == 1
-                print([path,'./Fig_DynamicPressure/Fig_LithPressure',num2str(istep,'%05d'),file_suffix], format, res)
-                close all
-            end
+%             if print2screen == 1
+%                 figCount = figCount +1;
+%                 figure(figCount), clf
+%             else
+%                 figure('Visible', 'Off')
+%             end
+% 
+%             imagesc( xc_plot, 0.5*(zc_plot(2:end)+zc_plot(1:end-1)), diff(Plith,1,1)/dz*1e-5/1000*1000 )
+% 
+%             hold on
+%             %         if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+%             imagesc( xc_plot, 0.5*(zc_plot(2:end)+zc_plot(1:end-1)), diff(Plith,1,1)/dz*1e-5/1000*1000, 'Visible', 'off' )
+%             hold off
+%             xlabel(xLabel), ylabel(zLabel)
+%             title(['dPlith/dz [Pa/m] at' TimeLabel])
+%             shading flat,axis xy image, colorbar; caxis([[-0.2757 -0.2747]])
+%             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+%             if printfig == 1
+%                 print([path,'./Fig_DynamicPressure/Fig_LithPressure',num2str(istep,'%05d'),file_suffix], format, res)
+%                 close all
+%             end
             
             
         end
@@ -4962,6 +4960,160 @@ for istep=istart:ijump:iend
             end
 
             clear VizGrid.ph VizGrid.x VizGrid.z
+            
+        end
+        
+        %--------------------------------------------------
+        % plot plastic moduli
+        %--------------------------------------------------
+        if (Pl_soft==1)
+            
+            Cent.Phi = hdf5read(filename,'/Centers/friction'); Cent.Phi = cast(Cent.Phi, 'double');
+            Phi      = reshape(Cent.Phi,params(4)-1,params(5)-1)';
+            
+            Cent.Coh = hdf5read(filename,'/Centers/cohesion'); Cent.Phi = cast(Cent.Coh, 'double');
+            Coh      = reshape(Cent.Coh,params(4)-1,params(5)-1)';
+            
+            if print2screen == 1
+                figCount = figCount +1;
+                figure(figCount), clf
+            else
+                figure('Visible', 'Off')
+            end
+            
+            subplot(211)
+            Phi = Phi*180/pi;
+            imagesc( xc_plot, zc_plot, Phi )
+            shading flat,axis xy image, colorbar;
+            colormap('jet')
+            hold on
+            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+            imagesc( xc_plot, zc_plot, Phi, 'Visible', 'off' )
+            hold off
+            xlabel(xLabel), ylabel(zLabel)
+            title(['Phi at' TimeLabel ' min = ' num2str(min(Phi(:))) ' deg max = ' num2str(max(Phi(:))) ' deg'])
+            caxis([15 30])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            
+            subplot(212)
+            imagesc( xc_plot, zc_plot, Coh )
+            shading flat,axis xy image, colorbar;
+            colormap('jet')
+            hold on
+            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+            imagesc( xc_plot, zc_plot, Coh, 'Visible', 'off' )
+            hold off
+            xlabel(xLabel), ylabel(zLabel)
+            title(['Coh at' TimeLabel ' min = ' num2str(min(Coh(:))) ' MPa max = ' num2str(max(Coh(:))) ' MPa'])
+            caxis([25e6 50e6])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            
+            
+            if printfig == 1
+                print([path, './Fig_Phi/Fig_Phi', num2str(istep,'%05d'),file_suffix], format, res)
+                close all
+            end
+            
+        end
+        
+        
+        
+        %--------------------------------------------------
+        % plot Sole
+        %--------------------------------------------------
+        if (Sole==1)
+            
+            %%%%%%%% PHASE
+            VizGrid = PhaseMap_hr( filename, VizGrid );
+
+            Cent.T = hdf5read(filename,'/Centers/T'); Cent.T = cast(Cent.T, 'double');
+            T = reshape(Cent.T,params(4)-1,params(5)-1)' - 273.15;
+            
+            Cent.P  = hdf5read(filename,'/Centers/P');
+            Cent.P  = cast(Cent.P , 'double');
+            P = reshape(Cent.P,params(4)-1,params(5)-1)';
+            
+            rho_n = hdf5read(filename,'/Centers/rho_n');
+            rho_n = cast(rho_n, 'double');
+            rhoc = reshape(rho_n,params(4)-1,params(5)-1)';
+            
+            % Build lithostatic pressure
+            dz = abs(zc_coord(2)-zc_coord(1));
+            Plith = P;
+            Plith(ncz, :) = rhoc(ncz,:)*gz*dz;
+            for o=ncz-1:-1:1
+                Plith(o, :) = Plith(o+1, :) - rhoc(o,:)*gz*dz;
+            end
+            Pdyn = P-Plith;
+            
+%             if print2screen == 1
+%                 figCount = figCount +1;
+%                 figure(figCount), clf
+%             else
+%                 figure('Visible', 'Off')
+%             end
+%             
+%             imagesc( xc_plot, zc_plot, Pdyn )
+%             shading flat,axis xy image, colorbar;
+%             hold on
+%             if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+%             imagesc( xc_plot, zc_plot, Pdyn, 'Visible', 'off' )
+%             hold off
+%             xlabel(xLabel), ylabel(zLabel)
+%             title(['Dynamic pressure at' TimeLabel])
+%             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+%             if exist('minPdyn', 'var') caxis([minPdyn maxPdyn]); end
+            
+            SoleCheck = zeros(size(P));
+            SoleCheck( P>0.6e9 & P<1.25e9 & T>550 & T<850) = 1;
+            
+            if print2screen == 1
+                figCount = figCount +1;
+                figure(figCount), clf
+            else
+                figure('Visible', 'Off')
+            end
+
+        
+            clf
+            colormap(map);
+            imagesc(VizGrid.x_plot_hr, VizGrid.z_plot_hr, VizGrid.ph_hr);
+            set(gca,'Ydir','Normal')
+            shading interp, caxis ([-1 size(map,1)-2])%, axis ij
+            axis image
+            title(['Sole ' TimeLabel], 'FontSize', 15, 'FontName', 'Myriad pro');
+            hold on    
+            [c, h] = contour(VizGrid.x_plot, VizGrid.z_plot, SoleCheck, [0 1]);
+            set(h, 'Color', 'w', 'LineWidth', 1.0);
+            hold off
+            
+%             if print2screen == 1
+%                 figCount = figCount +1;
+%                 figure(figCount), clf
+%             else
+%                 figure('Visible', 'Off')
+%             end
+%             
+%             imagesc( xc_plot, zc_plot, SoleCheck )
+%             shading flat,axis xy image, colorbar;
+%             colormap('jet')
+%             hold on
+%             if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+%             %         imagesc( xc_plot, zc_plot, T, 'Visible', 'off' )
+%             
+%             imagesc( xc_plot, zc_plot, T, 'Visible', 'off' )
+%             hold off
+%             
+%             xlabel(xLabel), ylabel(zLabel)
+%             title(['T at' TimeLabel ' min = ' num2str(min(T(:))) ' C max = ' num2str(max(T(:))) ' C'])
+%             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+%             %         if exist('minT', 'var') caxis([minT maxT]); end
+%             %         caxis([273 1000])
+
+            if printfig == 1
+                print([path, './Fig_Sole', num2str(istep,'%05d'),file_suffix], format, res)
+                close all
+            end
             
         end
         

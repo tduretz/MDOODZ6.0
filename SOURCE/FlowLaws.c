@@ -97,22 +97,7 @@ void ReadDataPowerLaw( mat_prop* mat, params* model, int k, int number, scale* s
             break;
             
         /******************************** Crust flow laws *********************************/
-        
-        case 46:
-            printf("Anorthite 60 - Rybacki & Dresen (2004):\n" ); // added by Pauline
-            mat->tpwl[k] = 1;
-            mat->npwl[k] = 3.0;
-            mat->mpwl[k] = 0.0;
-            mat->rpwl[k] = 0.0;
-            mat->Qpwl[k] = 235.0e3;
-            mat->Vpwl[k] = 0.0e-6;
-            mat->Apwl[k] = 3.16228e-20;
-            mat->fpwl[k] = 0.0;
-            mat->apwl[k] = 0.0;
-            success      = 1;
-            break;
-
-        
+                
         case 10:
             printf("Westerly Granite (dry) - Hansen & Carter (1983):\n" );
             mat->tpwl[k] = 1;
@@ -338,7 +323,7 @@ void ReadDataPowerLaw( mat_prop* mat, params* model, int k, int number, scale* s
             break;
         
         case 26:
-            printf("Wet Quartzite - Burov 2011, Brace and Kohlstedt 1980, Kirby and Kronenberg 1987, Kohlstedt et al. 1995 :\n" );
+            printf("Wet Quartzite - Burov (2011), Brace and Kohlstedt (1980), Kirby and Kronenberg (1987), Kohlstedt et al. (1995):\n" );
             mat->tpwl[k] = 1; //1           // NEED TO CHECKED!!!
             mat->npwl[k] = 2.4;
             mat->mpwl[k] = 0.0;
@@ -352,7 +337,7 @@ void ReadDataPowerLaw( mat_prop* mat, params* model, int k, int number, scale* s
             break;
             
         case 27:
-            printf("Dry Quartz - Ranalli et al. (1995, 1997), Ranalli (2003) :\n" );
+            printf("Dry Quartz - Ranalli et al. (1995, 1997), Ranalli (2003):\n" );
             mat->tpwl[k] = 1;
             mat->npwl[k] = 2.4;
             mat->mpwl[k] = 0.0;
@@ -375,6 +360,63 @@ void ReadDataPowerLaw( mat_prop* mat, params* model, int k, int number, scale* s
             mat->Qpwl[k] = 135.0e3;
             mat->Vpwl[k] = 0.0e-6;
             mat->Apwl[k] = 6.3096e-36;
+            mat->fpwl[k] = 0.0;
+            mat->apwl[k] = 0.0;
+            success      = 1;
+            break;
+            
+        case 29 :
+            printf("Basalt - Hacker & Chritie (1990):\n" );
+            mat->tpwl[k] = 0.0;
+            mat->npwl[k] = 3.7;
+            mat->mpwl[k] = 0.0;
+            mat->rpwl[k] = 0.0;
+            mat->Qpwl[k] = 244e3;
+            mat->Vpwl[k] = 0.0;
+            mat->Apwl[k] = 6.9405e-27;
+            mat->fpwl[k] = 0.0;
+            mat->apwl[k] = 0.0;
+            success      = 1;
+            break;
+            
+        // Granulite Eclogite Setups:
+        case 30:
+            printf("Anorthite dry - Rybacki and Dresen (2000):\n" );
+            mat->tpwl[k] = 1;
+            mat->npwl[k] = 3.0;
+            mat->mpwl[k] = 0.0;
+            mat->rpwl[k] = 0.0;
+            mat->Qpwl[k] = 648.0e3;
+            mat->Vpwl[k] = 0.0e-6;
+            mat->Apwl[k] = 5.0119e-06;
+            mat->fpwl[k] = 0.0;
+            mat->apwl[k] = 0.0;
+            success      = 1;
+            break;
+            
+        case 31:
+            printf("DRY CPX - Bystricky & Mackwell, 2001:\n" );
+            mat->tpwl[k] = 1;
+            mat->npwl[k] = 4.7;
+            mat->mpwl[k] = 0.0;
+            mat->rpwl[k] = 0.0;
+            mat->Qpwl[k] = 760.0e3;
+            mat->Vpwl[k] = 0.0e-6;
+            mat->Apwl[k] = 3.9811e-19;
+            mat->fpwl[k] = 0.0;
+            mat->apwl[k] = 0.0;
+            success      = 1;
+            break;
+            
+        case 32:
+            printf("Anorthite 60 - Rybacki & Dresen (2004):\n" ); // added by Pauline
+            mat->tpwl[k] = 1;
+            mat->npwl[k] = 3.0;
+            mat->mpwl[k] = 0.0;
+            mat->rpwl[k] = 0.0;
+            mat->Qpwl[k] = 235.0e3;
+            mat->Vpwl[k] = 0.0e-6;
+            mat->Apwl[k] = 3.16228e-20;
             mat->fpwl[k] = 0.0;
             mat->apwl[k] = 0.0;
             success      = 1;
@@ -467,30 +509,15 @@ void ReadDataPowerLaw( mat_prop* mat, params* model, int k, int number, scale* s
             success      = 1;
             break;
             
-            // Granulite Eclogite Setups:
-        case 50:
-            printf("Anorthite dry - Rybacki and Dresen (2000):\n" );
+        case 46:
+            printf("Serpentine 1 GPa - Hilairet et al. (2007):\n" ); // added by Pauline
             mat->tpwl[k] = 1;
-            mat->npwl[k] = 3.0;
+            mat->npwl[k] = 5.8;
             mat->mpwl[k] = 0.0;
             mat->rpwl[k] = 0.0;
-            mat->Qpwl[k] = 648.0e3;
+            mat->Qpwl[k] = 17.6e3;
             mat->Vpwl[k] = 0.0e-6;
-            mat->Apwl[k] = 5.0119e-06;
-            mat->fpwl[k] = 0.0;
-            mat->apwl[k] = 0.0;
-            success      = 1;
-            break;
-            
-        case 55:
-            printf("DRY CPX - Bystricky & Mackwell, 2001:\n" );
-            mat->tpwl[k] = 1;
-            mat->npwl[k] = 4.7;
-            mat->mpwl[k] = 0.0;
-            mat->rpwl[k] = 0.0;
-            mat->Qpwl[k] = 760.0e3;
-            mat->Vpwl[k] = 0.0e-6;
-            mat->Apwl[k] = 3.9811e-19;
+            mat->Apwl[k] = 5.3443e-41;
             mat->fpwl[k] = 0.0;
             mat->apwl[k] = 0.0;
             success      = 1;

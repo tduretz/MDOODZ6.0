@@ -592,14 +592,12 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
 
     }
 
-    if (model.isPl_soft == 1) {
-        Cfriction  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
-        DoubleToFloat( mesh->fric_n, Cfriction, (model.Nx-1)*(model.Nz-1) );
-        Ccohesion  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
-        DoubleToFloat( mesh->C_n, Ccohesion, (model.Nx-1)*(model.Nz-1) );
-        ScaleBack( Ccohesion, scaling.S, (model.Nx-1)*(model.Nz-1) );
-    }
-
+    Cfriction  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->fric_n, Cfriction, (model.Nx-1)*(model.Nz-1) );
+    Ccohesion  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->C_n, Ccohesion, (model.Nx-1)*(model.Nz-1) );
+    ScaleBack( Ccohesion, scaling.S, (model.Nx-1)*(model.Nz-1) );
+    
     // Get X from particles
     X  = DoodzCalloc((model.Nx-1)*(model.Nz-1),sizeof(double));
     Interp_P2C ( *particles,  particles->X, mesh, X, mesh->xg_coord, mesh->zg_coord, 1, 0 );
@@ -743,10 +741,8 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
         AddFieldToGroup_generic( _TRUE_, name, "Topo", "phase_mark" , 'i', topo_chain->Nb_part, topo_chain->phase, 1 );
     }
 
-    if (model.isPl_soft == 1) {
-        AddFieldToGroup_generic( _TRUE_, name, "Centers" , "friction", 'f', (model.Nx-1)*(model.Nz-1), Cfriction, 1 );
-        AddFieldToGroup_generic( _TRUE_, name, "Centers" , "cohesion", 'f', (model.Nx-1)*(model.Nz-1), Ccohesion, 1 );
-    }
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "friction", 'f', (model.Nx-1)*(model.Nz-1), Cfriction, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "cohesion", 'f', (model.Nx-1)*(model.Nz-1), Ccohesion, 1 );
 
     if (model.fstrain == 1) {
         AddFieldToGroup_generic( _TRUE_, name, "Centers" , "Fxx", 'f', (model.Nx-1)*(model.Nz-1), CFxx, 1 );
@@ -847,10 +843,8 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
         DoodzFree( Ctopovz_mark );
     }
 
-    if (model.isPl_soft == 1) {
-        DoodzFree( Cfriction );
-        DoodzFree( Ccohesion );
-    }
+    DoodzFree( Cfriction );
+    DoodzFree( Ccohesion );
 
     DoodzFree( compo    );
     DoodzFree( compo_hr );

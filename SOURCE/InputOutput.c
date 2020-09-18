@@ -979,7 +979,6 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->subgrid_diff    = ReadInt2( fin, "subgrid_diff",    0 );
     model->shear_heat      = ReadInt2( fin, "shear_heat",      1 );
     model->adiab_heat      = ReadInt2( fin, "adiab_heat",      0 );
-    model->isPl_soft       = ReadInt2( fin, "isPl_soft",       0 );
     model->surf_processes  = ReadInt2( fin, "surf_processes",  0 );
     model->surf_remesh     = ReadInt2( fin, "surf_remesh",     1 );
     model->cpc             = ReadInt2( fin, "cpc",             1 );
@@ -1086,11 +1085,20 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         materials->gs[k]    = ReadMatProps( fin, "gs",    k,    0.0   );
         materials->gs_ref[k]= ReadMatProps( fin, "gsref" ,k,  2.0e-3  ) /scaling->L;
         // Strain softening
-        materials->C_end[k]     = ReadMatProps( fin, "Ce",     k,    1.0e7  )  / scaling->S;
-        materials->phi_end[k]   = ReadMatProps( fin, "phie",   k,     30.0  )  / 1.0 * M_PI / 180.0;
-        materials->psi_end[k]   = ReadMatProps( fin, "phie",   k,      0.0  )  / 1.0 * M_PI / 180.0;
-        materials->pls_start[k] = ReadMatProps( fin, "plss",   k,    1.0e6  );
-        materials->pls_end[k]   = ReadMatProps( fin, "plse",   k,    1.0e6  );
+        materials->coh_soft[k]  = (int)ReadMatProps( fin, "coh_soft", k,    0.0   );
+        materials->phi_soft[k]  = (int)ReadMatProps( fin, "phi_soft", k,    0.0   );
+        materials->psi_soft[k]  = (int)ReadMatProps( fin, "psi_soft", k,    0.0   );
+        materials->C_end[k]     = ReadMatProps( fin, "Ce",     k,    materials->C[k]*scaling->S    ) / scaling->S;
+        materials->phi_end[k]   = ReadMatProps( fin, "phie",   k,    materials->phi[k]*180.0/M_PI  ) * M_PI / 180.0;
+        materials->psi_end[k]   = ReadMatProps( fin, "psie",   k,    materials->psi[k]*180.0/M_PI  ) * M_PI / 180.0;
+        double eps_coh = 1.0 / scaling->S;
+        double eps_phi = 0.1  * M_PI / 180.0;
+        double eps_psi = 0.1  * M_PI / 180.0;
+        if ( materials->coh_soft[k] == 1 && fabs( materials->C_end[k]   - materials->C[k]  ) < eps_coh ) { printf("Please set a difference in cohesion, if not set coh_soft of phase %d to 0.0\n", k); exit(122); };
+        if ( materials->phi_soft[k] == 1 && fabs( materials->phi_end[k] - materials->phi[k]) < eps_phi ) { printf("Please set a difference in friction angle, if not set phi_soft of phase %d to 0.0\n", k); exit(122); };
+        if ( materials->psi_soft[k] == 1 && fabs( materials->psi_end[k] - materials->psi[k]) < eps_psi ) { printf("Please set a difference in dilation angle, if not set psi_soft of phase %d to 0.0\n", k); exit(122); };
+        materials->pls_start[k] = ReadMatProps( fin, "plss",   k,    1.0    );
+        materials->pls_end[k]   = ReadMatProps( fin, "plse",   k,    2.0    );
         // Reaction stuff
         materials->Reac[k]      = ReadMatProps( fin, "Reac",   k,    0.0  );
         materials->Preac[k]     = ReadMatProps( fin, "Preac",  k,    0.0  ) / scaling->S;

@@ -3,7 +3,7 @@ function Main
 
 clear
 clear all
-close all
+% close all
 clc
 
 DEBUG = 0;
@@ -11,16 +11,16 @@ DEBUG = 0;
 MarkSize=1e0 ;
 
 
-path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE//'
+path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE//'
 M2Di_EP = load('./BENCHMARKS_data/DataM2Di_EP_test01');
 
 
 cd(path)
 
 % File
-istart = 40;
+istart = 100;
 ijump  = 1
-iend   = 40;
+iend   = 100;
 
 %--------------------------------------------------
 % what do you want to plot:
@@ -29,7 +29,7 @@ vel_divergence  = 0;
 pre_plot        = 0;
 stress_inv      = 1;
 stress_evol     = 0;
-divergence      = 1;
+divergence      = 0;
 
 % Visualisation options
 printfig      = 0;
