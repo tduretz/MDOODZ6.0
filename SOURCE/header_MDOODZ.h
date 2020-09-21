@@ -107,6 +107,7 @@ struct _params {
 	double gx, gz;
 	int Nx, Nz, Nt, step, nit, Newton, noisy;
 	int eta_avg;
+    double nexp_radial_basis;
 	int ismechanical, isperiodic_x, isinertial, iselastic, isnonnewtonian, isthermal, ispureshear_ale, free_surf, eqn_state, write_markers, write_debug, write_energies, no_markers;
     double free_surf_stab;
     int dt_constant, moving_front, imp_advection, RK, line_search, thermal_eq, subgrid_diff, adiab_heat, shear_heat, advection, fstrain;
@@ -572,3 +573,5 @@ void Print2DArrayDouble( DoodzFP*, int, int, double );
 
 void  OldDeviatoricStressesPressure( grid*, markers*, scale, params*  );
 void  TotalStresses( grid*, markers*, scale, params* );
+
+void Interp_P2G ( markers*, DoodzFP*, grid*, double*, double*, double*, int, int, params*, char*, int, int );

@@ -1,5 +1,5 @@
 **** RESTART ****/
-istep =00200
+istep =00010
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -20,7 +20,7 @@ T   = 100
 /**** SPACE-TIME ****/
 Nx   = 601
 Nz   = 301
-Nt   = 200
+Nt   = 300
 xmin    = -100e3
 xmax    =  100e3
 zmin    = -40e3
@@ -46,7 +46,6 @@ subgrid_diff    = 2
 shear_heat      = 1
 compressible    = 1
 adiab_heat      = 2
-isPl_soft       = 1 
 surf_processes  = 0
 shear_style     = 0 /0:pure shear --- 1: simple shear
 num_deriv       = 0
@@ -69,7 +68,7 @@ user0           = 700
 user1           = 0.3e3 /radius
 user2           = 0 /0:circle 1:layer 
 user3           = -20e3 / depth asthenosphere
-user4           = 0
+user4           = -1.5e3
 user5           = 0
 user6           = 0
 
@@ -216,6 +215,8 @@ aniso_angle  = 65
 aniso_factor = 10
 plss = 0.0
 plse = 1.0
+phi_soft = 1
+coh_soft = 1
 phie = 10.0
 Ce   = 20.0e6
 
@@ -245,6 +246,8 @@ Qpwl = 0
 aniso        = 0
 aniso_angle  = 65
 aniso_factor = 10
+phi_soft = 1
+coh_soft = 0
 plss = 0.0
 plse = 1.5
 phie = 20.0
@@ -285,7 +288,7 @@ Cv   = 1050
 k    = 2.0
 Qr   = 0
 C    = 5e7
-phi  = 32
+phi  = 5
 eta_vp = 1e20
 n_vp = 1.0
 Slim = 500e9
@@ -293,7 +296,7 @@ alp  = 10.0e-6
 bet  = 5e-11
 drho = 0
 cstv = 0
-pwlv = 13
+pwlv = 18
 linv = 0
 gbsv = 0
 expv = 0

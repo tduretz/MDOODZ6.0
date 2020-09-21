@@ -67,6 +67,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double spacing = 5.0e-3/scaling.L;
     int layer = (int)(model.user2);
     double z_ast = (double)(model.user3)/scaling.L;
+    double z_sed = (double)(model.user4)/scaling.L;
     
     double AspectRatio = 5.0;
     double x_ell, z_ell, a_ell = model.user1/scaling.L, b_ell = model.user1/scaling.L * AspectRatio, angle = 70*M_PI/180;
@@ -110,6 +111,11 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         // Step
         if ( particles->x[np] > 0.0 && particles->z[np] < (z_ast+Hstep) ) {
             particles->phase[np] = 8;
+        }
+        
+        // Astenosphere
+        if ( particles->z[np] > z_sed ) {
+            particles->phase[np] = 7;
         }
         
         //------------------------------------------//

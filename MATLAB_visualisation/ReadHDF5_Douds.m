@@ -14,15 +14,15 @@ path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Compression/'
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Shear_periodic_VEVP/'
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
 path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/'
-% path = '/Volumes/Seagate4TB/Wedge_MD6/HR/'
-% path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/RUN_MetamSoleLitho_09/'
+% path = '/Volumes/Seagate4TB/Wedge_MD6/LR/'
+% path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/RUN_MetamSoleLitho_14/'
 % 
 cd(path)
 
 % File
-istart = 200;
+istart = 60;
 ijump  = 10;
-iend   = 200;
+iend   = 60;
 
 %--------------------------------------------------
 % what do you want to plot:
@@ -32,17 +32,17 @@ eta_sym         = 0;
 eta_plot        = 0;
 rho_plot        = 0;
 phase_on_grid   = 0;
-phase_temp2     = 0;
+phase_temp2     = 1;
 vel_plot        = 0;
 vel_vectors     = 0;
 vel_divergence  = 0;
 pre_plot        = 0;
-dyna_pre        = 0;
+dyna_pre        = 1;
 stress_inv      = 1;
 stress_evol     = 0;
 stress_plot     = 0;
 srate_plot      = 0;
-acc_strain      = 1;
+acc_strain      = 0;
 temperature     = 0;
 temp_evol       = 0;
 Stefan          = 0;
@@ -74,7 +74,7 @@ shear_heating    = 0;
 princi_stress    = 0;
 director_vector  = 0;
 Pl_soft          = 1;
-Sole             = 0;
+Sole             = 1;
 
 % Visualisation options
 printfig      = 0;
@@ -119,7 +119,7 @@ maxPdyn =  5e8;
 % maxEta = 25;
 
 minEii = -16;
-maxEii = -12;
+maxEii = -14;
 
 % minSii = 1e6;
 % maxSii = 400e6;
@@ -329,6 +329,10 @@ if printfig == 1 || printfig == 2
     
     if (exist('./Fig_GS', 'dir') == 0)
         mkdir ./Fig_GS
+    end
+    
+    if (exist('./Fig_Phi', 'dir') == 0)
+        mkdir ./Fig_Phi
     end
     
 end

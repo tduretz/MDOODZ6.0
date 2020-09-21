@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00060
+istep = 00030
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -28,6 +28,7 @@ dt_constant = 1
 Courant = 0.3
 
 /**** SWITCHES ****/
+nexp_radial_basis = 0.5
 ismechanical    = 1
 advection       = 1
 RK              = 4

@@ -1036,14 +1036,15 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->user8           = ReadDou2( fin, "user8",           0.0 );
 
     // Derived quantities
-    model->dx              = (model->xmax - model->xmin) / (model->Nx - 1); printf("dx = %2.6e\n", model->dx );
-    model->dz              = (model->zmax - model->zmin) / (model->Nz - 1);
-    model->dt0             = model->dt;
-    model->dt_start        = model->dt;
-    model->dt_max          = ReadDou2( fin, "dt_max",     1e20 ) / scaling->t; // maximum allowed time step
-    model->eta_avg         = ReadInt2( fin, "eta_avg",       0 );              // 0 : arithmetic mean
-   
-    // For Cindy's setup
+    model->dx                = (model->xmax - model->xmin) / (model->Nx - 1); printf("dx = %2.6e\n", model->dx );
+    model->dz                = (model->zmax - model->zmin) / (model->Nz - 1);
+    model->dt0               = model->dt;
+    model->dt_start          = model->dt;
+    model->dt_max            = ReadDou2( fin, "dt_max",     1e20 ) / scaling->t; // maximum allowed time step
+    model->eta_avg           = ReadInt2( fin, "eta_avg",       0 );              // 0 : arithmetic mean
+    model->nexp_radial_basis = ReadDou2( fin, "nexp_radial_basis", 1.0 ); // exponent for radial basis function interp.
+
+       // For Cindy's setup
     model->diffuse_X       = ReadInt2( fin, "diffuse_X",     0 );              // 0 or 1
     model->diffuse_avg     = ReadInt2( fin, "diffuse_avg",   0 );              // 0 : arithmetic mean
     model->diffusion_length= ReadDou2( fin, "diffusion_length",  0.0 ) / scaling->L;

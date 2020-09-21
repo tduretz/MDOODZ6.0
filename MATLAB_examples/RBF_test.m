@@ -1,6 +1,6 @@
 function main
 clear 
-close all
+% close all
 
 xmin = -1/2;
 xmax = 1/2;
@@ -8,8 +8,7 @@ L    = (xmax - xmin);
 Nx   = 11;
 dx   =  L / (Nx-1);
 xg   = xmin:dx:xmax;
-
-
+xe   = xmin-dx/2:dx:xmax+dx/2;
 
 Nxm_cell  = 20;
 dxm       = dx/Nxm_cell;
@@ -19,13 +18,16 @@ n         = 5;
 Tm        = sin(-n*2*pi.*(xm+dx/3)/L);
 Np        = length(xm);
 
+iCm       = zeros(size(Tm));
 Tg        = zeros(size(xg));
 Wg        = zeros(size(xg));
 sig       = dx/4;
 p         = 10;
 for k=1:Np
     
-    iC = fix((xm(k)-xg(1))/dx)+1; % corresponding cell
+    iC = fix((xm(k)-xe(1))/dx)+1; % corresponding cell
+    
+    iCm(k) = iC;
     
     iW = iC-1;
     iE = iC+1;
@@ -46,6 +48,8 @@ for k=1:Np
     end
     
 end
+
+iCm
 
 Tg = Tg./Wg;
 
