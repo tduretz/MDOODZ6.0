@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00100
+istep = 00060
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -18,7 +18,7 @@ T   = 100
 /**** SPACE-TIME ****/
 Nx      = 202
 Nz      = 62
-Nt      = 100
+Nt      = 60
 xmin    = -5.000000e4
 zmin    = -3.000000e4
 xmax    =  5.000000e4
@@ -29,9 +29,10 @@ Courant = 0.3
 
 /**** SWITCHES ****/
 ismechanical    = 1
+advection       = 1
 RK              = 4
 isperiodic_x    = 0
-ispureshear_ALE = 0
+ispureshear_ALE = 1
 isinertial      = 0
 iselastic       = 1
 isthermal       = 0
@@ -48,8 +49,7 @@ HomoFields      = 0
 delete_breakpoints = 0
 GNUplot_residuals = 0
 no_markers      = 0
-eta_avg         = 1
-advection       = 0
+eta_avg         = 0
 cpc             = -1
 penalty         = 1e6
 lsolver         = 0
@@ -134,8 +134,8 @@ dmax  =    -2       / Grain size maximum log_10 [m]
 Pn    =  1e9        / Pressure [Pa]
 
 /**** PARTICLES ****/
-Nx_part  = 4
-Nz_part  = 4
+Nx_part  = 8
+Nz_part  = 8
 min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/

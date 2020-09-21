@@ -549,6 +549,7 @@ void SetParticles_BEN( markers *, scale , params , mat_prop*   );
 void BuildInitialTopography_BEN( surface *, markers *, params , grid , scale  );
 void SolveStokes_BEN( SparseMat*, DirectSolver* );
 
+void V2P( double*, double*, markers*, double*,  double*, double*, double*, double*, double*, int, int, int, int, char*, char*, double, double, int );
 double Grid2P( markers*, double*, double*, double*, int, int , char *, double, double, int );
 void RogerGuntherII( markers*, params, grid, int, scale );
 void AccumulatedStrainII( grid*, scale, params, markers*, double*, double*, int, int, char * );

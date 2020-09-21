@@ -42,6 +42,153 @@
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+void V2P( double *Vxm, double *Vzm, markers* particles, double*Vx,  double*Vz, double*xg, double*zg, double *zvx, double *xvz, int Nxg, int Nzg, int NzVx, int NxVz, char *tagVx, char *tagVz, double dx, double dz, int k ) {
+    
+    double val  = 0.0;
+    double sumW = 0.0;
+    double dxm, dzm, dst, vxm13, vxm24, vzm12, vzm34;
+    int    i_part, j_part, iSW, iNW, iSE, iNE;
+    int    Nx, Nz, iSEE, iNEE, iSWW, iNWW, iNNW, iNNE, iSSW, iSSE;
+    
+    (*Vxm) = 0.0;
+    (*Vzm) = 0.0;
+    
+    // Filter out particles that are inactive (out of the box)
+    if (particles->phase[k] != -1) {
+        
+        Nx = Nxg; Nz = NzVx;
+        
+        dst    = (particles->x[k]-xg[0]);
+        j_part = ceil((dst/dx)) - 1;
+        if (j_part<0) {
+            j_part = 0;
+        }
+        if (j_part>Nx-2) {
+            j_part = Nx-2;
+        }
+        
+        // Get the line:
+        dst    = fabs(particles->z[k]-zvx[0]);
+        i_part = ceil((dst/dz)) - 1;
+        if (i_part<0) {
+            i_part = 0;
+        }
+        if (i_part>Nz-2) {
+            i_part = Nz-2;
+        }
+        
+        dxm = particles->x[k] - xg[j_part];
+        dzm = particles->z[k] - zvx[i_part];
+        
+        iSW = j_part+i_part*Nx;
+        iSE = j_part+i_part*Nx+1;
+        iNW = j_part+(i_part+1)*Nx;
+        iNE = j_part+(i_part+1)*Nx+1;
+        
+        if (tagVx[iSW] == 30) Vx[iSW] = Vx[iNW];
+        if (tagVx[iSE] == 30) Vx[iSE] = Vx[iNE];
+        if (tagVx[iNW] == 30) Vx[iNW] = Vx[iSW];
+        if (tagVx[iNE] == 30) Vx[iNE] = Vx[iSE];
+        
+        vxm13 = Vx[iSW]*(1.0-dxm/dx) + Vx[iSE]*dxm/dx;
+        vxm24 = Vx[iNW]*(1.0-dxm/dx) + Vx[iNE]*dxm/dx;
+        
+        // Compute correction
+        if (dxm/dx>=0.5) {
+            if(j_part<Nx-2) {
+                iSEE  = j_part+i_part*Nx+1 + 1;
+                iNEE  = j_part+(i_part+1)*Nx+1 + 1;
+                if (tagVx[iSEE] == 30) Vx[iSEE] = Vx[iSW];
+                if (tagVx[iNEE] == 30) Vx[iNEE] = Vx[iNW];
+                vxm13 = vxm13 + 0.5*pow((dxm/dx-0.5),2.0) * (Vx[iSW] - 2.0*Vx[iSE] + Vx[iSEE]);
+                vxm24 = vxm24 + 0.5*pow((dxm/dx-0.5),2.0) * (Vx[iNW] - 2.0*Vx[iNE] + Vx[iNEE]);
+            }
+        }
+        else {
+            if(j_part>0) {
+                iSWW  = j_part+i_part*Nx - 1;
+                iNWW  = j_part+(i_part+1)*Nx - 1;
+                if (tagVx[iSWW] == 30) Vx[iSWW] = Vx[iSE];
+                if (tagVx[iNWW] == 30) Vx[iNWW] = Vx[iNE];
+                vxm13 = vxm13 + 0.5*pow((dxm/dx-0.5),2.0) * (Vx[iSWW]   -2.0*Vx[iSW]   + Vx[iSE]);
+                vxm24 = vxm24 + 0.5*pow((dxm/dx-0.5),2.0) * (Vx[iNWW]   -2.0*Vx[iNW]   + Vx[iNE]);
+            }
+        }
+        
+        (*Vxm) = (1.0-dzm/dz) * vxm13 + (dzm/dz) * vxm24;
+        
+        //---------------------------------------------------//
+        
+        Nx = NxVz; Nz = Nzg;
+        
+        dst    = (particles->x[k]-xvz[0]);
+        j_part = ceil((dst/dx)) - 1;
+        if (j_part<0) {
+            j_part = 0;
+        }
+        if (j_part>Nx-2) {
+            j_part = Nx-2;
+        }
+        
+        // Get the line:
+        dst    = fabs(particles->z[k]-zg[0]);
+        i_part = ceil((dst/dz)) - 1;
+        if (i_part<0) {
+            i_part = 0;
+        }
+        if (i_part>Nz-2) {
+            i_part = Nz-2;
+        }
+        
+        dxm = particles->x[k] - xvz[j_part];
+        dzm = particles->z[k] - zg[i_part];
+        
+        iSW = j_part+i_part*Nx;
+        iSE = j_part+i_part*Nx+1;
+        iNW = j_part+(i_part+1)*Nx;
+        iNE = j_part+(i_part+1)*Nx+1;
+
+        if (tagVz[iSW] == 30) Vz[iSW] = Vz[iSE];
+        if (tagVz[iSE] == 30) Vz[iSE] = Vz[iSW];
+        if (tagVz[iNW] == 30) Vz[iNW] = Vz[iNE];
+        if (tagVz[iNE] == 30) Vz[iNE] = Vz[iNW];
+        
+        vzm12 = Vz[iSW]*(1.0-dzm/dz) + Vz[iNW]*dzm/dz;
+        vzm34 = Vz[iSE]*(1.0-dzm/dz) + Vz[iNE]*dzm/dz;
+        
+        // Compute correction
+        if(dzm/dz>=0.5) {
+            if(i_part<Nz-2) {
+                iNNW  = j_part+(i_part+2)*Nx;
+                iNNE  = j_part+(i_part+2)*Nx+1;
+                if (tagVz[iNNW] == 30) Vz[iNNW] = Vz[iSW];
+                if (tagVz[iNNE] == 30) Vz[iNNE] = Vz[iSE];
+                vzm12 = vzm12 + 0.5*pow((dzm/dz-0.5),2.0) * (Vz[iSW] - 2.0*Vz[iNW] + Vz[iNNW]);
+                vzm34 = vzm34 + 0.5*pow((dzm/dz-0.5),2.0) * (Vz[iSE] - 2.0*Vz[iNE] + Vz[iNNE]);
+            }
+        }
+        else {
+            if(i_part>0) {
+                iSSW  = j_part+(i_part-1)*Nx;
+                iSSE  = j_part+(i_part-1)*Nx + 1;
+                if (tagVz[iSSW] == 30) Vz[iSSW] = Vz[iNW];
+                if (tagVz[iSSE] == 30) Vz[iSSE] = Vz[iNE];
+                vzm12 = vzm12 + 0.5*pow((dzm/dz-0.5),2) * (Vz[iSSW] - 2*Vz[iSW] + Vz[iNW]);
+                vzm34 = vzm34 + 0.5*pow((dzm/dz-0.5),2) * (Vz[iSSE] - 2*Vz[iSE] + Vz[iNE]);
+            }
+        }
+        
+        (*Vzm) = (1.0-dxm/dx)*vzm12 + (dxm/dx)*vzm34;
+        
+    }
+    
+}
+
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 
 double Grid2P( markers* particles, double* NodeField, double* X_vect, double* Z_vect, int Nx, int Nz, char *tag, double dx, double dz, int k ) {
     
@@ -53,7 +200,6 @@ double Grid2P( markers* particles, double* NodeField, double* X_vect, double* Z_
     // Filter out particles that are inactive (out of the box)
     if (particles->phase[k] != -1) {
         
-        //dst    = fabs(particles->x[k]-X_vect[0]);
         dst    = (particles->x[k]-X_vect[0]);
         j_part = ceil((dst/dx)) - 1;
         if (j_part<0) {
@@ -64,7 +210,6 @@ double Grid2P( markers* particles, double* NodeField, double* X_vect, double* Z_
         }
         
         // Get the line:
-        //dst    = fabs(particles->z[k]-Z_vect[0]);
         dst    = fabs(particles->z[k]-Z_vect[0]);
         i_part = ceil((dst/dz)) - 1;
         if (i_part<0) {
@@ -92,7 +237,10 @@ double Grid2P( markers* particles, double* NodeField, double* X_vect, double* Z_
         sumW += (1.0-dxm/dx)* (dzm/dz);
         sumW += (dxm/dx)* (dzm/dz);
         
-        if(sumW>1e-13) val /= sumW;
+        if( sumW > 1e-13 ) val /= sumW;
+//        if( sumW > 1.0001 ) printf("Achtung: sumW > 1.0!\n");
+//        if( sumW < 0.9998 ) printf("Achtung: sumW < 1.0!\n");
+//        printf("%2.2f\n", sumW);
         
     }
     return val;

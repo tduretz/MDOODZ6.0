@@ -488,7 +488,6 @@ int main( int nargs, char *args[] ) {
                 Interp_P2N ( particles, particles.sxxd, &mesh, mesh.sxxd0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
                 Interp_P2C ( particles, particles.szzd, &mesh, mesh.szzd0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
                 Interp_P2N ( particles, particles.szzd, &mesh, mesh.szzd0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-
                 Interp_P2N ( particles, particles.sxz,  &mesh, mesh.sxz0,    mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
                 Interp_P2C ( particles, particles.sxz,  &mesh, mesh.sxz0_n,  mesh.xg_coord, mesh.zg_coord, 1, 0 );
 
@@ -949,9 +948,6 @@ int main( int nargs, char *args[] ) {
         // Update pressure on markers
         UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
         
-//        Interp_Grid2P( particles, particles.P, &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-
-
         //------------------------------------------------------------------------------------------------------------------------------//
 
         if (model.isthermal == 1 ) {
@@ -1026,8 +1022,6 @@ int main( int nargs, char *args[] ) {
 
             // Advect free surface
             if ( model.free_surf == 1 ) {
-                //                    RogerGuntherII( &topo_chain,     model, mesh, 1, scaling );
-                //                    RogerGuntherII( &topo_chain_ini, model, mesh, 1, scaling );
                 AdvectFreeSurf( &topo_chain,     model, scaling );
                 AdvectFreeSurf( &topo_chain_ini, model, scaling );
                 MinMaxArray( topo_chain.z,      scaling.L, topo_chain.Nb_part,       "z surf.     " );
@@ -1155,6 +1149,21 @@ int main( int nargs, char *args[] ) {
             ////            }
             //            model.dt = whole_dt;
         }
+        
+        
+//        // Update stresses on markers
+//        if (model.iselastic == 1 ) {
+//            UpdateParticleStress(  &mesh, &particles, &model, &materials, &scaling );
+//        }
+//        else {
+//            Interp_Grid2P( particles, particles.sxxd, &mesh, mesh.sxxd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+//            Interp_Grid2P( particles, particles.szzd, &mesh, mesh.szzd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+//            Interp_Grid2P( particles, particles.sxz,  &mesh, mesh.sxz , mesh.xg_coord,  mesh.zg_coord,  mesh.Nx  , mesh.Nz, mesh.BCg.type   );
+//        }
+//
+//        //--------------------------------------------------------------------------------------------------------------------------------//
+//        // Update pressure on markers
+//        UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
         
         // Update time
         model.time += model.dt;
