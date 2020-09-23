@@ -85,11 +85,6 @@ void Continuity_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesC, Spar
         if ( mesh->BCu.type[c1+1   ] != 13 )    AddCoeff2( JtempC[ith], AtempC[ith], eqn, Stokes->eqn_u[c1+1],    &(nnzc2C[ith]), uE*celvol, mesh->BCu.type[c1+1],    mesh->BCu.val[c1+1],    StokesC->bbc );
         if ( mesh->BCv.type[c3     ] != 13 )    AddCoeff2( JtempC[ith], AtempC[ith], eqn, Stokes->eqn_v[c3],      &(nnzc2C[ith]), vS*celvol, mesh->BCv.type[c3],      mesh->BCv.val[c3],      StokesC->bbc );
         if ( mesh->BCv.type[c3+nxvz] != 13 )    AddCoeff2( JtempC[ith], AtempC[ith], eqn, Stokes->eqn_v[c3+nxvz], &(nnzc2C[ith]), vN*celvol, mesh->BCv.type[c3+nxvz], mesh->BCv.val[c3+nxvz], StokesC->bbc );
-
-//        if (comp == 0)  AddCoeff2( JtempD[ith], AtempD[ith], eqn, eqn, &(nnzc2D[ith]), 1.0, mesh->BCp.type[c2],      mesh->BCp.val[c2],      StokesC->bbc );
-//        if (comp == 1)  AddCoeff2( JtempD[ith], AtempD[ith], eqn, eqn, &(nnzc2D[ith]), pc*celvol, mesh->BCp.type[c2],      mesh->BCp.val[c2],      StokesC->bbc );
-
-//        AddCoeff2( JtempD[ith], AtempD[ith], eqn, eqn                   , &(nnzc2D[ith]), 1.0/celvol, mesh->BCp.type[c2],      mesh->BCp.val[c2],      StokesC->bbc );
     }
     else {
         StokesC->F[eqn] = pc*p[c2] + uW*u[c1] + uE*u[c1+1] + vS*v[c3] + vN*v[c3+nxvz];

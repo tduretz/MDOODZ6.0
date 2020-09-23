@@ -296,14 +296,19 @@ int main( int nargs, char *args[] ) {
             printf("****** Initialize composition *******\n");
             printf("*************************************\n");
 
-            if ( model.diffuse_X == 1 ) {
-                Interp_P2G ( &particles, particles.X,    &mesh, mesh.Xreac_n,    mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz  );
+//            if ( model.diffuse_X == 1 ) {
+//                Interp_P2G ( &particles, particles.X,    &mesh, mesh.Xreac_n,    mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz  );
+//
+//                Diffuse_X(&mesh, &model, &scaling);
+//                Interp_Grid2P( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+//                Interp_P2G ( &particles, particles.X,  &mesh, mesh.Xreac_s, mesh.xg_coord,   mesh.zg_coord, 1, 0, &model, mesh.BCg.type,  Nx,  Nz );
+//                Interp_P2G ( &particles, particles.X,  &mesh, mesh.Xreac_n, mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz );
+//            }
+            
+            Interp_P2G ( &particles, particles.X,    &mesh, mesh.X0_n,    mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz  );
+            Interp_P2G ( &particles, particles.X,    &mesh, mesh.X0_s,    mesh.xg_coord,   mesh.zg_coord, 1, 0, &model, mesh.BCg.type,  Nx,  Nz  );
 
-                Diffuse_X(&mesh, &model, &scaling);
-                Interp_Grid2P( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-                Interp_P2G ( &particles, particles.X,  &mesh, mesh.Xreac_s, mesh.xg_coord,   mesh.zg_coord, 1, 0, &model, mesh.BCg.type,  Nx,  Nz );
-                Interp_P2G ( &particles, particles.X,  &mesh, mesh.Xreac_n, mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz );
-            }
+
 
             if ( model.aniso == 1 ) InitialiseDirectorVector ( &particles, &model, &materials );
 //
@@ -461,8 +466,8 @@ int main( int nargs, char *args[] ) {
                 Interp_P2G ( &particles, materials.rho,  &mesh, mesh.rho_n, mesh.xc_coord,   mesh.zc_coord, 0, 0, &model, mesh.BCp.type, Ncx, Ncz );
             }
 
-            // Get X on the cell centers
-            Interp_P2G ( &particles, particles.X,        &mesh, mesh.X,     mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz  );
+//            // Get X on the cell centers
+//            Interp_P2G ( &particles, particles.X,        &mesh, mesh.X,     mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz  );
 
 
             // Free surface - subgrid density correction
@@ -508,15 +513,18 @@ int main( int nargs, char *args[] ) {
                 Interp_P2G ( &particles, materials.aniso_factor,   &mesh, mesh.aniso_factor_n,  mesh.xc_coord,   mesh.zc_coord, 0, 0, &model, mesh.BCp.type, Ncx, Ncz );
                 Interp_P2G ( &particles, materials.aniso_factor,   &mesh, mesh.aniso_factor_s,  mesh.xg_coord,   mesh.zg_coord, 0, 0, &model, mesh.BCg.type,  Nx,  Nz );
             }
+            
+            Interp_P2G ( &particles, particles.X,    &mesh, mesh.X0_n,    mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz  );
+            Interp_P2G ( &particles, particles.X,    &mesh, mesh.X0_s,    mesh.xg_coord,   mesh.zg_coord, 1, 0, &model, mesh.BCg.type,  Nx,  Nz  );
 
-            // Diffuse rheological contrasts
-            if (model.diffuse_X == 1) {
-                Interp_P2G ( &particles, particles.X, &mesh, mesh.Xreac_n,  mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz );
-                Diffuse_X(&mesh, &model, &scaling);
-                Interp_Grid2P( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-                Interp_P2G ( &particles, particles.X, &mesh, mesh.Xreac_n,  mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz );
-                Interp_P2G ( &particles, particles.X, &mesh, mesh.Xreac_s,  mesh.xg_coord,   mesh.zg_coord, 1, 0, &model, mesh.BCp.type,  Nx,  Nz );
-            }
+//            // Diffuse rheological contrasts
+//            if (model.diffuse_X == 1) {
+//                Interp_P2G ( &particles, particles.X, &mesh, mesh.Xreac_n,  mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz );
+//                Diffuse_X(&mesh, &model, &scaling);
+//                Interp_Grid2P( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+//                Interp_P2G ( &particles, particles.X, &mesh, mesh.Xreac_n,  mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz );
+//                Interp_P2G ( &particles, particles.X, &mesh, mesh.Xreac_s,  mesh.xg_coord,   mesh.zg_coord, 1, 0, &model, mesh.BCp.type,  Nx,  Nz );
+//            }
 
             // Interpolate Grain size
             Interp_P2G ( &particles, particles.d, &mesh, mesh.d0,  mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz );
@@ -943,6 +951,7 @@ int main( int nargs, char *args[] ) {
         //--------------------------------------------------------------------------------------------------------------------------------//
         // Update pressure on markers
         UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
+        UpdateParticleX( &mesh, scaling, model, &particles, &materials );
         
         //------------------------------------------------------------------------------------------------------------------------------//
 

@@ -296,7 +296,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     Interp_Phase2VizGrid ( *particles, particles->phase, mesh, compo_hr, xviz_hr, zviz_hr, nxviz_hr, nzviz_hr, model, *topo );
     // ---------------------------------------------------------
     // Smooth rheological contrasts
-    if (model.diffuse_X) Interp_P2C ( *particles, particles->X, mesh, mesh->Xreac_n, mesh->xg_coord, mesh->zg_coord, 1, 0 );
+    if (model.diffuse_X) Interp_P2C ( *particles, particles->X, mesh, mesh->X_n, mesh->xg_coord, mesh->zg_coord, 1, 0 );
     // ---------------------------------------------------------
     // Cast grid arrays
     Crho_s  = DoodzMalloc( sizeof(float)*model.Nx*model.Nz);
@@ -379,10 +379,10 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     DoubleToFloat( mesh->d, Cd, (model.Nx-1)*(model.Nz-1) );
     ScaleBack( Cd, scaling.L, (model.Nx-1)*(model.Nz-1) );
 
-    CXreac        = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
-    DoubleToFloat( mesh->Xreac_n, CXreac, (model.Nx-1)*(model.Nz-1) );
+    CX        = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->X_n, CX, (model.Nx-1)*(model.Nz-1) );
 
-    COverS        = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    COverS    = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( mesh->OverS_n, COverS, (model.Nx-1)*(model.Nz-1) );
     ScaleBack( COverS, scaling.S, (model.Nx-1)*(model.Nz-1) );
     
@@ -598,11 +598,11 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     DoubleToFloat( mesh->C_n, Ccohesion, (model.Nx-1)*(model.Nz-1) );
     ScaleBack( Ccohesion, scaling.S, (model.Nx-1)*(model.Nz-1) );
     
-    // Get X from particles
-    X  = DoodzCalloc((model.Nx-1)*(model.Nz-1),sizeof(double));
-    Interp_P2C ( *particles,  particles->X, mesh, X, mesh->xg_coord, mesh->zg_coord, 1, 0 );
-    CX  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
-    DoubleToFloat( X, CX, (model.Nx-1)*(model.Nz-1) );
+//    // Get X from particles
+//    X  = DoodzCalloc((model.Nx-1)*(model.Nz-1),sizeof(double));
+//    Interp_P2C ( *particles,  particles->X, mesh, X, mesh->xg_coord, mesh->zg_coord, 1, 0 );
+//    CX  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+//    DoubleToFloat( X, CX, (model.Nx-1)*(model.Nz-1) );
 
 
     //---------------------------------------------------
@@ -727,7 +727,6 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "eII_gbs" , 'f', (model.Nx-1)*(model.Nz-1), CeII_gbs, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "d" , 'f', (model.Nx-1)*(model.Nz-1), Cd, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "X" , 'f', (model.Nx-1)*(model.Nz-1), CX, 1 );
-    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "Xreac",'f', (model.Nx-1)*(model.Nz-1), CXreac, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "OverS",'f', (model.Nx-1)*(model.Nz-1), COverS, 1 );
 
     if ( model.free_surf == 1 ) {
@@ -826,7 +825,6 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     DoodzFree( CX );
     DoodzFree( CT );
     DoodzFree( Cd );
-    DoodzFree( CXreac );
     DoodzFree( COverS );
     DoodzFree( Cdivu  );
     DoodzFree( Cdivu_el );

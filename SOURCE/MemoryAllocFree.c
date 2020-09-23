@@ -204,7 +204,7 @@ void PartAlloc( markers *particles, params* model  ) {
     particles->phi        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->X          = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
 
-    particles->ttrans     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+
 
     particles->strain     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->strain_el  = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
@@ -269,8 +269,6 @@ void PartFree( markers *particles, params* model ) {
     DoodzFree(particles->d);
     DoodzFree(particles->phi);
     DoodzFree(particles->X);
-
-    DoodzFree(particles->ttrans);
 
     DoodzFree(particles->strain);
     DoodzFree(particles->strain_el);
@@ -529,7 +527,6 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->d       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->d0      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->phi     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    mesh->X       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
 
     mesh->cell_min_z = DoodzCalloc( (Nz-1), sizeof(double));
     mesh->cell_max_z = DoodzCalloc( (Nz-1), sizeof(double));
@@ -593,14 +590,13 @@ void GridAlloc ( grid* mesh, params* model ) {
     if ( model->aniso == 1 ) mesh->aniso_factor_n = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     if ( model->aniso == 1 ) mesh->aniso_factor_s = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
 
-    // reaction
-    mesh->p0_s       = DoodzCalloc ((Nx)*(Nz),sizeof(double));
-    mesh->Xreac_s    = DoodzCalloc ((Nx)*(Nz),sizeof(double));
-    mesh->ttrans0_s  = DoodzCalloc ((Nx)*(Nz),sizeof(double));
     mesh->p0_n       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    mesh->ttrans0_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    mesh->Xreac_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    mesh->ttrans_n   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->p0_s       = DoodzCalloc ((Nx)*(Nz),sizeof(double));
+    // reaction
+    mesh->X0_n       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->X_n        = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->X0_s       = DoodzCalloc ((Nx)*(Nz),sizeof(double));
+    mesh->X_s        = DoodzCalloc ((Nx)*(Nz),sizeof(double));
 
     mesh->OverS_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->OverS_s    = DoodzCalloc ((Nx)*(Nz),sizeof(double));
@@ -804,7 +800,6 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->d);
     DoodzFree(mesh->d0);
     DoodzFree(mesh->phi);
-    DoodzFree(mesh->X);
 
     DoodzFree(mesh->cell_min_z);
     DoodzFree(mesh->cell_max_z);
@@ -867,11 +862,10 @@ void GridFree( grid* mesh, params* model ) {
     if ( model->aniso == 1 ) DoodzFree(mesh->aniso_factor_s);
 
     // reac
-    DoodzFree(mesh->Xreac_n);
-    DoodzFree(mesh->Xreac_s);
-    DoodzFree(mesh->ttrans_n);
-    DoodzFree(mesh->ttrans0_n);
-    DoodzFree(mesh->ttrans0_s);
+    DoodzFree(mesh->X_n);
+    DoodzFree(mesh->X_s);
+    DoodzFree(mesh->X0_n);
+    DoodzFree(mesh->X0_s);
     DoodzFree(mesh->p0_n);
     DoodzFree(mesh->p0_s);
 

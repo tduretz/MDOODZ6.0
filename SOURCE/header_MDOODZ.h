@@ -13,10 +13,6 @@
 #define Rg    8.314510
 #define PI    3.14159265359
 
-//#define zeroC 0.0
-//#define Rg    1.0
-//#define PI    3.14159265359
-
 //---------------------------------------------------------------------------------------------------------------------------//
 //----------------------------------------------- STRUCTURE DEFINITIONS -----------------------------------------------------//
 //---------------------------------------------------------------------------------------------------------------------------//
@@ -56,8 +52,8 @@ struct _mat_prop {
     int     gs[20], cstv[20], pwlv[20], linv[20], expv[20], gbsv[20], phase_diagram[20], density_model[20];
     DoodzFP C_end[20], phi_end[20], psi_end[20], pls_start[20], pls_end[20], eta_vp[20], n_vp[20];
     int     phi_soft[20], psi_soft[20], coh_soft[20];
-    DoodzFP Preac[20], treac[20];
-    int     Reac[20];
+    DoodzFP Pr[20], tau_kin[20], dPr[20];
+    int     reac_soft[20], reac_phase[20];
     int     phase_mix[20], phase_two[20];
     double  aniso_factor[20], aniso_angle[20];
 };
@@ -66,7 +62,7 @@ struct _mat_prop {
 typedef struct _p_markers markers;
 struct _p_markers {
 	int    Nx_part, Nz_part, Nb_part, Nb_part_max, min_part_cell;
-	DoodzFP *x, *z, *Vx, *Vz, *P, *sxxd, *szzd, *sxz, *progress, *rho, *T, *d, *phi, *X, *ttrans, *syy;
+	DoodzFP *x, *z, *Vx, *Vz, *P, *sxxd, *szzd, *sxz, *progress, *rho, *T, *d, *phi, *X, *syy;
     DoodzFP *strain, *strain_el, *strain_pl, *strain_pwl, *strain_exp, *strain_lin, *strain_gbs;
 	int    *phase, *generation;
     markers* marker_chain;
@@ -147,7 +143,7 @@ struct _params {
     int diffuse_X, diffuse_avg;
     double diffusion_length;
     // For Pips
-    int ProgReac;
+    int ProgReac, NoReturn;
     // Anisotropy
     int aniso, aniso_fstrain;
 };
@@ -156,8 +152,9 @@ struct _params {
 typedef struct _n_params Nparams;
 struct _n_params {
 	int    nit, nit_max, stagnated;
-    double tol_u, tol_p;
+    double abs_tol_u, rel_tol_u, abs_tol_p, rel_tol_p;
 	double resx, resz, resp, rest;
+    double resx0, resz0, resp0;
     double resx_f, resz_f, resp_f;
 	double vrlx,  prlx, trlx;
 };
@@ -174,7 +171,7 @@ struct _grid {
 	BCT    BCt, BCg;
 	double *xg_coord, *zg_coord, *xc_coord, *zc_coord, *xvz_coord, *zvx_coord, *xg_coord0, *zg_coord0, *xg_coord_ext, *zg_coord_ext;
 	double *eta_s, *eta_n, *rho_s, *rho_n, *rho_app_s, *rho_app_n;
-    double *ttrans0_s, *ttrans0_n, *Xreac_s, *Xreac_n, *p0_n, *p0_s, *ttrans_n;
+    double *X_s, *X_n, *X0_s, *X0_n, *p0_n, *p0_s;
     double *OverS_n,  *OverS_s;
     double *strain_n, *strain_s;
 	double *u, *v, *p;
@@ -189,7 +186,7 @@ struct _grid {
     double *sxxd0_s, *szzd0_s, *sxz0_n, *exxd_s, *ezzd_s, *exz_n, *sxz_n;
     double *rho0_n;
     double Ut, Ue, W, *Work, *Uelastic, *Uthermal, *Time, *Short;
-    double *T, *dT, *d, *d0, *phi, *X;
+    double *T, *dT, *d, *d0, *phi;
     double *eII_el, *eII_pl, *eII_pl_s, *eII_pwl, *eII_exp, *eII_lin, *eII_gbs, *eII_cst;
     double *eII_pwl_s;
     double *exx_el, *ezz_el, *exz_el, *exx_diss, *ezz_diss, *exz_diss;
@@ -409,6 +406,7 @@ void StrainRateComponents( grid*, scale, params* );
 void GenerateDeformationMaps( grid*, mat_prop*, params*, Nparams, scale*);
 void UpdateParticleGrainSize( grid*, scale, params, markers*, mat_prop* );
 void UpdateParticleDensity( grid*, scale, params, markers*, mat_prop* );
+void UpdateParticleX( grid*, scale, params, markers*, mat_prop* );
 // Advection
 void DefineInitialTimestep( params*, grid*, markers, mat_prop, scale );
 void EvaluateCourantCriterion( double*, double*, params*, scale, grid*, int);
@@ -500,8 +498,6 @@ void cholmod_dense_plus_cholmod_dense( cholmod_dense*, cholmod_dense* );
 void ApplyBC( grid*, params* );
 void AssignMarkerProperties (markers*, int, int, params* );
 
-// Phase changes
-void UpdateParticlettrans( grid*, scale*, params, markers*, mat_prop*);
 
 // GLOBAL
 //void Interp_P2G( markers, DoodzFP*, grid*, double*, double*, double*, int, int, double, double, int, int, params*, char*  );
@@ -571,7 +567,7 @@ void InitialiseDirectorVector (markers*, params*, mat_prop*);
 void FiniteStrainAspectRatio ( grid*, scale, params, markers* );
 void Print2DArrayDouble( DoodzFP*, int, int, double );
 
-void  OldDeviatoricStressesPressure( grid*, markers*, scale, params*  );
-void  TotalStresses( grid*, markers*, scale, params* );
+void OldDeviatoricStressesPressure( grid*, markers*, scale, params*  );
+void TotalStresses( grid*, markers*, scale, params* );
 
 void Interp_P2G ( markers*, DoodzFP*, grid*, double*, double*, double*, int, int, params*, char*, int, int );

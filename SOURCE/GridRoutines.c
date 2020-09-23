@@ -535,13 +535,13 @@ void Diffuse_X( grid* mesh, params* model, scale* scaling ) {
         for (k=1;k<ncx-1;k++) {
             c = k + l*ncx;
             
-            if ( mesh->Xreac_n[c]>0.99 ) flag[c] = 1;
+            if ( mesh->X_n[c]>0.99 ) flag[c] = 1;
         }
     }
     
     
     for (it=0;it<nsteps;it++) {
-        ArrayEqualArray( X0, mesh->Xreac_n, ncx*ncz );
+        ArrayEqualArray( X0, mesh->X0_n, ncx*ncz );
         
         // !!!! BCs are not included!
         for (l=1;l<ncz-1;l++) {
@@ -555,13 +555,13 @@ void Diffuse_X( grid* mesh, params* model, scale* scaling ) {
                     qE = - K*(X0[c+1]-X0[c])/dx;
                     qS = - K*(X0[c]-X0[c-ncz])/dz;
                     qN = - K*(X0[c+ncz]-X0[c])/dz;
-                    mesh->Xreac_n[c] = X0[c] - dt* ( 1.0/dx*(qE-qW) + 1.0/dz*(qN-qS));
+                    mesh->X_n[c] = X0[c] - dt* ( 1.0/dx*(qE-qW) + 1.0/dz*(qN-qS));
                 }
             }
             
         }
     }
-    MinMaxArrayTag( mesh->Xreac_n,   1.0,    (mesh->Nx-1)*(mesh->Nz-1),   "Xreac_n",   mesh->BCp.type );
+    MinMaxArrayTag( mesh->X_n,   1.0,    (mesh->Nx-1)*(mesh->Nz-1),   "Xreac_n",   mesh->BCp.type );
     
     DoodzFree(X0);
     DoodzFree(flag);

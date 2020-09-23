@@ -61,7 +61,7 @@ int main( int nargs, char *args[] ) {
     SparseMat    JacobA,  JacobB,  JacobC,  JacobD;
     int          Nx, Nz, Ncx, Ncz;
     
-    double *rx_array, *rz_array, *rp_array;
+    double *rx_abs, *rz_abs, *rp_abs, *rx_rel, *rz_rel, *rp_rel;
     
     // Initialise integrated quantities
     mesh.W    = 0.0; // Work
@@ -114,9 +114,9 @@ int main( int nargs, char *args[] ) {
     // Get grid indices
     GridIndices( &mesh );
     
-    rx_array = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
-    rz_array = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
-    rp_array = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
+    rx_abs = DoodzCalloc(Nmodel.nit_max+1, sizeof(double)); rx_rel = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
+    rz_abs = DoodzCalloc(Nmodel.nit_max+1, sizeof(double)); rz_rel = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
+    rp_abs = DoodzCalloc(Nmodel.nit_max+1, sizeof(double)); rp_rel = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
     
     Nx = mesh.Nx; Nz = mesh.Nz; Ncx = Nx-1; Ncz = Nz-1;
     if ( model.aniso == 1 ) model.Newton = 1;
@@ -295,13 +295,16 @@ int main( int nargs, char *args[] ) {
             printf("****** Initialize composition *******\n");
             printf("*************************************\n");
 
-            if ( model.diffuse_X == 1 ) {
-                Interp_P2C ( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                Diffuse_X(&mesh, &model, &scaling);
-                Interp_Grid2P( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-                Interp_P2C ( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                Interp_P2N ( particles, particles.X, &mesh, mesh.Xreac_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-            }
+//            if ( model.diffuse_X == 1 ) {
+//                Interp_P2C ( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+//                Diffuse_X(&mesh, &model, &scaling);
+//                Interp_Grid2P( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+//                Interp_P2C ( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+//                Interp_P2N ( particles, particles.X, &mesh, mesh.Xreac_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+//            }
+            
+            Interp_P2C ( particles, particles.X, &mesh, mesh.X0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+            Interp_P2N ( particles, particles.X, &mesh, mesh.X0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
 
             if ( model.aniso == 1 ) InitialiseDirectorVector ( &particles, &model, &materials );
 //
@@ -462,8 +465,8 @@ int main( int nargs, char *args[] ) {
                 Interp_P2C ( particles, materials.rho,  &mesh, mesh.rho_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
             }
 
-            // Get X on the cell centers
-            Interp_P2C ( particles, particles.X, &mesh, mesh.X, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+//            // Get X on the cell centers
+//            Interp_P2C ( particles, particles.X, &mesh, mesh.X, mesh.xg_coord, mesh.zg_coord, 1, 0 );
 
             // Free surface - subgrid density correction
             if ( model.free_surf == 1 ) {
@@ -508,15 +511,18 @@ int main( int nargs, char *args[] ) {
                 Interp_P2C ( particles, materials.aniso_factor,  &mesh, mesh.aniso_factor_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
                 Interp_P2N ( particles, materials.aniso_factor,  &mesh, mesh.aniso_factor_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
             }
+            
+            Interp_P2C ( particles, particles.X, &mesh, mesh.X0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+            Interp_P2N ( particles, particles.X, &mesh, mesh.X0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
 
             // Diffuse rheological contrasts
-            if (model.diffuse_X == 1) {
-                Interp_P2C ( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                Diffuse_X(&mesh, &model, &scaling);
-                Interp_Grid2P( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-                Interp_P2C ( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                Interp_P2N ( particles, particles.X, &mesh, mesh.Xreac_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-            }
+//            if (model.diffuse_X == 1) {
+//                Interp_P2C ( particles, particles.X, &mesh, mesh.X0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+//                Diffuse_X(&mesh, &model, &scaling);
+//                Interp_Grid2P( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+//                Interp_P2C ( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+//                Interp_P2N ( particles, particles.X, &mesh, mesh.Xreac_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+//            }
 
             // Interpolate Grain size
             Interp_P2C ( particles,   particles.d, &mesh, mesh.d0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
@@ -529,10 +535,6 @@ int main( int nargs, char *args[] ) {
             // Interp P --> p0_n , p0_s
             Interp_P2C ( particles, particles.P, &mesh, mesh.p0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
             ArrayPlusArray(  mesh.p0_n,   mesh.p_lith, Ncx*Ncz ); // Add back lithostatic component
-
-            // Interp ttrans --> ttrans0_n , ttrans0_s
-            Interp_P2C ( particles, particles.ttrans, &mesh, mesh.ttrans0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-            Interp_P2N ( particles, particles.ttrans, &mesh, mesh.ttrans0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
 
             //-------------------------------------------------------------------------------------------------------------
 
@@ -740,16 +742,16 @@ int main( int nargs, char *args[] ) {
                 if ( model.Newton == 1 && model.diag_scaling ) ScaleMatrix( &JacobA,  &JacobB,  &JacobC,  &JacobD  );
 
                 // Store residuals
-                Nmodel.resx_f = Nmodel.resx; rx_array[Nmodel.nit] = Nmodel.resx;
-                Nmodel.resz_f = Nmodel.resz; rz_array[Nmodel.nit] = Nmodel.resz;
-                Nmodel.resp_f = Nmodel.resp; rp_array[Nmodel.nit] = Nmodel.resp;
+                Nmodel.resx_f = Nmodel.resx; rx_abs[Nmodel.nit] = Nmodel.resx; rx_rel[Nmodel.nit] = Nmodel.resx/Nmodel.resx0;
+                Nmodel.resz_f = Nmodel.resz; rz_abs[Nmodel.nit] = Nmodel.resz; rz_rel[Nmodel.nit] = Nmodel.resz/Nmodel.resz0;
+                Nmodel.resp_f = Nmodel.resp; rp_abs[Nmodel.nit] = Nmodel.resp; rp_rel[Nmodel.nit] = Nmodel.resp/Nmodel.resp0;
 
                 if ( model.write_debug == 1 ) WriteResiduals( mesh, model, Nmodel, scaling );
                 
                 // if pass --> clear matrix break
-                if ( (Nmodel.resx < Nmodel.tol_u) && (Nmodel.resz < Nmodel.tol_u) && (Nmodel.resp < Nmodel.tol_p) ) {
+                if ( (Nmodel.resx < Nmodel.abs_tol_u || Nmodel.resx/Nmodel.resx0 < Nmodel.rel_tol_u) && (Nmodel.resz < Nmodel.abs_tol_u || Nmodel.resz/Nmodel.resz0 < Nmodel.rel_tol_u) && (Nmodel.resp < Nmodel.abs_tol_p || Nmodel.resp/Nmodel.resp0 < Nmodel.rel_tol_p) ) {
                     
-                    printf( "Non-linear solver converged to tol_u = %2.2e tol_p = %2.2e\n", Nmodel.tol_u, Nmodel.tol_p );
+                    printf( "Non-linear solver converged to abs_tol_u = %2.2e abs_tol_p = %2.2e rel_tol_u = %2.2e rel_tol_p = %2.2e\n", Nmodel.abs_tol_u, Nmodel.abs_tol_p, Nmodel.rel_tol_u, Nmodel.rel_tol_p );
                     if ( model.decoupled_solve == 0 ) { FreeMat( &Stokes ); }
                     if ( model.decoupled_solve == 1 ) {
                         FreeMat( &StokesA );
@@ -818,7 +820,8 @@ int main( int nargs, char *args[] ) {
                 }
                 
                 if ( Nmodel.stagnated == 1 && model.iselastic == 1 && model.safe_mode == 1 ) {
-                    printf( "\e[1;31mWARNING : Non-linear solver stagnated (tol_u = %2.2e tol_p = %2.2e)\e[m\n", Nmodel.tol_u, Nmodel.tol_p );
+                    printf( "\e[1;31mWARNING : Non-linear solver stagnated (abs_tol_u = %2.2e abs_tol_p = %2.2e)\e[m\n", Nmodel.abs_tol_u, Nmodel.abs_tol_p );
+                    printf( "\e[1;31mWARNING : Non-linear solver stagnated (rel_tol_u = %2.2e rel_tol_p = %2.2e)\e[m\n", Nmodel.rel_tol_u, Nmodel.rel_tol_p );
                     printf( "\e[1;31mReducing the timestep, and restart the iterations cycle...\e[m\n");
                     printf( "Before reduction: model.dt =, %2.2e\n", model.dt*scaling.t);
                     // ----------------------
@@ -881,10 +884,10 @@ int main( int nargs, char *args[] ) {
             if (Nmodel.nit>=Nmodel.nit_max)  nit = Nmodel.nit_max;
             if (Nmodel.nit<Nmodel.nit_max)  nit = Nmodel.nit;
             for (i=0; i<=nit; i++) {
-                printf("Non-Linear it. %02d --- |Fx| = %2.2e --- |Fy| = %2.2e\n", i, rx_array[i],  rz_array[i]);
+                printf("Non-Linear it. %02d: |Fx abs.| = %2.2e - |Fz abs.| = %2.2e --- |Fx rel.| = %2.2e - |Fz rel.| = %2.2e\n", i, rx_abs[i], rz_abs[i], rx_rel[i], rz_rel[i]);
                 if (i == Nmodel.nit_max && model.safe_mode == 1) {
                     printf("Exit: Max iteration reached: Nmodel.nit_max = %02d! Check what you wanna do now...\n",Nmodel.nit_max);
-                    if ( (Nmodel.resx < Nmodel.tol_u) && (Nmodel.resz < Nmodel.tol_u) && (Nmodel.resp < Nmodel.tol_p) ) {}
+                    if ( (Nmodel.resx < Nmodel.abs_tol_u) && (Nmodel.resz < Nmodel.abs_tol_u) && (Nmodel.resp < Nmodel.abs_tol_p) ) {}
                     else {exit(1);}
                 }
             }
@@ -899,12 +902,11 @@ int main( int nargs, char *args[] ) {
                 //        char *GNUplotCommands[] = {"set title sprintf(a)", "set logscale y", "plot 'F_x'"};
                 
                 int NumCommands = 4;
-                char *GNUplotCommands[] = { "set term x11 1 noraise", "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3", "plot 'F_x' with linespoints ls 1"};
+                char *GNUplotCommands[] = { "set term x11 1 noraise", "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3", "plot 'F_x rel.' with linespoints ls 1"};
                 FILE *temp = fopen("F_x", "w");
                 FILE *GNUplotPipe = popen ("gnuplot -persistent", "w");
                 for (i=0; i< Nmodel.nit+1; i++) {
-                    fprintf(temp, "%lf %lf \n", (double)i, log10(rx_array[i])); //Write the data to a temporary file
-                    //                printf("%02d %2.2e %2.2f\n", i, rx_array[i], log10(rx_array[i]));
+                    fprintf(temp, "%lf %lf \n", (double)i, log10(rx_rel[i])); //Write the data to a temporary file
                 }
                 
                 for (i=0; i<NumCommands; i++) {
@@ -947,6 +949,7 @@ int main( int nargs, char *args[] ) {
         //--------------------------------------------------------------------------------------------------------------------------------//
         // Update pressure on markers
         UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
+        UpdateParticleX( &mesh, scaling, model, &particles, &materials );
         
         //------------------------------------------------------------------------------------------------------------------------------//
 
@@ -1253,9 +1256,12 @@ int main( int nargs, char *args[] ) {
 #endif
     
     // GNU plot
-    DoodzFree( rx_array );
-    DoodzFree( rz_array );
-    DoodzFree( rp_array );
+    DoodzFree( rx_abs );
+    DoodzFree( rz_abs );
+    DoodzFree( rp_abs );
+    DoodzFree( rx_rel );
+    DoodzFree( rz_rel );
+    DoodzFree( rp_rel );
     
     printf("\n********************************************************\n");
     printf("************* Ending MDOODZ 6.0 simulation *************\n");

@@ -375,7 +375,6 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
     particles->szzd[new_ind]          = particles->szzd[min_index];
     particles->sxz[new_ind]           = particles->sxz[min_index];
     particles->syy[new_ind]           = particles->syy[min_index];
-    particles->ttrans[new_ind]        = particles->ttrans[min_index];
     
     if (model->fstrain == 1) {
         // do not set default to 0 beause then it can not accumulate, better to identify which markers are new and start to accumulate as we do for the general case (fxx=fyy=1, fxz=fzx=0).
@@ -948,13 +947,254 @@ double MarkerValue( DoodzFP* mat_prop, markers *particles, int k, int itp_type, 
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-double RadiaBasisFunctionWeight( double xg, double zg, double xp, double zp, double p ) {
+double RadiaBasisFunctionWeight( double xg, double zg, double xp, double zp, double p, double sig ) {
     
     double d = sqrt(pow(xg-xp,2.0) + pow(zg-zp,2.0));
-    double w = 1.0 / pow(d, p);
+//    double w = 1.0 / pow(d, p);
+    double w = exp( -d*d / pow(sig,2.0) );
     return w;
 }
 
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+// Particles to reference nodes
+void Interp_G2P ( markers *particles, DoodzFP* mat_prop, grid *mesh, double* MarkerField, double* xg, double* zg, int flag, int itp_type, params* model, char* MarkerType, int Nx, int Nz ) {
+    
+    // flag     == 0 --> interpolate from material properties structure
+    // flag     == 1 --> interpolate straight from the particle arrays
+    // itp_type == 0 --> arithmetic distance-weighted average
+    // itp_type == 1 --> harmonic distance-weighted average
+    // itp_type == 2 --> geometric distance-weighted average
+
+    int i, j, k, ixp, izp, Nb_part=particles->Nb_part, nthreads, thread_num, l, c1;
+    double dx = mesh->dx, dz = mesh->dz, dxm, dzm,  distance, mark_val;
+    double  *WM, *BMWM;
+    double **Wm, **BmWm;
+    double nexp = model->nexp_radial_basis, w;
+    double sig  = sqrt( dx*dx + dz*dz )*2.0;
+    int    periodix = model->isperiodic_x;
+    
+    int vertx = 0, vertz = 0;
+    if (Nz==mesh->Nx) vertx = 1;
+    if (Nz==mesh->Nz) vertz = 1;
+    
+    #pragma omp parallel
+        {
+            nthreads = omp_get_num_threads();
+        }
+    
+    //--------------------------------------------------------------
+    // Initialize Wm and BmWm
+    //--------------------------------------------------------------
+    Wm   = DoodzMalloc ( nthreads*sizeof(double*));    // allocate storage for the array
+    BmWm = DoodzMalloc ( nthreads*sizeof(double*));    // allocate storage for the array
+    
+    for ( k=0; k<nthreads; k++ ) {
+        Wm[k]   = DoodzCalloc ( Nb_part, sizeof(double));
+        BmWm[k] = DoodzCalloc ( Nb_part, sizeof(double));
+    }
+    
+    WM   = DoodzCalloc ( Nb_part, sizeof(double));
+    BMWM = DoodzCalloc ( Nb_part, sizeof(double));
+    
+    //--------------------------------------------------------------
+    // Compute Wm and BmWm
+    //--------------------------------------------------------------
+    
+#pragma omp parallel for shared ( particles, BmWm, Wm, flag, itp_type, mat_prop, xg, zg )    \
+private ( k, ixp, izp, distance, mark_val, thread_num, i, w )    \
+firstprivate ( dx, dz, Nb_part, Nx, Nz, nexp, periodix, vertx, sig  ) //schedule( static )
+    
+    for ( k=0; k<Nb_part; k++ ) {
+        
+        thread_num = omp_get_thread_num();
+        
+        // Filter out particles that are inactive (out of the box)
+        if ( particles->phase[k] != -1 ) {
+            
+            // Get the column:
+            distance =  particles->x[k] - xg[0];
+            ixp      =  ceil((distance/dx)+0.5) -1;
+            
+            // Get the line:
+            distance = (particles->z[k] - zg[0]);
+            izp      = ceil((distance/dz)+0.5) -1;
+            
+            // Center
+            i        = ixp + izp*Nx;
+            mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
+            w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
+            Wm[thread_num][i]   += w;
+            BmWm[thread_num][i] += mark_val*w;
+            
+            // West
+            if ( ixp > 0 ) {
+                i = ixp + izp*Nx - 1;
+                mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
+                Wm[thread_num][i]   += w;
+                BmWm[thread_num][i] += mark_val*w;
+            }
+            if ( ixp == 0 && periodix == 1) {
+                if ( vertx == 1 ) i = ixp + izp*Nx + (Nx-2);
+                if ( vertx == 0 ) i = ixp + izp*Nx + (Nx-1);
+                mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
+                Wm[thread_num][i]   += w;
+                BmWm[thread_num][i] += mark_val*w;
+            }
+            
+            // South-West
+            if ( ixp > 0 && izp > 0 ) {
+                i = ixp + (izp-1)*Nx - 1;
+                mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
+                Wm[thread_num][i]   += w;
+                BmWm[thread_num][i] += mark_val*w;
+            }
+            if ( ixp == 0 && izp > 0 && periodix == 1) {
+                if ( vertx == 1 ) i = ixp + (izp-1)*Nx + (Nx-2);
+                if ( vertx == 0 ) i = ixp + (izp-1)*Nx + (Nx-1);
+                mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
+                Wm[thread_num][i]   += w;
+                BmWm[thread_num][i] += mark_val*w;
+            }
+
+            // North-West
+            if ( ixp > 0 && izp < Nz-1 ) {
+                i = ixp + (izp+1)*Nx - 1;
+                mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
+                Wm[thread_num][i]   += w;
+                BmWm[thread_num][i] += mark_val*w;
+            }
+            if ( ixp == 0 && izp > 0 && periodix == 1) {
+                if ( vertx == 1 ) i = ixp + (izp+1)*Nx + (Nx-2);
+                if ( vertx == 0 ) i = ixp + (izp+1)*Nx + (Nx-1);
+                mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
+                Wm[thread_num][i]   += w;
+                BmWm[thread_num][i] += mark_val*w;
+            }
+            
+            // North-East
+            if ( ixp < Nx-1 && izp < Nz-1 ) {
+                i = ixp + (izp+1)*Nx + 1;
+                mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
+                Wm[thread_num][i]   += w;
+                BmWm[thread_num][i] += mark_val*w;
+            }
+            if ( ixp == Nx-1 && izp < Nz-1 && periodix == 1) {
+                if ( vertx == 1 ) i = ixp + (izp+1)*Nx - (Nx-2);
+                if ( vertx == 0 ) i = ixp + (izp+1)*Nx - (Nx-1);
+                mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
+                Wm[thread_num][i]   += w;
+                BmWm[thread_num][i] += mark_val*w;
+            }
+            
+            // East
+            if ( ixp < Nx-1  ) {
+                i = ixp + izp*Nx + 1;
+                mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
+                Wm[thread_num][i]   += w;
+                BmWm[thread_num][i] += mark_val*w;
+            }
+            if ( ixp == Nx-1 && periodix == 1) {
+                if ( vertx == 1 ) i = ixp + izp*Nx - (Nx-2);
+                if ( vertx == 0 ) i = ixp + izp*Nx - (Nx-1);
+                mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
+                Wm[thread_num][i]   += w;
+                BmWm[thread_num][i] += mark_val*w;
+            }
+            
+            // South-East
+            if ( ixp < Nx-1 && izp > 0 ) {
+                i = ixp + (izp-1)*Nx + 1;
+                mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
+                Wm[thread_num][i]   += w;
+                BmWm[thread_num][i] += mark_val*w;
+            }
+            if ( ixp == Nx-1 && izp > 0 && periodix == 1) {
+                if ( vertx == 1 ) i = ixp + (izp-1)*Nx - (Nx-2);
+                if ( vertx == 0 ) i = ixp + (izp-1)*Nx - (Nx-1);
+                mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
+                Wm[thread_num][i]   += w;
+                BmWm[thread_num][i] += mark_val*w;
+            }
+            
+            
+            // South
+            if ( izp > 0 ) {
+                i = ixp + (izp-1)*Nx;
+                mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
+                Wm[thread_num][i]   += w;
+                BmWm[thread_num][i] += mark_val*w;
+            }
+            
+            // North
+            if ( izp < Nz-1 ) {
+                i = ixp + (izp+1)*Nx;
+                mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
+                Wm[thread_num][i]   += w;
+                BmWm[thread_num][i] += mark_val*w;
+            }
+            
+            
+        }
+    }
+    
+    // Final reduction
+#pragma omp parallel for shared ( BmWm, Wm, BMWM, WM, Nx, Nz, nthreads ) private( i, k )  schedule( static )
+    for ( i=0; i<Nb_part; i++ ) {
+        for ( k=0; k<nthreads; k++ ) {
+            WM[i]   += Wm[k][i];
+            BMWM[i] += BmWm[k][i];
+        }
+    }
+    
+    //--------------------------------------------------------------
+    // Get interpolated value on nodes
+    //--------------------------------------------------------------
+    
+#pragma omp parallel for shared ( mesh, MarkerField, BMWM, WM, Nx, Nz, MarkerType ) private( i )  firstprivate ( itp_type )  schedule( static )
+    for (i=0;i<Nb_part;i++) {
+        
+        MarkerField[i] = 0.0;
+        
+        if (WM[i]>1e-30 && MarkerType[i]!=-1 ) {
+            MarkerField[i] = BMWM[i]/WM[i];
+            if (itp_type==1) {
+                MarkerField[i] =  1.0 / MarkerField[i];
+            }
+            if (itp_type==2) {
+                MarkerField[i] =  exp(MarkerField[i]);
+            }
+        }
+    }
+    
+    // Clean up
+    DoodzFree(WM);
+    DoodzFree(BMWM);
+    
+    for ( k=0; k<nthreads; k++ ) {
+        DoodzFree(Wm[k]);
+        DoodzFree(BmWm[k]);
+    }
+    DoodzFree(Wm);
+    DoodzFree(BmWm);
+}
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
@@ -969,21 +1209,18 @@ void Interp_P2G ( markers *particles, DoodzFP* mat_prop, grid *mesh, double* Nod
     // itp_type == 1 --> harmonic distance-weighted average
     // itp_type == 2 --> geometric distance-weighted average
 
-    int i, j, k, ixp, izp, Nb_part, nthreads, thread_num, l, c1;
-    double dx, dz, dxm, dzm,  distance, mark_val;
+    int i, j, k, ixp, izp, Nb_part=particles->Nb_part, nthreads, thread_num, l, c1;
+    double dx = mesh->dx, dz = mesh->dz, dxm, dzm,  distance, mark_val;
     double  *WM, *BMWM;
     double **Wm, **BmWm;
     double nexp = model->nexp_radial_basis, w;
+    double sig  = sqrt( dx*dx + dz*dz )*2.0;
     int    periodix = model->isperiodic_x;
     
     int vertx = 0, vertz = 0;
     if (Nz==mesh->Nx) vertx = 1;
     if (Nz==mesh->Nz) vertz = 1;
     
-    Nb_part=particles->Nb_part;
-    dx = mesh->dx;
-    dz = mesh->dz;
-
     #pragma omp parallel
         {
             nthreads = omp_get_num_threads();
@@ -1009,7 +1246,7 @@ void Interp_P2G ( markers *particles, DoodzFP* mat_prop, grid *mesh, double* Nod
     
 #pragma omp parallel for shared ( particles, BmWm, Wm, flag, itp_type, mat_prop, xg, zg )    \
 private ( k, ixp, izp, distance, mark_val, thread_num, i, w )    \
-firstprivate ( dx, dz, Nb_part, Nx, Nz, nexp, periodix, vertx  ) //schedule( static )
+firstprivate ( dx, dz, Nb_part, Nx, Nz, nexp, periodix, vertx, sig  ) //schedule( static )
     
     for ( k=0; k<Nb_part; k++ ) {
         
@@ -1029,7 +1266,7 @@ firstprivate ( dx, dz, Nb_part, Nx, Nz, nexp, periodix, vertx  ) //schedule( sta
             // Center
             i        = ixp + izp*Nx;
             mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
-            w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp );
+            w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
             Wm[thread_num][i]   += w;
             BmWm[thread_num][i] += mark_val*w;
             
@@ -1037,7 +1274,7 @@ firstprivate ( dx, dz, Nb_part, Nx, Nz, nexp, periodix, vertx  ) //schedule( sta
             if ( ixp > 0 ) {
                 i = ixp + izp*Nx - 1;
                 mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
-                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
                 Wm[thread_num][i]   += w;
                 BmWm[thread_num][i] += mark_val*w;
             }
@@ -1045,7 +1282,7 @@ firstprivate ( dx, dz, Nb_part, Nx, Nz, nexp, periodix, vertx  ) //schedule( sta
                 if ( vertx == 1 ) i = ixp + izp*Nx + (Nx-2);
                 if ( vertx == 0 ) i = ixp + izp*Nx + (Nx-1);
                 mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
-                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
                 Wm[thread_num][i]   += w;
                 BmWm[thread_num][i] += mark_val*w;
             }
@@ -1054,7 +1291,7 @@ firstprivate ( dx, dz, Nb_part, Nx, Nz, nexp, periodix, vertx  ) //schedule( sta
             if ( ixp > 0 && izp > 0 ) {
                 i = ixp + (izp-1)*Nx - 1;
                 mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
-                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
                 Wm[thread_num][i]   += w;
                 BmWm[thread_num][i] += mark_val*w;
             }
@@ -1062,7 +1299,7 @@ firstprivate ( dx, dz, Nb_part, Nx, Nz, nexp, periodix, vertx  ) //schedule( sta
                 if ( vertx == 1 ) i = ixp + (izp-1)*Nx + (Nx-2);
                 if ( vertx == 0 ) i = ixp + (izp-1)*Nx + (Nx-1);
                 mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
-                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
                 Wm[thread_num][i]   += w;
                 BmWm[thread_num][i] += mark_val*w;
             }
@@ -1071,7 +1308,7 @@ firstprivate ( dx, dz, Nb_part, Nx, Nz, nexp, periodix, vertx  ) //schedule( sta
             if ( ixp > 0 && izp < Nz-1 ) {
                 i = ixp + (izp+1)*Nx - 1;
                 mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
-                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
                 Wm[thread_num][i]   += w;
                 BmWm[thread_num][i] += mark_val*w;
             }
@@ -1079,7 +1316,7 @@ firstprivate ( dx, dz, Nb_part, Nx, Nz, nexp, periodix, vertx  ) //schedule( sta
                 if ( vertx == 1 ) i = ixp + (izp+1)*Nx + (Nx-2);
                 if ( vertx == 0 ) i = ixp + (izp+1)*Nx + (Nx-1);
                 mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
-                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
                 Wm[thread_num][i]   += w;
                 BmWm[thread_num][i] += mark_val*w;
             }
@@ -1088,7 +1325,7 @@ firstprivate ( dx, dz, Nb_part, Nx, Nz, nexp, periodix, vertx  ) //schedule( sta
             if ( ixp < Nx-1 && izp < Nz-1 ) {
                 i = ixp + (izp+1)*Nx + 1;
                 mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
-                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
                 Wm[thread_num][i]   += w;
                 BmWm[thread_num][i] += mark_val*w;
             }
@@ -1096,7 +1333,7 @@ firstprivate ( dx, dz, Nb_part, Nx, Nz, nexp, periodix, vertx  ) //schedule( sta
                 if ( vertx == 1 ) i = ixp + (izp+1)*Nx - (Nx-2);
                 if ( vertx == 0 ) i = ixp + (izp+1)*Nx - (Nx-1);
                 mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
-                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
                 Wm[thread_num][i]   += w;
                 BmWm[thread_num][i] += mark_val*w;
             }
@@ -1105,7 +1342,7 @@ firstprivate ( dx, dz, Nb_part, Nx, Nz, nexp, periodix, vertx  ) //schedule( sta
             if ( ixp < Nx-1  ) {
                 i = ixp + izp*Nx + 1;
                 mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
-                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
                 Wm[thread_num][i]   += w;
                 BmWm[thread_num][i] += mark_val*w;
             }
@@ -1113,7 +1350,7 @@ firstprivate ( dx, dz, Nb_part, Nx, Nz, nexp, periodix, vertx  ) //schedule( sta
                 if ( vertx == 1 ) i = ixp + izp*Nx - (Nx-2);
                 if ( vertx == 0 ) i = ixp + izp*Nx - (Nx-1);
                 mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
-                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
                 Wm[thread_num][i]   += w;
                 BmWm[thread_num][i] += mark_val*w;
             }
@@ -1122,7 +1359,7 @@ firstprivate ( dx, dz, Nb_part, Nx, Nz, nexp, periodix, vertx  ) //schedule( sta
             if ( ixp < Nx-1 && izp > 0 ) {
                 i = ixp + (izp-1)*Nx + 1;
                 mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
-                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
                 Wm[thread_num][i]   += w;
                 BmWm[thread_num][i] += mark_val*w;
             }
@@ -1130,7 +1367,7 @@ firstprivate ( dx, dz, Nb_part, Nx, Nz, nexp, periodix, vertx  ) //schedule( sta
                 if ( vertx == 1 ) i = ixp + (izp-1)*Nx - (Nx-2);
                 if ( vertx == 0 ) i = ixp + (izp-1)*Nx - (Nx-1);
                 mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
-                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
                 Wm[thread_num][i]   += w;
                 BmWm[thread_num][i] += mark_val*w;
             }
@@ -1140,7 +1377,7 @@ firstprivate ( dx, dz, Nb_part, Nx, Nz, nexp, periodix, vertx  ) //schedule( sta
             if ( izp > 0 ) {
                 i = ixp + (izp-1)*Nx;
                 mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
-                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
                 Wm[thread_num][i]   += w;
                 BmWm[thread_num][i] += mark_val*w;
             }
@@ -1149,7 +1386,7 @@ firstprivate ( dx, dz, Nb_part, Nx, Nz, nexp, periodix, vertx  ) //schedule( sta
             if ( izp < Nz-1 ) {
                 i = ixp + (izp+1)*Nx;
                 mark_val = MarkerValue( mat_prop, particles, k, itp_type, flag );
-                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp );
+                w        = RadiaBasisFunctionWeight( xg[ixp], zg[izp], particles->x[k], particles->z[k], nexp, sig );
                 Wm[thread_num][i]   += w;
                 BmWm[thread_num][i] += mark_val*w;
             }
