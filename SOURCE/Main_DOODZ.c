@@ -803,21 +803,21 @@ int main( int nargs, char *args[] ) {
 
                 }
                 
-                if ( Nmodel.stagnated == 0 ) {
-                    
-                    if ( Nmodel.nit == 0  ) {
-                        printf("---- Direct solve residual ----\n");
-                        StrainRateComponents( &mesh, scaling, &model );
-                        RheologicalOperators( &mesh, &model, &scaling, 0 );
-                        NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
-                        if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
-                        if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
-                        printf("---- Direct solve residual ----\n");
-       
-                        if ( model.write_debug == 1 ) WriteResiduals( mesh, model, Nmodel, scaling );
-                
-                    }
-                }
+//                if ( Nmodel.stagnated == 0 ) {
+//                    
+//                    if ( Nmodel.nit == 0  ) {
+//                        printf("---- Direct solve residual ----\n");
+//                        StrainRateComponents( &mesh, scaling, &model );
+//                        RheologicalOperators( &mesh, &model, &scaling, 0 );
+//                        NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
+//                        if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
+//                        if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
+//                        printf("---- Direct solve residual ----\n");
+//       
+//                        if ( model.write_debug == 1 ) WriteResiduals( mesh, model, Nmodel, scaling );
+//                
+//                    }
+//                }
                 
                 if ( Nmodel.stagnated == 1 && model.iselastic == 1 && model.safe_mode == 1 ) {
                     printf( "\e[1;31mWARNING : Non-linear solver stagnated (abs_tol_u = %2.2e abs_tol_p = %2.2e)\e[m\n", Nmodel.abs_tol_u, Nmodel.abs_tol_p );
