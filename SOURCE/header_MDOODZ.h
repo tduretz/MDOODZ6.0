@@ -302,8 +302,8 @@ void Initialise1DArrayChar( char*, int, char );
 void Initialise1DArrayInt( int*, int, int );
 void IsNanArray2DFP( DoodzFP*, int );
 void IsInfArray2DFP( DoodzFP*, int );
-void InterpCentroidsToVerticesDouble( double*, double*, grid*, params*, scale* );
-void InterpVerticesToCentroidsDouble( double*, double*, grid*, params*, scale* );
+void InterpCentroidsToVerticesDouble( double*, double*, grid*, params* );
+void InterpVerticesToCentroidsDouble( double*, double*, grid*, params* );
 //
 //
 // Grid initialisation and boundary conditions
@@ -571,3 +571,5 @@ void OldDeviatoricStressesPressure( grid*, markers*, scale, params*  );
 void TotalStresses( grid*, markers*, scale, params* );
 
 void Interp_P2G ( markers*, DoodzFP*, grid*, double*, double*, double*, int, int, params*, char*, int, int );
+void Interp_Grid2P_centroids ( markers, DoodzFP* , grid *, double* , double* , double* , int , int , char *, params* );
+void ExpandCentroidArray( double*, double*, grid*, params* );

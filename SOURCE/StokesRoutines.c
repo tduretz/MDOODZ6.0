@@ -496,10 +496,10 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
             //------------------------------------------------------------------------------------------------------
             
             // Some stuff to be put on vertices                       < ---------------------- get P from centroids to vertices
-            InterpCentroidsToVerticesDouble( mesh->T,    mesh->T_s,   mesh, model, &scaling );
-//            InterpCentroidsToVerticesDouble( mesh->p_in, mesh->P_s,   mesh, model, &scaling );
-            InterpCentroidsToVerticesDouble( mesh->d0,   mesh->d0_s,  mesh, model, &scaling );
-            InterpCentroidsToVerticesDouble( mesh->phi,  mesh->phi_s, mesh, model, &scaling );
+            InterpCentroidsToVerticesDouble( mesh->T,    mesh->T_s,   mesh, model );
+//            InterpCentroidsToVerticesDouble( mesh->p_in, mesh->P_s,   mesh, model );
+            InterpCentroidsToVerticesDouble( mesh->d0,   mesh->d0_s,  mesh, model );
+            InterpCentroidsToVerticesDouble( mesh->phi,  mesh->phi_s, mesh, model );
             
             // Update non-linearity
             UpdateNonLinearity( mesh, particles, topo_chain, topo, materials, model, Nmodel, scaling, 0, 1.0 );

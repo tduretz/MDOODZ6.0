@@ -86,10 +86,10 @@ void  OldDeviatoricStressesPressure( grid* mesh, markers* particles, scale scali
     
     
     
-    InterpCentroidsToVerticesDouble( mesh->sxxd0,  mesh->sxxd0_s, mesh, model, &scaling );
-    InterpCentroidsToVerticesDouble( mesh->szzd0,  mesh->szzd0_s, mesh, model, &scaling );
-    InterpCentroidsToVerticesDouble( mesh->p0_n,   mesh->p0_s,    mesh, model, &scaling );
-    InterpVerticesToCentroidsDouble( mesh->sxz0_n, mesh->sxz0,    mesh, model, &scaling );
+    InterpCentroidsToVerticesDouble( mesh->sxxd0,  mesh->sxxd0_s, mesh, model );
+    InterpCentroidsToVerticesDouble( mesh->szzd0,  mesh->szzd0_s, mesh, model );
+    InterpCentroidsToVerticesDouble( mesh->p0_n,   mesh->p0_s,    mesh, model );
+    InterpVerticesToCentroidsDouble( mesh->sxz0_n, mesh->sxz0,    mesh, model );
     
     
     
@@ -1101,8 +1101,8 @@ void UpdateParticleX( grid* mesh, scale scaling, params model, markers* particle
     }
 
     // Interp increments to particles
-    Interp_Grid2P( *particles, X_inc_mark, mesh, X_inc_grid, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
-//    Interp_Grid2P_centroids( *particles, X_inc_mark, mesh, X_inc_grid, mesh->xg_coord,  mesh->zg_coord, Nx, Nz, mesh->BCg.type, &model  );
+    //Interp_Grid2P( *particles, X_inc_mark, mesh, X_inc_grid, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
+    Interp_Grid2P_centroids( *particles, X_inc_mark, mesh, X_inc_grid, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
 
     
     // Increment temperature on particles
@@ -1268,7 +1268,8 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
     for (k=0; k<Ncx*Ncz; k++) {
         mesh->dp[k] = 0.0;
         if (mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
-            mesh->dp[k] = (mesh->p_in[k] - mesh->p_lith[k]) - (mesh->p0_n[k]-mesh->p_lith0[k]); // dp dynamic pressure
+//            mesh->dp[k] = (mesh->p_in[k] - mesh->p_lith[k]) - (mesh->p0_n[k]-mesh->p_lith0[k]); // dp dynamic pressure
+            mesh->dp[k] = (mesh->p_in[k]-mesh->p0_n[k]);
         }
     }
 
@@ -1341,7 +1342,9 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
         P_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
 
         // Interp increments to particles
-        Interp_Grid2P( *particles, P_inc_mark, mesh, mesh->dp, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
+//        Interp_Grid2P( *particles, P_inc_mark, mesh, mesh->dp, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
+    
+        Interp_Grid2P_centroids( *particles, P_inc_mark, mesh, mesh->dp, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
 
         // Increment pressure on particles
         ArrayPlusArray( particles->P, P_inc_mark, particles->Nb_part );
@@ -1386,10 +1389,16 @@ void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_pr
         etam   = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
 
         // Old stresses grid --> markers
-        Interp_Grid2P( *particles, txxm0, mesh, mesh->sxxd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type );
-        Interp_Grid2P( *particles, tzzm0, mesh, mesh->szzd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type );
+//        Interp_Grid2P( *particles, txxm0, mesh, mesh->sxxd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type );
+//        Interp_Grid2P( *particles, tzzm0, mesh, mesh->szzd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type );
+        
+        Interp_Grid2P_centroids( *particles, txxm0, mesh, mesh->sxxd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
+        Interp_Grid2P_centroids( *particles, tzzm0, mesh, mesh->szzd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
+        
         Interp_Grid2P( *particles, txzm0, mesh, mesh->sxz0 , mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type     );
         Interp_Grid2P( *particles, etam,  mesh, mesh->eta_phys_s, mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type);
+        
+        
 
         if ( model->subgrid_diff == 2 ) {
 
@@ -1424,8 +1433,10 @@ void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_pr
             }
 
             // Remaining stress increments grid --> markers
-            Interp_Grid2P( *particles, dtxxmr, mesh, dtxxgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
-            Interp_Grid2P( *particles, dtzzmr, mesh, dtzzgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
+//            Interp_Grid2P( *particles, dtxxmr, mesh, dtxxgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
+//            Interp_Grid2P( *particles, dtzzmr, mesh, dtzzgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
+            Interp_Grid2P_centroids( *particles, dtxxmr, mesh, dtxxgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
+            Interp_Grid2P_centroids( *particles, dtzzmr, mesh, dtzzgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
             Interp_Grid2P( *particles, dtxzmr, mesh, dtxzgr, mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type  );
 
             // Final stresses update on markers
@@ -1944,17 +1955,17 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     
     // ----------------- Reaction volume changes
     
-    // Activate volume changes only if reaction is taking place
-    if ( fabs(X-X0)>0.0 ) {
-        rho       = rho1 * (1-X) + rho2 * X;
-        drhodX    = rho2 - rho1;
-        drhodP    = drhodX * dXdP;
-        d2rhodP2  = drhodX * d2XdP2;
-        divr      = -1.0/rho * drhodP;
-        ddivrdpc  = -d2rhodP2/rho + pow(drhodP/rho, 2.0);
-        Pc        = Pc + K*dt*divr;
-        *Pcorr    = Pc;
-    }
+//    // Activate volume changes only if reaction is taking place
+//    if ( fabs(X-X0)>0.0 ) {
+//        rho       = rho1 * (1-X) + rho2 * X;
+//        drhodX    = rho2 - rho1;
+//        drhodP    = drhodX * dXdP;
+//        d2rhodP2  = drhodX * d2XdP2;
+//        divr      = -1.0/rho * drhodP;
+//        ddivrdpc  = -d2rhodP2/rho + pow(drhodP/rho, 2.0);
+//        Pc        = Pc + K*dt*divr;
+//        *Pcorr    = Pc;
+//    }
     
     // ----------------- Reaction volume changes
 
@@ -2072,11 +2083,11 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
     Ncx = Nx-1;
     Ncz = Nz-1;
 
-    InterpCentroidsToVerticesDouble( mesh->div_u,   mesh->div_u_s, mesh, model, scaling );
-    InterpCentroidsToVerticesDouble( mesh->T,       mesh->T_s,     mesh, model, scaling );
-    InterpCentroidsToVerticesDouble( mesh->p_in,    mesh->P_s,     mesh, model, scaling );
-    InterpCentroidsToVerticesDouble( mesh->d0,      mesh->d0_s,    mesh, model, scaling );
-    InterpCentroidsToVerticesDouble( mesh->phi,     mesh->phi_s,   mesh, model, scaling ); // ACHTUNG NOT FRICTION ANGLE
+    InterpCentroidsToVerticesDouble( mesh->div_u,   mesh->div_u_s, mesh, model );
+    InterpCentroidsToVerticesDouble( mesh->T,       mesh->T_s,     mesh, model );
+    InterpCentroidsToVerticesDouble( mesh->p_in,    mesh->P_s,     mesh, model );
+    InterpCentroidsToVerticesDouble( mesh->d0,      mesh->d0_s,    mesh, model );
+    InterpCentroidsToVerticesDouble( mesh->phi,     mesh->phi_s,   mesh, model ); // ACHTUNG NOT FRICTION ANGLE
 
     // Evaluate cell center viscosities
 #pragma omp parallel for shared( mesh  ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, d1, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, detadexx, detadezz, detadexz, detadp, Xreac, OverS, ddivpdexx, ddivpdezz, ddivpdexz, ddivpdp, Pcorr, div_el, div_pl, div_r ) firstprivate( materials, scaling, average, model, Ncx, Ncz )
@@ -2685,6 +2696,19 @@ void ShearModCompExpGrid( grid* mesh, mat_prop materials, params model, scale sc
             }
         }
     }
+    
+    // Periodic
+    double av;
+    if (model.isperiodic_x==1) {
+        for( l=0; l<Nz; l++) {
+            c1 = l*Nx + Nx-1;
+            av = 0.5*(mesh->mu_s[c1] + mesh->mu_s[l*Nx]);
+            mesh->mu_s[c1] = av; mesh->mu_s[l*Nx] = av;
+            av = 0.5*(mesh->bet_s[c1] + mesh->bet_s[l*Nx]);
+            mesh->bet_s[c1] = av; mesh->bet_s[l*Nx] = av;
+        }
+    }
+    
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -2788,7 +2812,7 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
         mesh->rho_n[c0]   = rhonew;
     }
 
-    InterpCentroidsToVerticesDouble( mesh->rho_n, mesh->rho_s, mesh, model, scaling );
+    InterpCentroidsToVerticesDouble( mesh->rho_n, mesh->rho_s, mesh, model );
 
 //    // Interpolate center values to vertices
 //    int l, c1;
@@ -2926,8 +2950,8 @@ void  StrainRateComponents( grid* mesh, scale scaling, params* model ) {
     }
 
     // Interpolate normal strain rate on vertices
-    InterpCentroidsToVerticesDouble( mesh->exxd, mesh->exxd_s, mesh, model, &scaling );
-    InterpCentroidsToVerticesDouble( mesh->ezzd, mesh->ezzd_s, mesh, model, &scaling );
+    InterpCentroidsToVerticesDouble( mesh->exxd, mesh->exxd_s, mesh, model );
+    InterpCentroidsToVerticesDouble( mesh->ezzd, mesh->ezzd_s, mesh, model );
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/

@@ -244,7 +244,7 @@ int main( int nargs, char *args[] ) {
 #endif
             if ( model.thermal_eq == 1 ) ThermalSteps( &mesh, model,  mesh.T,  mesh.dT,  mesh.rhs_t, mesh.T, &particles, model.cooling_time, scaling );
             if ( model.therm_pert == 1 ) SetThermalPert( &mesh, model, scaling );
-            Interp_Grid2P( particles, particles.T,    &mesh, mesh.T, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type );
+            Interp_Grid2P_centroids( particles, particles.T,    &mesh, mesh.T, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type, &model );
 
             printf("*************************************\n");
             printf("******** Initialize pressure ********\n");
@@ -268,7 +268,7 @@ int main( int nargs, char *args[] ) {
 
             // Lithostatic pressure for initial visco-plastic viscosity field
             ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 0 );
-            Interp_Grid2P( particles, particles.P,    &mesh, mesh.p_lith, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+            Interp_Grid2P_centroids( particles, particles.P,    &mesh, mesh.p_lith, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
             Interp_P2C ( particles, particles.P, &mesh, mesh.p_in, mesh.xg_coord, mesh.zg_coord,  1, 0 );
 //            ArrayEqualArray( mesh.p_in, mesh.p_lith,  (mesh.Nx-1)*(mesh.Nz-1) );
 
@@ -486,7 +486,7 @@ int main( int nargs, char *args[] ) {
                 
 //                OldDeviatoricStressesPressure( &mesh, &particles, scaling, &model );
 
-                // Get old stresses from particles
+//                // Get old stresses from particles
                 Interp_P2C ( particles, particles.sxxd, &mesh, mesh.sxxd0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
                 Interp_P2N ( particles, particles.sxxd, &mesh, mesh.sxxd0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
                 Interp_P2C ( particles, particles.szzd, &mesh, mesh.szzd0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
@@ -533,8 +533,9 @@ int main( int nargs, char *args[] ) {
 
             //-----------------------------------------------------------------------------------------------------------
             // Interp P --> p0_n , p0_s
+//            ArrayEqualArray(  mesh.p0_n,  mesh.p_in, Ncx*Ncz );
             Interp_P2C ( particles, particles.P, &mesh, mesh.p0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-            ArrayPlusArray(  mesh.p0_n,   mesh.p_lith, Ncx*Ncz ); // Add back lithostatic component
+//            ArrayPlusArray(  mesh.p0_n,   mesh.p_lith, Ncx*Ncz ); // Add back lithostatic component
 
             //-------------------------------------------------------------------------------------------------------------
 
@@ -552,9 +553,9 @@ int main( int nargs, char *args[] ) {
             ArrayEqualArray(  mesh.szzd0,  mesh.szzd, Ncx*Ncz );
             ArrayEqualArray(  mesh.sxz0,   mesh.sxz,   Nx*Nz );
             
-            InterpCentroidsToVerticesDouble( mesh.sxxd0, mesh.sxxd0_s, &mesh, &model, &scaling );
-            InterpCentroidsToVerticesDouble( mesh.szzd0, mesh.szzd0_s, &mesh, &model, &scaling );
-            InterpVerticesToCentroidsDouble( mesh.sxz0_n,  mesh.sxz0,  &mesh, &model, &scaling );
+            InterpCentroidsToVerticesDouble( mesh.sxxd0, mesh.sxxd0_s, &mesh, &model );
+            InterpCentroidsToVerticesDouble( mesh.szzd0, mesh.szzd0_s, &mesh, &model );
+            InterpVerticesToCentroidsDouble( mesh.sxz0_n,  mesh.sxz0,  &mesh, &model );
 
             ShearModCompExpGrid( &mesh, materials, model, scaling );
             CohesionFrictionDilationGrid( &mesh, &particles, materials, model, scaling );
@@ -935,20 +936,22 @@ int main( int nargs, char *args[] ) {
         }
         
 //        TotalStresses( &mesh, &particles, scaling, &model );
-        
-        // Update stresses on markers
-        if (model.iselastic == 1 ) {
-            UpdateParticleStress(  &mesh, &particles, &model, &materials, &scaling );
-        }
-        else {
-            Interp_Grid2P( particles, particles.sxxd, &mesh, mesh.sxxd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-            Interp_Grid2P( particles, particles.szzd, &mesh, mesh.szzd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+
+//        // Update stresses on markers
+//        if (model.iselastic == 1 ) {
+//            UpdateParticleStress(  &mesh, &particles, &model, &materials, &scaling );
+//        }
+//        else {
+            Interp_Grid2P_centroids( particles, particles.sxxd, &mesh, mesh.sxxd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
+            Interp_Grid2P_centroids( particles, particles.szzd, &mesh, mesh.szzd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
             Interp_Grid2P( particles, particles.sxz,  &mesh, mesh.sxz , mesh.xg_coord,  mesh.zg_coord,  mesh.Nx  , mesh.Nz, mesh.BCg.type   );
-        }
+//        }
 
         //--------------------------------------------------------------------------------------------------------------------------------//
         // Update pressure on markers
-        UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
+//        UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
+        Interp_Grid2P_centroids( particles, particles.P, &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
+
         UpdateParticleX( &mesh, scaling, model, &particles, &materials );
         
         //------------------------------------------------------------------------------------------------------------------------------//
@@ -969,7 +972,7 @@ int main( int nargs, char *args[] ) {
             UpdateParticleEnergy( &mesh, scaling, model, &particles, &materials );
             MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. after UpdateParticleEnergy");
 
-            if ( model.iselastic == 1 ) Interp_Grid2P( particles, particles.rhoUe0, &mesh, mesh.rhoUe0, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+            if ( model.iselastic == 1 ) Interp_Grid2P_centroids( particles, particles.rhoUe0, &mesh, mesh.rhoUe0, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
 
             // Calculate energies
             if ( model.write_energies == 1 ) Energies( &mesh, model, scaling );
@@ -1039,10 +1042,6 @@ int main( int nargs, char *args[] ) {
 
             // Correction for particle inflow 1
             if (model.ispureshear_ale == -1 && model.isperiodic_x == 0) ParticleInflowCheck( &particles, &mesh, model, topo, 1 );
-
-            // Roration of stresses (visco-elastic flow)
-            //            if ( model.iselastic == 1 ) RotateStresses( mesh, &particles, model, &scaling );
-            //            if ( model.aniso     == 1 ) RotateDirectorVector( mesh, &particles, model, &scaling  );
 
             // Update accumulated strain
             AccumulatedStrainII( &mesh, scaling, model, &particles,  mesh.xc_coord,  mesh.zc_coord, mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
@@ -1131,9 +1130,7 @@ int main( int nargs, char *args[] ) {
 
             // Count the number of particle per cell
             t_omp = (double)omp_get_wtime();
-            //            if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 1, scaling );
             if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
-            //            if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 1, scaling );
             if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
             if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
             if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
@@ -1152,21 +1149,6 @@ int main( int nargs, char *args[] ) {
             ////            }
             //            model.dt = whole_dt;
         }
-        
-        
-//        // Update stresses on markers
-//        if (model.iselastic == 1 ) {
-//            UpdateParticleStress(  &mesh, &particles, &model, &materials, &scaling );
-//        }
-//        else {
-//            Interp_Grid2P( particles, particles.sxxd, &mesh, mesh.sxxd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-//            Interp_Grid2P( particles, particles.szzd, &mesh, mesh.szzd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-//            Interp_Grid2P( particles, particles.sxz,  &mesh, mesh.sxz , mesh.xg_coord,  mesh.zg_coord,  mesh.Nx  , mesh.Nz, mesh.BCg.type   );
-//        }
-//
-//        //--------------------------------------------------------------------------------------------------------------------------------//
-//        // Update pressure on markers
-//        UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
         
         // Update time
         model.time += model.dt;

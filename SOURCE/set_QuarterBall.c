@@ -98,24 +98,24 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
 //        }
 //        }
         //=================================================================
-        // Layering (passive markers) - Matrice - phase 0 et 3 => Granulite
-        if (particles->phase[np] == 0) {
-            
-            for( il=0; il<= 100; il=il+2 ) {
-                if ((particles->z[np]-Lz/2.0-spacing/2.0)>=-((il+1)*spacing) && (particles->z[np]-Lz/2.0-spacing/2.0)<-(il*spacing)) particles->phase[np] = 4;
-            }
-            for( il=0; il<= 100; il=il+2 ) {
-                if (particles->phase[np]==0 && (particles->x[np]-Lx/2.0-spacing/2.0)>=-((il+1)*spacing) && (particles->x[np]-Lx/2.0-spacing/2.0)<-(il*spacing)) particles->phase[np] = 5;
-                if (particles->phase[np]==4 && (particles->x[np]-Lx/2.0-spacing/2.0)>=-((il+1)*spacing) && (particles->x[np]-Lx/2.0-spacing/2.0)<-(il*spacing)) particles->phase[np] = 0;
-            }
-            if (particles->phase[np]==5 || particles->phase[np]==4) particles->phase[np] = 3;
-        }
+//        // Layering (passive markers) - Matrice - phase 0 et 3 => Granulite
+//        if (particles->phase[np] == 0) {
+//            
+//            for( il=0; il<= 100; il=il+2 ) {
+//                if ((particles->z[np]-Lz/2.0-spacing/2.0)>=-((il+1)*spacing) && (particles->z[np]-Lz/2.0-spacing/2.0)<-(il*spacing)) particles->phase[np] = 4;
+//            }
+//            for( il=0; il<= 100; il=il+2 ) {
+//                if (particles->phase[np]==0 && (particles->x[np]-Lx/2.0-spacing/2.0)>=-((il+1)*spacing) && (particles->x[np]-Lx/2.0-spacing/2.0)<-(il*spacing)) particles->phase[np] = 5;
+//                if (particles->phase[np]==4 && (particles->x[np]-Lx/2.0-spacing/2.0)>=-((il+1)*spacing) && (particles->x[np]-Lx/2.0-spacing/2.0)<-(il*spacing)) particles->phase[np] = 0;
+//            }
+//            if (particles->phase[np]==5 || particles->phase[np]==4) particles->phase[np] = 3;
+//        }
         //==================================================================
         
         // ------------------------------------------------
         // 1ere elliptical inclusion
         double rad=0.25/scaling.L;
-        double X,Xn,Z,Zn, xc=-1.0/scaling.L, zc=-1.0/scaling.L, la= 1.00*rad, sa = 1.00*rad, theta=(90.0)*M_PI/180.0;
+        double X,Xn,Z,Zn, xc=model.xmax, zc=model.zmin, la= 1.00*rad, sa = 1.00*rad, theta=(90.0)*M_PI/180.0;
         X = particles->x[np]-xc;
         Z = particles->z[np]-zc;
         // elliptical inclusion
@@ -124,8 +124,8 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         if ( pow(Xn/la,2) + pow(Zn/sa,2) - 1 < 0 ) particles->phase[np] = 1;
         
         // 2eme elliptical inclusion
-        xc=+1.00/scaling.L;
-        zc=-1.00/scaling.L;
+        xc=model.xmin;
+        zc=model.zmin;
         la= 1.0*rad;
         sa = 1.0*rad;
         //theta=(90.0)*M_PI/180.0;

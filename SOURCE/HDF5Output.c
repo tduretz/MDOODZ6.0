@@ -261,7 +261,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
 
     // Build total pressure
     for (k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
-        P_total[k] = mesh->p_in[k];
+        P_total[k] = (mesh->p_in[k] -  mesh->p0_n[k]);
     }
 
     // ---------------------------------------------------------

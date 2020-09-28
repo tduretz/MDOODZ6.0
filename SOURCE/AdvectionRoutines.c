@@ -90,7 +90,7 @@ firstprivate ( model ) reduction (+:count) //schedule( static )
 
 void isoutPart( markers *particles, params *model, int k ) {
 
-     if ( model->isperiodic_x) {
+     if ( model->isperiodic_x == 1 ) {
          if ( particles->x[k] < model->xmin ) {
              // Correct position in x
              particles->x[k] = model->xmax - ABSV(model->xmin - particles->x[k]);
@@ -355,9 +355,9 @@ void RogerGuntherII( markers *particles, params model, grid mesh, int precise, s
     double txx, tzz, txz, angle;
     double *dudx_n, *dvdz_n, *dudz_s, *dvdx_s;
     double dudxA, dvdzA, dudzA, dvdxA, dudxB, dvdzB, dudzB, dvdxB, dudxC, dvdzC, dudzC, dvdxC, dudxD, dvdzD, dudzD, dvdxD, VEA,VEB,VEC,VED;
-    double nx, nz, ndotx, ndotz, w12, exxA, exzA, exxB, exzB, exxC, exzC, exxD, exzD, exx, exz, norm;
+    double nx, nz, ndotx, ndotz, w12, norm;
 
-    int new = 1;
+    int new = 0; // activates Taras trick: conservative interpolation
     dx = mesh.dx;
     dz = mesh.dz;
 
@@ -402,18 +402,16 @@ firstprivate( model )
     }
 
 #pragma omp parallel for shared ( particles, mesh, om_s ) \
-private ( k, xA, zA, VxA, VzA, VxB, VzB, VxC, VzC, VxD, VzD, OmA, OmB, OmC, OmD, txx, tzz, txz, angle, dudxA, dvdzA, dudzA, dvdxA, dudxB, dvdzB, dudzB, dvdxB, dudxC, dvdzC, dudzC, dvdxC, dudxD, dvdzD, dudzD, dvdxD, VEA,VEB,VEC,VED, nx, nz, ndotx, ndotz, w12, exxA, exzA, exxB, exzB, exxC, exzC, exxD, exzD, exx, exz, norm ) \
+private ( k, xA, zA, VxA, VzA, VxB, VzB, VxC, VzC, VxD, VzD, OmA, OmB, OmC, OmD, txx, tzz, txz, angle, dudxA, dvdzA, dudzA, dvdxA, dudxB, dvdzB, dudzB, dvdxB, dudxC, dvdzC, dudzC, dvdxC, dudxD, dvdzD, dudzD, dvdxD, VEA,VEB,VEC,VED, nx, nz, ndotx, ndotz, w12, norm ) \
 firstprivate( model, dx, dz, new )
     for (k=0;k<Nb_part;k++) {
 
-        if ( model.iselastic == 1 || model.aniso == 1 ) OmA = Grid2P( particles, om_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) OmA   = Grid2P( particles, om_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         if ( model.iselastic == 1 || model.aniso == 1 ) dudzA = Grid2P( particles, dudz_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         if ( model.iselastic == 1 || model.aniso == 1 ) dvdxA = Grid2P( particles, dvdx_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         if ( model.iselastic == 1 || model.aniso == 1 ) dudxA = Grid2P( particles, dudx_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
         if ( model.iselastic == 1 || model.aniso == 1 ) dvdzA = Grid2P( particles, dvdz_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
-        if ( model.iselastic == 1 || model.aniso == 1 ) VEA = Grid2P( particles, mesh.VE_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
-        if ( model.iselastic == 1 || model.aniso == 1 ) exxA = Grid2P( particles, mesh.exxd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
-        if ( model.iselastic == 1 || model.aniso == 1 ) exzA = Grid2P( particles, mesh.exz , mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) VEA   = Grid2P( particles, mesh.VE_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         xA           = particles->x[k];
         zA           = particles->z[k];
 //        VxA          = particles->Vx[k];
@@ -426,14 +424,12 @@ firstprivate( model, dx, dz, new )
             particles->z[k] = zA + 0.5 * model.dt * VzA;
         }
         isoutPart( particles, &model, k );
-        if ( model.iselastic == 1 || model.aniso == 1 ) OmB = Grid2P( particles, om_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) OmB   = Grid2P( particles, om_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         if ( model.iselastic == 1 || model.aniso == 1 ) dudzB = Grid2P( particles, dudz_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         if ( model.iselastic == 1 || model.aniso == 1 ) dvdxB = Grid2P( particles, dvdx_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         if ( model.iselastic == 1 || model.aniso == 1 ) dudxB = Grid2P( particles, dudx_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
         if ( model.iselastic == 1 || model.aniso == 1 ) dvdzB = Grid2P( particles, dvdz_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
-        if ( model.iselastic == 1 || model.aniso == 1 ) VEB = Grid2P( particles, mesh.VE_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
-        if ( model.iselastic == 1 || model.aniso == 1 ) exxB = Grid2P( particles, mesh.exxd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
-        if ( model.iselastic == 1 || model.aniso == 1 ) exzB = Grid2P( particles, mesh.exz , mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) VEB   = Grid2P( particles, mesh.VE_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         if (new==0) VxB = Grid2P( particles, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type, dx, dz, k );
         if (new==0) VzB = Grid2P( particles, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz, mesh.BCv.type, dx, dz, k );
         if (new==1) V2P( &VxB, &VzB, particles, mesh.u_in,  mesh.v_in, mesh.xg_coord, mesh.zg_coord, mesh.zvx_coord, mesh.xvz_coord, mesh.Nx, mesh.Nz, mesh.Nz+1, mesh.Nx+1, mesh.BCu.type, mesh.BCv.type, dx, dz, k );
@@ -442,14 +438,12 @@ firstprivate( model, dx, dz, new )
             particles->z[k] = zA + 0.5 * model.dt * VzB;
         }
         isoutPart( particles, &model, k );
-        if ( model.iselastic == 1 || model.aniso == 1 ) OmC = Grid2P( particles, om_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) OmC   = Grid2P( particles, om_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         if ( model.iselastic == 1 || model.aniso == 1 ) dudzC = Grid2P( particles, dudz_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         if ( model.iselastic == 1 || model.aniso == 1 ) dvdxC = Grid2P( particles, dvdx_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         if ( model.iselastic == 1 || model.aniso == 1 ) dudxC = Grid2P( particles, dudx_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
         if ( model.iselastic == 1 || model.aniso == 1 ) dvdzC = Grid2P( particles, dvdz_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
-        if ( model.iselastic == 1 || model.aniso == 1 ) VEC = Grid2P( particles, mesh.VE_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
-        if ( model.iselastic == 1 || model.aniso == 1 ) exxC = Grid2P( particles, mesh.exxd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
-        if ( model.iselastic == 1 || model.aniso == 1 ) exzC = Grid2P( particles, mesh.exz , mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) VEC   = Grid2P( particles, mesh.VE_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         if (new==0) VxC = Grid2P( particles, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type, dx, dz, k );
         if (new==0) VzC = Grid2P( particles, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz, mesh.BCv.type, dx, dz, k );
         if (new==1) V2P( &VxC, &VzC, particles, mesh.u_in,  mesh.v_in, mesh.xg_coord, mesh.zg_coord, mesh.zvx_coord, mesh.xvz_coord, mesh.Nx, mesh.Nz, mesh.Nz+1, mesh.Nx+1, mesh.BCu.type, mesh.BCv.type, dx, dz, k );
@@ -458,14 +452,12 @@ firstprivate( model, dx, dz, new )
             particles->z[k] = zA + 1.0 * model.dt * VzC;
         }
         isoutPart( particles, &model, k );
-        if ( model.iselastic == 1 || model.aniso == 1 ) OmD = Grid2P( particles, om_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) OmD   = Grid2P( particles, om_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         if ( model.iselastic == 1 || model.aniso == 1 ) dudzD = Grid2P( particles, dudz_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         if ( model.iselastic == 1 || model.aniso == 1 ) dvdxD = Grid2P( particles, dvdx_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         if ( model.iselastic == 1 || model.aniso == 1 ) dudxD = Grid2P( particles, dudx_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
         if ( model.iselastic == 1 || model.aniso == 1 ) dvdzD = Grid2P( particles, dvdz_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
-        if ( model.iselastic == 1 || model.aniso == 1 ) VED = Grid2P( particles, mesh.VE_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
-        if ( model.iselastic == 1 || model.aniso == 1 ) exxD = Grid2P( particles, mesh.exxd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
-        if ( model.iselastic == 1 || model.aniso == 1 ) exzD = Grid2P( particles, mesh.exz , mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
+        if ( model.iselastic == 1 || model.aniso == 1 ) VED   = Grid2P( particles, mesh.VE_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         if (new==0) VxD = Grid2P( particles, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type, dx, dz, k );
         if (new==0) VzD = Grid2P( particles, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz,   mesh.BCv.type, dx, dz, k );
         if (new==1) V2P( &VxD, &VzD, particles, mesh.u_in,  mesh.v_in, mesh.xg_coord, mesh.zg_coord, mesh.zvx_coord, mesh.xvz_coord, mesh.Nx, mesh.Nz, mesh.Nz+1, mesh.Nx+1, mesh.BCu.type, mesh.BCv.type, dx, dz, k );
@@ -477,8 +469,6 @@ firstprivate( model, dx, dz, new )
         if ( model.iselastic == 1 || model.aniso == 1 ) dudxA = (1.0/6.0) * ( dudxA + 2.0 * dudxB + 2.0 * dudxC + dudxD);
         if ( model.iselastic == 1 || model.aniso == 1 ) dvdzA = (1.0/6.0) * ( dvdzA + 2.0 * dvdzB + 2.0 * dvdzC + dvdzD);
         if ( model.iselastic == 1 || model.aniso == 1 ) VEA   = (1.0/6.0) * ( VEA   + 2.0 * VEB   + 2.0 * VEC   + VED);
-        if ( model.iselastic == 1 || model.aniso == 1 ) exxA  = (1.0/6.0) * ( exxA   + 2.0 * exxB   + 2.0 * exxC   + exxD);
-        if ( model.iselastic == 1 || model.aniso == 1 ) exzA  = (1.0/6.0) * ( exzA   + 2.0 * exzB   + 2.0 * exzC   + exzD);
 
         if (particles->phase[k] != -1) {
             particles->x[k]    = xA + model.dt * VxA;
@@ -506,18 +496,9 @@ firstprivate( model, dx, dz, new )
             // Director vector rotation
             nx = particles->nx[k];// = 0.0;
             nz = particles->nz[k];// = 1.0;
-            w12 = OmA; //0.5*(dudzA - dvdxA);//
-            exx = exxA;
-            exz = exzA;
-            
             ndotx = (-(dudxA-dvdzA)*nx*nz - dvdxA*nz*nz + dudzA*nx*nx)*nz;
             ndotz = ( (dudxA-dvdzA)*nx*nz + dvdxA*nz*nz - dudzA*nx*nx)*nx;
-            
-//            printf("ndotx = %2.2e\n", ndotx);
-//            printf("ndotz = %2.2e\n", ndotz);
-            
-//            ndotx = nx*(nx*(exx*nx + exz*nz) + nz*(-exx*nz + exz*nx)) + nz*w12 - (pow(nx, 2) + pow(nz, 2))*(exx*nx + exz*nz);
-//            ndotz = -nx*w12 + nz*(nx*(exx*nx + exz*nz) + nz*(-exx*nz + exz*nx)) - (pow(nx, 2) + pow(nz, 2))*(-exx*nz + exz*nx);
+
             nx   += ndotx*model.dt;
             nz   += ndotz*model.dt;
             norm  = sqrt(nx*nx + nz*nz);

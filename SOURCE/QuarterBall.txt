@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00050
+istep = 00010
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -18,9 +18,9 @@ T   = 700
 /**** SPACE-TIME ****/
 Nx      = 51
 Nz      = 51
-Nt      = 50
-xmin    = -1.000000
-zmin    = -1.000000
+Nt      = 10
+xmin    =-1.000000
+zmin    =-1.000000
 xmax    =  1.000000
 zmax    =  1.000000
 advection         = 1
@@ -33,36 +33,36 @@ diag_scaling      = 0
 abs_tol_div       = 1e-12
 rel_tol_div       = 1e-12
 GNUplot_residuals = 0
-shear_style       = 1
 pc_type           = 1
 eta_avg           = 1
 num_deriv         = 0
-StressRotation    = 2
+StressRotation    = 0
 safe_mode         = 1
 nstagmax          = 5
 
 /**** SWITCHES ****/
-compressible    = 1
+no_markers =0
+compressible    = 0
 ProgReac        = 1            / !!!!
 NoReturn        = 0 
 ismechanical    = 1
 RK              = 4
-isperiodic_x    = 1
+isperiodic_x    = 0
 ispureshear_ALE = 0
-isinertial      = 0
 iselastic       = 1
-isthermal       = 1
+isthermal       = 0
 line_search     = 1
 free_surf       = 0
 free_surf_stab  = 0
 eqn_state       = 0
 thermal_eq      = 0
-subgrid_diff    = 2
-shear_heat      = 1
+subgrid_diff    = 0
+shear_heat      = 0
 adiab_heat      = 0
-fstrain         = 1
+fstrain         = 0
 
 /**** SETUP DEPENDANT ****/
+shear_style     = 1
 EpsBG           = 2.0e-14
 PrBG            = 1.6e9
 user0           = 680.0     / temperature [°C]
