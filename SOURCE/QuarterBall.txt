@@ -1,6 +1,6 @@
 /**** RESTART ****/
-istep = 00090
-irestart = 1
+istep = 00050
+irestart = 0
 
 /**** OUTPUT FILES ****/
 writer          = 1
@@ -16,9 +16,9 @@ V   = 1.0e-10
 T   = 700
 
 /**** SPACE-TIME ****/
-Nx      = 101
-Nz      = 101
-Nt      = 100
+Nx      = 51
+Nz      = 51
+Nt      = 50
 xmin    = -1.000000
 zmin    = -1.000000
 xmax    =  1.000000

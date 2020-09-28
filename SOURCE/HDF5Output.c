@@ -248,7 +248,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     double *T0, *P0, *x0, *z0, *Tmax, *Pmax;
     float *CT0, *CP0, *Cx0, *Cz0, *CTmax, *CPmax;
     float *CXreac;
-    float *COverS, *Cdivu, *Cdivu_el, *Cdivu_pl, *Cdivu_th;
+    float *COverS, *Cdivu, *Cdivu_el, *Cdivu_pl, *Cdivu_th, *Cdivu_r;
 
     int    res_fact = 1;
     int    nxviz, nzviz, nxviz_hr, nzviz_hr;
@@ -401,6 +401,10 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     Cdivu_th     = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( mesh->div_u_th, Cdivu_th, (model.Nx-1)*(model.Nz-1) );
     ScaleBack( Cdivu_th, scaling.E, (model.Nx-1)*(model.Nz-1) );
+    
+    Cdivu_r      = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->div_u_r , Cdivu_r , (model.Nx-1)*(model.Nz-1) );
+    ScaleBack( Cdivu_r , scaling.E, (model.Nx-1)*(model.Nz-1) );
 
     //---------------------------------------------------
     CT  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
@@ -718,6 +722,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "divu_el" , 'f', (model.Nx-1)*(model.Nz-1), Cdivu_el, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "divu_pl" , 'f', (model.Nx-1)*(model.Nz-1), Cdivu_pl, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "divu_th" , 'f', (model.Nx-1)*(model.Nz-1), Cdivu_th, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "divu_r"  , 'f', (model.Nx-1)*(model.Nz-1), Cdivu_r , 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Vertices", "exz"  , 'f', model.Nx*model.Nz,         Cexz, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "eII_el" , 'f', (model.Nx-1)*(model.Nz-1), CeII_el, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "eII_pl" , 'f', (model.Nx-1)*(model.Nz-1), CeII_pl, 1 );
@@ -814,7 +819,6 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     DoodzFree( strain_exp );
     DoodzFree( strain_lin );
     DoodzFree( strain_gbs );
-    DoodzFree( X );
     DoodzFree( Cstrain     );
     DoodzFree( Cstrain_el  );
     DoodzFree( Cstrain_pl  );
@@ -830,6 +834,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     DoodzFree( Cdivu_el );
     DoodzFree( Cdivu_pl );
     DoodzFree( Cdivu_th );
+    DoodzFree( Cdivu_r );
 
     if ( model.free_surf == 1 ) {
         DoodzFree( Cxtopo );

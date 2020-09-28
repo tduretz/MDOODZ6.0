@@ -20,9 +20,9 @@ path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/'
 cd(path)
 
 % File
-istart = 60;
+istart = 50;
 ijump  = 10;
-iend   = 60;
+iend   = 50;
 
 %--------------------------------------------------
 % what do you want to plot:
@@ -32,13 +32,13 @@ eta_sym         = 0;
 eta_plot        = 0;
 rho_plot        = 0;
 phase_on_grid   = 0;
-phase_temp2     = 1;
+phase_temp2     = 0;
 vel_plot        = 0;
 vel_vectors     = 0;
-vel_divergence  = 0;
+vel_divergence  = 1;
 pre_plot        = 0;
-dyna_pre        = 1;
-stress_inv      = 1;
+dyna_pre        = 0;
+stress_inv      = 0;
 stress_evol     = 0;
 stress_plot     = 0;
 srate_plot      = 0;
@@ -73,8 +73,8 @@ fstrain          = 0;
 shear_heating    = 0;
 princi_stress    = 0;
 director_vector  = 0;
-Pl_soft          = 1;
-Sole             = 1;
+Pl_soft          = 0;
+Sole             = 0;
 
 % Visualisation options
 printfig      = 0;
@@ -1154,19 +1154,11 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if ( vel_divergence == 1 )
             
-            VxNodes.Vx = hdf5read(filename,'/VxNodes/Vx'); VxNodes.Vx = cast(VxNodes.Vx, 'double');
-            VzNodes.Vz = hdf5read(filename,'/VzNodes/Vz'); VzNodes.Vz = cast(VzNodes.Vz, 'double');
-            Vx = reshape(VxNodes.Vx,nx,nz+1)';
-            Vz = reshape(VzNodes.Vz,nx+1,nz)';
-            
-            % Velocity divergence
-            dVxdx = (Vx(:,2:end) - Vx(:,1:end-1)) ./ (xc_coord(2)-xc_coord(1));
-            dVzdz = (Vz(2:end,:) - Vz(1:end-1,:)) ./ (zc_coord(2)-zc_coord(1));
-            divV  = abs(dVxdx(2:end-1,:) + dVzdz(:,2:end-1));
-
-            divV = hdf5read(filename,'/Centers/divu');  divV = cast(divV, 'double'); divV = reshape(divV,params(4)-1,params(5)-1)';
-
-            
+            divV     = hdf5read(filename,'/Centers/divu');     divV    = cast(divV,    'double'); divV    = reshape(divV   , params(4)-1,params(5)-1)';
+            divV_el  = hdf5read(filename,'/Centers/divu_el');  divV_el = cast(divV_el, 'double'); divV_el = reshape(divV_el, params(4)-1,params(5)-1)';
+            divV_r   = hdf5read(filename,'/Centers/divu_r');   divV_r  = cast(divV_r,  'double'); divV_r  = reshape(divV_r , params(4)-1,params(5)-1)';
+            divV_net = divV - divV_el - divV_r;
+             
             if crop == 1
                 [divV, xc_plot, zc_plot] = CropCellArray( divV, xc_plot, zc_plot, lim );
             end
@@ -1177,10 +1169,36 @@ for istep=istart:ijump:iend
             else
                 figure('Visible', 'Off')
             end
+            subplot(2,2,1)
             imagesc( xc_plot, zc_plot, divV )
             shading flat,axis xy image, colorbar;
             xlabel('X'), ylabel('Z')
             title(['Velocity divergence at' TimeLabel])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            caxis([-0.25e-14 0.25e-14])
+            
+            subplot(2,2,2)
+            imagesc( xc_plot, zc_plot, divV_el )
+            shading flat,axis xy image, colorbar;
+            xlabel('X'), ylabel('Z')
+            title(['Elastic divergence at' TimeLabel])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            caxis([-0.25e-14 0.25e-14])
+            
+            subplot(2,2,3)
+            imagesc( xc_plot, zc_plot, divV_r )
+            shading flat,axis xy image, colorbar;
+            xlabel('X'), ylabel('Z')
+            title(['Reaction divergence at' TimeLabel])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            caxis([-0.25e-14 0.25e-14])
+            
+            
+            subplot(2,2,4)
+            imagesc( xc_plot, zc_plot, divV_net )
+            shading flat,axis xy image, colorbar;
+            xlabel('X'), ylabel('Z')
+            title(['Net divergence at' TimeLabel])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             caxis([-0.25e-14 0.25e-14])
             

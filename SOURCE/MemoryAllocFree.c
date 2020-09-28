@@ -380,6 +380,7 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->div_u_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->div_u_el   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->div_u_pl   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->div_u_r    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->Qrho       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
 
     // Solution arrays
@@ -622,6 +623,7 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->div_u_s);
     DoodzFree(mesh->div_u_el);
     DoodzFree(mesh->div_u_pl);
+    DoodzFree(mesh->div_u_r);
     DoodzFree(mesh->Qrho);
 
 	// Solution arrays
