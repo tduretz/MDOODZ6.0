@@ -2086,26 +2086,22 @@ void Interp_Grid2P_centroids ( markers particles, DoodzFP* PartField, grid *mesh
     int Nzc = mesh->Nz-1;
     int i;
     
-    // Interp centroid 2 vertices before interp 2 P (not OK)
-    double *VertexArray;
-    VertexArray = DoodzCalloc(Nxg*Nzg, sizeof(DoodzFP));
-    InterpCentroidsToVerticesDouble( CentroidArray, VertexArray, mesh, model );
-    Interp_Grid2P ( particles, PartField, mesh, VertexArray, mesh->xg_coord, mesh->zg_coord, Nxg, Nzg, mesh->BCg.type );
-    DoodzFree(VertexArray);
+//    // Interp centroid 2 vertices before interp 2 P (not OK)
+//    double *VertexArray;
+//    VertexArray = DoodzCalloc(Nxg*Nzg, sizeof(DoodzFP));
+//    InterpCentroidsToVerticesDouble( CentroidArray, VertexArray, mesh, model );
+//    Interp_Grid2P ( particles, PartField, mesh, VertexArray, mesh->xg_coord, mesh->zg_coord, Nxg, Nzg, mesh->BCg.type );
+//    DoodzFree(VertexArray);
 
 //    // Standard interpolation (not really periodic)
 //    Interp_Grid2P ( particles, PartField, mesh, CentroidArray, mesh->xc_coord, mesh->zc_coord, Nxc, Nzc, tag );
 
-//    // Expand centroid array before interp 2 P
-//    double *ExpCentroidArray;
-//    char * BCp_exp;
-//    BCp_exp = DoodzCalloc((Nxc+2)*(Nzc+2), sizeof(char));
-//    for (i=0; i<(Nxc+2)*(Nzc+2); i++) BCp_exp[i] = -1;
-//    ExpCentroidArray = DoodzCalloc((Nxc+2)*(Nzc+2), sizeof(DoodzFP));
-//    ExpandCentroidArray( CentroidArray, ExpCentroidArray, mesh, model );
-//    Interp_Grid2P ( particles, PartField, mesh, ExpCentroidArray, mesh->xvz_coord, mesh->zvx_coord, Nxc+2, Nzc+2, BCp_exp);
-//    DoodzFree(ExpCentroidArray);
-//    DoodzFree(BCp_exp);
+    // Expand centroid array before interp 2 P
+    double *ExpCentroidArray;
+    ExpCentroidArray = DoodzCalloc((Nxc+2)*(Nzc+2), sizeof(DoodzFP));
+    ExpandCentroidArray( CentroidArray, ExpCentroidArray, mesh, model );
+    Interp_Grid2P ( particles, PartField, mesh, ExpCentroidArray, mesh->xvz_coord, mesh->zvx_coord, Nxc+2, Nzc+2, mesh->BCp_exp.type);
+    DoodzFree(ExpCentroidArray);
     
     
 }

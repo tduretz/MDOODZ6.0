@@ -667,15 +667,16 @@ void CellFlagging( grid *mesh, params model, surface topo, scale scaling ) {
             c1 = i + j*(ncx);
             c2 = i + 1 + (j+1)*(ncx+2);
             
-            mesh->BCp.type[c1] = PVtag[c2];
-            mesh->BCt.type[c1]    = PVtag[c2];
-            //            mesh->BCt.val[c1]     = zeroC/scaling.T;
-            //             mesh->T[c1]        = zeroC/scaling.T ;
+            mesh->BCp.type[c1]     = PVtag[c2];
+            mesh->BCt.type[c1]     = PVtag[c2];
+            mesh->BCp_exp.type[c2] = PVtag[c2];
+
             
             if ( PVtag[c2] == 30 ) {
-                mesh->BCt.type[c1] = 30;
+                mesh->BCt.type[c1]     = 30;
                 //                mesh->BCt.val[c1]  = zeroC/scaling.T;
-                mesh->T[c1]        = zeroC/scaling.T ;
+                mesh->T[c1]            = zeroC/scaling.T ;
+                mesh->BCp_exp.type[c2] = 30;
             }
             
             // Above surface pressure nodes
@@ -687,6 +688,8 @@ void CellFlagging( grid *mesh, params model, surface topo, scale scaling ) {
                 mesh->BCt.type[c1] = 30;
                 //                mesh->BCt.val[c1]  = zeroC/scaling.T;
                 mesh->T[c1]        = zeroC/scaling.T ;
+                // activate first layer above surface for interpolation
+                mesh->BCp_exp.type[c2] = -1;
                 
             }
         }

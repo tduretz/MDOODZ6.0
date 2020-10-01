@@ -357,7 +357,7 @@ void RogerGuntherII( markers *particles, params model, grid mesh, int precise, s
     double dudxA, dvdzA, dudzA, dvdxA, dudxB, dvdzB, dudzB, dvdxB, dudxC, dvdzC, dudzC, dvdxC, dudxD, dvdzD, dudzD, dvdxD, VEA,VEB,VEC,VED;
     double nx, nz, ndotx, ndotz, w12, norm;
 
-    int new = 0; // activates Taras trick: conservative interpolation
+    int new = 1; // activates Taras trick: conservative interpolation
     dx = mesh.dx;
     dz = mesh.dz;
 

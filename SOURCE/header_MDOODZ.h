@@ -143,7 +143,7 @@ struct _params {
     int diffuse_X, diffuse_avg;
     double diffusion_length;
     // For Pips
-    int ProgReac, NoReturn;
+    int ProgReac, NoReturn, VolChangeReac;
     // Anisotropy
     int aniso, aniso_fstrain;
 };
@@ -167,7 +167,7 @@ struct _grid {
 	double *roger_x, *roger_z, *div_u, *div_u_s, *div_u_el, *div_u_pl, *div_u_r, *u_in, *v_in, *p_in, *p_corr, *sxxd, *szzd, *sxz, *exxd, *ezzd, *exz, *VE_s, *VE_n, *sxxd0, *szzd0, *sxz0, *mu_s, *mu_n, *u_adv, *v_adv, *eta_phys_n, *kx, *kz, *Cv, *Qr, *eta_phys_s, *u_start, *v_start, *p_start, *div_u_th;
 	int    *iter_smooth;
 	int    *nb_part_cell, *nb_part_vert;
-	BC     BCu, BCv, BCp;
+	BC     BCu, BCv, BCp, BCp_exp;
 	BCT    BCt, BCg;
 	double *xg_coord, *zg_coord, *xc_coord, *zc_coord, *xvz_coord, *zvx_coord, *xg_coord0, *zg_coord0, *xg_coord_ext, *zg_coord_ext;
 	double *eta_s, *eta_n, *rho_s, *rho_n, *rho_app_s, *rho_app_n;

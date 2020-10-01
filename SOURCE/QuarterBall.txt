@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00010
+istep = 00050
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -18,7 +18,7 @@ T   = 700
 /**** SPACE-TIME ****/
 Nx      = 51
 Nz      = 51
-Nt      = 10
+Nt      = 50
 xmin    =-1.000000
 zmin    =-1.000000
 xmax    =  1.000000
@@ -41,10 +41,10 @@ safe_mode         = 1
 nstagmax          = 5
 
 /**** SWITCHES ****/
-no_markers =0
-compressible    = 0
+compressible    = 1
 ProgReac        = 1            / !!!!
 NoReturn        = 0 
+VolChangeReac   = 1
 ismechanical    = 1
 RK              = 4
 isperiodic_x    = 0

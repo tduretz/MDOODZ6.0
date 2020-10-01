@@ -100,7 +100,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         //=================================================================
 //        // Layering (passive markers) - Matrice - phase 0 et 3 => Granulite
 //        if (particles->phase[np] == 0) {
-//            
+//
 //            for( il=0; il<= 100; il=il+2 ) {
 //                if ((particles->z[np]-Lz/2.0-spacing/2.0)>=-((il+1)*spacing) && (particles->z[np]-Lz/2.0-spacing/2.0)<-(il*spacing)) particles->phase[np] = 4;
 //            }
@@ -361,13 +361,15 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                         // Free slip S
                         if (l==0 ) { //&& (k>0 && k<NX-1) ) {
                             mesh->BCu.type[c] =  11;
-                            mesh->BCu.val[c]  = -1*model->EpsBG*Lz;
+//                            mesh->BCu.val[c]  = -model->EpsBG*Lz/1.0;
+                            mesh->BCu.val[c]  = (mesh->zvx_coord[l]-model->zmin)*model->EpsBG;
                         }
                         
                         // Free slip N
                         if ( l==mesh->Nz) {// && (k>0 && k<NX-1)) {
                             mesh->BCu.type[c] =  11;
-                            mesh->BCu.val[c]  =  1*model->EpsBG*Lz;
+//                            mesh->BCu.val[c]  =  model->EpsBG*Lz/1.0;
+                            mesh->BCu.val[c]  = (mesh->zvx_coord[l]-model->zmin)*model->EpsBG;
                         }
                         
                     }

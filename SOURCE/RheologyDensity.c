@@ -1264,6 +1264,10 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
     
+    MinMaxArrayTag( mesh->p0_n,   scaling.S,    (mesh->Nx-1)*(mesh->Nz-1),       "P0",   mesh->BCp.type    );
+    MinMaxArrayTag( mesh->p_in,   scaling.S,    (mesh->Nx-1)*(mesh->Nz-1),       "P1",   mesh->BCp.type    );
+
+    
     // Compute increment
     for (k=0; k<Ncx*Ncz; k++) {
         mesh->dp[k] = 0.0;
@@ -1342,8 +1346,6 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
         P_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
 
         // Interp increments to particles
-//        Interp_Grid2P( *particles, P_inc_mark, mesh, mesh->dp, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
-    
         Interp_Grid2P_centroids( *particles, P_inc_mark, mesh, mesh->dp, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
 
         // Increment pressure on particles
@@ -1392,8 +1394,8 @@ void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_pr
 //        Interp_Grid2P( *particles, txxm0, mesh, mesh->sxxd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type );
 //        Interp_Grid2P( *particles, tzzm0, mesh, mesh->szzd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type );
         
-        Interp_Grid2P_centroids( *particles, txxm0, mesh, mesh->sxxd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
-        Interp_Grid2P_centroids( *particles, tzzm0, mesh, mesh->szzd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
+        Interp_Grid2P_centroids( *particles, txxm0, mesh, mesh->sxxd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
+        Interp_Grid2P_centroids( *particles, tzzm0, mesh, mesh->szzd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
         
         Interp_Grid2P( *particles, txzm0, mesh, mesh->sxz0 , mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type     );
         Interp_Grid2P( *particles, etam,  mesh, mesh->eta_phys_s, mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type);
@@ -1435,8 +1437,8 @@ void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_pr
             // Remaining stress increments grid --> markers
 //            Interp_Grid2P( *particles, dtxxmr, mesh, dtxxgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
 //            Interp_Grid2P( *particles, dtzzmr, mesh, dtzzgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
-            Interp_Grid2P_centroids( *particles, dtxxmr, mesh, dtxxgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
-            Interp_Grid2P_centroids( *particles, dtzzmr, mesh, dtzzgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
+            Interp_Grid2P_centroids( *particles, dtxxmr, mesh, dtxxgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
+            Interp_Grid2P_centroids( *particles, dtzzmr, mesh, dtzzgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
             Interp_Grid2P( *particles, dtxzmr, mesh, dtxzgr, mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type  );
 
             // Final stresses update on markers
@@ -1497,8 +1499,8 @@ void UpdateParticleStress( grid* mesh, markers* particles, params* model, mat_pr
         }
 
         // Interpolate stress changes to markers
-        Interp_Grid2P( *particles, mdsxxd, mesh, dsxxd, mesh->xc_coord,  mesh->zc_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type  );
-        Interp_Grid2P( *particles, mdszzd, mesh, dszzd, mesh->xc_coord,  mesh->zc_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type  );
+        Interp_Grid2P_centroids( *particles, mdsxxd, mesh, dsxxd, mesh->xc_coord,  mesh->zc_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, model  );
+        Interp_Grid2P_centroids( *particles, mdszzd, mesh, dszzd, mesh->xc_coord,  mesh->zc_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, model  );
         Interp_Grid2P( *particles, mdsxz,  mesh, dsxz,  mesh->xg_coord,  mesh->zg_coord,  mesh->Nx,   mesh->Nz,   mesh->BCg.type  );
 
         // Update marker stresses
@@ -1529,7 +1531,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
 
     // Parameters for deformation map calculations
     int    local_iter = model->loc_iter, it, nitmax = 20, noisy = 0;
-    int    constant=0, dislocation=0, peierls=0, diffusion=0, gbs=0, elastic = model->iselastic, comp = model->compressible;
+    int    constant=0, dislocation=0, peierls=0, diffusion=0, gbs=0, elastic = model->iselastic, comp = model->compressible, VolChangeReac = model->VolChangeReac;
     double tol = 1.0e-11, res=0.0, res0=0.0, dfdeta=0.0, Txx=0.0, Tzz=0.0, Txz=0.0, Tii=0.0, ieta_sum=0.0, Tii0 = sqrt(Txx0*Txx0 + Txz0*Txz0);
     double eta_up=0.0, eta_lo=0.0, eta_ve=0.0, eta_p=0.0, r_eta_pl=0.0, r_eta_ve=0.0, r_eta_p=0.0;
     double eta_pwl=0.0, eta_exp=0.0, eta_vep=0.0, eta_lin=0.0, eta_el=0.0, eta_gbs=0.0, eta_cst=0.0, eta_step=0.0;
@@ -1955,17 +1957,17 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     
     // ----------------- Reaction volume changes
     
-//    // Activate volume changes only if reaction is taking place
-//    if ( fabs(X-X0)>0.0 ) {
-//        rho       = rho1 * (1-X) + rho2 * X;
-//        drhodX    = rho2 - rho1;
-//        drhodP    = drhodX * dXdP;
-//        d2rhodP2  = drhodX * d2XdP2;
-//        divr      = -1.0/rho * drhodP;
-//        ddivrdpc  = -d2rhodP2/rho + pow(drhodP/rho, 2.0);
-//        Pc        = Pc + K*dt*divr;
-//        *Pcorr    = Pc;
-//    }
+    // Activate volume changes only if reaction is taking place
+    if ( VolChangeReac == 1 && fabs(X-X0)>0.0 ) {
+        rho       = rho1 * (1-X) + rho2 * X;
+        drhodX    = rho2 - rho1;
+        drhodP    = drhodX * dXdP;
+        d2rhodP2  = drhodX * d2XdP2;
+        divr      = -1.0/rho * drhodP;
+        ddivrdpc  = -d2rhodP2/rho + pow(drhodP/rho, 2.0);
+        Pc        = Pc + K*dt*divr;
+        *Pcorr    = Pc;
+    }
     
     // ----------------- Reaction volume changes
 

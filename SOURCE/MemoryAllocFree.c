@@ -350,12 +350,15 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->rp    = (double*) DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1) ,sizeof(double));
     mesh->rhs_p = (double*) DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1) ,sizeof(double));
 
-    mesh->BCu.type = (char*)   DoodzCalloc( (mesh->Nx)  *(mesh->Nz+1)   ,sizeof(char));
-    mesh->BCv.type = (char*)   DoodzCalloc( (mesh->Nx+1)*(mesh->Nz)     ,sizeof(char));
-    mesh->BCp.type = (char*)   DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1)   ,sizeof(char));
-    mesh->BCu.val  = (double*) DoodzCalloc( (mesh->Nx)  *(mesh->Nz+1) ,sizeof(double));
-    mesh->BCv.val  = (double*) DoodzCalloc( (mesh->Nx+1)*(mesh->Nz)   ,sizeof(double));
-    mesh->BCp.val  = (double*) DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1) ,sizeof(double));
+    mesh->BCu.type     = (char*)   DoodzCalloc( (mesh->Nx)  *(mesh->Nz+1)   ,sizeof(char));
+    mesh->BCv.type     = (char*)   DoodzCalloc( (mesh->Nx+1)*(mesh->Nz)     ,sizeof(char));
+    mesh->BCp.type     = (char*)   DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1)   ,sizeof(char));
+    mesh->BCp_exp.type = (char*)   DoodzCalloc( (mesh->Nx+1)*(mesh->Nz+1)   ,sizeof(char));
+    Initialise1DArrayChar(   mesh->BCp_exp.type, (mesh->Nx+1)*(mesh->Nz+1), -1  );
+    mesh->BCu.val      = (double*) DoodzCalloc( (mesh->Nx)  *(mesh->Nz+1) ,sizeof(double));
+    mesh->BCv.val      = (double*) DoodzCalloc( (mesh->Nx+1)*(mesh->Nz)   ,sizeof(double));
+    mesh->BCp.val      = (double*) DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1) ,sizeof(double));
+    mesh->BCp_exp.val  = (double*) DoodzCalloc( (mesh->Nx+1)*(mesh->Nz+1) ,sizeof(double));
 
     //-------------------------------------------------------------------------------------------------//
 
@@ -677,9 +680,11 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->BCu.val);
     DoodzFree(mesh->BCv.val);
     DoodzFree(mesh->BCp.val);
+    DoodzFree(mesh->BCp_exp.val);
     DoodzFree(mesh->BCu.type);
     DoodzFree(mesh->BCv.type);
     DoodzFree(mesh->BCp.type);
+    DoodzFree(mesh->BCp_exp.type);
 
     // Viscoelasticity
     DoodzFree(mesh->mu_s);

@@ -50,7 +50,9 @@ void ExpandCentroidArray( double* CentroidArray, double* temp, grid* mesh, param
         for (l=0; l<Ncz; l++) {
             c0 = k + l*(Ncx);
             c1 = k + (l+1)*(Ncx+2) + 1;
-            temp[c1] = CentroidArray[c0];
+//            temp[c1] = CentroidArray[c0];
+            if (mesh->BCp.type[c0] == -1) temp[c1] = CentroidArray[c0];
+            if (mesh->BCp.type[c0] == 31) temp[c1] = CentroidArray[c0-Ncx];
         }
     }
     
@@ -346,7 +348,8 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
                     if (model->EpsBG == 0) mesh->u_in[c]  = 0.0;
                     // Pure shear
                     else mesh->u_in[c]  = -mesh->xg_coord[k]*model->EpsBG;
-                    if (model->isperiodic_x == 1) mesh->u_in[c] = 2.0*mesh->zvx_coord[l]*model->EpsBG; // Simple shear
+//                    if (model->isperiodic_x == 1) mesh->u_in[c] = 2.0*mesh->zvx_coord[l]*model->EpsBG; // Simple shear
+                    if (model->isperiodic_x == 1) mesh->u_in[c] = 2.0*(mesh->zvx_coord[l]-model->zmin)*model->EpsBG; // Simple shear
                 }
                 // Force Dirichlets
                 if (mesh->BCu.type[c] == 0) mesh->u_in[c]  = mesh->BCu.val[c];
