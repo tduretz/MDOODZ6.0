@@ -896,14 +896,16 @@ int main( int nargs, char *args[] ) {
             
             
             // plot residuals
-            if ( model.GNUplot_residuals == 1 ) {
+            if ( model.GNUplot_residuals == 1 && model.step % writer_step == 0 ) {
                 
                 printf("DOING GNU PLOTTING\n");
                 //        int NumCommands = 3;
                 //        char *GNUplotCommands[] = {"set title sprintf(a)", "set logscale y", "plot 'F_x'"};
                 
                 int NumCommands = 4;
-                char *GNUplotCommands[] = { "set term x11 1 noraise", "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3", "plot 'F_x rel.' with linespoints ls 1"};
+                char *GNUplotCommands[] = {"set title \"Non-linear residuals\"", "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3", "plot 'F_x' with linespoints ls 1"};
+
+//                char *GNUplotCommands[] = { "set term x11 1 noraise", "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3", "plot 'F_x' with linespoints ls 1"};
                 FILE *temp = fopen("F_x", "w");
                 FILE *GNUplotPipe = popen ("gnuplot -persistent", "w");
                 for (i=0; i< Nmodel.nit+1; i++) {
@@ -937,15 +939,15 @@ int main( int nargs, char *args[] ) {
         
 //        TotalStresses( &mesh, &particles, scaling, &model );
 
-//        // Update stresses on markers
-//        if (model.iselastic == 1 ) {
-//            UpdateParticleStress(  &mesh, &particles, &model, &materials, &scaling );
-//        }
-//        else {
+        // Update stresses on markers
+        if (model.iselastic == 1 ) {
+            UpdateParticleStress(  &mesh, &particles, &model, &materials, &scaling );
+        }
+        else {
             Interp_Grid2P_centroids( particles, particles.sxxd, &mesh, mesh.sxxd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
             Interp_Grid2P_centroids( particles, particles.szzd, &mesh, mesh.szzd, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
             Interp_Grid2P( particles, particles.sxz,  &mesh, mesh.sxz , mesh.xg_coord,  mesh.zg_coord,  mesh.Nx  , mesh.Nz, mesh.BCg.type   );
-//        }
+        }
 
         //--------------------------------------------------------------------------------------------------------------------------------//
         // Update pressure on markers

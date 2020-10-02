@@ -1041,7 +1041,7 @@ void UpdateParticleDensity( grid* mesh, scale scaling, params model, markers* pa
     }
 
     // Interp increments to particles
-    Interp_Grid2P( *particles, rho_inc_mark, mesh, rho_inc_grid, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
+    Interp_Grid2P_centroids( *particles, rho_inc_mark, mesh, rho_inc_grid, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
 
     // Increment temperature on particles
     ArrayPlusArray( particles->rho, rho_inc_mark, particles->Nb_part );
@@ -1141,7 +1141,7 @@ void UpdateParticleGrainSize( grid* mesh, scale scaling, params model, markers* 
         if (mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) d_inc_grid[k] = mesh->d[k] - mesh->d0[k];
     }
 
-    Interp_Grid2P( *particles, particles->d, mesh, mesh->d, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type  );
+    Interp_Grid2P_centroids( *particles, particles->d, mesh, mesh->d, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
 
 #pragma omp parallel for shared ( particles )
     for (k=0;k<particles->Nb_part;k++) {
@@ -1959,6 +1959,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     
     // Activate volume changes only if reaction is taking place
     if ( VolChangeReac == 1 && fabs(X-X0)>0.0 ) {
+//        printf("%2.2lf %2.2lf\n", rho1*scaling->rho, rho2*scaling->rho);
         rho       = rho1 * (1-X) + rho2 * X;
         drhodX    = rho2 - rho1;
         drhodP    = drhodX * dXdP;
