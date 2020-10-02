@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00040
+istep = 00060
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -18,7 +18,7 @@ T   = 100
 /**** SPACE-TIME ****/
 Nx      = 201
 Nz      = 62
-Nt      = 40
+Nt      = 1000
 xmin    = -150.000000e3
 zmin    = -100.000000e3
 xmax    =  150.000000e3
@@ -176,6 +176,10 @@ expv = 0
 gsel = 0
 eta_vp = 1e21
 n_vp   = 1.0
+plss     = 0.0
+plse     = 0.5
+phi_soft = 1
+phie     = 10.0
 
 ID   = 4       / mc
 density_model = 3
@@ -199,6 +203,10 @@ expv = 0
 gsel = 0
 eta_vp = 1e21
 n_vp   = 1.0
+plss     = 0.0
+plse     = 0.5
+phi_soft = 1
+phie     = 20.0
 
 ID   = 5       / lc
 density_model = 3

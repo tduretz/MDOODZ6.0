@@ -1272,76 +1272,77 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
     for (k=0; k<Ncx*Ncz; k++) {
         mesh->dp[k] = 0.0;
         if (mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
-//            mesh->dp[k] = (mesh->p_in[k] - mesh->p_lith[k]) - (mesh->p0_n[k]-mesh->p_lith0[k]); // dp dynamic pressure
-            mesh->dp[k] = (mesh->p_in[k]-mesh->p0_n[k]);
+            mesh->dp[k] = (mesh->p_in[k] - mesh->p_lith[k]) - (mesh->p0_n[k]-mesh->p_lith0[k]); // dp dynamic pressure
+//            mesh->dp[k] = (mesh->p_in[k]-mesh->p0_n[k]);
         }
     }
 
-//    if ( model.subgrid_diff >= 1 ) {
-//
-//        printf("Subgrid diffusion for pressure update\n");
-//        double *Pg0  = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
-//        double *dPgs = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
-//        double *dPgr = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
-//        double *Pm0  = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-//        double *dPms = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-//        double *dPmr = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-//        double *etam = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-//
-//        Interp_Grid2P( *particles, etam,  mesh, mesh->eta_phys_s, mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type);
-//
-//        /* -------------- */
-//        // Old Pressure grid
-//#pragma omp parallel for shared(mesh, Pg0) private(c0) firstprivate(Ncx,Ncz)
-//        for ( c0=0; c0<Ncx*Ncz; c0++ ) {
-//            if (mesh->BCt.type[c0] != 30) Pg0[c0] = mesh->p0_n[k]-mesh->p_lith0[k];
-//        }
-//        Interp_Grid2P( *particles, Pm0, mesh, Pg0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
-//        /* -------------- */
-//
-//
-//        // Old temperature grid --> markers
-//        Interp_Grid2P( *particles, Pm0, mesh, mesh->p0_n, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
-//
-//        // Compute subgrid temperature increments on markers
-//#pragma omp parallel for shared(particles,Pm0,dPms) private(k,p,dtm) firstprivate(materials,model,d)
-//        for ( k=0; k<particles->Nb_part; k++ ) {
-//            if (particles->phase[k] != -1) {
-//                p         = particles->phase[k];
-//                dtm       = etam[k]/ (materials->bet[p]);
-//                dPms[k]   = -( particles->P[k] - Pm0[k]) * (1.0 - exp(-d*model.dt/dtm));
-//            }
-//        }
-//
-//        // Subgrid temperature increments markers --> grid
-//        Interp_P2C ( *particles, dPms, mesh, dPgs, mesh->xg_coord, mesh->zg_coord, 1, 0 );
-//
-//        // Remaining temperature increments on the grid
-//#pragma omp parallel for shared(mesh, dPgs, dPgr) private(c0) firstprivate(Ncx,Ncz)
-//        for ( c0=0; c0<Ncx*Ncz; c0++ ) {
-//            if (mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) dPgr[c0] = mesh->dp[c0] - dPgs[c0];
-//        }
-//
-//        // Remaining temperature increments grid --> markers
-//        Interp_Grid2P( *particles, dPmr, mesh, dPgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type  );
-//
-//        // Final temperature update on markers
-//#pragma omp parallel for shared(particles,dPms,dPmr) private(k)
-//        for ( k=0; k<particles->Nb_part; k++ ) {
-//            if (particles->phase[k] != -1) particles->P[k] += dPms[k] + dPmr[k];
-//        }
-////        MinMaxArrayTag( dPms,   scaling.S,    (mesh->Nx)*(mesh->Nz),       "dPms",   mesh->BCp.type    );
-////        MinMaxArrayTag( dPmr,   scaling.S,    (mesh->Nx)*(mesh->Nz),       "dPmr",   mesh->BCp.type    );
-//
-//        DoodzFree(Pg0);
-//        DoodzFree(Pm0);
-//        DoodzFree(dPms);
-//        DoodzFree(dPmr);
-//        DoodzFree(dPgs);
-//        DoodzFree(dPgr);
-//        DoodzFree(etam);
-//    }
-//    else {
+    if ( model.subgrid_diff >= 1 ) {
+
+        printf("Subgrid diffusion for pressure update\n");
+        double *Pg0  = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+        double *dPgs = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+        double *dPgr = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+        double *Pm0  = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        double *dPms = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        double *dPmr = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+        double *etam = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+
+        Interp_Grid2P( *particles, etam,  mesh, mesh->eta_phys_s, mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type);
+
+        /* -------------- */
+        // Old Pressure grid
+#pragma omp parallel for shared(mesh, Pg0) private(c0) firstprivate(Ncx,Ncz)
+        for ( c0=0; c0<Ncx*Ncz; c0++ ) {
+            if (mesh->BCt.type[c0] != 30) Pg0[c0] = mesh->p0_n[k]-mesh->p_lith0[k];
+//            if (mesh->BCt.type[c0] != 30) Pg0[c0] = mesh->p0_n[k];
+        }
+        Interp_Grid2P_centroids( *particles, Pm0, mesh, Pg0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
+        /* -------------- */
+
+
+        // Old temperature grid --> markers
+//        Interp_Grid2P_centroids( *particles, Pm0, mesh, mesh->p0_n, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
+
+        // Compute subgrid temperature increments on markers
+#pragma omp parallel for shared(particles,Pm0,dPms) private(k,p,dtm) firstprivate(materials,model,d)
+        for ( k=0; k<particles->Nb_part; k++ ) {
+            if (particles->phase[k] != -1) {
+                p         = particles->phase[k];
+                dtm       = etam[k]/ (materials->bet[p]);
+                dPms[k]   = -( particles->P[k] - Pm0[k]) * (1.0 - exp(-d*model.dt/dtm));
+            }
+        }
+
+        // Subgrid temperature increments markers --> grid
+        Interp_P2C ( *particles, dPms, mesh, dPgs, mesh->xg_coord, mesh->zg_coord, 1, 0 );
+
+        // Remaining temperature increments on the grid
+#pragma omp parallel for shared(mesh, dPgs, dPgr) private(c0) firstprivate(Ncx,Ncz)
+        for ( c0=0; c0<Ncx*Ncz; c0++ ) {
+            if (mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) dPgr[c0] = mesh->dp[c0] - dPgs[c0];
+        }
+
+        // Remaining temperature increments grid --> markers
+        Interp_Grid2P_centroids( *particles, dPmr, mesh, dPgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
+
+        // Final temperature update on markers
+#pragma omp parallel for shared(particles,dPms,dPmr) private(k)
+        for ( k=0; k<particles->Nb_part; k++ ) {
+            if (particles->phase[k] != -1) particles->P[k] += dPms[k] + dPmr[k];
+        }
+//        MinMaxArrayTag( dPms,   scaling.S,    (mesh->Nx)*(mesh->Nz),       "dPms",   mesh->BCp.type    );
+//        MinMaxArrayTag( dPmr,   scaling.S,    (mesh->Nx)*(mesh->Nz),       "dPmr",   mesh->BCp.type    );
+
+        DoodzFree(Pg0);
+        DoodzFree(Pm0);
+        DoodzFree(dPms);
+        DoodzFree(dPmr);
+        DoodzFree(dPgs);
+        DoodzFree(dPgr);
+        DoodzFree(etam);
+    }
+    else {
 
         P_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
 
@@ -1353,7 +1354,7 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
 
         DoodzFree(P_inc_mark);
 
-//    }
+    }
 
 }
 

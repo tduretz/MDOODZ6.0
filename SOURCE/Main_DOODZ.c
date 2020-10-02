@@ -384,7 +384,7 @@ int main( int nargs, char *args[] ) {
         }
 #endif
         // Set initial stresses and pressure to zero
-//        Initialise1DArrayDouble( particles.P,      particles.Nb_part, 0.0 ); // now dynamic pressure...
+        Initialise1DArrayDouble( particles.P,      particles.Nb_part, 0.0 ); // now dynamic pressure...
 //        Initialise1DArrayDouble( mesh.p_in,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
         Initialise1DArrayDouble( mesh.sxxd,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
         Initialise1DArrayDouble( mesh.szzd,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
@@ -535,7 +535,7 @@ int main( int nargs, char *args[] ) {
             // Interp P --> p0_n , p0_s
 //            ArrayEqualArray(  mesh.p0_n,  mesh.p_in, Ncx*Ncz );
             Interp_P2C ( particles, particles.P, &mesh, mesh.p0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-//            ArrayPlusArray(  mesh.p0_n,   mesh.p_lith, Ncx*Ncz ); // Add back lithostatic component
+            ArrayPlusArray(  mesh.p0_n,   mesh.p_lith, Ncx*Ncz ); // Add back lithostatic component
 
             //-------------------------------------------------------------------------------------------------------------
 
@@ -923,14 +923,13 @@ int main( int nargs, char *args[] ) {
         
         //------------------------------------------------------------------------------------------------------------------------------//
         
-        // Particle velocities
-        VelocitiesToParticles( &mesh, &particles, particles.Vx, particles.Vz, model, scaling );
+//        // Particle velocities
+//        VelocitiesToParticles( &mesh, &particles, particles.Vx, particles.Vz, model, scaling );
 
         // Free surface - interpolate velocity components on the free surface
         if ( model.free_surf == 1 ) {
             SurfaceVelocity( &mesh, model, &topo, &topo_chain, scaling );
-            VelocitiesToParticles( &mesh, &topo_chain_ini, topo_chain_ini.Vx, topo_chain_ini.Vz, model, scaling );
-
+//            VelocitiesToParticles( &mesh, &topo_chain_ini, topo_chain_ini.Vx, topo_chain_ini.Vz, model, scaling );
             MinMaxArray( topo_chain.Vx,  scaling.V, topo_chain.Nb_part,   "Vx surf." );
             MinMaxArray( topo_chain.Vz,  scaling.V, topo_chain.Nb_part,   "Vz surf." );
             MinMaxArray( topo_chain_ini.Vx,  scaling.V, topo_chain_ini.Nb_part,   "Vx surf. ini." );

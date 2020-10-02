@@ -2179,7 +2179,7 @@ private ( k, dxm, dzm, j_part, i_part, distance, iSW, iNW, iSE, iNE, sumW, Xp ) 
                 j_part = 0;
 
                 if (abs(Nx - (Nxg-1))>0) {
-                    printf("Nx = %03d %d\n", Nx, Nxg-1);
+                    printf("Nx = %03d Nxc = %d --- px = %2.2e xg = %2.2e\n", Nx, Nxg-1, particles.x[k], X_vect[j_part]);
                      exit(89);
                 }
             }
@@ -2189,7 +2189,9 @@ private ( k, dxm, dzm, j_part, i_part, distance, iSW, iNW, iSE, iNE, sumW, Xp ) 
                 j_part = Nx-2;
 
                 if (abs(Nx - (Nxg-1))>0) {
-                    printf("Nx = %03d %d\n", Nx, Nxg-1);
+                    printf("j_part = %d --- Nx = %03d Nxc = %d --- px = %2.2e xg = %2.2e\n", j_part, Nx, Nxg-1, particles.x[k], X_vect[j_part]);
+                    printf("i_part = %d --- Nz = %03d Nzc = %d --- pi = %2.2e ig = %2.2e\n", i_part, Nz, Nz-1, particles.z[k], Z_vect[i_part]);
+
                      exit(89);
                 }
             }
