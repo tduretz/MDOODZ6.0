@@ -217,6 +217,9 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
         fread( particles->sxxd,   s3, particles->Nb_part, file );
         fread( particles->szzd,   s3, particles->Nb_part, file );
         fread( particles->sxz,    s3, particles->Nb_part, file );
+        fread( particles->dsxxd,   s3, particles->Nb_part, file );
+        fread( particles->dszzd,   s3, particles->Nb_part, file );
+        fread( particles->dsxz,    s3, particles->Nb_part, file );
 
         fread( mesh->eta_n, s3, (Nx-1)*(Nz-1), file );
         fread( mesh->VE_n, s3, (Nx-1)*(Nz-1), file );
@@ -241,6 +244,8 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
     }
     
     if (model->aniso == 1) {
+        fread( particles->dnx        , s3, particles->Nb_part, file);
+        fread( particles->dnz        , s3, particles->Nb_part, file);
         fread( particles->nx         , s3, particles->Nb_part, file);
         fread( particles->nz         , s3, particles->Nb_part, file);
     }
@@ -351,6 +356,9 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
             particles->sxxd[k]    /= scaling.S;
             particles->szzd[k]    /= scaling.S;
             particles->sxz[k]     /= scaling.S;
+            particles->dsxxd[k]    /= scaling.S;
+            particles->dszzd[k]    /= scaling.S;
+            particles->dsxz[k]     /= scaling.S;
         }
         if ( model->isthermal == 1 ) {
             particles->div_u_th[k]  /= scaling.E;
@@ -490,6 +498,9 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             particles->sxxd[k] *= scaling.S;
             particles->szzd[k] *= scaling.S;
             particles->sxz[k]  *= scaling.S;
+            particles->dsxxd[k] *= scaling.S;
+            particles->dszzd[k] *= scaling.S;
+            particles->dsxz[k]  *= scaling.S;
         }
         if (model.isthermal == 1) {
             particles->div_u_th[k]  *= scaling.E;
@@ -646,6 +657,9 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
         fwrite( particles->sxxd,   s3, particles->Nb_part, file );
         fwrite( particles->szzd,   s3, particles->Nb_part, file );
         fwrite( particles->sxz,    s3, particles->Nb_part, file );
+        fwrite( particles->dsxxd,   s3, particles->Nb_part, file );
+        fwrite( particles->dszzd,   s3, particles->Nb_part, file );
+        fwrite( particles->dsxz,    s3, particles->Nb_part, file );
 
         fwrite( mesh->eta_n, s3, (Nx-1)*(Nz-1), file );
         fwrite( mesh->VE_n, s3, (Nx-1)*(Nz-1), file );
@@ -670,6 +684,8 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     }
     
     if (model.aniso == 1) {
+        fwrite( particles->dnx        , s3, particles->Nb_part, file);
+        fwrite( particles->dnz        , s3, particles->Nb_part, file);
         fwrite( particles->nx         , s3, particles->Nb_part, file);
         fwrite( particles->nz         , s3, particles->Nb_part, file);
     }
@@ -779,6 +795,9 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             particles->sxxd[k]   /= scaling.S;
             particles->szzd[k]   /= scaling.S;
             particles->sxz[k]    /= scaling.S;
+            particles->dsxxd[k]   /= scaling.S;
+            particles->dszzd[k]   /= scaling.S;
+            particles->dsxz[k]    /= scaling.S;
         }
         if (model.isthermal == 1) {
             particles->div_u_th[k]  /= scaling.E;
@@ -985,6 +1004,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->no_markers      = ReadInt2( fin, "no_markers",     0 );
     model->shear_style     = ReadInt2( fin, "shear_style",    0 ); // 0: pure shear, 2: periodic simple shear
     model->StressRotation  = ReadInt2( fin, "StressRotation", 1 ); // 0: no stress rotation, 1: analytic rotation, 2: upper convected rate
+    model->StressUpdate    = ReadInt2( fin, "StressUpdate",   0 );
     model->polar           = ReadInt2( fin, "polar",          0 ); // Activate polar-Cartesian coordinates
     model->ProgReac        = ReadInt2( fin, "ProgReac",       0 ); // Activate progressive reactions
     model->NoReturn        = ReadInt2( fin, "NoReturn",       0 ); // Turns off retrogression if 1.0

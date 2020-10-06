@@ -65,7 +65,7 @@ void  ArrayPlusArray( DoodzFP* arr1, DoodzFP* arr2, int size ) {
     int k;
 #pragma omp parallel for shared( arr1, arr2) private(k) schedule( static )
     for(k=0;k<size;k++) {
-        arr1[k] += arr2[k];
+        arr1[k] = arr1[k] + arr2[k];
     }
 }
 
@@ -318,7 +318,7 @@ void ArrayPlusScalarArray( double* arr1, double scalar, double* arr2, int size )
     int k;
 #pragma omp parallel for shared( arr1, arr2, scalar) private(k) schedule( static )
     for(k=0;k<size;k++) {
-        arr1[k] += scalar*arr2[k];
+        arr1[k] = arr1[k] + scalar*arr2[k];
         //        printf("%2.2e %2.2e %2.2e\n", scalar*arr2[k], scalar, arr2[k]);
     }
 }

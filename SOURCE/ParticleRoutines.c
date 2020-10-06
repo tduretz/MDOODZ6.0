@@ -374,6 +374,9 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
     particles->sxxd[new_ind]          = particles->sxxd[min_index];
     particles->szzd[new_ind]          = particles->szzd[min_index];
     particles->sxz[new_ind]           = particles->sxz[min_index];
+    particles->dsxxd[new_ind]         = particles->dsxxd[min_index];
+    particles->dszzd[new_ind]         = particles->dszzd[min_index];
+    particles->dsxz[new_ind]          = particles->dsxz[min_index];
     particles->syy[new_ind]           = particles->syy[min_index];
     
     if (model->fstrain == 1) {
@@ -392,6 +395,8 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
         particles->Pmax[new_ind]         = particles->Pmax[min_index];
     }
     if (model->aniso == 1) {
+        particles->dnx[new_ind]          = particles->dnx[min_index];
+        particles->dnz[new_ind]          = particles->dnz[min_index];
         particles->nx[new_ind]           = particles->nx[min_index];
         particles->nz[new_ind]           = particles->nz[min_index];
     }

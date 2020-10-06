@@ -522,7 +522,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
 
     if ( model.aniso == 1 ) {
 
-        // nx
+       // nx
         nx  = DoodzCalloc((model.Nx-1)*(model.Nz-1),sizeof(double));
         Interp_P2C ( *particles,  particles->nx, mesh, nx, mesh->xg_coord, mesh->zg_coord, 1, 0 );
         Cnx = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));

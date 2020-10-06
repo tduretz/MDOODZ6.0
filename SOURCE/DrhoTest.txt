@@ -1,10 +1,10 @@
 /**** RESTART ****/
-istep = 00050
+istep = 00001
 irestart = 0
 
 /**** OUTPUT FILES ****/
 writer          = 1
-writer_step     = 10
+writer_step     = 1
 writer_markers  = 0
 writer_debug    = 0
 writer_energies = 0
@@ -18,7 +18,7 @@ T   = 700
 /**** SPACE-TIME ****/
 Nx      = 51
 Nz      = 51
-Nt      = 50
+Nt      = 1
 xmin    =-1.000000
 zmin    =-1.000000
 xmax    =  1.000000
@@ -62,9 +62,9 @@ adiab_heat      = 0
 fstrain         = 0
 
 /**** SETUP DEPENDANT ****/
-shear_style     = 1
-EpsBG           = 2.0e-14
-PrBG            = 1.6e9
+shear_style     = 0
+EpsBG           = 1e-18
+PrBG            = 2.5e9
 user0           = 680.0     / temperature [°C]
 user1           = 0
 user2           = 0
@@ -75,11 +75,11 @@ gx = 0.0000
 gz = 0.0000
 
 /**** MAT PROPERTIES ****/
-Nb_phases = 7
+Nb_phases = 3
 
-/**** PHASE 1 ****/
+/**** PHASE 0 ****/
 ID   = 0
-rho  = 2800.00 / matrix Granulite
+rho  = 2800.00 / matrix that does not react
 mu   = 3.0e10
 Cv   = 1050.0
 k    = 2.3
@@ -93,23 +93,19 @@ alp  = 10.0e-6
 bet  = 5.0e-11
 drho = 0
 cstv = 0             / constant visc law
-pwlv = 30            / disloc. creep
+pwlv = 1             / disloc. creep
 linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
 gsel = 0             / grain size evo.
-eta0 = 0
-npwl = 0
+eta0 = 1e22
+npwl = 1.0
 Qpwl = 0
-reac_soft  = 1
-reac_phase = 5
-Pr         = 1.85e9
-dPr        = 50e6
-tr         = 3.1558e11 /equal 10000 ans
+reac_soft  = 0
 
-/**** PHASE 2 ****/
+/**** PHASE 1 ****/
 ID   = 1
-rho  = 3300.00 / Dry CPX inclusion
+rho  = 2800.00 / Inclusion that reacts to phase 2
 mu   = 3.0e10
 Cv   = 1050.0
 k    = 2.3
@@ -125,75 +121,23 @@ alp  = 10.0e-6
 bet  = 5.0e-11
 drho = 0
 cstv = 0             / constant visc law
-pwlv = 31            / disloc. creep
+pwlv = 1             / disloc. creep
 linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
 gsel = 0             / grain size evo.
-eta0 = 0
-npwl = 0
-Qpwl = 0
-reac_soft  = 0
-
-/**** PHASE 3 ****/
-ID   = 2
-rho  = 3300.00 / Dry CPX inclusion
-mu   = 3.0e10
-Cv   = 1050.0
-k    = 2.3
-Qr   = 0.0
-C    = 50.0e60
-phi  = 30.0
-eta_vp = 3.5355e13
-n_vp   = 2.0
-Slim = 500e9
-alp  = 10.0e-6
-bet  = 5.0e-11
-drho = 0
-cstv = 0             / constant visc law
-pwlv = 31            / disloc. creep
-linv = 0             / diff. creep
-gbsv = 0             / grain boundary sliding
-expv = 0             / peierls creep
-gsel = 0             / grain size evo.
-eta0 = 0
-npwl = 0
-Qpwl = 0
-reac_soft  = 0
-
-/**** PHASE 4 ****/
-ID   = 3
-rho  = 2800.00 / matrix Granulite
-mu   = 3.0e10
-Cv   = 1050.0
-k    = 2.3
-Qr   = 0.0
-C    = 50.0e60
-phi  = 30.0
-eta_vp = 3.5355e13
-n_vp   = 2.0
-Slim = 500e9
-alp  = 10.0e-6
-bet  = 5.0e-11
-drho = 0
-cstv = 0             / constant visc law
-pwlv = 30            / disloc. creep
-linv = 0             / diff. creep
-gbsv = 0             / grain boundary sliding
-expv = 0             / peierls creep
-gsel = 0             / grain size evo.
-eta0 = 0
-npwl = 0
+eta0 = 1e22
+npwl = 1.0
 Qpwl = 0
 reac_soft  = 1
-reac_phase = 6
+reac_phase = 2
 Pr         = 1.85e9
 dPr        = 50e6
 tr         = 3.1558e11 /equal 10000 ans
 
-/**** PHASE 5 ****/
-ID   = 4
-rho  = 2600.00 /SALT no used right now
+/**** PHASE 2 ****/
+ID   = 2
+rho  = 3000.00 / Inclusion that reacts to phase 2
 mu   = 3.0e10
 Cv   = 1050.0
 k    = 2.3
@@ -202,70 +146,20 @@ C    = 50.0e60
 phi  = 30.0
 eta_vp = 3.5355e13
 n_vp   = 2.0
-Slim = 500.0e9
+Slim = 500e9
+n_vp   = 3.0
+Slim = 500e9
 alp  = 10.0e-6
 bet  = 5.0e-11
 drho = 0
-cstv = 0 
-pwlv = 30
-linv = 0
-gbsv = 0
-expv = 0
-gsel = 0
-eta0 = 1.0e18
-npwl = 0
-Qpwl = 0
-reac_soft  = 0
-
-/**** PHASE 6 ****/
-ID   = 5
-rho  = 2801.00 /Omphacite => reaction
-mu   = 3.0e10
-Cv   = 1050.0
-k    = 2.3
-Qr   = 0.0
-C    = 50.0e60
-phi  = 30.0
-eta_vp = 3.5355e13
-n_vp   = 2.0
-Slim = 500.0e9
-alp  = 10.0e-6
-bet  = 5.0e-11
-drho = 0
-cstv = 0
-pwlv = 21
-linv = 0
-gbsv = 0
-expv = 0
-gsel = 0
-eta0 = 0
-npwl = 0
-Qpwl = 0
-reac_soft  = 0
-
-/**** PHASE 7 ****/
-ID   = 6
-rho  = 2801.00 /Omphacite => reaction
-mu   = 3.0e10
-Cv   = 1050.0
-k    = 2.3
-Qr   = 0.0
-C    = 50.0e60
-phi  = 30.0
-eta_vp = 6.7860e14
-n_vp   = 2.0
-Slim = 500.0e9
-alp  = 10.0e-6
-bet  = 5.0e-11
-drho = 0
-cstv = 0
-pwlv = 21
-linv = 0
-gbsv = 0
-expv = 0
-gsel = 0
-eta0 = 0
-npwl = 0
+cstv = 0            / constant visc law
+pwlv = 1            / disloc. creep
+linv = 0             / diff. creep
+gbsv = 0             / grain boundary sliding
+expv = 0             / peierls creep
+gsel = 0             / grain size evo.
+eta0 = 1e22
+npwl = 1.0
 Qpwl = 0
 reac_soft  = 0
 
@@ -290,8 +184,8 @@ min_part_cell = 16
 Newton      = 1
 nit_max     = 20
 rel_tol_KSP = 5e-4
-abs_tol_u   = 1e-15
-abs_tol_p   = 1e-15
+abs_tol_u   = 1e-8
+abs_tol_p   = 1e-8
 rel_tol_u   = 1e-9
 rel_tol_p   = 1e-9
 mineta      = 1e10

@@ -68,8 +68,9 @@ struct _p_markers {
     markers* marker_chain;
     int    *intag;
     double *rhoUe0;
-    double *Fxx, *Fxz, *Fzx, *Fzz, *nx, *nz;
+    double *Fxx, *Fxz, *Fzx, *Fzz, *dnx, *dnz, *nx, *nz;
     double *T0, *P0, *x0, *z0, *Tmax, *Pmax, *div_u_th;
+    double *dsxxd, *dszzd, *dsxz;
 };
 
 // BC is a boundary condition structure for the mechanical solver
@@ -138,7 +139,7 @@ struct _params {
     int rec_T_P_x_z, delete_breakpoints, GNUplot_residuals;
     // Boundary conditions type
     int    BC_setup_type, shear_style, polar;
-    int    StressRotation;
+    int    StressRotation, StressUpdate;
     // For diffused rheological constrasts
     int diffuse_X, diffuse_avg;
     double diffusion_length;
@@ -201,6 +202,7 @@ struct _grid {
     double *phi_s, *d0_s, *T_s, *P_s;
     // For anisotropy
     double *nx_n, *nz_n, *nx_s, *nz_s, *FS_AR_n, *FS_AR_s, *aniso_factor_n, *aniso_factor_s;
+    double *nx0_n, *nz0_n, *nx0_s, *nz0_s;
     
     double *cell_min_z, *cell_max_z, *vert_min_z, *vert_max_z;
     double *dil_n, *dil_s, *fric_n, *fric_s, *C_n, *C_s;
@@ -552,6 +554,8 @@ void RogerGuntherII( markers*, params, grid, int, scale );
 void AccumulatedStrainII( grid*, scale, params, markers*, double*, double*, int, int, char * );
 void AdvectFreeSurf( markers*, params, scale );
 
+void InitialiseDirectorVector (grid*, markers*, params*, mat_prop*);
+void NormalizeDirector ( grid* , DoodzFP*, DoodzFP*, DoodzFP*, DoodzFP*, params*  );
 void RotateDirectorVector( grid, markers*, params, scale* );
 void UpdateParticlePressure( grid*, scale, params, markers*, mat_prop* );
 void DetectCompressibleCells ( grid* , params*  );
@@ -563,7 +567,6 @@ void RheologicalOperators( grid*, params*, scale*, int );
 void ComputeViscosityDerivatives_FD( grid*, mat_prop*, params*, Nparams, scale* );
 void SetUpModel_NoMarkers ( grid*, params*, scale* );
 void Diffuse_X( grid*, params*, scale* );
-void InitialiseDirectorVector (markers*, params*, mat_prop*);
 void FiniteStrainAspectRatio ( grid*, scale, params, markers* );
 void Print2DArrayDouble( DoodzFP*, int, int, double );
 
@@ -573,3 +576,4 @@ void TotalStresses( grid*, markers*, scale, params* );
 void Interp_P2G ( markers*, DoodzFP*, grid*, double*, double*, double*, int, int, params*, char*, int, int );
 void Interp_Grid2P_centroids ( markers, DoodzFP* , grid *, double* , double* , double* , int , int , char *, params* );
 void ExpandCentroidArray( double*, double*, grid*, params* );
+void ComputeIncrementsOnParticles( grid*, markers*, params*, mat_prop*, scale* );
