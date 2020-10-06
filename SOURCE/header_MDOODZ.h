@@ -67,7 +67,6 @@ struct _p_markers {
 	int    *phase, *generation;
     markers* marker_chain;
     int    *intag;
-    double *rhoUe0;
     double *Fxx, *Fxz, *Fzx, *Fzz, *dnx, *dnz, *nx, *nz;
     double *T0, *P0, *x0, *z0, *Tmax, *Pmax, *div_u_th;
     double *dsxxd, *dszzd, *dsxz;
@@ -206,7 +205,6 @@ struct _grid {
     
     double *cell_min_z, *cell_max_z, *vert_min_z, *vert_max_z;
     double *dil_n, *dil_s, *fric_n, *fric_s, *C_n, *C_s;
-    double *rhoUe0;
     double *exz_n_el, *exz_n_diss, *exz_n_pl;
 };
 

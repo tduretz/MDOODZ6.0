@@ -529,18 +529,13 @@ int main( int nargs, char *args[] ) {
                 InterpCentroidsToVerticesDouble( mesh.szzd0, mesh.szzd0_s, &mesh, &model );
                 InterpVerticesToCentroidsDouble( mesh.sxz0_n,  mesh.sxz0,  &mesh, &model );
 
-                // Interpolate elastic energy from previous step
-                Interp_P2C ( particles, particles.rhoUe0, &mesh, mesh.rhoUe0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
-
                 // Interpolate shear modulus
                 ShearModCompExpGrid( &mesh, materials, model, scaling );
                 
-                
-
             }
 
             // Director vector
-             {
+            if (model.aniso == 1 ) {
                 double *dnx_n = DoodzCalloc ( Ncx*Ncz, sizeof(double));
                 double *dnz_n = DoodzCalloc ( Ncx*Ncz, sizeof(double));
                 double *dnx_s = DoodzCalloc ( Nx*Nz,   sizeof(double));
@@ -549,9 +544,6 @@ int main( int nargs, char *args[] ) {
                 Interp_P2C ( particles, particles.dnz, &mesh, dnz_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
                 Interp_P2N ( particles, particles.dnx, &mesh, dnx_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
                 Interp_P2N ( particles, particles.dnz, &mesh, dnz_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-                 
-//                 MinMaxArray( particles.dnx,        1.0,   particles.Nb_part, "dnx       ");
-                 
                 ArrayPlusArray(  mesh.nx0_n,  dnx_n, Ncx*Ncz );
                 ArrayPlusArray(  mesh.nx0_s,  dnx_s,   Nx*Nz );
                 ArrayPlusArray(  mesh.nz0_n,  dnz_n, Ncx*Ncz );
@@ -1012,8 +1004,6 @@ int main( int nargs, char *args[] ) {
             // Update energy on particles
             UpdateParticleEnergy( &mesh, scaling, model, &particles, &materials );
             MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. after UpdateParticleEnergy");
-
-            if ( model.iselastic == 1 ) Interp_Grid2P_centroids( particles, particles.rhoUe0, &mesh, mesh.rhoUe0, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
 
             // Calculate energies
             if ( model.write_energies == 1 ) Energies( &mesh, model, scaling );
