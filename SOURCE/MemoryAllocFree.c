@@ -201,13 +201,10 @@ void PartAlloc( markers *particles, params* model  ) {
 
     particles->div_u_th   = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->rho        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
-    particles->rhoUe0     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->T          = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->d          = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->phi        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->X          = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
-
-
 
     particles->strain     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->strain_el  = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
@@ -272,7 +269,6 @@ void PartFree( markers *particles, params* model ) {
 
     DoodzFree(particles->div_u_th);
     DoodzFree(particles->rho);
-    DoodzFree(particles->rhoUe0);
     DoodzFree(particles->T);
     DoodzFree(particles->d);
     DoodzFree(particles->phi);
@@ -555,8 +551,6 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->fric_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->dil_n      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
 
-    mesh->rhoUe0     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-
     // For Newton iterations
     mesh->D11_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->D12_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
@@ -834,8 +828,6 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->C_n);
     DoodzFree(mesh->fric_n);
     DoodzFree(mesh->dil_n);
-
-    DoodzFree(mesh->rhoUe0);
 
     // For Newton iterations
     DoodzFree(mesh->D11_n);
