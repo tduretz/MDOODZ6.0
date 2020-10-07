@@ -942,7 +942,11 @@ int main( int nargs, char *args[] ) {
             // Update energy on particles
             UpdateParticleEnergy( &mesh, scaling, model, &particles, &materials );
             MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. after UpdateParticleEnergy");
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> 00adcc3f668db6daca607608fd4af9b552ba1f95
             // Calculate energies
             if ( model.write_energies == 1 ) Energies( &mesh, model, scaling );
             
