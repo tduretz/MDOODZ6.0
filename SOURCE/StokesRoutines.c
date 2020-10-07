@@ -498,8 +498,8 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
             // Some stuff to be put on vertices                       < ---------------------- get P from centroids to vertices
             InterpCentroidsToVerticesDouble( mesh->T,    mesh->T_s,   mesh, model );
 //            InterpCentroidsToVerticesDouble( mesh->p_in, mesh->P_s,   mesh, model );
-            InterpCentroidsToVerticesDouble( mesh->d0,   mesh->d0_s,  mesh, model );
-            InterpCentroidsToVerticesDouble( mesh->phi,  mesh->phi_s, mesh, model );
+            InterpCentroidsToVerticesDouble( mesh->d0_n,   mesh->d0_s,  mesh, model );
+            InterpCentroidsToVerticesDouble( mesh->phi0_n,  mesh->phi0_s, mesh, model );
             
             // Update non-linearity
             UpdateNonLinearity( mesh, particles, topo_chain, topo, materials, model, Nmodel, scaling, 0, 1.0 );
@@ -1083,7 +1083,7 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                     if (mesh->comp_cells[c] == 1) {
                         mesh->rhs_p[c] += (mesh->p0_n[c] + 0.0*mesh->p_lith[c])*mesh->bet_n[c]/model.dt;
                         if (model.adiab_heat > 0 ) {
-                            mesh->rhs_p[c] += mesh->div_u_th[c];
+                            mesh->rhs_p[c] += mesh->divth0_n[c];
                         }
                     }
                 }

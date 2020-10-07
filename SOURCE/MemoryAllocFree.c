@@ -199,7 +199,7 @@ void PartAlloc( markers *particles, params* model  ) {
     particles->generation = DoodzCalloc( particles->Nb_part_max,sizeof(int));
     particles->progress   = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
 
-    particles->div_u_th   = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+    particles->divth      = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->rho        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->T          = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->d          = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
@@ -240,6 +240,14 @@ void PartAlloc( markers *particles, params* model  ) {
         particles->nx        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
         particles->nz        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     }
+    
+    particles->ddivth = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+    particles->dT     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+    particles->dP     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+    particles->dd     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+    particles->dX     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+    particles->dphi   = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+    particles->drho   = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
 }
 
 
@@ -267,7 +275,7 @@ void PartFree( markers *particles, params* model ) {
     DoodzFree(particles->progress);
     DoodzFree(particles->generation);
 
-    DoodzFree(particles->div_u_th);
+    DoodzFree(particles->divth);
     DoodzFree(particles->rho);
     DoodzFree(particles->T);
     DoodzFree(particles->d);
@@ -306,6 +314,14 @@ void PartFree( markers *particles, params* model ) {
         DoodzFree(particles->nx);
         DoodzFree(particles->nz);
     }
+    
+    DoodzFree(particles->ddivth);
+    DoodzFree(particles->dT);
+    DoodzFree(particles->dP);
+    DoodzFree(particles->dd);
+    DoodzFree(particles->dX);
+    DoodzFree(particles->dphi);
+    DoodzFree(particles->drho);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -496,7 +512,8 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->Short      = DoodzCalloc (model->Nt,sizeof(double));
 
     mesh->T          = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    mesh->div_u_th       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->T0_n       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->divth0_n   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->dT         = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->eII_el     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->exx_el     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
@@ -534,9 +551,10 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->eII_gbs    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->eII_cst    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
 
-    mesh->d       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    mesh->d0      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    mesh->phi     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->d_n     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->d0_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->phi_n   = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->phi0_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
 
     mesh->cell_min_z = DoodzCalloc( (Nz-1), sizeof(double));
     mesh->cell_max_z = DoodzCalloc( (Nz-1), sizeof(double));
@@ -583,7 +601,7 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->detadp_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
 
     mesh->d0_s   = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
-    mesh->phi_s  = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
+    mesh->phi0_s = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->T_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
     mesh->P_s    = DoodzCalloc ((Nx-0)*(Nz-0),sizeof(double));
 
@@ -789,7 +807,8 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->Short);
 
     DoodzFree(mesh->T);
-    DoodzFree(mesh->div_u_th);
+    DoodzFree(mesh->T0_n);
+    DoodzFree(mesh->divth0_n);
     DoodzFree(mesh->dT);
     DoodzFree(mesh->eII_el);
     DoodzFree(mesh->exx_el);
@@ -800,7 +819,6 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->exz_diss);
 
     DoodzFree(mesh->eII_pl);
-//    DoodzFree(mesh->eII_pl_s);
     DoodzFree(mesh->eII_pwl);
     DoodzFree(mesh->eII_exp);
     DoodzFree(mesh->eII_lin);
@@ -812,9 +830,10 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->exz_n_el);
     DoodzFree(mesh->exz_n_diss);
 
-    DoodzFree(mesh->d);
-    DoodzFree(mesh->d0);
-    DoodzFree(mesh->phi);
+    DoodzFree(mesh->d_n);
+    DoodzFree(mesh->d0_n);
+    DoodzFree(mesh->phi_n);
+    DoodzFree(mesh->phi0_n);
 
     DoodzFree(mesh->cell_min_z);
     DoodzFree(mesh->cell_max_z);
@@ -861,7 +880,7 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->detadp_s);
 
     DoodzFree(mesh->d0_s);
-    DoodzFree(mesh->phi_s);
+    DoodzFree(mesh->phi0_s);
     DoodzFree(mesh->T_s);
     DoodzFree(mesh->P_s);
 

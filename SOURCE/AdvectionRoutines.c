@@ -778,30 +778,6 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
             model->dt = dtc;
         }
 
-
-//        // REACTION DT:
-//        // is there a reaction somewhere?
-//        reaction_in_progress = 0;
-//        for (k=0; k<model->Nx; k++) {
-//            for (l=0; l<model->Nz; l++) {
-//                c = k + l*(model->Nx);
-//                if (mesh->ttrans0_s[c] > 0.0 && mesh->ttrans0_s[c]< time_reaction) reaction_in_progress += 1;
-//            }
-//        }
-//
-//        if (reaction_in_progress > 0){
-//        printf("Reaction in progress in %d mesh(es)\n", reaction_in_progress);
-//        if (model->dt>=0.1*time_reaction/scaling.t){
-//            model->dt = 0.1*time_reaction/scaling.t;
-//            printf("!!! => Timestep potentially limited by Chemical Reaction Time\n");
-//            printf("!! model dt = 0.1 x Reaction Time = %2.2e\n", model->dt*scaling.t);
-//            }
-//        }
-//        else{
-//            printf("No Reaction in progress \n");
-//            printf("No timestep limitation due to Chemical Reaction \n");
-//        }
-
         // If there is no motion, then the timestep becomes huge: cut off the motion.
         if( model->dt>1.0e30 || vmax<1.0e-30) {
             dtc = 0.0;

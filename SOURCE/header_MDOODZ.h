@@ -68,8 +68,9 @@ struct _p_markers {
     markers* marker_chain;
     int    *intag;
     double *Fxx, *Fxz, *Fzx, *Fzz, *dnx, *dnz, *nx, *nz;
-    double *T0, *P0, *x0, *z0, *Tmax, *Pmax, *div_u_th;
+    double *T0, *P0, *x0, *z0, *Tmax, *Pmax, *divth;
     double *dsxxd, *dszzd, *dsxz;
+    double *ddivth, *dT, *dP, *dd, *dphi, *dX, *drho;
 };
 
 // BC is a boundary condition structure for the mechanical solver
@@ -163,8 +164,8 @@ struct _n_params {
 typedef struct _grid grid;
 struct _grid {
 	int    Nx, Nz, NN, NC;
-	double dx,dz;
-	double *roger_x, *roger_z, *div_u, *div_u_s, *div_u_el, *div_u_pl, *div_u_r, *u_in, *v_in, *p_in, *p_corr, *sxxd, *szzd, *sxz, *exxd, *ezzd, *exz, *VE_s, *VE_n, *sxxd0, *szzd0, *sxz0, *mu_s, *mu_n, *u_adv, *v_adv, *eta_phys_n, *kx, *kz, *Cv, *Qr, *eta_phys_s, *u_start, *v_start, *p_start, *div_u_th;
+	double dx, dz;
+	double *roger_x, *roger_z, *div_u, *div_u_s, *div_u_el, *div_u_pl, *div_u_r, *u_in, *v_in, *p_in, *p_corr, *sxxd, *szzd, *sxz, *exxd, *ezzd, *exz, *VE_s, *VE_n, *sxxd0, *szzd0, *sxz0, *mu_s, *mu_n, *u_adv, *v_adv, *eta_phys_n, *kx, *kz, *Cv, *Qr, *eta_phys_s, *u_start, *v_start, *p_start, *divth0_n, *T0_n;
 	int    *iter_smooth;
 	int    *nb_part_cell, *nb_part_vert;
 	BC     BCu, BCv, BCp, BCp_exp;
@@ -186,7 +187,7 @@ struct _grid {
     double *sxxd0_s, *szzd0_s, *sxz0_n, *exxd_s, *ezzd_s, *exz_n, *sxz_n;
     double *rho0_n;
     double Ut, Ue, W, *Work, *Uelastic, *Uthermal, *Time, *Short;
-    double *T, *dT, *d, *d0, *phi;
+    double *T, *dT, *d_n, *d0_n, *phi_n, *phi0_n;
     double *eII_el, *eII_pl, *eII_pl_s, *eII_pwl, *eII_exp, *eII_lin, *eII_gbs, *eII_cst;
     double *eII_pwl_s;
     double *exx_el, *ezz_el, *exz_el, *exx_diss, *ezz_diss, *exz_diss;
@@ -198,7 +199,7 @@ struct _grid {
     double *detadexx_n,  *detadezz_n,  *detadgxz_n,  *detadp_n;
     double *ddivpdexx_n, *ddivpdezz_n, *ddivpdgxz_n, *ddivpdp_n;
     double *detadexx_s,  *detadezz_s,  *detadgxz_s,  *detadp_s;
-    double *phi_s, *d0_s, *T_s, *P_s;
+    double *phi0_s, *d0_s, *T_s, *P_s;
     // For anisotropy
     double *nx_n, *nz_n, *nx_s, *nz_s, *FS_AR_n, *FS_AR_s, *aniso_factor_n, *aniso_factor_s;
     double *nx0_n, *nz0_n, *nx0_s, *nz0_s;
@@ -407,6 +408,7 @@ void GenerateDeformationMaps( grid*, mat_prop*, params*, Nparams, scale*);
 void UpdateParticleGrainSize( grid*, scale, params, markers*, mat_prop* );
 void UpdateParticleDensity( grid*, scale, params, markers*, mat_prop* );
 void UpdateParticleX( grid*, scale, params, markers*, mat_prop* );
+void UpdateParticlePhi( grid*, scale, params, markers*, mat_prop* );
 // Advection
 void DefineInitialTimestep( params*, grid*, markers, mat_prop, scale );
 void EvaluateCourantCriterion( double*, double*, params*, scale, grid*, int);
@@ -575,3 +577,4 @@ void Interp_P2G ( markers*, DoodzFP*, grid*, double*, double*, double*, int, int
 void Interp_Grid2P_centroids ( markers, DoodzFP* , grid *, double* , double* , double* , int , int , char *, params* );
 void ExpandCentroidArray( double*, double*, grid*, params* );
 void ComputeIncrementsOnParticles( grid*, markers*, params*, mat_prop*, scale* );
+void UpdateGridFields( grid*, markers*, params*, mat_prop*, scale* );

@@ -139,68 +139,68 @@ int main( int nargs, char *args[] ) {
         model.time = 0.0;
         
         if ( model.no_markers == 0 ) {
-
+            
             // Initialise particle fields
             PartInit( &particles, &model );
-
+            
 #ifdef _NEW_INPUT_
             // Initial grid tags
             model.BC_setup_type = 1; // eventually it should be set from the input file
             SetBCs_new( &mesh, &model, scaling , &particles, &materials );
-
+            
             LoadIniParticles( PartFileName, &particles, &mesh, &topo_chain, &topo_chain_ini, &model, scaling );
-
+            
             if ( model.free_surf == 1 ) {
                 // Project topography on vertices
                 ProjectTopography( &topo, &topo_chain, model, mesh, scaling, mesh.xg_coord, 0 );
-
+                
                 // Marker chain polynomial fit
                 MarkerChainPolyFit( &topo, &topo_chain, model, mesh );
-
+                
                 // Call cell flagging routine for free surface calculations
                 CellFlagging( &mesh, model, topo, scaling );
             }
-
+            
 #else
             // Initial grid tags
             SetBCs( &mesh, &model, scaling , &particles, &materials );
             if ( model.free_surf == 1 ) {
-
+                
                 // Define the horizontal position of the surface marker chain
                 SetTopoChainHorizontalCoords( &topo,     &topo_chain,     model, mesh, scaling );
                 SetTopoChainHorizontalCoords( &topo_ini, &topo_chain_ini, model, mesh, scaling );
-
+                
                 // Define the vertical position of the surface marker chain
                 BuildInitialTopography( &topo,     &topo_chain,     model, mesh, scaling );
                 BuildInitialTopography( &topo_ini, &topo_chain_ini, model, mesh, scaling );
-
+                
                 // Project topography on vertices
                 ProjectTopography( &topo, &topo_chain, model, mesh, scaling, mesh.xg_coord, 0 );
-
+                
                 // Marker chain polynomial fit
                 MarkerChainPolyFit( &topo, &topo_chain, model, mesh );
-
+                
                 // Call cell flagging routine for free surface calculations
                 CellFlagging( &mesh, model, topo, scaling );
             }
             // Set particles coordinates
             PutPartInBox( &particles, &mesh, model, topo, scaling );
-
+            
             // Set phases on particles
             SetParticles( &particles, scaling, model, &materials );
             if ( model.free_surf == 1 ) CleanUpSurfaceParticles( &particles, &mesh, topo, scaling ); /////////!!!!!!!!!
-
+            
 #endif
             if ( model.free_surf == 1 ) CleanUpSurfaceParticles( &particles, &mesh, topo, scaling ); /////////!!!!!!!!!
-
+            
             Interp_P2N ( particles, materials.eta0,  &mesh, mesh.eta_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
             Interp_P2C ( particles, materials.eta0,  &mesh, mesh.eta_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
-
+            
             Interp_P2C ( particles, particles.T,        &mesh, mesh.T,     mesh.xg_coord,  mesh.zg_coord, 1, 0 );
             Interp_P2C ( particles, materials.Cv,       &mesh, mesh.Cv,       mesh.xg_coord,  mesh.zg_coord, 0, 0 );
             Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kz,       mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1,     mesh.Nz,   0, mesh.BCv.type , &model);
             Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kx,       mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,       mesh.Nz+1, 0, mesh.BCu.type , &model);
-
+            
             if ( model.eqn_state > 0) {
                 Interp_P2N ( particles, particles.rho,  &mesh, mesh.rho_s, mesh.xg_coord,  mesh.zg_coord, 1, 0, &model );
                 Interp_P2C ( particles, particles.rho,  &mesh, mesh.rho_n, mesh.xg_coord,  mesh.zg_coord, 1, 0 );
@@ -213,7 +213,7 @@ int main( int nargs, char *args[] ) {
             MinMaxArray( mesh.u_in,  scaling.V, (mesh.Nx)*(mesh.Nz+1),   "Vx. grid" );
             MinMaxArray( mesh.v_in,  scaling.V, (mesh.Nx+1)*(mesh.Nz),   "Vz. grid" );
             MinMaxArray( mesh.p_in,  scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "       P" );
-
+            
             // Initial solution fields (Fine mesh)
 #ifdef _NEW_INPUT_
             SetBCs_new( &mesh, &model, scaling , &particles, &materials );
@@ -225,18 +225,18 @@ int main( int nargs, char *args[] ) {
             MinMaxArray( mesh.u_in,  scaling.V, (mesh.Nx)*(mesh.Nz+1),   "Vx. grid" );
             MinMaxArray( mesh.v_in,  scaling.V, (mesh.Nx+1)*(mesh.Nz),   "Vz. grid" );
             MinMaxArray( mesh.p_in,  scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "       P" );
-
+            
             printf("*************************************\n");
             printf("****** Initialize temperature *******\n");
             printf("*************************************\n");
-
+            
             // Get energy and related material parameters from particles
             Interp_P2C ( particles, materials.Cv,   &mesh, mesh.Cv,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
             Interp_P2C ( particles, materials.Qr,   &mesh, mesh.Qr,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
             Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kz,   mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz,   0, mesh.BCv.type , &model);
             Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kx,   mesh.xg_coord, mesh.zvx_coord,  mesh.Nx, mesh.Nz+1,   0, mesh.BCu.type , &model);
             Interp_P2C ( particles, particles.T, &mesh, mesh.T, mesh.xg_coord, mesh.zg_coord,  1, 0 );
-
+            
 #ifdef _NEW_INPUT_
             SetBCs_new( &mesh, &model, scaling , &particles, &materials );
 #else
@@ -245,18 +245,19 @@ int main( int nargs, char *args[] ) {
             if ( model.thermal_eq == 1 ) ThermalSteps( &mesh, model,  mesh.T,  mesh.dT,  mesh.rhs_t, mesh.T, &particles, model.cooling_time, scaling );
             if ( model.therm_pert == 1 ) SetThermalPert( &mesh, model, scaling );
             Interp_Grid2P_centroids( particles, particles.T,    &mesh, mesh.T, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type, &model );
-
+            ArrayEqualArray( mesh.T0_n, mesh.T, (mesh.Nx-1)*(mesh.Nz-1) );
+            
             printf("*************************************\n");
             printf("******** Initialize pressure ********\n");
             printf("*************************************\n");
-
+            
             // Strain rate field
             if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
             if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling  );
             if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling  );
-
+            
             StrainRateComponents( &mesh, scaling, &model );
-
+            
             // Free surface - subgrid density correction
             if ( model.free_surf == 1 ) {
                 SurfaceDensityCorrection( &mesh, model, topo, scaling  );
@@ -265,64 +266,65 @@ int main( int nargs, char *args[] ) {
                 ArrayEqualArray( mesh.rho_app_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
                 ArrayEqualArray( mesh.rho_app_s, mesh.rho_s, (mesh.Nx)*(mesh.Nz) );
             }
-
+            ArrayEqualArray( mesh.rho0_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
+            
             // Lithostatic pressure for initial visco-plastic viscosity field
             ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 0 );
             Interp_Grid2P_centroids( particles, particles.P,    &mesh, mesh.p_lith, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
             Interp_P2C ( particles, particles.P, &mesh, mesh.p_in, mesh.xg_coord, mesh.zg_coord,  1, 0 );
-//            ArrayEqualArray( mesh.p_in, mesh.p_lith,  (mesh.Nx-1)*(mesh.Nz-1) );
-
+            //            ArrayEqualArray( mesh.p_in, mesh.p_lith,  (mesh.Nx-1)*(mesh.Nz-1) );
+            
             printf("*************************************\n");
             printf("******* Initialize grain size *******\n");
             printf("*************************************\n");
-
+            
             // Grain size
-            Interp_P2C ( particles, particles.d,  &mesh, mesh.d, mesh.xg_coord,  mesh.zg_coord, 1, 0 );
-            ArrayEqualArray( mesh.d0, mesh.d,  (mesh.Nx-1)*(mesh.Nz-1) );
+            Interp_P2C ( particles, particles.d,  &mesh, mesh.d_n, mesh.xg_coord,  mesh.zg_coord, 1, 0 );
+            ArrayEqualArray( mesh.d0_n, mesh.d_n,  (mesh.Nx-1)*(mesh.Nz-1) );
             
             printf("*************************************\n");
             printf("******** Initialize density *********\n");
             printf("*************************************\n");
-
+            
             if ( model.eqn_state > 0 ) {
                 UpdateDensity( &mesh, &particles, &materials, &model, &scaling );
             }
             ArrayEqualArray( mesh.rho0_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
             ArrayEqualArray( mesh.rho_app_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
             ArrayEqualArray( mesh.rho_app_s, mesh.rho_s, (mesh.Nx)*(mesh.Nz) );
-
+            
             printf("*************************************\n");
             printf("****** Initialize composition *******\n");
             printf("*************************************\n");
-
-//            if ( model.diffuse_X == 1 ) {
-//                Interp_P2C ( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-//                Diffuse_X(&mesh, &model, &scaling);
-//                Interp_Grid2P( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-//                Interp_P2C ( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-//                Interp_P2N ( particles, particles.X, &mesh, mesh.Xreac_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-//            }
+            
+            //            if ( model.diffuse_X == 1 ) {
+            //                Interp_P2C ( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+            //                Diffuse_X(&mesh, &model, &scaling);
+            //                Interp_Grid2P( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+            //                Interp_P2C ( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+            //                Interp_P2N ( particles, particles.X, &mesh, mesh.Xreac_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+            //            }
             
             Interp_P2C ( particles, particles.X, &mesh, mesh.X0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
             Interp_P2N ( particles, particles.X, &mesh, mesh.X0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-
+            
             if ( model.aniso == 1 ) InitialiseDirectorVector ( &mesh, &particles, &model, &materials );
-//
+            //
             printf("*************************************\n");
             printf("******* Initialize viscosity ********\n");
             printf("*************************************\n");
-
+            
             if ( model.iselastic == 1 ) ShearModCompExpGrid( &mesh, materials, model, scaling );
-
+            
             // Compute cohesion and friction angle on the grid
             CohesionFrictionDilationGrid( &mesh, &particles, materials, model, scaling );
             Interp_Grid2P_centroids( particles, particles.P,    &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
             Interp_Grid2P_centroids( particles, particles.T,    &mesh, mesh.T,    mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type, &model );
             NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
-
+            
         } // end of no_markers --- debug
         else {
-        
+            
             Initialise1DArrayChar( mesh.BCu.type,  (mesh.Nx+0)*(mesh.Nz+1), -1 ); // make sure dofs are activated
             Initialise1DArrayChar( mesh.BCv.type,  (mesh.Nx+1)*(mesh.Nz+0), -1 );
             Initialise1DArrayChar( mesh.BCp.type,  (mesh.Nx-1)*(mesh.Nz-1), -1 );
@@ -334,15 +336,14 @@ int main( int nargs, char *args[] ) {
             ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 0 );
             NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
         }
-    
+        
         printf("Number of phases : %d\n", model.Nb_phases);
         if ( model.noisy == 1 ) {
-            MinMaxArrayTag( mesh.d0,         scaling.L,   (mesh.Nx-1)*(mesh.Nz-1), "d0        ", mesh.BCp.type );
-            MinMaxArrayTag( mesh.d,          scaling.L,   (mesh.Nx-1)*(mesh.Nz-1), "d         ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.d0_n,       scaling.L,   (mesh.Nx-1)*(mesh.Nz-1), "d0        ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.d_n,        scaling.L,   (mesh.Nx-1)*(mesh.Nz-1), "d         ", mesh.BCp.type );
             MinMaxArrayTag( mesh.p_lith,     scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P litho   ", mesh.BCp.type );
             MinMaxArrayTag( mesh.p_in,       scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P initial ", mesh.BCp.type );
             MinMaxArrayTag( mesh.T,          scaling.T,   (mesh.Nx-1)*(mesh.Nz-1), "T         ", mesh.BCp.type );
-            MinMaxArrayTag( mesh.d,          scaling.L,   (mesh.Nx-1)*(mesh.Nz-1), "d         ", mesh.BCp.type );
             MinMaxArrayTag( mesh.mu_s,       scaling.S,   (mesh.Nx)*(mesh.Nz),     "mu_s      ", mesh.BCg.type );
             MinMaxArrayTag( mesh.mu_n,       scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "mu_n      ", mesh.BCp.type );
             MinMaxArrayTag( mesh.eta_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "eta_s     ", mesh.BCg.type );
@@ -384,9 +385,9 @@ int main( int nargs, char *args[] ) {
         }
 #endif
         // Set initial stresses and pressure to zero
-//        Initialise1DArrayDouble( particles.X,      particles.Nb_part, 0.0 ); // set X to zero for the first time step
+        //        Initialise1DArrayDouble( particles.X,      particles.Nb_part, 0.0 ); // set X to zero for the first time step
         Initialise1DArrayDouble( particles.P,      particles.Nb_part, 0.0 ); // now dynamic pressure...
-//        Initialise1DArrayDouble( mesh.p_in,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
+        //        Initialise1DArrayDouble( mesh.p_in,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
         Initialise1DArrayDouble( mesh.sxxd,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
         Initialise1DArrayDouble( mesh.szzd,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
         Initialise1DArrayDouble( mesh.sxz,   (mesh.Nx)  *(mesh.Nz)  , 0.0 );
@@ -431,32 +432,39 @@ int main( int nargs, char *args[] ) {
         //------------------------------------------------------------------------------------------------------------------------------//
         
         if (model.no_markers == 0 ) {
-
-
+            
+            
             // Remove particles that would be above the surface
             if ( model.free_surf == 1 ) {
                 CleanUpSurfaceParticles( &particles, &mesh, topo, scaling );
                 CellFlagging( &mesh, model, topo, scaling );
             }
-
+            
             // Interpolate material properties from particles to nodes
             t_omp = (double)omp_get_wtime();
-
+            
+            // Save old lithostatic pressure (to disappear ? )
+            ArrayEqualArray(  mesh.p_lith0,   mesh.p_lith, Ncx*Ncz );
+            
+            // Master routines that update solution increments
+            UpdateGridFields( &mesh, &particles, &model, &materials, &scaling );
+            
+            // Make sure T is up to date for rheology evaluation
+            ArrayEqualArray( mesh.T, mesh.T0_n, (mesh.Nx-1)*(mesh.Nz-1) );
+            
+            // So far no changes of phi
+            ArrayEqualArray(  mesh.phi_n,   mesh.phi0_n, Ncx*Ncz );
+            
             // Energy - interpolate thermal parameters and advected energy
             if ( model.isthermal == 1 ) {
-
+                
                 // Get energy and related material parameters from particles
-                Interp_P2C ( particles, materials.Cv,   &mesh, mesh.Cv,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
-                Interp_P2C ( particles, materials.Qr,   &mesh, mesh.Qr,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
-
-                Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kz,   mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz,   0, mesh.BCv.type , &model);
-                Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kx,   mesh.xg_coord, mesh.zvx_coord,  mesh.Nx, mesh.Nz+1,   0, mesh.BCu.type , &model);
-
-                // Get T and dTdt from previous step from particles
-                Interp_P2C ( particles, particles.T,    &mesh, mesh.T,    mesh.xg_coord, mesh.zg_coord,  1, 0 );
-                Interp_P2C ( particles, particles.div_u_th, &mesh, mesh.div_u_th, mesh.xg_coord, mesh.zg_coord,  1, 0 );
+                Interp_P2C ( particles,    materials.Cv,   &mesh, mesh.Cv,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
+                Interp_P2C ( particles,    materials.Qr,   &mesh, mesh.Qr,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
+                Interp_P2U ( particles, materials.k_eff,   &mesh, mesh.kz,   mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz,   0, mesh.BCv.type , &model);
+                Interp_P2U ( particles, materials.k_eff,   &mesh, mesh.kx,   mesh.xg_coord, mesh.zvx_coord,  mesh.Nx, mesh.Nz+1,   0, mesh.BCu.type , &model);
             }
-
+            
             // Get physical properties that are constant throughout each timestep
             if ( model.eqn_state  > 0 ) {
                 UpdateDensity( &mesh, &particles, &materials, &model, &scaling );
@@ -465,10 +473,7 @@ int main( int nargs, char *args[] ) {
                 Interp_P2N ( particles, materials.rho,  &mesh, mesh.rho_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
                 Interp_P2C ( particles, materials.rho,  &mesh, mesh.rho_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
             }
-
-//            // Get X on the cell centers
-//            Interp_P2C ( particles, particles.X, &mesh, mesh.X, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-
+            
             // Free surface - subgrid density correction
             if ( model.free_surf == 1 ) {
                 SurfaceDensityCorrection( &mesh, model, topo, scaling  );
@@ -477,117 +482,38 @@ int main( int nargs, char *args[] ) {
                 ArrayEqualArray( mesh.rho_app_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
                 ArrayEqualArray( mesh.rho_app_s, mesh.rho_s, (mesh.Nx  )*(mesh.Nz  ) );
             }
-
+            
             // Lithostatic pressure
-            ArrayEqualArray(  mesh.p_lith0,   mesh.p_lith, Ncx*Ncz );
             ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 1 );
-
+            
             // Elasticity - interpolate advected/rotated stresses
             if  ( model.iselastic == 1 ) {
-                
-
-//                OldDeviatoricStressesPressure( &mesh, &particles, scaling, &model );
-                
-//                Interp_P2G ( &particles, particles.sxxd,  &mesh, mesh.sxxd0,   mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz );
-//                Interp_P2G ( &particles, particles.sxxd,  &mesh, mesh.sxxd0_s, mesh.xg_coord,   mesh.zg_coord, 1, 0, &model, mesh.BCg.type,  Nx,  Nz );
-//                Interp_P2G ( &particles, particles.szzd,  &mesh, mesh.szzd0,   mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz );
-//                Interp_P2G ( &particles, particles.szzd,  &mesh, mesh.szzd0_s, mesh.xg_coord,   mesh.zg_coord, 1, 0, &model, mesh.BCg.type,  Nx,  Nz );
-//                Interp_P2G ( &particles, particles.sxz,   &mesh, mesh.sxz0_n,  mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz );
-//                Interp_P2G ( &particles, particles.sxz,   &mesh, mesh.sxz0,    mesh.xg_coord,   mesh.zg_coord, 1, 0, &model, mesh.BCg.type,  Nx,  Nz );
-
-//                // Get old stresses from particles
-                if (model.StressUpdate == 0 ) {
-                    Interp_P2C ( particles, particles.sxxd, &mesh, mesh.sxxd0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                    Interp_P2C ( particles, particles.szzd, &mesh, mesh.szzd0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                    Interp_P2N ( particles, particles.sxz,  &mesh, mesh.sxz0,    mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-                }
-                
-//                Interp_P2N ( particles, particles.sxxd, &mesh, mesh.sxxd0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-//                Interp_P2N ( particles, particles.szzd, &mesh, mesh.szzd0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-//                Interp_P2C ( particles, particles.sxz,  &mesh, mesh.sxz0_n,  mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                
-//                ArrayEqualArray(  mesh.sxxd0,  mesh.sxxd, Ncx*Ncz );
-//                ArrayEqualArray(  mesh.szzd0,  mesh.szzd, Ncx*Ncz );
-//                ArrayEqualArray(  mesh.sxz0,   mesh.sxz,   Nx*Nz );
-                
-                if (model.StressUpdate == 1 ) {
-                    double *dsxxd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-                    double *dszzd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-                    double *dsxz  = DoodzCalloc ( Nx*Nz,   sizeof(double));
-                    Interp_P2C ( particles, particles.dsxxd, &mesh, dsxxd,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                    Interp_P2C ( particles, particles.dszzd, &mesh, dszzd,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                    Interp_P2N ( particles, particles.dsxz,  &mesh, dsxz ,   mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-                    ArrayPlusArray(  mesh.sxxd0,  dsxxd, Ncx*Ncz );
-                    ArrayPlusArray(  mesh.szzd0,  dszzd, Ncx*Ncz );
-                    ArrayPlusArray(  mesh.sxz0,   dsxz,   Nx*Nz );
-                    DoodzFree(dsxxd);
-                    DoodzFree(dszzd);
-                    DoodzFree(dsxz );
-                }
-
-                InterpCentroidsToVerticesDouble( mesh.sxxd0, mesh.sxxd0_s, &mesh, &model );
-                InterpCentroidsToVerticesDouble( mesh.szzd0, mesh.szzd0_s, &mesh, &model );
-                InterpVerticesToCentroidsDouble( mesh.sxz0_n,  mesh.sxz0,  &mesh, &model );
-
                 // Interpolate shear modulus
                 ShearModCompExpGrid( &mesh, materials, model, scaling );
-                
             }
-
-            // Director vector
-            if (model.aniso == 1 ) {
-                double *dnx_n = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-                double *dnz_n = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-                double *dnx_s = DoodzCalloc ( Nx*Nz,   sizeof(double));
-                double *dnz_s = DoodzCalloc ( Nx*Nz,   sizeof(double));
-                Interp_P2C ( particles, particles.dnx, &mesh, dnx_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                Interp_P2C ( particles, particles.dnz, &mesh, dnz_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                Interp_P2N ( particles, particles.dnx, &mesh, dnx_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-                Interp_P2N ( particles, particles.dnz, &mesh, dnz_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-                ArrayPlusArray(  mesh.nx0_n,  dnx_n, Ncx*Ncz );
-                ArrayPlusArray(  mesh.nx0_s,  dnx_s,   Nx*Nz );
-                ArrayPlusArray(  mesh.nz0_n,  dnz_n, Ncx*Ncz );
-                ArrayPlusArray(  mesh.nz0_s,  dnz_s,   Nx*Nz );
-                NormalizeDirector( &mesh, mesh.nx0_n, mesh.nz0_n, mesh.nx0_s, mesh.nz0_s, &model );
+            
+            if ( model.aniso == 1 ) {
                 FiniteStrainAspectRatio ( &mesh, scaling, model, &particles );
                 Interp_P2C ( particles, materials.aniso_factor,  &mesh, mesh.aniso_factor_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
                 Interp_P2N ( particles, materials.aniso_factor,  &mesh, mesh.aniso_factor_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
             }
             
-            Interp_P2C ( particles, particles.X, &mesh, mesh.X0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-            Interp_P2N ( particles, particles.X, &mesh, mesh.X0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-
             // Diffuse rheological contrasts
-//            if (model.diffuse_X == 1) {
-//                Interp_P2C ( particles, particles.X, &mesh, mesh.X0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-//                Diffuse_X(&mesh, &model, &scaling);
-//                Interp_Grid2P( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-//                Interp_P2C ( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-//                Interp_P2N ( particles, particles.X, &mesh, mesh.Xreac_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-//            }
-
-            // Interpolate Grain size
-            Interp_P2C ( particles,   particles.d, &mesh, mesh.d0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
-            ArrayEqualArray(  mesh.d,  mesh.d0, Ncx*Ncz );
-
-            // Interpolate Melt fraction
-            Interp_P2C ( particles, particles.phi, &mesh, mesh.phi,  mesh.xg_coord, mesh.zg_coord, 1, 0 );
-
-            //-----------------------------------------------------------------------------------------------------------
-            // Interp P --> p0_n , p0_s
-//            ArrayEqualArray(  mesh.p0_n,  mesh.p_in, Ncx*Ncz );
-            Interp_P2C ( particles, particles.P, &mesh, mesh.p0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-            ArrayPlusArray(  mesh.p0_n,   mesh.p_lith0, Ncx*Ncz ); // Add back lithostatic component
-
+            //            if (model.diffuse_X == 1) {
+            //                Interp_P2C ( particles, particles.X, &mesh, mesh.X0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+            //                Diffuse_X(&mesh, &model, &scaling);
+            //                Interp_Grid2P( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+            //                Interp_P2C ( particles, particles.X, &mesh, mesh.Xreac_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+            //                Interp_P2N ( particles, particles.X, &mesh, mesh.Xreac_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+            
             //-------------------------------------------------------------------------------------------------------------
-
+            
             // Compute cohesion and friction angle on the grid
             CohesionFrictionDilationGrid( &mesh, &particles, materials, model, scaling );
-
+            
             // Detect compressible cells
             if (model.compressible == 1) DetectCompressibleCells ( &mesh, &model );
-
-            Interp_P2C ( particles,   particles.rho, &mesh, mesh.rho0_n,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
+            
         }
         else {
             ArrayEqualArray(  mesh.p0_n,   mesh.p_in, Ncx*Ncz );
@@ -598,13 +524,13 @@ int main( int nargs, char *args[] ) {
             InterpCentroidsToVerticesDouble( mesh.sxxd0, mesh.sxxd0_s, &mesh, &model );
             InterpCentroidsToVerticesDouble( mesh.szzd0, mesh.szzd0_s, &mesh, &model );
             InterpVerticesToCentroidsDouble( mesh.sxz0_n,  mesh.sxz0,  &mesh, &model );
-
+            
             ShearModCompExpGrid( &mesh, materials, model, scaling );
             CohesionFrictionDilationGrid( &mesh, &particles, materials, model, scaling );
             // Detect compressible cells
             if (model.compressible == 1) DetectCompressibleCells ( &mesh, &model );
         }
-    
+        
         // Min/Max interpolated fields
         if ( model.noisy == 1 ) {
             MinMaxArray(particles.rho, scaling.rho, particles.Nb_part, "rho part  ");
@@ -628,9 +554,9 @@ int main( int nargs, char *args[] ) {
             MinMaxArrayTag( mesh.strain_n,   1.0,       (mesh.Nx-1)*(mesh.Nz-1), "strain_n", mesh.BCp.type );
             MinMaxArrayTag( mesh.bet_s,    1.0/scaling.S,   (mesh.Nx)*(mesh.Nz),     "beta_s  ", mesh.BCg.type );
             MinMaxArrayTag( mesh.bet_n,    1.0/scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "beta_n  ", mesh.BCp.type );
-             IsInfArray2DFP(mesh.bet_n, Nx*Nz);
+            IsInfArray2DFP(mesh.bet_n, Nx*Nz);
             IsNanArray2DFP(mesh.bet_n, Nx*Nz);
-            MinMaxArrayTag( mesh.T,        scaling.T,   (mesh.Nx-1)*(mesh.Nz-1), "T       ", mesh.BCt.type );
+            MinMaxArrayTag( mesh.T0_n,     scaling.T,   (mesh.Nx-1)*(mesh.Nz-1), "T       ", mesh.BCt.type );
             MinMaxArrayTag( mesh.p_in,     scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P       ", mesh.BCt.type );
             MinMaxArrayI  ( mesh.comp_cells, 1.0, (mesh.Nx-1)*(mesh.Nz-1), "comp_cells" );
             if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nx0_n,    1.0,   (mesh.Nx-1)*(mesh.Nz-1), "nx0_n  ", mesh.BCp.type );
@@ -747,20 +673,20 @@ int main( int nargs, char *args[] ) {
                     }
                 }
                 
-//                MinMaxArrayTag( mesh.detadexx_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "detadexx_n     ", mesh.BCg.type );
-//                MinMaxArrayTag( mesh.detadezz_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "detadezz_n     ", mesh.BCg.type );
-//                MinMaxArrayTag( mesh.detadexx_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "detadgxz_n     ", mesh.BCg.type );
-//                MinMaxArrayTag( mesh.detadexx_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "detadexx_s     ", mesh.BCg.type );
-//                MinMaxArrayTag( mesh.detadezz_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "detadezz_s     ", mesh.BCg.type );
-//                MinMaxArrayTag( mesh.detadgxz_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "detadgxz_s     ", mesh.BCg.type );
-//                MinMaxArrayTag( mesh.D11_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "D21_n     ", mesh.BCg.type );
-//                MinMaxArrayTag( mesh.D12_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "D22_n     ", mesh.BCg.type );
-//                MinMaxArrayTag( mesh.D13_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "D23_n     ", mesh.BCg.type );
-//                MinMaxArrayTag( mesh.D14_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "D24_n     ", mesh.BCg.type );
-//                MinMaxArrayTag( mesh.D31_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "D31_s     ", mesh.BCg.type );
-//                MinMaxArrayTag( mesh.D32_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "D32_s     ", mesh.BCg.type );
-//                MinMaxArrayTag( mesh.D33_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "D33_s     ", mesh.BCg.type );
-//                MinMaxArrayTag( mesh.D34_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "D34_s     ", mesh.BCg.type );
+                //                MinMaxArrayTag( mesh.detadexx_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "detadexx_n     ", mesh.BCg.type );
+                //                MinMaxArrayTag( mesh.detadezz_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "detadezz_n     ", mesh.BCg.type );
+                //                MinMaxArrayTag( mesh.detadexx_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "detadgxz_n     ", mesh.BCg.type );
+                //                MinMaxArrayTag( mesh.detadexx_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "detadexx_s     ", mesh.BCg.type );
+                //                MinMaxArrayTag( mesh.detadezz_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "detadezz_s     ", mesh.BCg.type );
+                //                MinMaxArrayTag( mesh.detadgxz_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "detadgxz_s     ", mesh.BCg.type );
+                //                MinMaxArrayTag( mesh.D11_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "D21_n     ", mesh.BCg.type );
+                //                MinMaxArrayTag( mesh.D12_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "D22_n     ", mesh.BCg.type );
+                //                MinMaxArrayTag( mesh.D13_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "D23_n     ", mesh.BCg.type );
+                //                MinMaxArrayTag( mesh.D14_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "D24_n     ", mesh.BCg.type );
+                //                MinMaxArrayTag( mesh.D31_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "D31_s     ", mesh.BCg.type );
+                //                MinMaxArrayTag( mesh.D32_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "D32_s     ", mesh.BCg.type );
+                //                MinMaxArrayTag( mesh.D33_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "D33_s     ", mesh.BCg.type );
+                //                MinMaxArrayTag( mesh.D34_s,      scaling.eta, (mesh.Nx)*(mesh.Nz),     "D34_s     ", mesh.BCg.type );
                 
                 // Diagonal scaling
                 if ( model.diag_scaling ) {
@@ -777,18 +703,18 @@ int main( int nargs, char *args[] ) {
                 if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
                 if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
                 printf("---- Non-linear residual ----\n");
-
+                
                 if ( model.Newton == 1 && model.aniso == 0 ) {
                     ArrayEqualArray( JacobA.F, StokesA.F,  StokesA.neq );
                     ArrayEqualArray( JacobC.F, StokesC.F,  StokesC.neq );
                 }
                 if ( model.Newton == 1 && model.diag_scaling ) ScaleMatrix( &JacobA,  &JacobB,  &JacobC,  &JacobD  );
-
+                
                 // Store residuals
                 Nmodel.resx_f = Nmodel.resx; rx_abs[Nmodel.nit] = Nmodel.resx; rx_rel[Nmodel.nit] = Nmodel.resx/Nmodel.resx0;
                 Nmodel.resz_f = Nmodel.resz; rz_abs[Nmodel.nit] = Nmodel.resz; rz_rel[Nmodel.nit] = Nmodel.resz/Nmodel.resz0;
                 Nmodel.resp_f = Nmodel.resp; rp_abs[Nmodel.nit] = Nmodel.resp; rp_rel[Nmodel.nit] = Nmodel.resp/Nmodel.resp0;
-
+                
                 if ( model.write_debug == 1 ) WriteResiduals( mesh, model, Nmodel, scaling );
                 
                 // if pass --> clear matrix break
@@ -811,7 +737,7 @@ int main( int nargs, char *args[] ) {
                     break;
                 }
                 
-
+                
                 // Direct solve
                 t_omp = (double)omp_get_wtime();
                 if ( model.decoupled_solve == 0 ) SolveStokesDefect( &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling );
@@ -843,24 +769,24 @@ int main( int nargs, char *args[] ) {
                         break;
                         
                     }
-
+                    
                 }
                 
-//                if ( Nmodel.stagnated == 0 ) {
-//                    
-//                    if ( Nmodel.nit == 0  ) {
-//                        printf("---- Direct solve residual ----\n");
-//                        StrainRateComponents( &mesh, scaling, &model );
-//                        RheologicalOperators( &mesh, &model, &scaling, 0 );
-//                        NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
-//                        if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
-//                        if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
-//                        printf("---- Direct solve residual ----\n");
-//       
-//                        if ( model.write_debug == 1 ) WriteResiduals( mesh, model, Nmodel, scaling );
-//                
-//                    }
-//                }
+                //                if ( Nmodel.stagnated == 0 ) {
+                //
+                //                    if ( Nmodel.nit == 0  ) {
+                //                        printf("---- Direct solve residual ----\n");
+                //                        StrainRateComponents( &mesh, scaling, &model );
+                //                        RheologicalOperators( &mesh, &model, &scaling, 0 );
+                //                        NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
+                //                        if ( model.decoupled_solve == 0 ) EvaluateStokesResidual( &Stokes, &Nmodel, &mesh, model, scaling, 0 );
+                //                        if ( model.decoupled_solve == 1 ) EvaluateStokesResidualDecoupled( &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, &Nmodel, &mesh, model, scaling, 0 );
+                //                        printf("---- Direct solve residual ----\n");
+                //
+                //                        if ( model.write_debug == 1 ) WriteResiduals( mesh, model, Nmodel, scaling );
+                //
+                //                    }
+                //                }
                 
                 if ( Nmodel.stagnated == 1 && model.iselastic == 1 && model.safe_mode == 1 ) {
                     printf( "\e[1;31mWARNING : Non-linear solver stagnated (abs_tol_u = %2.2e abs_tol_p = %2.2e)\e[m\n", Nmodel.abs_tol_u, Nmodel.abs_tol_p );
@@ -946,8 +872,8 @@ int main( int nargs, char *args[] ) {
                 
                 int NumCommands = 4;
                 char *GNUplotCommands[] = {"set title \"Non-linear residuals\"", "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3", "plot 'F_x' with linespoints ls 1"};
-
-//                char *GNUplotCommands[] = { "set term x11 1 noraise", "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3", "plot 'F_x' with linespoints ls 1"};
+                
+                //                char *GNUplotCommands[] = { "set term x11 1 noraise", "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3", "plot 'F_x' with linespoints ls 1"};
                 FILE *temp = fopen("F_x", "w");
                 FILE *GNUplotPipe = popen ("gnuplot -persistent", "w");
                 for (i=0; i< Nmodel.nit+1; i++) {
@@ -968,78 +894,79 @@ int main( int nargs, char *args[] ) {
         // Free surface - interpolate velocity components on the free surface
         if ( model.free_surf == 1 ) {
             SurfaceVelocity( &mesh, model, &topo, &topo_chain, scaling );
-            MinMaxArray( topo_chain.Vx,  scaling.V, topo_chain.Nb_part,   "Vx surf." );
-            MinMaxArray( topo_chain.Vz,  scaling.V, topo_chain.Nb_part,   "Vz surf." );
+            MinMaxArray( topo_chain.Vx,      scaling.V, topo_chain.Nb_part,       "Vx surf." );
+            MinMaxArray( topo_chain.Vz,      scaling.V, topo_chain.Nb_part,       "Vz surf." );
             MinMaxArray( topo_chain_ini.Vx,  scaling.V, topo_chain_ini.Nb_part,   "Vx surf. ini." );
             MinMaxArray( topo_chain_ini.Vz,  scaling.V, topo_chain_ini.Nb_part,   "Vz surf. ini." );
         }
         
         //--------------------------------------------------------------------------------------------------------------------------------//
         
-//        TotalStresses( &mesh, &particles, scaling, &model );
-
+        //        TotalStresses( &mesh, &particles, scaling, &model );
+        
         // Update stresses on markers
         UpdateParticleStress(  &mesh, &particles, &model, &materials, &scaling );
-
+        
         // Update pressure on markers
         UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
-//        Interp_Grid2P_centroids( particles, particles.P, &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
-
+        //        Interp_Grid2P_centroids( particles, particles.P, &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
+        
         UpdateParticleX( &mesh, scaling, model, &particles, &materials );
         
+        // Grain size evolution
+        UpdateParticleGrainSize( &mesh, scaling, model, &particles, &materials );
+        MinMaxArrayTag( mesh.d0_n   , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d0", mesh.BCp.type );
+        MinMaxArrayTag( mesh.d_n    , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d ", mesh.BCp.type );
+        MinMaxArrayPart( particles.d, scaling.L, particles.Nb_part, "d on markers", particles.phase ) ;
+        
+        // Update density on the particles
+        UpdateParticleDensity( &mesh, scaling, model, &particles, &materials );
+        
+        // Update phi on the particles
+        UpdateParticlePhi( &mesh, scaling, model, &particles, &materials );
+        
         //------------------------------------------------------------------------------------------------------------------------------//
-
+        
         if (model.isthermal == 1 ) {
-
+            
             printf("*************************************\n");
             printf("*********** Thermal solver **********\n");
             printf("*************************************\n");
-
+            
             t_omp = (double)omp_get_wtime();
-
+            
             // Matrix assembly and direct solve
             EnergyDirectSolve( &mesh, model,  mesh.T,  mesh.dT,  mesh.rhs_t, mesh.T, &particles, model.dt, model.shear_heat, model.adiab_heat, scaling, 1 );
             MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. before UpdateParticleEnergy");
-
+            
             // Update energy on particles
             UpdateParticleEnergy( &mesh, scaling, model, &particles, &materials );
             MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. after UpdateParticleEnergy");
-
+            
             // Calculate energies
             if ( model.write_energies == 1 ) Energies( &mesh, model, scaling );
-
+            
             printf("** Time for Thermal solver = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
         }
-
+        
         //------------------------------------------------------------------------------------------------------------------------------//
-
-        // Grain size evolution
-        UpdateParticleGrainSize( &mesh, scaling, model, &particles, &materials );
-        MinMaxArrayTag( mesh.d0    , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d0", mesh.BCp.type );
-        MinMaxArrayTag( mesh.d     , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d ", mesh.BCp.type );
-        MinMaxArrayPart( particles.d, scaling.L, particles.Nb_part, "d on markers", particles.phase ) ;
-
-        // Update density on the particles
-        UpdateParticleDensity( &mesh, scaling, model, &particles, &materials );
-
-        //------------------------------------------------------------------------------------------------------------------------------//
-
+        
         // Update maximum pressure and temperature on markers
         if ( model.rec_T_P_x_z == 1 )  UpdateMaxPT( scaling, model, &particles );
-
+        
         //------------------------------------------------------------------------------------------------------------------------------//
-
+        
         if ( model.advection == 1 ) {
-
+            
             printf("*************************************\n");
             printf("************** Advection ************\n");
             printf("*************************************\n");
-
+            
             t_omp = (double)omp_get_wtime();
             //EvaluateCourantCriterion_BEN( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
             //EvaluateCourantCriterion( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
             Check_dt_for_advection( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
-
+            
             //            double whole_dt = model.dt;
             //            int nsub, isub;
             //
@@ -1051,12 +978,12 @@ int main( int nargs, char *args[] ) {
             //            for (isub=0;isub<nsub;isub++) {
             //
             //                printf("Advection step %03d of %03d: dtsub = %2.2e\n", isub, nsub, model.dt*scaling.t );
-
+            
             // Advect domain boundaries
             if ( model.ispureshear_ale > 0 ) {
                 PureShearALE( &model, &mesh, &topo_chain, scaling );
             }
-
+            
             // Advect free surface
             if ( model.free_surf == 1 ) {
                 AdvectFreeSurf( &topo_chain,     model, scaling );
@@ -1064,31 +991,31 @@ int main( int nargs, char *args[] ) {
                 MinMaxArray( topo_chain.z,      scaling.L, topo_chain.Nb_part,       "z surf.     " );
                 MinMaxArray( topo_chain_ini.z,  scaling.L, topo_chain_ini.Nb_part,   "z surf. ini." );
             }
-
+            
             // Correction for particle inflow 0
             if (model.ispureshear_ale == -1 && model.isperiodic_x == 0) ParticleInflowCheck( &particles, &mesh, model, topo, 0 );
-
+            
             // Advect fluid particles
             RogerGuntherII( &particles, model, mesh, 1, scaling );
-
+            
             // Correction for particle inflow 1
             if (model.ispureshear_ale == -1 && model.isperiodic_x == 0) ParticleInflowCheck( &particles, &mesh, model, topo, 1 );
-
+            
             // Update accumulated strain
             AccumulatedStrainII( &mesh, scaling, model, &particles,  mesh.xc_coord,  mesh.zc_coord, mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-
+            
             // Update deformation gradient tensor components
             if ( model.fstrain == 1 ) DeformationGradient( mesh, scaling, model, &particles );
-
+            
             //#ifdef _HDF5_
             if ( model.write_debug == 1 ) {
                 WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, model, "Output_BeforeSurfRemesh", materials, scaling );
                 WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particles_BeforeSurfRemesh", materials, scaling );
             }
             //#endif
-
+            
             if ( model.free_surf == 1 ) {
-
+                
                 if ( model.surf_remesh == 1 ) {
                     // Get current topography
                     ProjectTopography( &topo,     &topo_chain,     model, mesh, scaling, mesh.xg_coord, 0 );
@@ -1099,18 +1026,18 @@ int main( int nargs, char *args[] ) {
                     RemeshMarkerChain( &topo_chain,     &topo,     model, scaling, &mesh, 1 );
                     RemeshMarkerChain( &topo_chain_ini, &topo_ini, model, scaling, &mesh, 1 );
                 }
-
+                
                 // Project topography on vertices
                 ProjectTopography( &topo,     &topo_chain,     model, mesh, scaling, mesh.xg_coord, 0 );
                 ProjectTopography( &topo_ini, &topo_chain_ini, model, mesh, scaling, mesh.xg_coord, 0 );
                 ArrayEqualArray( topo.height0, topo.height, mesh.Nx );
                 ArrayEqualArray( topo_ini.height0, topo_ini.height, mesh.Nx );
-
+                
                 if ( model.write_debug == 1 ) {
                     WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, model, "Output_AfterSurfRemesh", materials, scaling );
                     WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particles_AfterSurfRemesh", materials, scaling );
                 }
-
+                
                 //                    // Diffuse topography
                 if ( model.surf_processes >= 1 )  DiffuseAlongTopography( &mesh, model, scaling, topo.height, mesh.Nx, 0.0, model.dt );
                 //
@@ -1118,7 +1045,7 @@ int main( int nargs, char *args[] ) {
                 MarkerChainPolyFit( &topo,     &topo_chain,     model, mesh );
                 CorrectTopoIni( &particles, materials, &topo_chain_ini, &topo, model, scaling, &mesh);
                 MarkerChainPolyFit( &topo_ini, &topo_chain_ini, model, mesh );
-
+                
                 // Sedimentation
                 if ( model.surf_processes >= 1 ) {
                     AddPartSed( &particles, materials, &topo_chain, &topo, model, scaling, &mesh);
@@ -1126,29 +1053,29 @@ int main( int nargs, char *args[] ) {
                     if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
                     if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
                 }
-
+                
 #ifdef _HDF5_
                 if ( model.write_debug == 1 ) {
                     WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, model, "Outputx", materials, scaling );
                     WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particlesx", materials, scaling );
                 }
 #endif
-
+                
                 // Remesh free surface II
                 RemeshMarkerChain( &topo_chain,     &topo,     model, scaling, &mesh, 2 );
                 RemeshMarkerChain( &topo_chain_ini, &topo_ini, model, scaling, &mesh, 2 );
                 CorrectTopoIni( &particles, materials, &topo_chain_ini, &topo, model, scaling, &mesh);
                 MarkerChainPolyFit( &topo_ini, &topo_chain_ini, model, mesh );
-
+                
                 // Remove particles that are above the surface
                 CleanUpSurfaceParticles( &particles, &mesh, topo, scaling );
-
+                
                 // Call cell flagging routine for free surface calculations
                 CellFlagging( &mesh, model, topo, scaling );
             }
-
+            
             printf("** Time for advection solver = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
-
+            
 #ifdef _HDF5_
             if ( model.write_debug == 1 ) {
                 WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, model, "Outputxx", materials, scaling );
@@ -1158,7 +1085,7 @@ int main( int nargs, char *args[] ) {
             // Count the number of particle per cell
             printf("Before re-seeding : number of particles = %d\n", particles.Nb_part);
             t_omp = (double)omp_get_wtime();
-
+            
             // Count the number of particle per cell
             t_omp = (double)omp_get_wtime();
             if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
@@ -1166,10 +1093,10 @@ int main( int nargs, char *args[] ) {
             if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
             if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
             printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
-
+            
             printf("After re-seeding : number of particles = %d\n", particles.Nb_part);
             printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
-
+            
             // Remove particles that would be above the surface
             if ( model.free_surf == 1 ) {
                 CleanUpSurfaceParticles( &particles, &mesh, topo, scaling );
@@ -1177,8 +1104,8 @@ int main( int nargs, char *args[] ) {
             }
             
             ComputeIncrementsOnParticles( &mesh, &particles, &model, &materials, &scaling );
-
-
+            
+            
             ////            }
             //            model.dt = whole_dt;
         }

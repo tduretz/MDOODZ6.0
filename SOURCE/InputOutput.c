@@ -260,14 +260,22 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
     }
 
     if (model->isthermal == 1) {
-        fread( particles->div_u_th, s3, particles->Nb_part, file);
-        fread( particles->T,        s3, particles->Nb_part, file);
+        fread( particles->divth, s3, particles->Nb_part, file);
+        fread( particles->T,     s3, particles->Nb_part, file);
     }
 
     if (model->eqn_state > 0) {
         fread( particles->rho, s3, particles->Nb_part, file);
     }
 
+    fread( particles->ddivth, s3, particles->Nb_part, file);
+    fread( particles->drho,   s3, particles->Nb_part, file);
+    fread( particles->dX,     s3, particles->Nb_part, file);
+    fread( particles->dphi,   s3, particles->Nb_part, file);
+    fread( particles->dd,     s3, particles->Nb_part, file);
+    fread( particles->dP,     s3, particles->Nb_part, file);
+    fread( particles->dT,     s3, particles->Nb_part, file);
+    
     fread( mesh->eta_phys_n, s3, (Nx-1)*(Nz-1), file );
     fread( mesh->eta_phys_s, s3, (Nx)*(Nz),     file );
 
@@ -361,8 +369,8 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
             particles->dsxz[k]     /= scaling.S;
         }
         if ( model->isthermal == 1 ) {
-            particles->div_u_th[k]  /= scaling.E;
-            particles->T[k]         /= scaling.T;
+            particles->divth[k]  /= scaling.E;
+            particles->T[k]      /= scaling.T;
         }
 
         if ( model->eqn_state > 0 ) {
@@ -377,7 +385,12 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
             particles->Tmax[k]/= scaling.T;
             particles->Pmax[k]/= scaling.S;
         }
-        particles->d[k]  /=scaling.L;
+        particles->d[k]      /= scaling.L;
+        particles->ddivth[k] /= scaling.E;
+        particles->drho[k]   /= scaling.rho;
+        particles->dd[k]     /= scaling.L;
+        particles->dP[k]     /= scaling.S;
+        particles->dT[k]     /= scaling.T;
     }
 
     // Grid data
@@ -503,7 +516,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             particles->dsxz[k]  *= scaling.S;
         }
         if (model.isthermal == 1) {
-            particles->div_u_th[k]  *= scaling.E;
+            particles->divth[k]  *= scaling.E;
             particles->T[k]         *= scaling.T;
         }
         if (model.eqn_state > 0) {
@@ -519,6 +532,11 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             particles->Tmax[k]*= scaling.T;
             particles->Pmax[k]*= scaling.S;
         }
+        particles->ddivth[k] *= scaling.E;
+        particles->drho[k]   *= scaling.rho;
+        particles->dd[k]     *= scaling.L;
+        particles->dP[k]     *= scaling.S;
+        particles->dT[k]     *= scaling.T;
     }
 
     // grid data
@@ -700,12 +718,20 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     }
 
     if (model.isthermal == 1) {
-        fwrite( particles->div_u_th, s3, particles->Nb_part, file);
-        fwrite( particles->T,        s3, particles->Nb_part, file);
+        fwrite( particles->divth, s3, particles->Nb_part, file);
+        fwrite( particles->T,     s3, particles->Nb_part, file);
     }
     if (model.eqn_state > 0) {
         fwrite( particles->rho, s3, particles->Nb_part, file);
     }
+    
+    fwrite( particles->ddivth, s3, particles->Nb_part, file);
+    fwrite( particles->drho,   s3, particles->Nb_part, file);
+    fwrite( particles->dX,     s3, particles->Nb_part, file);
+    fwrite( particles->dphi,   s3, particles->Nb_part, file);
+    fwrite( particles->dd,     s3, particles->Nb_part, file);
+    fwrite( particles->dP,     s3, particles->Nb_part, file);
+    fwrite( particles->dT,     s3, particles->Nb_part, file);
 
     fwrite( mesh->eta_phys_n, s3, (Nx-1)*(Nz-1), file );
     fwrite( mesh->eta_phys_s, s3, (Nx)*(Nz), file );
@@ -800,8 +826,8 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             particles->dsxz[k]    /= scaling.S;
         }
         if (model.isthermal == 1) {
-            particles->div_u_th[k]  /= scaling.E;
-            particles->T[k]         /= scaling.T;
+            particles->divth[k]  /= scaling.E;
+            particles->T[k]      /= scaling.T;
         }
         if (model.eqn_state > 0) {
             particles->rho[k]  /= scaling.rho;
@@ -816,6 +842,11 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             particles->Tmax[k]/= scaling.T;
             particles->Pmax[k]/= scaling.S;
         }
+        particles->ddivth[k] /= scaling.E;
+        particles->drho[k]   /= scaling.rho;
+        particles->dd[k]     /= scaling.L;
+        particles->dP[k]     /= scaling.S;
+        particles->dT[k]     /= scaling.T;
     }
 
     for (k=0; k<Nx; k++) {

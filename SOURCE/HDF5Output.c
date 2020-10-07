@@ -376,7 +376,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     ScaleBack( CeII_gbs, scaling.E, (model.Nx-1)*(model.Nz-1) );
 
     Cd        = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
-    DoubleToFloat( mesh->d, Cd, (model.Nx-1)*(model.Nz-1) );
+    DoubleToFloat( mesh->d_n, Cd, (model.Nx-1)*(model.Nz-1) );
     ScaleBack( Cd, scaling.L, (model.Nx-1)*(model.Nz-1) );
 
     CX        = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
@@ -399,7 +399,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     ScaleBack( Cdivu_pl, scaling.E, (model.Nx-1)*(model.Nz-1) );
     
     Cdivu_th     = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
-    DoubleToFloat( mesh->div_u_th, Cdivu_th, (model.Nx-1)*(model.Nz-1) );
+    DoubleToFloat( mesh->divth0_n, Cdivu_th, (model.Nx-1)*(model.Nz-1) );
     ScaleBack( Cdivu_th, scaling.E, (model.Nx-1)*(model.Nz-1) );
     
     Cdivu_r      = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));

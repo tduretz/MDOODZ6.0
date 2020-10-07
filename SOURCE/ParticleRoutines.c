@@ -363,7 +363,7 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
     particles->strain_lin[new_ind]    = particles->strain_lin[min_index];
     particles->strain_gbs[new_ind]    = particles->strain_gbs[min_index];
     particles->d[new_ind]             = particles->d[min_index];
-    particles->div_u_th[new_ind]      = particles->div_u_th[min_index];
+    particles->divth[new_ind]         = particles->divth[min_index];
     particles->T[new_ind]             = particles->T[min_index];
     particles->P[new_ind]             = particles->P[min_index];
 
@@ -378,6 +378,14 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
     particles->dszzd[new_ind]         = particles->dszzd[min_index];
     particles->dsxz[new_ind]          = particles->dsxz[min_index];
     particles->syy[new_ind]           = particles->syy[min_index];
+    
+    particles->ddivth[new_ind]        = particles->ddivth[min_index];
+    particles->dT[new_ind]            = particles->dT[min_index];
+    particles->dP[new_ind]            = particles->dP[min_index];
+    particles->dd[new_ind]            = particles->dd[min_index];
+    particles->dphi[new_ind]          = particles->dphi[min_index];
+    particles->dX[new_ind]            = particles->dX[min_index];
+    particles->drho[new_ind]          = particles->drho[min_index];
     
     if (model->fstrain == 1) {
         // do not set default to 0 beause then it can not accumulate, better to identify which markers are new and start to accumulate as we do for the general case (fxx=fyy=1, fxz=fzx=0).
