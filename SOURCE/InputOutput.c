@@ -242,7 +242,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
         fread( particles->Fzx         , s3, particles->Nb_part, file);
         fread( particles->Fzz         , s3, particles->Nb_part, file);
     }
-    
+
     if (model->aniso == 1) {
         fread( particles->dnx        , s3, particles->Nb_part, file);
         fread( particles->dnz        , s3, particles->Nb_part, file);
@@ -275,7 +275,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
     fread( particles->dd,     s3, particles->Nb_part, file);
     fread( particles->dP,     s3, particles->Nb_part, file);
     fread( particles->dT,     s3, particles->Nb_part, file);
-    
+
     fread( mesh->eta_phys_n, s3, (Nx-1)*(Nz-1), file );
     fread( mesh->eta_phys_s, s3, (Nx)*(Nz),     file );
 
@@ -700,7 +700,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
         fwrite( particles->Fzx         , s3, particles->Nb_part, file);
         fwrite( particles->Fzz         , s3, particles->Nb_part, file);
     }
-    
+
     if (model.aniso == 1) {
         fwrite( particles->dnx        , s3, particles->Nb_part, file);
         fwrite( particles->dnz        , s3, particles->Nb_part, file);
@@ -724,7 +724,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     if (model.eqn_state > 0) {
         fwrite( particles->rho, s3, particles->Nb_part, file);
     }
-    
+
     fwrite( particles->ddivth, s3, particles->Nb_part, file);
     fwrite( particles->drho,   s3, particles->Nb_part, file);
     fwrite( particles->dX,     s3, particles->Nb_part, file);
@@ -967,7 +967,6 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
 
     // Input
     model->input_file      = ReadChar( fin, "input_file", "blah.bin");
-    printf("%s\n",     model->input_file );
 
     // Read scales for non-dimensionalisation
     scaling->eta           = ReadDou2( fin, "eta", 1.0  );
@@ -995,7 +994,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->pc_type         = ReadInt2( fin, "pc_type",       0 );
     model->num_deriv       = ReadInt2( fin, "num_deriv",     0 );
     model->safe_mode       = ReadInt2( fin, "safe_mode",     0 );
-    model->nstagmax        = ReadInt2( fin, "nstagmax",      3 );  
+    model->nstagmax        = ReadInt2( fin, "nstagmax",      3 );
     model->noisy           = ReadInt2( fin, "noisy",         1 );  // prints a lot of info to standard output
 
     // Switches
@@ -1224,14 +1223,14 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
 
     // Phase diagrams
     if ( model->isPD == 1 ) {
-        
+
         printf("Loading phase_diagrams...\n");
         int pid;
         model->num_PD = 9;
-        
+
         // Allocate
         AllocatePhaseDiagrams( model );
-        
+
         /**** PHASE DIAGRAMS #00 - Mantle (Jenadi_stx.dat)  ****/
         pid                       = 0;         // Kaus & Connolly, 2005: Effect of mineral phase transitions on sedimentary basin subsidence and uplift
         if (pid > (model->num_PD-1) ) {
@@ -1245,7 +1244,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         model->PDMPmin[pid]       = 100e6/scaling->S;         // Minimum pressure           (MANTLE) [Pa]
         model->PDMPmax[pid]       = 15e9 /scaling->S;         // Maximum pressure           (MANTLE) [Pa]
         model->PDMrho[pid]        = ReadBin( "PHASE_DIAGRAMS/Hawaiian_Pyrolite_rho_bin.dat", model->PDMnT[pid], model->PDMnP[pid], scaling->rho);
-        
+
         /**** PHASE DIAGRAMS #00 - Mantle (Jenadi_stx_HR.dat)  ****/
         pid                       = 1;         // Kaus & Connolly, 2005: Effect of mineral phase transitions on sedimentary basin subsidence and uplift
         if (pid > (model->num_PD-1) ) {
@@ -1357,7 +1356,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         model->PDMPmin[pid]       = 10.13e6/scaling->S;         // Minimum pressure           (MANTLE) [Pa]
         model->PDMPmax[pid]       = 5.5816e9 /scaling->S;        // Maximum pressure           (MANTLE) [Pa]
         model->PDMrho[pid]        = ReadBin( "PHASE_DIAGRAMS/Serpentinite.dat", model->PDMnT[pid], model->PDMnP[pid], scaling->rho);
-        
+
     }
 
     //------------------------------------------------------------------------------------------------------------------------------//
@@ -1444,7 +1443,7 @@ void ScaleMe( scale* scale) {
 double* ReadBin( char A_name[], int nx, int ny, double scale ){
     double *A;
     char* bname; size_t nb_elems = nx*ny; FILE* fid; asprintf(&bname, "%s", A_name);
-    
+
     A = malloc((nb_elems)*sizeof(double));
     fid=fopen(bname, "rb"); // Open file
     if (!fid){
@@ -1494,6 +1493,9 @@ char* ReadChar( FILE *fin, char FieldName[], char Default[] ) {
             for (h1=0; h1<str_size; h1++) {
                 string2[h1] = Default[h1];
             }
+            free(string1);
+            free(param1);
+            free(param2);
             return string2;
         }
 
