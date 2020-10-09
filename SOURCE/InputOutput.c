@@ -1040,6 +1040,8 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->ProgReac        = ReadInt2( fin, "ProgReac",       0 ); // Activate progressive reactions
     model->NoReturn        = ReadInt2( fin, "NoReturn",       0 ); // Turns off retrogression if 1.0
     model->VolChangeReac   = ReadInt2( fin, "VolChangeReac", -1 ); // Turns on volume change due to reaction if 1
+    model->Plith_trick     = ReadInt2( fin, "Plith_trick", 0 );
+
     if ( model->shear_style == 1 ) model->isperiodic_x  = 1;
     if ( model->shear_style == 0 ) model->isperiodic_x  = 0;
     if ( model->aniso       == 1 ) model->fstrain       = 1;

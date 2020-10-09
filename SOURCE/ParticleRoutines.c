@@ -378,6 +378,7 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
     particles->dszzd[new_ind]         = particles->dszzd[min_index];
     particles->dsxz[new_ind]          = particles->dsxz[min_index];
     particles->syy[new_ind]           = particles->syy[min_index];
+    particles->dsyy[new_ind]           = particles->dsyy[min_index];
     
     particles->ddivth[new_ind]        = particles->ddivth[min_index];
     particles->dT[new_ind]            = particles->dT[min_index];

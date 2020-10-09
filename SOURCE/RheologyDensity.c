@@ -1257,25 +1257,36 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
 void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* particles, mat_prop* materials ) {
     
     DoodzFP *P_inc_mark;
-    int Nx, Nz, Ncx, Ncz, k, c0, p;
+    int Nx, Nz, Ncx, Ncz, k, c0, p, ptrick=model.Plith_trick;
     double d=1.0, dtm;
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
     
-    MinMaxArrayTag( mesh->p0_n,   scaling.S,    (mesh->Nx-1)*(mesh->Nz-1),       "P0",   mesh->BCp.type    );
-    MinMaxArrayTag( mesh->p_in,   scaling.S,    (mesh->Nx-1)*(mesh->Nz-1),       "P1",   mesh->BCp.type    );
-    
-    
     // Compute increment
-    for (k=0; k<Ncx*Ncz; k++) {
-        mesh->dp[k] = 0.0;
-        if (mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
-            mesh->dp[k] = (mesh->p_in[k] - mesh->p_lith[k]) - (mesh->p0_n[k]-mesh->p_lith0[k]); // dp dynamic pressure
-            //            mesh->dp[k] = (mesh->p_in[k]-mesh->p0_n[k]);
+#pragma omp parallel for shared(mesh) private(c0) firstprivate( ptrick )
+    for ( c0=0; c0<Ncx*Ncz; c0++ ) {
+        mesh->dp[c0] = 0.0;
+        if (mesh->BCp.type[c0] != 30 ) {
+            if ( ptrick == 1 ) mesh->dp[c0] = (mesh->p_in[c0] - mesh->p_lith[c0]) - (mesh->p0_n[c0] - mesh->p_lith0[c0]); // dp dynamic pressure
+            if ( ptrick == 0 ) mesh->dp[c0] = (mesh->p_in[c0]-mesh->p0_n[c0]);
         }
     }
     
-    if ( model.subgrid_diff >= 1 ) {
+    
+//    double *p_s = DoodzCalloc(Nx*Nz, sizeof(DoodzFP));
+//    double *dp = DoodzCalloc(Nx*Nz, sizeof(DoodzFP));
+//    InterpCentroidsToVerticesDouble( mesh->p_in, p_s,mesh, &model );
+//
+//    // Compute increment
+//    #pragma omp parallel for shared(mesh) private(c0) firstprivate( ptrick )
+//        for ( c0=0; c0<Nx*Nz; c0++ ) {
+//            dp[c0] = 0.0;
+//            if (mesh->BCg.type[c0] != 30 ) {
+//                dp[c0] = (p_s[c0]-mesh->p0_s[c0]);
+//            }
+//        }
+    
+    if ( model.subgrid_diff >= 2 ) {
         
         printf("Subgrid diffusion for pressure update\n");
         double *Pg0  = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
@@ -1290,13 +1301,16 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
         
         /* -------------- */
         // Old Pressure grid
-#pragma omp parallel for shared(mesh, Pg0) private(c0) firstprivate(Ncx,Ncz)
+#pragma omp parallel for shared(mesh, Pg0) private(c0) firstprivate(Ncx,Ncz) firstprivate( ptrick )
         for ( c0=0; c0<Ncx*Ncz; c0++ ) {
-            if (mesh->BCt.type[c0] != 30) Pg0[c0] = mesh->p0_n[k]-mesh->p_lith0[k];
-            //            if (mesh->BCt.type[c0] != 30) Pg0[c0] = mesh->p0_n[k];
+            if (mesh->BCt.type[c0] != 30 && ptrick == 1 ) Pg0[c0] = mesh->p0_n[c0] - mesh->p_lith0[c0];
+            if (mesh->BCt.type[c0] != 30 && ptrick == 0 ) Pg0[c0] = mesh->p0_n[c0];
         }
         Interp_Grid2P_centroids( *particles, Pm0, mesh, Pg0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
         /* -------------- */
+        
+//        Interp_Grid2P_centroids( *particles, Pm0, mesh, mesh->p0_n, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
+
         
         
         // Old temperature grid --> markers
@@ -1318,7 +1332,7 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
         // Remaining temperature increments on the grid
 #pragma omp parallel for shared(mesh, dPgs, dPgr) private(c0) firstprivate(Ncx,Ncz)
         for ( c0=0; c0<Ncx*Ncz; c0++ ) {
-            if (mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) dPgr[c0] = mesh->dp[c0] - dPgs[c0];
+            if (mesh->BCp.type[c0] != 30 ) dPgr[c0] = mesh->dp[c0] - dPgs[c0];
         }
         
         // Remaining temperature increments grid --> markers
@@ -1344,6 +1358,9 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
         
         // Interp increments to particles
         Interp_Grid2P_centroids( *particles, P_inc_mark, mesh, mesh->dp, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
+        
+//        // Interp increments to particles
+//        Interp_Grid2P( *particles, P_inc_mark, mesh, dp, mesh->xg_coord,  mesh->zg_coord, Nx, Nz, mesh->BCg.type  ); DoodzFree(p_s); DoodzFree(dp);
         
         // Increment pressure on particles
         ArrayPlusArray( particles->P, P_inc_mark, particles->Nb_part );
@@ -3772,8 +3789,16 @@ firstprivate( model, materials )
         
         if (particles->phase[k] != -1) {
             
+            
+            if (model->StressUpdate==0) {
             particles->dsxxd[k]  =  particles->sxxd[k] - txxm0[k];
             particles->dszzd[k]  =  particles->szzd[k] - tzzm0[k];
+            }
+            if (model->StressUpdate==1) {
+                particles->dsxxd[k]  =  particles->sxxd[k] - (txxm0[k]-Pm0[k]);
+                particles->dszzd[k]  =  particles->szzd[k] - (tzzm0[k]-Pm0[k]);
+                particles->dsyy[k]   =  particles->syy[k] - ( -(txxm0[k]+tzzm0[k])-Pm0[k]);
+            }
             particles->dsxz[k]   =  particles->sxz[k]  - txzm0[k];
             if ( model->aniso == 1 ) particles->dnx[k] = particles->nx[k] - nxm0[k];
             if ( model->aniso == 1 ) particles->dnz[k] = particles->nz[k] - nzm0[k];
@@ -3820,9 +3845,21 @@ void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* 
     int Ncx = mesh->Nx-1;
     int Ncz = mesh->Nz-1;
     
+
+//    double *dP     = DoodzCalloc ( Nx*Nz, sizeof(double));
+//    Interp_P2N ( *particles, particles->dP,  mesh, dP ,   mesh->xg_coord, mesh->zg_coord, 1, 0, model );
+//    ArrayPlusArray(  mesh->p0_s,     dP,     Nx*Nz );
+//    InterpVerticesToCentroidsDouble( mesh->p0_n,  mesh->p0_s, mesh, model );
+    
+    
+    double *dP     = DoodzCalloc ( Ncx*Ncz, sizeof(double));
+    Interp_P2C ( *particles, particles->dP,     mesh,     dP, mesh->xg_coord, mesh->zg_coord, 1, 0 );
+    ArrayPlusArray(  mesh->p0_n,     dP,     Ncx*Ncz );
+
     // Elasticity - interpolate advected/rotated stresses
     if  ( model->iselastic == 1 ) {
         
+        if (model->StressUpdate==0) {
         double *dsxxd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
         double *dszzd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
         double *dsxz  = DoodzCalloc ( Nx*Nz,   sizeof(double));
@@ -3839,6 +3876,43 @@ void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* 
         InterpCentroidsToVerticesDouble( mesh->sxxd0, mesh->sxxd0_s, mesh, model );
         InterpCentroidsToVerticesDouble( mesh->szzd0, mesh->szzd0_s, mesh, model );
         InterpVerticesToCentroidsDouble( mesh->sxz0_n,  mesh->sxz0,  mesh, model );
+        }
+        if (model->StressUpdate==1) {
+        double *dsxxd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
+        double *dszzd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
+        double *dsxz  = DoodzCalloc ( Nx*Nz,   sizeof(double));
+        double *dsyy = DoodzCalloc ( Ncx*Ncz, sizeof(double));
+
+        Interp_P2C ( *particles, particles->dsxxd, mesh, dsxxd,   mesh->xg_coord, mesh->zg_coord, 1, 0 );
+        Interp_P2C ( *particles, particles->dszzd, mesh, dszzd,   mesh->xg_coord, mesh->zg_coord, 1, 0 );
+        Interp_P2N ( *particles, particles->dsxz,  mesh, dsxz ,   mesh->xg_coord, mesh->zg_coord, 1, 0, model );
+            Interp_P2C ( *particles, particles->dsyy, mesh, dsyy,   mesh->xg_coord, mesh->zg_coord, 1, 0 );
+
+            
+            int c0, k1, l, k;
+            for ( k1=0; k1<Ncx*Ncz; k1++ ) {
+                k  = mesh->kp[k1];
+                l  = mesh->lp[k1];
+                c0 = k  + l*(Nx-1);
+                
+                if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
+                    dP[c0]         = -1.0/3.0*(dsxxd[c0] + dsyy[c0] + dszzd[c0] );
+                    dsxxd[c0]      =  dP[c0] + dsxxd[c0];
+                    dszzd[c0]      =  dP[c0] + dszzd[c0];
+                }
+            }
+            
+        ArrayPlusArray(  mesh->sxxd0,  dsxxd, Ncx*Ncz );
+        ArrayPlusArray(  mesh->szzd0,  dszzd, Ncx*Ncz );
+        ArrayPlusArray(  mesh->sxz0,   dsxz,   Nx*Nz );
+        DoodzFree(dsxxd);
+        DoodzFree(dszzd);
+        DoodzFree(dsxz );
+        // Interpolate to necessary locations for rheological computations...
+        InterpCentroidsToVerticesDouble( mesh->sxxd0, mesh->sxxd0_s, mesh, model );
+        InterpCentroidsToVerticesDouble( mesh->szzd0, mesh->szzd0_s, mesh, model );
+        InterpVerticesToCentroidsDouble( mesh->sxz0_n,  mesh->sxz0,  mesh, model );
+        }
     }
     
     // Director vector
@@ -3868,7 +3942,6 @@ void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* 
     double *dX_s   = DoodzCalloc (   Nx*Nz, sizeof(double));
     double *dd     = DoodzCalloc ( Ncx*Ncz, sizeof(double));
     double *dphi   = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-    double *dP     = DoodzCalloc ( Ncx*Ncz, sizeof(double));
     double *drho   = DoodzCalloc ( Ncx*Ncz, sizeof(double));
     
     Interp_P2C ( *particles, particles->dT,     mesh,     dT, mesh->xg_coord, mesh->zg_coord, 1, 0 );
@@ -3877,7 +3950,6 @@ void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* 
     Interp_P2N ( *particles, particles->dX,     mesh,   dX_s, mesh->xg_coord, mesh->zg_coord, 1, 0, model );
     Interp_P2C ( *particles, particles->dd,     mesh,     dd, mesh->xg_coord, mesh->zg_coord, 1, 0 );
     Interp_P2C ( *particles, particles->dphi,   mesh,   dphi, mesh->xg_coord, mesh->zg_coord, 1, 0 );
-    Interp_P2C ( *particles, particles->dP,     mesh,     dP, mesh->xg_coord, mesh->zg_coord, 1, 0 );
     Interp_P2C ( *particles, particles->drho,   mesh,   drho, mesh->xg_coord, mesh->zg_coord, 1, 0 );
     
     
@@ -3888,9 +3960,8 @@ void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* 
     ArrayPlusArray(  mesh->d0_n,     dd,     Ncx*Ncz );
     ArrayPlusArray(  mesh->phi0_n,   dphi,   Ncx*Ncz );
     ArrayPlusArray(  mesh->rho0_n,   drho,   Ncx*Ncz );
-    ArrayPlusArray(  mesh->p0_n,     dP,     Ncx*Ncz );
     
-    ArrayPlusArray(  mesh->p0_n,   mesh->p_lith0, Ncx*Ncz ); // Add back lithostatic component
+    if ( model->Plith_trick == 1 ) ArrayPlusArray(  mesh->p0_n,   mesh->p_lith0, Ncx*Ncz ); // Add back lithostatic component
     
     DoodzFree( dT );
     DoodzFree( ddivth );

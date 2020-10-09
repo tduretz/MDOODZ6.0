@@ -272,7 +272,13 @@ int main( int nargs, char *args[] ) {
             ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 0 );
             Interp_Grid2P_centroids( particles, particles.P,    &mesh, mesh.p_lith, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
             Interp_P2C ( particles, particles.P, &mesh, mesh.p_in, mesh.xg_coord, mesh.zg_coord,  1, 0 );
-            //            ArrayEqualArray( mesh.p_in, mesh.p_lith,  (mesh.Nx-1)*(mesh.Nz-1) );
+            ArrayEqualArray( mesh.p_in, mesh.p_lith,  (mesh.Nx-1)*(mesh.Nz-1) );
+            ArrayEqualArray( mesh.p0_n, mesh.p_lith,  (mesh.Nx-1)*(mesh.Nz-1) );
+            
+            InterpCentroidsToVerticesDouble( mesh.p0_n, mesh.p0_s, &mesh, &model );
+//            InterpCentroidsToVerticesDouble( mesh.szzd0, mesh.szzd0_s, &mesh, &model );
+//            InterpVerticesToCentroidsDouble( mesh.sxz0_n,  mesh.sxz0,  &mesh, &model );
+            
             
             printf("*************************************\n");
             printf("******* Initialize grain size *******\n");
@@ -386,7 +392,7 @@ int main( int nargs, char *args[] ) {
 #endif
         // Set initial stresses and pressure to zero
         //        Initialise1DArrayDouble( particles.X,      particles.Nb_part, 0.0 ); // set X to zero for the first time step
-        Initialise1DArrayDouble( particles.P,      particles.Nb_part, 0.0 ); // now dynamic pressure...
+//        Initialise1DArrayDouble( particles.P,      particles.Nb_part, 0.0 ); // now dynamic pressure...
         //        Initialise1DArrayDouble( mesh.p_in,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
         Initialise1DArrayDouble( mesh.sxxd,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
         Initialise1DArrayDouble( mesh.szzd,  (mesh.Nx-1)*(mesh.Nz-1), 0.0 );
@@ -448,6 +454,14 @@ int main( int nargs, char *args[] ) {
             
             // Master routines that update solution increments
             UpdateGridFields( &mesh, &particles, &model, &materials, &scaling );
+            
+            //
+            
+            
+//            ArrayEqualArray(  mesh.p0_n,   mesh.p_in, Ncx*Ncz );
+            
+            
+            
             
             // Make sure T is up to date for rheology evaluation
             ArrayEqualArray( mesh.T, mesh.T0_n, (mesh.Nx-1)*(mesh.Nz-1) );
@@ -902,10 +916,11 @@ int main( int nargs, char *args[] ) {
         
         //--------------------------------------------------------------------------------------------------------------------------------//
         
-        //        TotalStresses( &mesh, &particles, scaling, &model );
+        
+        if (model.StressUpdate==1)TotalStresses( &mesh, &particles, scaling, &model );
         
         // Update stresses on markers
-        UpdateParticleStress(  &mesh, &particles, &model, &materials, &scaling );
+       if (model.StressUpdate==0) UpdateParticleStress(  &mesh, &particles, &model, &materials, &scaling );
         
         // Update pressure on markers
         UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
@@ -942,11 +957,7 @@ int main( int nargs, char *args[] ) {
             // Update energy on particles
             UpdateParticleEnergy( &mesh, scaling, model, &particles, &materials );
             MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. after UpdateParticleEnergy");
-<<<<<<< HEAD
-            
-=======
 
->>>>>>> 00adcc3f668db6daca607608fd4af9b552ba1f95
             // Calculate energies
             if ( model.write_energies == 1 ) Energies( &mesh, model, scaling );
             

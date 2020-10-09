@@ -194,7 +194,7 @@ void ExtractSolutions2( SparseMat *Stokes, grid* mesh, params* model, double* dx
 #pragma omp parallel for shared( mesh, dx, Stokes ) private( cc ) firstprivate( alpha, nzvx, nx )
 for( cc=0; cc<nzvx*nx; cc++) {
     if ( mesh->BCu.type[cc] != 30 && mesh->BCu.type[cc] != 0 && mesh->BCu.type[cc] != 11 && mesh->BCu.type[cc] != 13 && mesh->BCu.type[cc] != -12 ) {
-        mesh->u_in[cc] += alpha*dx[Stokes->eqn_u[cc]];
+        mesh->u_in[cc] = mesh->u_in[cc] + alpha*dx[Stokes->eqn_u[cc]];
     }
 }
     
@@ -209,7 +209,7 @@ for( cc=0; cc<nzvx*nx; cc++) {
 #pragma omp parallel for shared( mesh, dx, Stokes ) private( cc ) firstprivate( alpha, nz, nxvz )
 for( cc=0; cc<nz*nxvz; cc++) {
     if ( mesh->BCv.type[cc] != 30 && mesh->BCv.type[cc] != 0 && mesh->BCv.type[cc] != 11 && mesh->BCv.type[cc] != 13 && mesh->BCv.type[cc] != -12 ) {
-        mesh->v_in[cc] += alpha*dx[Stokes->eqn_v[cc]];
+        mesh->v_in[cc] = mesh->v_in[cc] + alpha*dx[Stokes->eqn_v[cc]];
     }
 }
 
@@ -219,9 +219,9 @@ for( cc=0; cc<ncz*ncx; cc++) {
 //    mesh->p_in[cc] = 0.0;
 //    mesh->dp[cc]   = 0.0;
     if ( mesh->BCp.type[cc] != 30 && mesh->BCp.type[cc] != 0  && mesh->BCp.type[cc] != 31 ) {
-        mesh->p_in[cc] += alpha*dx[Stokes->eqn_p[cc]];
+        mesh->p_in[cc] =  mesh->p_in[cc] + alpha*dx[Stokes->eqn_p[cc]];
 //        mesh->p_in[cc]  = mesh->p_trial[cc] + alpha*dx[Stokes->eqn_p[cc]];
-        mesh->dp[cc]    = alpha*dx[Stokes->eqn_p[cc]];
+//        mesh->dp[cc]    = alpha*dx[Stokes->eqn_p[cc]];
     }
 }
 
@@ -1081,7 +1081,7 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                 
                 if (model.compressible == 1 ) {
                     if (mesh->comp_cells[c] == 1) {
-                        mesh->rhs_p[c] += (mesh->p0_n[c] + 0.0*mesh->p_lith[c])*mesh->bet_n[c]/model.dt;
+                        mesh->rhs_p[c] += mesh->p0_n[c]*mesh->bet_n[c]/model.dt;
                         if (model.adiab_heat > 0 ) {
                             mesh->rhs_p[c] += mesh->divth0_n[c];
                         }

@@ -62,7 +62,7 @@ struct _mat_prop {
 typedef struct _p_markers markers;
 struct _p_markers {
 	int    Nx_part, Nz_part, Nb_part, Nb_part_max, min_part_cell;
-	DoodzFP *x, *z, *Vx, *Vz, *P, *sxxd, *szzd, *sxz, *progress, *rho, *T, *d, *phi, *X, *syy;
+	DoodzFP *x, *z, *Vx, *Vz, *P, *sxxd, *szzd, *sxz, *progress, *rho, *T, *d, *phi, *X, *syy, *dsyy;
     DoodzFP *strain, *strain_el, *strain_pl, *strain_pwl, *strain_exp, *strain_lin, *strain_gbs;
 	int    *phase, *generation;
     markers* marker_chain;
@@ -144,7 +144,7 @@ struct _params {
     int diffuse_X, diffuse_avg;
     double diffusion_length;
     // For Pips
-    int ProgReac, NoReturn, VolChangeReac;
+    int ProgReac, NoReturn, VolChangeReac, Plith_trick;
     // Anisotropy
     int aniso, aniso_fstrain;
 };
