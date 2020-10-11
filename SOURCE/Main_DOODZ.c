@@ -244,8 +244,13 @@ int main( int nargs, char *args[] ) {
 #endif
             if ( model.thermal_eq == 1 ) ThermalSteps( &mesh, model,  mesh.T,  mesh.dT,  mesh.rhs_t, mesh.T, &particles, model.cooling_time, scaling );
             if ( model.therm_pert == 1 ) SetThermalPert( &mesh, model, scaling );
-            Interp_Grid2P_centroids( particles, particles.T,    &mesh, mesh.T, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type, &model );
+//            Interp_Grid2P_centroids ( particles, particles.T,    &mesh, mesh.T, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type, &model );
+
+            Interp_Grid2P_centroids2( particles, particles.T,    &mesh, mesh.T, mesh.xvz_coord,  mesh.zvx_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type, &model );
             ArrayEqualArray( mesh.T0_n, mesh.T, (mesh.Nx-1)*(mesh.Nz-1) );
+            
+            
+            //--------------------------------------------------------------------------------------------------------
 
             printf("*************************************\n");
             printf("******** Initialize pressure ********\n");
@@ -970,6 +975,17 @@ int main( int nargs, char *args[] ) {
         if ( model.rec_T_P_x_z == 1 )  UpdateMaxPT( scaling, model, &particles );
 
         //------------------------------------------------------------------------------------------------------------------------------//
+        
+//        // Count the number of particle per cell
+//        t_omp = (double)omp_get_wtime();
+//        if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
+//        if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
+//        if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
+//        if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
+//        printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
+//
+//        printf("After re-seeding : number of particles = %d\n", particles.Nb_part);
+//        printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
 
         if ( model.advection == 1 ) {
 

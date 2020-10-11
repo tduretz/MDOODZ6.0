@@ -498,7 +498,7 @@ void copy_cholmod_dense_to_cholmod_dense( cholmod_dense*, cholmod_dense* );
 void cholmod_dense_plus_cholmod_dense( cholmod_dense*, cholmod_dense* );
 
 void ApplyBC( grid*, params* );
-void AssignMarkerProperties (markers*, int, int, params* );
+void AssignMarkerProperties (markers*, int, int, params*, grid* );
 
 
 // GLOBAL
@@ -549,7 +549,8 @@ void BuildInitialTopography_BEN( surface *, markers *, params , grid , scale  );
 void SolveStokes_BEN( SparseMat*, DirectSolver* );
 
 void V2P( double*, double*, markers*, double*,  double*, double*, double*, double*, double*, int, int, int, int, char*, char*, double, double, int );
-double Grid2P( markers*, double*, double*, double*, int, int , char *, double, double, int );
+double Vertices2Particle( markers*, double*, double*, double*, int, int , char *, double, double, int );
+double Centers2Particle( markers*, double*, double*, double*, int, int, char*, double, double, int, int );
 void RogerGuntherII( markers*, params, grid, int, scale );
 void AccumulatedStrainII( grid*, scale, params, markers*, double*, double*, int, int, char * );
 void AdvectFreeSurf( markers*, params, scale );
@@ -575,6 +576,7 @@ void TotalStresses( grid*, markers*, scale, params* );
 
 void Interp_P2G ( markers*, DoodzFP*, grid*, double*, double*, double*, int, int, params*, char*, int, int );
 void Interp_Grid2P_centroids ( markers, DoodzFP* , grid *, double* , double* , double* , int , int , char *, params* );
+void Interp_Grid2P_centroids2( markers, DoodzFP* , grid *, double* , double* , double* , int , int , char *, params* );
 void ExpandCentroidArray( double*, double*, grid*, params* );
 void ComputeIncrementsOnParticles( grid*, markers*, params*, mat_prop*, scale* );
 void UpdateGridFields( grid*, markers*, params*, mat_prop*, scale* );

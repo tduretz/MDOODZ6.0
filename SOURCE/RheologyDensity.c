@@ -1306,7 +1306,7 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
             if (mesh->BCt.type[c0] != 30 && ptrick == 1 ) Pg0[c0] = mesh->p0_n[c0] - mesh->p_lith0[c0];
             if (mesh->BCt.type[c0] != 30 && ptrick == 0 ) Pg0[c0] = mesh->p0_n[c0];
         }
-        Interp_Grid2P_centroids( *particles, Pm0, mesh, Pg0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
+        Interp_Grid2P_centroids2( *particles, Pm0, mesh, Pg0, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
         /* -------------- */
 
 //        Interp_Grid2P_centroids( *particles, Pm0, mesh, mesh->p0_n, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
@@ -1336,7 +1336,7 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
         }
 
         // Remaining temperature increments grid --> markers
-        Interp_Grid2P_centroids( *particles, dPmr, mesh, dPgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
+        Interp_Grid2P_centroids2( *particles, dPmr, mesh, dPgr, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
 
         // Final temperature update on markers
 #pragma omp parallel for shared(particles,dPms,dPmr) private(k)
@@ -1357,7 +1357,7 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
         P_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
 
         // Interp increments to particles
-        Interp_Grid2P_centroids( *particles, P_inc_mark, mesh, mesh->dp, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
+        Interp_Grid2P_centroids2( *particles, P_inc_mark, mesh, mesh->dp, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
 
 //        // Interp increments to particles
 //        Interp_Grid2P( *particles, P_inc_mark, mesh, dp, mesh->xg_coord,  mesh->zg_coord, Nx, Nz, mesh->BCg.type  ); DoodzFree(p_s); DoodzFree(dp);

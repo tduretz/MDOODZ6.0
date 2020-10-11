@@ -414,8 +414,8 @@ firstprivate( model, dx, dz, new )
 //        if ( model.iselastic == 1 || model.aniso == 1 ) VEA   = Grid2P( particles, mesh.VE_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
         xA           = particles->x[k];
         zA           = particles->z[k];
-        if (new==0) VxA = Grid2P( particles, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type, dx, dz, k );
-        if (new==0) VzA = Grid2P( particles, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz, mesh.BCv.type, dx, dz, k );
+        if (new==0) VxA = Vertices2Particle( particles, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type, dx, dz, k );
+        if (new==0) VzA = Vertices2Particle( particles, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz, mesh.BCv.type, dx, dz, k );
         if (new==1) V2P( &VxA, &VzA, particles, mesh.u_in,  mesh.v_in, mesh.xg_coord, mesh.zg_coord, mesh.zvx_coord, mesh.xvz_coord, mesh.Nx, mesh.Nz, mesh.Nz+1, mesh.Nx+1, mesh.BCu.type, mesh.BCv.type, dx, dz, k );
         if (particles->phase[k] != -1) {
             particles->x[k] = xA + 0.5 * model.dt * VxA;
@@ -428,8 +428,8 @@ firstprivate( model, dx, dz, new )
 //        if ( model.iselastic == 1 || model.aniso == 1 ) dudxB = Grid2P( particles, dudx_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
 //        if ( model.iselastic == 1 || model.aniso == 1 ) dvdzB = Grid2P( particles, dvdz_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
 //        if ( model.iselastic == 1 || model.aniso == 1 ) VEB   = Grid2P( particles, mesh.VE_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
-        if (new==0) VxB = Grid2P( particles, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type, dx, dz, k );
-        if (new==0) VzB = Grid2P( particles, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz, mesh.BCv.type, dx, dz, k );
+        if (new==0) VxB = Vertices2Particle( particles, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type, dx, dz, k );
+        if (new==0) VzB = Vertices2Particle( particles, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz, mesh.BCv.type, dx, dz, k );
         if (new==1) V2P( &VxB, &VzB, particles, mesh.u_in,  mesh.v_in, mesh.xg_coord, mesh.zg_coord, mesh.zvx_coord, mesh.xvz_coord, mesh.Nx, mesh.Nz, mesh.Nz+1, mesh.Nx+1, mesh.BCu.type, mesh.BCv.type, dx, dz, k );
         if (particles->phase[k] != -1) {
             particles->x[k] = xA + 0.5 * model.dt * VxB;
@@ -442,8 +442,8 @@ firstprivate( model, dx, dz, new )
 //        if ( model.iselastic == 1 || model.aniso == 1 ) dudxC = Grid2P( particles, dudx_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
 //        if ( model.iselastic == 1 || model.aniso == 1 ) dvdzC = Grid2P( particles, dvdz_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
 //        if ( model.iselastic == 1 || model.aniso == 1 ) VEC   = Grid2P( particles, mesh.VE_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
-        if (new==0) VxC = Grid2P( particles, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type, dx, dz, k );
-        if (new==0) VzC = Grid2P( particles, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz, mesh.BCv.type, dx, dz, k );
+        if (new==0) VxC = Vertices2Particle( particles, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type, dx, dz, k );
+        if (new==0) VzC = Vertices2Particle( particles, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz, mesh.BCv.type, dx, dz, k );
         if (new==1) V2P( &VxC, &VzC, particles, mesh.u_in,  mesh.v_in, mesh.xg_coord, mesh.zg_coord, mesh.zvx_coord, mesh.xvz_coord, mesh.Nx, mesh.Nz, mesh.Nz+1, mesh.Nx+1, mesh.BCu.type, mesh.BCv.type, dx, dz, k );
         if (particles->phase[k] != -1) {
             particles->x[k] = xA + 1.0 * model.dt * VxC;
@@ -456,8 +456,8 @@ firstprivate( model, dx, dz, new )
 //        if ( model.iselastic == 1 || model.aniso == 1 ) dudxD = Grid2P( particles, dudx_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
 //        if ( model.iselastic == 1 || model.aniso == 1 ) dvdzD = Grid2P( particles, dvdz_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1,   mesh.Nz-1, mesh.BCp.type, dx, dz, k );
 //        if ( model.iselastic == 1 || model.aniso == 1 ) VED   = Grid2P( particles, mesh.VE_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
-        if (new==0) VxD = Grid2P( particles, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type, dx, dz, k );
-        if (new==0) VzD = Grid2P( particles, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz,   mesh.BCv.type, dx, dz, k );
+        if (new==0) VxD = Vertices2Particle( particles, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type, dx, dz, k );
+        if (new==0) VzD = Vertices2Particle( particles, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz,   mesh.BCv.type, dx, dz, k );
         if (new==1) V2P( &VxD, &VzD, particles, mesh.u_in,  mesh.v_in, mesh.xg_coord, mesh.zg_coord, mesh.zvx_coord, mesh.xvz_coord, mesh.Nx, mesh.Nz, mesh.Nz+1, mesh.Nx+1, mesh.BCu.type, mesh.BCv.type, dx, dz, k );
         VxA = (1.0/6.0) * ( VxA + 2.0 * VxB + 2.0 * VxC + VxD);
         VzA = (1.0/6.0) * ( VzA + 2.0 * VzB + 2.0 * VzC + VzD);

@@ -180,223 +180,22 @@ void V2P( double *Vxm, double *Vzm, markers* particles, double*Vx,  double*Vz, d
         
         (*Vzm) = (1.0-dxm/dx)*vzm12 + (dxm/dx)*vzm34;
         
+
     }
     
 }
 
+
 /*--------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*//*--------------------------------------------------------------------------------------------------------------------*/
 
 
-double Centers2Particle( markers* particles, double* NodeField, double* X_vect, double* Z_vect, int Nx, int Nz, char *tag, double dx, double dz, int k, int periodix ) {
+double Grid2P( markers* particles, double* NodeField, double* X_vect, double* Z_vect, int Nx, int Nz, char *tag, double dx, double dz, int k ) {
     
     double val  = 0.0;
     double sumW = 0.0;
     double dxm, dzm, dst;
-    int    i_part, j_part, iSW, iNW, iSE, iNE, ic, jc;
-    
-    // Filter out particles that are inactive (out of the box)
-    if (particles->phase[k] != -1) {
-
-        // Check distance with regards to extended array
-        dst    = (particles->x[k]-X_vect[0]);
-        j_part = ceil((dst/dx)) - 1;
-        
-        // Get the line:
-        dst    = (particles->z[k]-Z_vect[0]);
-        i_part = ceil((dst/dz)) - 1;
-        
-        if (j_part>0 && j_part<Nx && i_part>0 && i_part<Nz) {
-            ic  = i_part - 1;
-            jc  = j_part - 1;
-            iSW = jc + ic*Nx;
-            iSE = jc + ic*Nx+1;
-            iNW = jc + (ic+1)*Nx;
-            iNE = jc + (ic+1)*Nx+1;
-        }
-        
-        if (j_part==0 && i_part > 0 && i_part<Nz ) {
-            if (periodix==1) {
-                ic  = i_part-1;
-                jc  = j_part;
-                iSW = (Nx-1) + ic*Nx;
-                iSE = jc     + ic*Nx;
-                iNW = (Nx-1) + (ic+1)*Nx;
-                iNE = jc     + (ic+1)*Nx;
-            }
-            else {
-                // Copy solution along edge
-                ic  = i_part-1;
-                jc  = j_part;
-                iSW = jc + ic*Nx;
-                iSE = jc + ic*Nx;
-                iNW = jc + (ic+1)*Nx;
-                iNE = jc + (ic+1)*Nx;
-            }
-        }
-
-        if (j_part==Nx && i_part > 0 && i_part<Nz ) {
-            if (periodix==1) {
-                ic  = i_part-1;
-                jc  = j_part-1;
-                iSW = jc + ic*Nx;
-                iSE = 0  + ic*Nx;
-                iNW = jc + (ic+1)*Nx;
-                iNE = 0  + (ic+1)*Nx;
-            }
-            else {
-                // Copy solution along edge
-                ic  = i_part-1;
-                jc  = j_part-1;
-                iSW = jc + ic*Nx;
-                iSE = jc + ic*Nx;
-                iNW = jc + (ic+1)*Nx;
-                iNE = jc + (ic+1)*Nx;
-            }
-        }
-        
-        if (i_part==0 && j_part > 0 && j_part<Nx) {
-            // Copy solution along edge
-            ic  = i_part;
-            jc  = j_part-1;
-            iSW = jc + ic*Nx;
-            iSE = jc + ic*Nx + 1;
-            iNW = jc + ic*Nx;
-            iNE = jc + ic*Nx + 1;
-        }
-
-        if (i_part==Nz && j_part > 0 && j_part<Nx) {
-            // Copy solution along edge
-            ic  = i_part-1;
-            jc  = j_part-1;
-            iSW = jc + ic*Nx;
-            iSE = jc + ic*Nx + 1;
-            iNW = jc + ic*Nx;
-            iNE = jc + ic*Nx + 1;
-        }
-        
-        // SW
-        if (i_part==0 && j_part==0) {
-
-            if (periodix==1) {
-                ic  = 0;
-                jc  = 0;
-                iSW = (Nx-1) + ic*Nx;
-                iSE = jc     + ic*Nx;
-                iNW = (Nx-1) + ic*Nx;
-                iNE = jc     + ic*Nx;
-            }
-            else {
-                ic  = i_part - 0;
-                jc  = j_part - 0;
-                iSW = jc + ic*Nx;
-                iSE = jc + ic*Nx;
-                iNW = jc + ic*Nx;
-                iNE = jc + ic*Nx;
-            }
-        }
-        // SE
-        if (i_part==0 && j_part==Nx) {
-
-            if (periodix==1) {
-                ic  = i_part - 0;
-                jc  = j_part - 1;
-                iSW = jc + ic*Nx;
-                iSE = 0  + ic*Nx;
-                iNW = jc + ic*Nx;
-                iNE = 0  + ic*Nx;
-            }
-            else {
-                ic  = i_part - 0;
-                jc  = j_part - 1;
-                iSW = jc + ic*Nx;
-                iSE = jc + ic*Nx;
-                iNW = jc + ic*Nx;
-                iNE = jc + ic*Nx;
-            }
-        }
-        // NW
-        if (i_part==Nz && j_part==0) {
-
-            if (periodix==1) {
-                ic  = i_part - 1;
-                jc  = j_part - 0;
-                iSW = (Nx-1) + ic*Nx;
-                iSE = jc     + ic*Nx;
-                iNW = (Nx-1) + ic*Nx;
-                iNE = jc     + ic*Nx;
-            }
-            else {
-                ic  = i_part - 1;
-                jc  = j_part - 0;
-                iSW = jc + ic*Nx;
-                iSE = jc + ic*Nx;
-                iNW = jc + ic*Nx;
-                iNE = jc + ic*Nx;
-            }
-        }
-        // NE
-        if (i_part==Nz && j_part==Nx) {
-
-            if (periodix==1) {
-                ic  = i_part - 1;
-                jc  = j_part - 1;
-                iSW = jc + ic*Nx;
-                iSE = 0  + ic*Nx;
-                iNW = jc + ic*Nx;
-                iNE = 0  + ic*Nx;
-            }
-            else {
-                ic  = i_part - 1;
-                jc  = j_part - 1;
-                iSW = jc + ic*Nx;
-                iSE = jc + ic*Nx;
-                iNW = jc + ic*Nx;
-                iNE = jc + ic*Nx;
-            }
-        }
-    
-        dxm = (particles->x[k] - X_vect[j_part]);
-        dzm = (particles->z[k] - Z_vect[i_part]);
-
-        if (tag[iSW]!=30 && tag[iSW]!=31) {
-            val  += (1.0-dxm/dx) * (1.0-dzm/dz) * NodeField[iSW];
-            sumW += (1.0-dxm/dx) * (1.0-dzm/dz);
-
-        }
-        if (tag[iSE]!=30 && tag[iSE]!=31) {
-            val  += (dxm/dx) * (1.0-dzm/dz)  * NodeField[iSE];
-            sumW += (dxm/dx) * (1.0-dzm/dz);
-        }
-        if (tag[iNW]!=30 && tag[iNW]!=31) {
-            val  += (1.0-dxm/dx) * (dzm/dz)    * NodeField[iNW];
-            sumW += (1.0-dxm/dx) * (dzm/dz);
-        }
-        if (tag[iNE]!=30 && tag[iNE]!=31) {
-            val  += (dxm/dx) * (dzm/dz)    * NodeField[iNE];
-            sumW += (dxm/dx) * (dzm/dz);
-        }
-
-        if(sumW>1e-13) val /= sumW;
-        
-    }
-    
-    return val;
-}
-
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-
-double Vertices2Particle( markers* particles, double* NodeField, double* X_vect, double* Z_vect, int Nx, int Nz, char *tag, double dx, double dz, int k ) {
-    
-    double val  = 0.0;
-    double sumW = 0.0;
-    double dxm, dzm, dst;
-    int    i_part, j_part, iSW, iNW, iSE, iNE;
+    int    i_part,j_part, iSW, iNW, iSE, iNE;
     
     // Filter out particles that are inactive (out of the box)
     if (particles->phase[k] != -1) {
@@ -456,6 +255,7 @@ void ParticleInflowCheck ( markers* particles, grid *mesh, params model, surface
     int k, Nb_part=particles->Nb_part, npW=0, npE=0;
     double xW, xE, dx2=model.dx/2.0;
     int finite_strain = model.fstrain;
+    int icell;
     
     clock_t t_omp = (double)omp_get_wtime();
     
@@ -491,6 +291,8 @@ reduction(+:npW,npE )
         printf("Number of particles east boundary: %d\n", npE);
     }
     
+    double distance, dx=model.dx, dz=model.dz;
+    int i_part, j_part, Nx=model.Nx-1, Nz=model.Nz-1;
     if (flag == 1) {
         
         xW=mesh->xg_coord[0]          + dx2;
@@ -499,6 +301,20 @@ reduction(+:npW,npE )
         for (k=0; k<Nb_part; k++) {
             
             if ( particles->phase[k] != -1 && particles->intag[k] == 1 ) {
+                
+                // find cell
+                distance                = ( particles->x[k] - mesh->xc_coord[0] );
+                j_part                  = ceil( (distance/dx) + 0.5) - 1;
+                if (j_part<0)    j_part = 0;
+                if (j_part>Nx-1) j_part = Nx-1;
+                
+                // Get the line:
+                distance                = ( particles->z[k] - mesh->zc_coord[0] );
+                i_part                  = ceil( (distance/dz) + 0.5) - 1;
+                if (i_part<0)    i_part = 0;
+                if (i_part>Nz-1) i_part = Nz-1;
+                
+                icell = j_part + i_part*Nx;
                 
                 // WEST COAST
                 if (particles->x[k]>=xW && particles->x[k]<=xW+dx2) {
@@ -510,7 +326,7 @@ reduction(+:npW,npE )
                         particles->x[Nb_part] = particles->x[k]-dx2;
                         particles->z[Nb_part] = particles->z[k];
                         // Assign new marker point properties
-                        AssignMarkerProperties ( particles, Nb_part, k, &model, mesh );
+                        AssignMarkerProperties ( particles, Nb_part, k, icell, mesh,  &model );
                         Nb_part++;
                     }
                     else {
@@ -529,7 +345,7 @@ reduction(+:npW,npE )
                         particles->z[Nb_part] = particles->z[k];
                         //                        printf("Adding on E\n");
                         // Assign new marker point properties
-                        AssignMarkerProperties ( particles, Nb_part, k, &model, mesh );
+                        AssignMarkerProperties ( particles, Nb_part, k, icell, mesh, &model );
                         Nb_part++;
                     }
                     else {
@@ -551,8 +367,8 @@ reduction(+:npW,npE )
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void AssignMarkerProperties (markers* particles, int new_ind, int min_index, params *model, grid* mesh ) {
-    
+void AssignMarkerProperties (markers* particles, int new_ind, int min_index, int cell_index, grid* mesh, params *model ) {
+
     particles->phase[new_ind]         = particles->phase[min_index];
     particles->Vx[new_ind]            = particles->Vx[min_index];
     particles->Vz[new_ind]            = particles->Vz[min_index];
@@ -563,31 +379,50 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
     particles->strain_exp[new_ind]    = particles->strain_exp[min_index];
     particles->strain_lin[new_ind]    = particles->strain_lin[min_index];
     particles->strain_gbs[new_ind]    = particles->strain_gbs[min_index];
-//    particles->d[new_ind]             = particles->d[min_index];
-    particles->divth[new_ind]         = particles->divth[min_index]; // to be changed
-//    particles->T[new_ind]             = particles->T[min_index];
-//    particles->P[new_ind]             = particles->P[min_index];
-    particles->d[new_ind]             = Centers2Particle( particles, mesh->d_n,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
-//    particles->divth[new_ind]         = Centers2Particle( particles, mesh->p_in,  mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
-    particles->T[new_ind]             = Centers2Particle( particles, mesh->T,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
-    particles->P[new_ind]             = Centers2Particle( particles, mesh->p_in,  mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
+    particles->d[new_ind]             = particles->d[min_index];
+    particles->divth[new_ind]         = particles->divth[min_index];
+    particles->T[new_ind]             = particles->T[min_index];
+    particles->P[new_ind]             = particles->P[min_index];
 
-    particles->phi[new_ind]           = particles->phi[min_index]; // to be changed
-    particles->X[new_ind]             = particles->X[min_index];   // to be changed
-//    //    particles->generation[new_ind]    = particles->generation[min_index];
-//    particles->rho[new_ind]           = particles->rho[min_index];
-//    particles->sxxd[new_ind]          = particles->sxxd[min_index];
-//    particles->szzd[new_ind]          = particles->szzd[min_index];
-//    particles->sxz[new_ind]           = particles->sxz[min_index];
-    particles->rho[new_ind]           = Centers2Particle( particles, mesh->rho_n,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
-    particles->sxxd[new_ind]          = Centers2Particle( particles, mesh->sxxd,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
-    particles->szzd[new_ind]          = Centers2Particle( particles, mesh->szzd,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
-    particles->sxz[new_ind]           = Vertices2Particle( particles, mesh->sxz,     mesh->xg_coord,  mesh->zg_coord,  mesh->Nx-0, mesh->Nz-0, mesh->BCg.type, mesh->dx, mesh->dz, new_ind );
+    particles->phi[new_ind]           = particles->phi[min_index];
+    particles->X[new_ind]             = particles->X[min_index];
+    //    particles->generation[new_ind]    = particles->generation[min_index];
+    particles->rho[new_ind]           = particles->rho[min_index];
+    particles->sxxd[new_ind]          = particles->sxxd[min_index];
+    particles->szzd[new_ind]          = particles->szzd[min_index];
+    particles->sxz[new_ind]           = particles->sxz[min_index];
     particles->dsxxd[new_ind]         = particles->dsxxd[min_index];
     particles->dszzd[new_ind]         = particles->dszzd[min_index];
     particles->dsxz[new_ind]          = particles->dsxz[min_index];
     particles->syy[new_ind]           = particles->syy[min_index];
     particles->dsyy[new_ind]           = particles->dsyy[min_index];
+    
+//    particles->strain[new_ind]        = mesh->strain_n[cell_index];
+//    particles->strain_el[new_ind]     = particles->strain_el[min_index];
+//    particles->strain_pl[new_ind]     = particles->strain_pl[min_index];
+//    particles->strain_pwl[new_ind]    = particles->strain_pwl[min_index];
+//    particles->strain_exp[new_ind]    = particles->strain_exp[min_index];
+//    particles->strain_lin[new_ind]    = particles->strain_lin[min_index];
+//    particles->strain_gbs[new_ind]    = particles->strain_gbs[min_index];
+//    particles->d[new_ind]             = mesh->d_n[cell_index];
+//    particles->divth[new_ind]         = mesh->divth0_n[cell_index];
+//    particles->T[new_ind]             = mesh->T[cell_index];
+//    particles->P[new_ind]             = mesh->p_in[cell_index];
+//
+//    particles->phi[new_ind]           = mesh->phi_n[cell_index];
+//    particles->X[new_ind]             = mesh->X_n[cell_index];
+//    //    particles->generation[new_ind]    = particles->generation[min_index];
+//    particles->rho[new_ind]           = mesh->rho_n[cell_index];
+//    particles->sxxd[new_ind]          = mesh->sxxd[cell_index];
+//    particles->szzd[new_ind]          = mesh->szzd[cell_index];
+//    particles->sxz[new_ind]           = mesh->sxz_n[cell_index];
+//    particles->dsxxd[new_ind]         = particles->dsxxd[min_index];
+//    particles->dszzd[new_ind]         = particles->dszzd[min_index];
+//    particles->dsxz[new_ind]          = particles->dsxz[min_index];
+//    particles->syy[new_ind]           = particles->syy[min_index];
+//    particles->dsyy[new_ind]           = particles->dsyy[min_index];
+
+
     
     particles->ddivth[new_ind]        = particles->ddivth[min_index];
     particles->dT[new_ind]            = particles->dT[min_index];
@@ -724,7 +559,7 @@ void FindClosestPhase( markers* particles, int ic, int jc, grid mesh, int *ind_l
     }
 
     // Assign new marker point properties
-    AssignMarkerProperties ( particles, new_ind, min_index, model, &mesh );
+    AssignMarkerProperties ( particles, new_ind, min_index, 0, &mesh,  model );
 
 }
 
@@ -740,7 +575,7 @@ int FindClosestPhase2( markers* particles, double *newx, double* newz, int ic, i
     double dst, min_dst;
     int ind, min_index=ind_list[0];
 
-    min_dst = (model.xmax-model.xmin);//*sqrt( pow( mesh.dx, 2.0) + pow( mesh.dz, 2.0) );
+    min_dst = sqrt( pow( mesh.dx, 2.0) + pow( mesh.dz, 2.0) );
 
     if (sedim==0) {
 
@@ -774,7 +609,7 @@ int FindClosestPhase2( markers* particles, double *newx, double* newz, int ic, i
     return min_index;
 
     // Assign new marker point properties
-    // AssignMarkerProperties ( particles, new_ind, min_index, &mesh );
+    // AssignMarkerProperties ( particles, new_ind, min_index );
 }
 
 
@@ -810,7 +645,7 @@ void FindClosestPhaseVertex( markers* particles, int ic, int jc, grid mesh, int 
     }
 
     // Assign new marker point properties
-    AssignMarkerProperties ( particles, new_ind, min_index, model, &mesh );
+    AssignMarkerProperties ( particles, new_ind, min_index, 0, &mesh, model );
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -853,7 +688,7 @@ void AddPartCell( markers *particles, grid mesh, int ic, int jc, int* ind_list, 
                     particles->Nb_part++;
                 }
 
-                // Add 4 particules
+                // Add 1 particule
                 particles->x[new_ind]      = new_x;
                 particles->z[new_ind]      = new_z;
                 FindClosestPhase( particles, ic, jc, mesh, ind_list, new_ind, nb_neigh, &model  );
@@ -868,7 +703,7 @@ void AddPartCell( markers *particles, grid mesh, int ic, int jc, int* ind_list, 
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void AddPartCell2( int *pidx, int *Nb_part_thread, markers *particles, grid mesh, int ic, int jc, int* ind_list, params model, int nb_neigh, surface topo, double* xg , double* zg, int cell, int *nnewp, double *newx, double *newz, int *newi, int sed_phase, surface topo_ini ) {
+void AddPartCell2( int *pidx, int *Nb_part_thread, markers *particles, grid mesh, int ic, int jc, int* ind_list, params model, int nb_neigh, surface topo, double* xg , double* zg, int cell, int *nnewp, double *newx, double *newz, int *newi, int *newicell, int sed_phase, surface topo_ini, int coarse_cell ) {
 
     // This functions add particles to cells that are tag as 'particle deficient'.
     // So far, it adds 4 new particles at different locations within the cell.
@@ -910,6 +745,8 @@ void AddPartCell2( int *pidx, int *Nb_part_thread, markers *particles, grid mesh
                 newx[(*nnewp)] = new_x;
                 newz[(*nnewp)] = new_z;
                 newi[(*nnewp)] = FindClosestPhase2( particles, newx, newz, ic, jc, mesh, ind_list, (*nnewp), nb_neigh, sedim, sed_phase, model  );
+                newicell[(*nnewp)] = coarse_cell;
+                
 
                 (*nnewp)++;
             }
@@ -2464,222 +2301,6 @@ private ( k, dxm, dzm, j_part, i_part, distance, iSW, iNW, iSE, iNE, sumW, Xp ) 
 }
 
 
-
-void Interp_Grid2P_centroids2 ( markers particles, DoodzFP* PartField, grid *mesh, double* NodeField, double* X_vect, double* Z_vect, int Nx, int Nz, char *tag, params* model ) {
-
-    int k;
-    int i_part,j_part, iSW, iNW, iSE, iNE, ic, jc;
-    double dx,dz,dxm,dzm;
-    int  Nb_part;
-    double distance, sumW;
-    int periodix = model->isperiodic_x;
-
-    Nb_part=particles.Nb_part;
-    double Xp, Lx = mesh->xg_coord[mesh->Nx-1] - mesh->xg_coord[0];
-    int Nxg = mesh->Nx;
-    
-    dx=mesh->dx;
-    dz=mesh->dz;
-
-#pragma omp parallel for shared ( particles, PartField, X_vect, Z_vect, NodeField, Nb_part, dx, dz, Nx, Nz, tag ) \
-private ( k, dxm, dzm, j_part, i_part, distance, iSW, iNW, iSE, iNE, sumW, Xp, ic, jc ) firstprivate( Lx, Nxg, periodix )// schedule( static )
-    for (k=0;k<Nb_part;k++) {
-
-        PartField[k] = 0.0;
-
-        // Filter out particles that are inactive (out of the box)
-        if (particles.phase[k] != -1) {
-
-            
-            // Check distance with regards to extended array
-            distance = (particles.x[k]-X_vect[0]);
-            j_part   = ceil((distance/dx)) - 1;
-            
-            // Get the line:
-            distance = (particles.z[k]-Z_vect[0]);
-            i_part   = ceil((distance/dz)) - 1;
-            
-            if (j_part>0 && j_part<Nx && i_part>0 && i_part<Nz) {
-                ic  = i_part - 1;
-                jc  = j_part - 1;
-                iSW = jc + ic*Nx;
-                iSE = jc + ic*Nx+1;
-                iNW = jc + (ic+1)*Nx;
-                iNE = jc + (ic+1)*Nx+1;
-            }
-            
-            if (j_part==0 && i_part > 0 && i_part<Nz ) {
-                if (periodix==1) {
-                    ic  = i_part-1;
-                    jc  = j_part;
-                    iSW = (Nx-1) + ic*Nx;
-                    iSE = jc     + ic*Nx;
-                    iNW = (Nx-1) + (ic+1)*Nx;
-                    iNE = jc     + (ic+1)*Nx;
-                }
-                else {
-                    // Copy solution along edge
-                    ic  = i_part-1;
-                    jc  = j_part;
-                    iSW = jc + ic*Nx;
-                    iSE = jc + ic*Nx;
-                    iNW = jc + (ic+1)*Nx;
-                    iNE = jc + (ic+1)*Nx;
-                }
-            }
-
-            if (j_part==Nx && i_part > 0 && i_part<Nz ) {
-                if (periodix==1) {
-                    ic  = i_part-1;
-                    jc  = j_part-1;
-                    iSW = jc + ic*Nx;
-                    iSE = 0  + ic*Nx;
-                    iNW = jc + (ic+1)*Nx;
-                    iNE = 0  + (ic+1)*Nx;
-                }
-                else {
-                    // Copy solution along edge
-                    ic  = i_part-1;
-                    jc  = j_part-1;
-                    iSW = jc + ic*Nx;
-                    iSE = jc + ic*Nx;
-                    iNW = jc + (ic+1)*Nx;
-                    iNE = jc + (ic+1)*Nx;
-                }
-            }
-            
-            
-            if (i_part==0 && j_part > 0 && j_part<Nx) {
-                // Copy solution along edge
-                ic  = i_part;
-                jc  = j_part-1;
-                iSW = jc + ic*Nx;
-                iSE = jc + ic*Nx + 1;
-                iNW = jc + ic*Nx;
-                iNE = jc + ic*Nx + 1;
-            }
-
-            if (i_part==Nz && j_part > 0 && j_part<Nx) {
-                // Copy solution along edge
-                ic  = i_part-1;
-                jc  = j_part-1;
-                iSW = jc + ic*Nx;
-                iSE = jc + ic*Nx + 1;
-                iNW = jc + ic*Nx;
-                iNE = jc + ic*Nx + 1;
-            }
-            
-            // SW
-            if (i_part==0 && j_part==0) {
-
-                if (periodix==1) {
-                    ic  = 0;
-                    jc  = 0;
-                    iSW = (Nx-1) + ic*Nx;
-                    iSE = jc     + ic*Nx;
-                    iNW = (Nx-1) + ic*Nx;
-                    iNE = jc     + ic*Nx;
-                }
-                else {
-                    ic  = i_part - 0;
-                    jc  = j_part - 0;
-                    iSW = jc + ic*Nx;
-                    iSE = jc + ic*Nx;
-                    iNW = jc + ic*Nx;
-                    iNE = jc + ic*Nx;
-                }
-            }
-            // SE
-            if (i_part==0 && j_part==Nx) {
-
-                if (periodix==1) {
-                    ic  = i_part - 0;
-                    jc  = j_part - 1;
-                    iSW = jc + ic*Nx;
-                    iSE = 0  + ic*Nx;
-                    iNW = jc + ic*Nx;
-                    iNE = 0  + ic*Nx;
-                }
-                else {
-                    ic  = i_part - 0;
-                    jc  = j_part - 1;
-                    iSW = jc + ic*Nx;
-                    iSE = jc + ic*Nx;
-                    iNW = jc + ic*Nx;
-                    iNE = jc + ic*Nx;
-                }
-            }
-            // NW
-            if (i_part==Nz && j_part==0) {
-
-                if (periodix==1) {
-                    ic  = i_part - 1;
-                    jc  = j_part - 0;
-                    iSW = (Nx-1) + ic*Nx;
-                    iSE = jc     + ic*Nx;
-                    iNW = (Nx-1) + ic*Nx;
-                    iNE = jc     + ic*Nx;
-                }
-                else {
-                    ic  = i_part - 1;
-                    jc  = j_part - 0;
-                    iSW = jc + ic*Nx;
-                    iSE = jc + ic*Nx;
-                    iNW = jc + ic*Nx;
-                    iNE = jc + ic*Nx;
-                }
-            }
-            // NE
-            if (i_part==Nz && j_part==Nx) {
-
-                if (periodix==1) {
-                    ic  = i_part - 1;
-                    jc  = j_part - 1;
-                    iSW = jc + ic*Nx;
-                    iSE = 0  + ic*Nx;
-                    iNW = jc + ic*Nx;
-                    iNE = 0  + ic*Nx;
-                }
-                else {
-                    ic  = i_part - 1;
-                    jc  = j_part - 1;
-                    iSW = jc + ic*Nx;
-                    iSE = jc + ic*Nx;
-                    iNW = jc + ic*Nx;
-                    iNE = jc + ic*Nx;
-                }
-            }
-        
-            dxm = (particles.x[k] - X_vect[j_part]);
-            dzm = (particles.z[k] - Z_vect[i_part]);
-            
-            PartField[k] = 0.0;
-            sumW         = 0.0;
-
-            if (tag[iSW]!=30 && tag[iSW]!=31) {
-                PartField[k] +=  (1.0-dxm/dx)* (1.0-dzm/dz) * NodeField[iSW];
-                sumW += (1.0-dxm/dx)* (1.0-dzm/dz);
-
-            }
-            if (tag[iSE]!=30 && tag[iSE]!=31) {
-                PartField[k] += (dxm/dx)  * (1.0-dzm/dz)  * NodeField[iSE];
-                sumW += (dxm/dx)* (1.0-dzm/dz);
-            }
-            if (tag[iNW]!=30 && tag[iNW]!=31) {
-                PartField[k] += (1.0-dxm/dx)* (dzm/dz)    * NodeField[iNW];
-                sumW += (1.0-dxm/dx)* (dzm/dz);
-            }
-            if (tag[iNE]!=30 && tag[iNE]!=31) {
-                PartField[k] += (dxm/dx)  * (dzm/dz)    * NodeField[iNE];
-                sumW += (dxm/dx)* (dzm/dz);
-            }
-
-            if(sumW>1e-13) PartField[k] /= sumW;
-        }
-    }
-}
-
-
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -3072,7 +2693,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
     int **pidx, **npc, **mpc, **npv, **ipreuse, ***ipcell, **npcell, **ind_list, **pidxr;
     int neighs=0, oo=0;
     double **newx, **newz;
-    int    **newi;
+    int    **newi, **newicell;
     int offc=0;
     int flag1;
 
@@ -3142,7 +2763,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
     }
 
     // start parallel section
-#pragma omp parallel private (ith, k, ip, distance, ic, jc, kc, kd, l, neighs, oo, nb, offc, start, flag1, nxl) shared (ncx_e, ncz_e, nx_e, nz_e, xg, xg_e, xc, xc_e, dx, dz, nx, ncx, Nb_part, npart, particles, nthreads, pidx, phv, phc, npv, npc, npreuse, mesh, ind_list, nnewp, newi, newx, newz, pidxr, npartr, nb_new, id_new, num_new, topo, topo_ini) firstprivate(Nx, Nz, Ncx, Ncz, model, sed_phase )
+#pragma omp parallel private (ith, k, ip, distance, ic, jc, kc, kd, l, neighs, oo, nb, offc, start, flag1, nxl) shared (ncx_e, ncz_e, nx_e, nz_e, xg, xg_e, xc, xc_e, dx, dz, nx, ncx, Nb_part, npart, particles, nthreads, pidx, phv, phc, npv, npc, npreuse, mesh, ind_list, nnewp, newi, newicell, newx, newz, pidxr, npartr, nb_new, id_new, num_new, topo, topo_ini) firstprivate(Nx, Nz, Ncx, Ncz, model, sed_phase )
             //for (ith=0; ith<nthreads; ith++)
     {
         ith = omp_get_thread_num();
@@ -3318,17 +2939,15 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
 
         }
         
-//        MinMaxArrayTag( mesh->phase_perc_n[0], 1.0, Ncx*Ncz, "phase % n", mesh->BCp.type );
-        
-
 
         // ------------------------------------ RE-SEEDING ------------------------------------ //
         // Re-seeding on a double resolution grid
         if (RESEED==1) {
 
-            newi[ith]   = DoodzCalloc( npart[ith]  , sizeof(int));
-            newx[ith]   = DoodzCalloc( npart[ith]  , sizeof(double));
-            newz[ith]   = DoodzCalloc( npart[ith]  , sizeof(double));
+            newi[ith]     = DoodzCalloc( npart[ith]  , sizeof(int));
+            newicell[ith] = DoodzCalloc( npart[ith]  , sizeof(int));
+            newx[ith]     = DoodzCalloc( npart[ith]  , sizeof(double));
+            newz[ith]     = DoodzCalloc( npart[ith]  , sizeof(double));
 
             // Count number of particle per re-seeding volume
             for (ip=0; ip<npart[ith]; ip++) {
@@ -3658,7 +3277,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
                             }
 
                             // Identify closer points
-                            AddPartCell2( pidx[ith], &(npart[ith]), particles, *mesh, k-2, l-2, ind_list[ith], model, neighs, topo, xg[ith], mesh->zg_coord, ic, &(nnewp[ith]), newx[ith], newz[ith], newi[ith], sed_phase, topo_ini );
+                            AddPartCell2( pidx[ith], &(npart[ith]), particles, *mesh, k-2, l-2, ind_list[ith], model, neighs, topo, xg[ith], mesh->zg_coord, ic, &(nnewp[ith]), newx[ith], newz[ith], newi[ith], newicell[ith], sed_phase, topo_ini, ip );
                             DoodzFree(ind_list[ith]);
 
                         }
@@ -3701,7 +3320,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
         
         
         // Generate new particles in global array
-       #pragma omp parallel private ( ip, k, ith ) shared( particles, nb_new, newi, newx, newz, id_new, ipreuse, npreuse, nnewp, mesh ) firstprivate( model )
+       #pragma omp parallel private ( ip, k, ith ) shared( particles, nb_new, newi, newicell, newx, newz, id_new, ipreuse, npreuse, nnewp ) firstprivate( model )
 //                for (ith=0; ith<nthreads; ith++)
         {
 
@@ -3731,7 +3350,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
                     particles->x[k]          = newx[ith][ip];
                     particles->z[k]          = newz[ith][ip];
                     particles->generation[k] = 1;
-                    AssignMarkerProperties( particles, k, newi[ith][ip], &model, mesh );
+                    AssignMarkerProperties( particles, k, newi[ith][ip], newicell[ith][ip], mesh, &model );
                 }
             }
         }
@@ -3839,6 +3458,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
         //        DoodzFree( flag[ith]);
 
         if (RESEED==1) DoodzFree( newi[ith]);
+        if (RESEED==1) DoodzFree( newicell[ith]);
         if (RESEED==1) DoodzFree( newx[ith]);
         if (RESEED==1) DoodzFree( newz[ith]);
         //        DoodzFree( ind_list[ith]);
