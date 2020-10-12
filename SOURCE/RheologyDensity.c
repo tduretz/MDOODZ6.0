@@ -159,9 +159,9 @@ void TotalStresses( grid* mesh, markers* particles, scale scaling, params* model
     }
 
     // Interpolate stress changes to markers
-    Interp_Grid2P( *particles, mdsxx,  mesh, dsxx, mesh->xc_coord,  mesh->zc_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type  );
-    Interp_Grid2P( *particles, mdszz,  mesh, dszz, mesh->xc_coord,  mesh->zc_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type  );
-    Interp_Grid2P( *particles, mdsyy,  mesh, dsyy, mesh->xc_coord,  mesh->zc_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type  );
+    Interp_Grid2P_centroids2( *particles, mdsxx,  mesh, dsxx, mesh->xvz_coord,  mesh->xvz_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, model  );
+    Interp_Grid2P_centroids2( *particles, mdszz,  mesh, dszz, mesh->xvz_coord,  mesh->xvz_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, model  );
+    Interp_Grid2P_centroids2( *particles, mdsyy,  mesh, dsyy, mesh->xvz_coord,  mesh->xvz_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, model  );
     Interp_Grid2P( *particles, mdsxz,  mesh, dsxz, mesh->xg_coord,  mesh->zg_coord,  mesh->Nx,   mesh->Nz,   mesh->BCg.type  );
 
     // Update marker stresses
@@ -838,8 +838,8 @@ void DeformationGradient ( grid mesh, scale scaling, params model, markers *part
     }
 
     // Interpolate from grid to particles
-    Interp_Grid2P( *(particles), pdudx, &mesh, dudx, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type  );
-    Interp_Grid2P( *(particles), pdvdz, &mesh, dvdz, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
+    Interp_Grid2P_centroids2( *(particles), pdudx, &mesh, dudx, mesh.xvz_coord,  mesh.zvx_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model  );
+    Interp_Grid2P_centroids2( *(particles), pdvdz, &mesh, dvdz, mesh.xvz_coord,  mesh.zvx_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
     Interp_Grid2P( *(particles), pdvdx, &mesh, dvdx, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type   );
     Interp_Grid2P( *(particles), pdudz, &mesh, dudz, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type   );
 
@@ -1041,7 +1041,7 @@ void UpdateParticleDensity( grid* mesh, scale scaling, params model, markers* pa
     }
 
     // Interp increments to particles
-    Interp_Grid2P_centroids( *particles, rho_inc_mark, mesh, rho_inc_grid, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
+    Interp_Grid2P_centroids2( *particles, rho_inc_mark, mesh, rho_inc_grid, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
 
     // Increment temperature on particles
     ArrayPlusArray( particles->rho, rho_inc_mark, particles->Nb_part );
@@ -1071,7 +1071,7 @@ void UpdateParticlePhi( grid* mesh, scale scaling, params model, markers* partic
     }
 
     // Interp increments to particles
-    Interp_Grid2P_centroids( *particles, phi_inc_mark, mesh, phi_inc_grid, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
+    Interp_Grid2P_centroids2( *particles, phi_inc_mark, mesh, phi_inc_grid, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
 
     // Increment temperature on particles
     ArrayPlusArray( particles->phi, phi_inc_mark, particles->Nb_part );
@@ -1112,7 +1112,7 @@ void UpdateParticleX( grid* mesh, scale scaling, params model, markers* particle
     }
 
     // Interp increments to particles
-    Interp_Grid2P_centroids( *particles, X_inc_mark, mesh, X_inc_grid, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
+    Interp_Grid2P_centroids2( *particles, X_inc_mark, mesh, X_inc_grid, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
 
     // Increment temperature on particles
     ArrayPlusArray( particles->X, X_inc_mark, particles->Nb_part );
@@ -1149,7 +1149,7 @@ void UpdateParticleGrainSize( grid* mesh, scale scaling, params model, markers* 
     }
 
     // Interp increments to particles
-    Interp_Grid2P_centroids( *particles, d_inc_mark, mesh, d_inc_grid, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
+    Interp_Grid2P_centroids2( *particles, d_inc_mark, mesh, d_inc_grid, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
 
     // Increment grain size on particles
     ArrayPlusArray( particles->d, d_inc_mark, particles->Nb_part );
@@ -1186,7 +1186,7 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
     for ( c0=0; c0<Ncx*Ncz; c0++ ) {
         if (mesh->BCt.type[c0] != 30) Tg0[c0] = mesh->T[c0] - mesh->dT[c0];
     }
-    Interp_Grid2P_centroids( *particles, Tm0, mesh, Tg0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
+    Interp_Grid2P_centroids2( *particles, Tm0, mesh, Tg0, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
 
     // SUBGRID
     if ( model.subgrid_diff >= 1 ) { /* CASE WITH SUBGRID DIFFUSION */
@@ -1198,8 +1198,8 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
         dTmr = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
         rho_part = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
 
-        /// Get density
-        Interp_Grid2P_centroids( *particles, rho_part, mesh, mesh->rho_n, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
+        // Get density
+        Interp_Grid2P_centroids2( *particles, rho_part, mesh, mesh->rho_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
 
         // Compute subgrid temperature increments on markers
 #pragma omp parallel for shared(particles,Tm0,dTms) private(k,p,dtm) firstprivate(materials,dx,dz,model,d)
@@ -1221,7 +1221,7 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
         }
 
         // Remaining temperature increments grid --> markers
-        Interp_Grid2P_centroids( *particles, dTmr, mesh, dTgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
+        Interp_Grid2P_centroids2( *particles, dTmr, mesh, dTgr, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
 
         // Final temperature update on markers
 #pragma omp parallel for shared(particles,dTms,dTmr,T_inc_mark) private(k)
@@ -1238,7 +1238,7 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
     else {  /* CASE WITHOUT SUBGRID DIFFUSION: INTERPOLATE INCREMENT DIRECTLY */
 
         // Interp increments to particles
-        Interp_Grid2P_centroids( *particles, T_inc_mark, mesh, mesh->dT, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
+        Interp_Grid2P_centroids2( *particles, T_inc_mark, mesh, mesh->dT, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
 
         // Increment temperature on particles
         ArrayPlusArray( particles->T, T_inc_mark, particles->Nb_part );
@@ -1297,7 +1297,7 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
         double *dPmr = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
         double *etam = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
 
-        Interp_Grid2P_centroids( *particles, etam,  mesh, mesh->eta_phys_n, mesh->xc_coord,  mesh->zc_coord, Nx-1  , Nz-1 , mesh->BCp.type, &model);
+        Interp_Grid2P_centroids2( *particles, etam,  mesh, mesh->eta_phys_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1  , Nz-1 , mesh->BCp.type, &model);
 
         /* -------------- */
         // Old Pressure grid
@@ -1563,8 +1563,8 @@ firstprivate( model, dt )
         etam   = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
 
         // Old stresses grid --> markers
-        Interp_Grid2P_centroids( *particles, txxm0, mesh, mesh->sxxd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
-        Interp_Grid2P_centroids( *particles, tzzm0, mesh, mesh->szzd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
+        Interp_Grid2P_centroids2( *particles, txxm0, mesh, mesh->sxxd0, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
+        Interp_Grid2P_centroids2( *particles, tzzm0, mesh, mesh->szzd0, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
         Interp_Grid2P( *particles, txzm0, mesh, mesh->sxz0 , mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type     );
         Interp_Grid2P( *particles, etam,  mesh, mesh->eta_phys_s, mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type);
 
@@ -1602,8 +1602,8 @@ firstprivate( model, dt )
             }
 
             // Remaining stress increments grid --> markers
-            Interp_Grid2P_centroids( *particles, dtxxmr, mesh, dtxxgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
-            Interp_Grid2P_centroids( *particles, dtzzmr, mesh, dtzzgr, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
+            Interp_Grid2P_centroids2( *particles, dtxxmr, mesh, dtxxgr, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
+            Interp_Grid2P_centroids2( *particles, dtzzmr, mesh, dtzzgr, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
             Interp_Grid2P(           *particles, dtxzmr, mesh, dtxzgr, mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type         );
 
             // Final stresses update on markers
@@ -1665,8 +1665,8 @@ firstprivate( model, dt )
         }
 
         // Interpolate stress changes to markers
-        Interp_Grid2P_centroids( *particles, mdsxxd, mesh, dsxxd, mesh->xc_coord,  mesh->zc_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, model  );
-        Interp_Grid2P_centroids( *particles, mdszzd, mesh, dszzd, mesh->xc_coord,  mesh->zc_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, model  );
+        Interp_Grid2P_centroids2( *particles, mdsxxd, mesh, dsxxd, mesh->xvz_coord,  mesh->zvx_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, model  );
+        Interp_Grid2P_centroids2( *particles, mdszzd, mesh, dszzd, mesh->xvz_coord,  mesh->zvx_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, model  );
         Interp_Grid2P( *particles, mdsxz,  mesh, dsxz,  mesh->xg_coord,  mesh->zg_coord,  mesh->Nx,   mesh->Nz,   mesh->BCg.type  );
 
         // Update marker stresses
@@ -3762,24 +3762,24 @@ void ComputeIncrementsOnParticles( grid* mesh, markers* particles, params* model
     rhom0   = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
 
     // Interpolate old fields to new marker locations
-    Interp_Grid2P_centroids( *particles, txxm0, mesh, mesh->sxxd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model );
-    Interp_Grid2P_centroids( *particles, tzzm0, mesh, mesh->szzd0, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model );
+    Interp_Grid2P_centroids2( *particles, txxm0, mesh, mesh->sxxd0, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
+    Interp_Grid2P_centroids2( *particles, tzzm0, mesh, mesh->szzd0, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
     Interp_Grid2P(           *particles, txzm0, mesh, mesh->sxz0 , mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type        );
 
     if ( model->aniso == 1 ) {
         nxm0  = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
         nzm0  = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-        Interp_Grid2P_centroids( *particles, nxm0, mesh, mesh->nx0_n, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
-        Interp_Grid2P_centroids( *particles, nzm0, mesh, mesh->nz0_n, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
+        Interp_Grid2P_centroids2( *particles, nxm0, mesh, mesh->nx0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
+        Interp_Grid2P_centroids2( *particles, nzm0, mesh, mesh->nz0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
     }
 
-    Interp_Grid2P_centroids( *particles, dm0, mesh, mesh->d0_n, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model );
-    Interp_Grid2P_centroids( *particles, Xm0, mesh, mesh->X0_n, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model );
-    Interp_Grid2P_centroids( *particles, phim0, mesh, mesh->phi0_n, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model );
-    Interp_Grid2P_centroids( *particles, rhom0, mesh, mesh->rho0_n, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model );
-    Interp_Grid2P_centroids( *particles, divthm0, mesh, mesh->divth0_n, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model );
-    Interp_Grid2P_centroids( *particles, Pm0, mesh, mesh->p0_n, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model );
-    Interp_Grid2P_centroids( *particles, Tm0, mesh, mesh->T0_n, mesh->xc_coord,  mesh->zc_coord, Nx-1, Nz-1, mesh->BCp.type, model );
+    Interp_Grid2P_centroids2( *particles, dm0, mesh, mesh->d0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
+    Interp_Grid2P_centroids2( *particles, Xm0, mesh, mesh->X0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
+    Interp_Grid2P_centroids2( *particles, phim0, mesh, mesh->phi0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
+    Interp_Grid2P_centroids2( *particles, rhom0, mesh, mesh->rho0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
+    Interp_Grid2P_centroids2( *particles, divthm0, mesh, mesh->divth0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
+    Interp_Grid2P_centroids2( *particles, Pm0, mesh, mesh->p0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
+    Interp_Grid2P_centroids2( *particles, Tm0, mesh, mesh->T0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
 
     // Compute total changes on markers
 #pragma omp parallel for shared ( particles, txxm0, tzzm0, txzm0, nxm0, nzm0, dm0, Xm0, phim0, Pm0, Tm0, divthm0 ) \
