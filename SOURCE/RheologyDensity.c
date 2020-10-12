@@ -1809,9 +1809,8 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         B_exp = 0.5*pow(C_exp, -1./(n_exp+ST) );
     }
 
-    if ( comp == 0 ) Tyield     = C*cos(fric) + ( P + model->PrBG)*sin(fric);  // need to shift the yield since pressure is shifted
-    if ( comp == 1 ) Tyield     = C*cos(fric) + P*sin(fric);                   // no need to shift yield if compressible: set initial pressure Pconf
-
+    Tyield     = C*cos(fric) + P*sin(fric);
+    
     // Von-Mises cut-off
     if (materials->Slim[phase] < Tyield) {
         fric   = 0.0;
@@ -2071,8 +2070,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
             divp    = -gdot*dQdP;
             Pc      = P + K*dt*divp; // P0 - k*dt*(div-divp) = P + k*dt*divp
             eta_vp  = eta_vp0 * pow(fabs(gdot), 1.0/n_vp - 1);
-            if ( comp == 0 ) Tyield     = C*cos(fric) + ( Pc + model->PrBG)*sin(fric) +  gdot*eta_vp;  // need to shift the yield since pressure is shifted
-            if ( comp == 1 ) Tyield     = C*cos(fric) + Pc*sin(fric) +  gdot*eta_vp;                   // no need to shift yield if compressible: set initial pressure
+            Tyield  = C*cos(fric) + Pc*sin(fric) +  gdot*eta_vp;              
             F_trial = Tii - eta_ve*gdot - Tyield;
 
             // Residual check
