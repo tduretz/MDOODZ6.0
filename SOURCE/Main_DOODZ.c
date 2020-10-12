@@ -60,7 +60,6 @@ int main( int nargs, char *args[] ) {
     SparseMat    StokesA, StokesB, StokesC, StokesD;
     SparseMat    JacobA,  JacobB,  JacobC,  JacobD;
     int          Nx, Nz, Ncx, Ncz;
-    int          IncrementalUpdateGrid = 1;
 
     double *rx_abs, *rz_abs, *rp_abs, *rx_rel, *rz_rel, *rp_rel;
 
@@ -454,7 +453,7 @@ int main( int nargs, char *args[] ) {
             // Interpolate material properties from particles to nodes
             t_omp = (double)omp_get_wtime();
             
-            if ( IncrementalUpdateGrid == 0 ) {
+            if ( model.IncrementalUpdateGrid == 0 ) { // OLD STYLE
                 
                 // Energy - interpolate thermal parameters and advected energy
                 if ( model.isthermal == 1 ) {
@@ -577,7 +576,7 @@ int main( int nargs, char *args[] ) {
                 Interp_P2C ( particles,   particles.rho, &mesh, mesh.rho0_n,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
             }
             
-            if ( IncrementalUpdateGrid == 1 ) {
+            if (  model.IncrementalUpdateGrid == 1 ) {
                 
                 // Save old lithostatic pressure (to disappear ? )
                 ArrayEqualArray(  mesh.p_lith0,   mesh.p_lith, Ncx*Ncz );

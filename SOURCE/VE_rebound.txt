@@ -46,7 +46,7 @@ thermal_eq      = 0
 shear_heat      = 0
 adiab_heat      = 0
 StressRotation  = 2
-StressUpdate    = 1
+StressUpdate    = 0
 subgrid_diff    = 0
 
 /**** SETUP DEPENDANT ****/

@@ -3853,6 +3853,7 @@ void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* 
     double *dP     = DoodzCalloc ( Ncx*Ncz, sizeof(double));
     Interp_P2C ( *particles, particles->dP,     mesh,     dP, mesh->xg_coord, mesh->zg_coord, 1, 0 );
     ArrayPlusArray(  mesh->p0_n,     dP,     Ncx*Ncz );
+//    InterpCentroidsToVerticesDouble( mesh->p0_n,  mesh->p0_s, mesh, model );
 
     // Elasticity - interpolate advected/rotated stresses
     if  ( model->iselastic == 1 ) {
