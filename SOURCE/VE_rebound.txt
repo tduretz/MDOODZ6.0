@@ -46,8 +46,9 @@ thermal_eq      = 0
 shear_heat      = 0
 adiab_heat      = 0
 StressRotation  = 2
+subgrid_diff    = 2
 StressUpdate    = 0
-subgrid_diff    = 0
+IncrementalUpdateGrid = 1
 
 /**** SETUP DEPENDANT ****/
 EpsBG           =-5e-140

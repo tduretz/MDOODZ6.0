@@ -16,8 +16,8 @@ V   = 1.0e-10
 T   = 700
 
 /**** SPACE-TIME ****/
-Nx      = 101
-Nz      = 101
+Nx      = 51
+Nz      = 51
 Nt      = 50
 xmin    =-1.000000
 zmin    =-1.000000
@@ -39,22 +39,23 @@ num_deriv         = 0
 StressRotation    = 0
 safe_mode         = 1
 nstagmax          = 5
+IncrementalUpdateGrid = 1
 
 /**** SWITCHES ****/
 compressible    = 1
-ProgReac        = 1           / !!!!
+iselastic       = 1
+ProgReac        = 0           / !!!!
 NoReturn        = 0 
 VolChangeReac   = 0
 ismechanical    = 1
 RK              = 4
 isperiodic_x    = 0
 ispureshear_ALE = 0
-iselastic       = 1
 isthermal       = 0
 line_search     = 1
 free_surf       = 0
 free_surf_stab  = 0
-eqn_state       = 0
+eqn_state       = 1
 thermal_eq      = 0
 subgrid_diff    = 2
 shear_heat      = 0

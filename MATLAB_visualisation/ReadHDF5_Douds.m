@@ -16,7 +16,8 @@ path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
 path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/'
 % path = '/Volumes/Seagate4TB/Wedge_MD6/LR/'
 % path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/RUN_MetamSoleLitho_14/'
-% 
+% path = '/Volumes/Seagate4TB/LithoScale/LithoScale_MR/'
+
 cd(path)
 
 % File
@@ -35,10 +36,10 @@ phase_on_grid   = 0;
 phase_temp2     = 0;
 vel_plot        = 0;
 vel_vectors     = 0;
-vel_divergence  = 1;
-pre_plot        = 0;
+vel_divergence  = 0;
+pre_plot        = 1;
 dyna_pre        = 0;
-stress_inv      = 0;
+stress_inv      = 1;
 stress_evol     = 0;
 stress_plot     = 0;
 srate_plot      = 0;
@@ -118,8 +119,11 @@ maxPdyn =  5e8;
 % minEta = 19;
 % maxEta = 25;
 
-minEii = -16;
-maxEii = -14;
+mindiv  =-0.25e-14;
+maxdiv  = 0.25e-14;
+
+% minEii = -16;
+% maxEii = -14;
 
 % minSii = 1e6;
 % maxSii = 400e6;
@@ -1156,8 +1160,10 @@ for istep=istart:ijump:iend
             
             divV     = hdf5read(filename,'/Centers/divu');     divV    = cast(divV,    'double'); divV    = reshape(divV   , params(4)-1,params(5)-1)';
             divV_el  = hdf5read(filename,'/Centers/divu_el');  divV_el = cast(divV_el, 'double'); divV_el = reshape(divV_el, params(4)-1,params(5)-1)';
+            divV_pl  = hdf5read(filename,'/Centers/divu_pl');  divV_pl = cast(divV_pl, 'double'); divV_pl = reshape(divV_pl, params(4)-1,params(5)-1)';
             divV_r   = hdf5read(filename,'/Centers/divu_r');   divV_r  = cast(divV_r,  'double'); divV_r  = reshape(divV_r , params(4)-1,params(5)-1)';
-            divV_net = divV - divV_el - divV_r;
+            divV_th  = hdf5read(filename,'/Centers/divu_th');  divV_th = cast(divV_th, 'double'); divV_th = reshape(divV_th, params(4)-1,params(5)-1)';
+            divV_net = divV - divV_el - divV_pl - divV_r - divV_th;
              
             if crop == 1
                 [divV, xc_plot, zc_plot] = CropCellArray( divV, xc_plot, zc_plot, lim );
@@ -1169,38 +1175,56 @@ for istep=istart:ijump:iend
             else
                 figure('Visible', 'Off')
             end
-            subplot(2,2,1)
-            imagesc( xc_plot, zc_plot, divV )
-            shading flat,axis xy image, colorbar;
-            xlabel('X'), ylabel('Z')
-            title(['Velocity divergence at' TimeLabel])
-            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-            caxis([-0.25e-14 0.25e-14])
             
-            subplot(2,2,2)
+            
+            subplot(3,2,1)
             imagesc( xc_plot, zc_plot, divV_el )
             shading flat,axis xy image, colorbar;
             xlabel('X'), ylabel('Z')
             title(['Elastic divergence at' TimeLabel])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-            caxis([-0.25e-14 0.25e-14])
+            if exist('mindiv', 'var'), caxis([mindiv maxdiv]); end
             
-            subplot(2,2,3)
+            subplot(3,2,2)
+            imagesc( xc_plot, zc_plot, divV_pl )
+            shading flat,axis xy image, colorbar;
+            xlabel('X'), ylabel('Z')
+            title(['Plastic divergence at' TimeLabel])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            if exist('mindiv', 'var'), caxis([mindiv maxdiv]); end
+            
+                        
+            subplot(3,2,3)
+            imagesc( xc_plot, zc_plot, divV_th )
+            shading flat,axis xy image, colorbar;
+            xlabel('X'), ylabel('Z')
+            title(['Thermal divergence at' TimeLabel])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            if exist('mindiv', 'var'), caxis([mindiv maxdiv]); end
+            
+            subplot(3,2,4)
             imagesc( xc_plot, zc_plot, divV_r )
             shading flat,axis xy image, colorbar;
             xlabel('X'), ylabel('Z')
             title(['Reaction divergence at' TimeLabel])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-            caxis([-0.25e-14 0.25e-14])
+            if exist('mindiv', 'var'), caxis([mindiv maxdiv]); end
             
+            subplot(3,2,5)
+            imagesc( xc_plot, zc_plot, divV )
+            shading flat,axis xy image, colorbar;
+            xlabel('X'), ylabel('Z')
+            title(['Velocity divergence at' TimeLabel])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            if exist('mindiv', 'var'), caxis([mindiv maxdiv]); end
             
-            subplot(2,2,4)
+            subplot(3,2,6)
             imagesc( xc_plot, zc_plot, divV_net )
             shading flat,axis xy image, colorbar;
             xlabel('X'), ylabel('Z')
             title(['Net divergence at' TimeLabel])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-            caxis([-0.25e-14 0.25e-14])
+            if exist('mindiv', 'var'), caxis([mindiv maxdiv]); end
             
             if printfig == 1
                 print([path, './Fig_VelocityDivergence/Fig_VelocityDivergence', num2str(istep,'%05d'),file_suffix], format, res)
@@ -1425,6 +1449,7 @@ for istep=istart:ijump:iend
                 stress = 0;
             end
             figure(90), 
+            if istep==0, clf; end
             hold on
             %         plot(strain, (stress), '.')
 %             s_anal = 2*1e-14*1e21*(1-exp(-time*1e10/1e21));
