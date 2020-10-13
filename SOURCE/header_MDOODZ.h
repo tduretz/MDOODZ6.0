@@ -139,7 +139,7 @@ struct _params {
     int rec_T_P_x_z, delete_breakpoints, GNUplot_residuals;
     // Boundary conditions type
     int    BC_setup_type, shear_style, polar;
-    int    StressRotation, StressUpdate, IncrementalUpdateGrid;
+    int    StressRotation, StressUpdate, IncrementalUpdateGrid, DirectNeighbour;
     // For diffused rheological constrasts
     int diffuse_X, diffuse_avg;
     double diffusion_length;
@@ -498,7 +498,7 @@ void copy_cholmod_dense_to_cholmod_dense( cholmod_dense*, cholmod_dense* );
 void cholmod_dense_plus_cholmod_dense( cholmod_dense*, cholmod_dense* );
 
 void ApplyBC( grid*, params* );
-void AssignMarkerProperties (markers*, int, int, params*, grid* );
+void AssignMarkerProperties (markers*, int, int, params*, grid*, int );
 
 
 // GLOBAL

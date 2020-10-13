@@ -404,9 +404,11 @@ double Vertices2Particle( markers* particles, double* NodeField, double* X_vect,
         dst    = fabs(particles->x[k]-X_vect[0]);
         j_part = ceil((dst/dx)) - 1;
         if (j_part<0) {
+            printf("Should never be here I! (Vertices2Particle)\n"); exit(1);
             j_part = 0;
         }
         if (j_part>Nx-2) {
+            printf("Should never be here II! (Vertices2Particle)\n"); exit(1);
             j_part = Nx-2;
         }
         
@@ -414,9 +416,11 @@ double Vertices2Particle( markers* particles, double* NodeField, double* X_vect,
         dst    = fabs(particles->z[k]-Z_vect[0]);
         i_part = ceil((dst/dz)) - 1;
         if (i_part<0) {
+            printf("Should never be here IV! (Vertices2Particle)\n"); exit(1);
             i_part = 0;
         }
         if (i_part>Nz-2) {
+            printf("Should never be here V! (Vertices2Particle)\n"); exit(1);
             i_part = Nz-2;
         }
         
@@ -428,21 +432,43 @@ double Vertices2Particle( markers* particles, double* NodeField, double* X_vect,
         iNW = j_part+(i_part+1)*Nx;
         iNE = j_part+(i_part+1)*Nx+1;
         
-        val =  (1.0-dxm/dx)* (1.0-dzm/dz) * NodeField[iSW];
-        val += (dxm/dx)    * (1.0-dzm/dz) * NodeField[iSE];
-        val += (1.0-dxm/dx)* (dzm/dz)     * NodeField[iNW];
-        val += (dxm/dx)    * (dzm/dz)     * NodeField[iNE];
+        if (tag[iSW]!=30 && tag[iSW]!=31) {
+            val  += (1.0-dxm/dx) * (1.0-dzm/dz) * NodeField[iSW];
+            sumW += (1.0-dxm/dx) * (1.0-dzm/dz);
+
+        }
+        if (tag[iSE]!=30 && tag[iSE]!=31) {
+            val  += (dxm/dx) * (1.0-dzm/dz)  * NodeField[iSE];
+            sumW += (dxm/dx) * (1.0-dzm/dz);
+        }
+        if (tag[iNW]!=30 && tag[iNW]!=31) {
+            val  += (1.0-dxm/dx) * (dzm/dz)    * NodeField[iNW];
+            sumW += (1.0-dxm/dx) * (dzm/dz);
+        }
+        if (tag[iNE]!=30 && tag[iNE]!=31) {
+            val  += (dxm/dx) * (dzm/dz)    * NodeField[iNE];
+            sumW += (dxm/dx) * (dzm/dz);
+        }
+        if(sumW>1e-13) val /= sumW;
         
-        sumW += (1.0-dxm/dx)* (1.0-dzm/dz);
-        sumW += (dxm/dx)* (1.0-dzm/dz);
-        sumW += (1.0-dxm/dx)* (dzm/dz);
-        sumW += (dxm/dx)* (dzm/dz);
+
+//
+//        val =  (1.0-dxm/dx)* (1.0-dzm/dz) * NodeField[iSW];
+//        val += (dxm/dx)    * (1.0-dzm/dz) * NodeField[iSE];
+//        val += (1.0-dxm/dx)* (dzm/dz)     * NodeField[iNW];
+//        val += (dxm/dx)    * (dzm/dz)     * NodeField[iNE];
+//
+//        sumW += (1.0-dxm/dx)* (1.0-dzm/dz);
+//        sumW += (dxm/dx)* (1.0-dzm/dz);
+//        sumW += (1.0-dxm/dx)* (dzm/dz);
+//        sumW += (dxm/dx)* (dzm/dz);
+//
+//        if( sumW > 1e-13 ) val /= sumW;
+
         
-        if( sumW > 1e-13 ) val /= sumW;
-//        if( sumW > 1.0001 ) printf("Achtung: sumW > 1.0!\n");
-//        if( sumW < 0.9998 ) printf("Achtung: sumW < 1.0!\n");
-//        printf("%2.2f\n", sumW);
-        
+    }
+    else {
+        printf("Should never be here VI ! (Vertices2Particle)\n"); exit(1);
     }
     return val;
 }
@@ -510,7 +536,8 @@ reduction(+:npW,npE )
                         particles->x[Nb_part] = particles->x[k]-dx2;
                         particles->z[Nb_part] = particles->z[k];
                         // Assign new marker point properties
-                        AssignMarkerProperties ( particles, Nb_part, k, &model, mesh );
+//                        AssignMarkerProperties ( particles, Nb_part, k, &model, mesh, 1 );
+                        AssignMarkerProperties ( particles, Nb_part, k, &model, mesh, model.DirectNeighbour );
                         Nb_part++;
                     }
                     else {
@@ -527,9 +554,9 @@ reduction(+:npW,npE )
                     if (Nb_part < particles->Nb_part_max) {
                         particles->x[Nb_part] = particles->x[k]+dx2;
                         particles->z[Nb_part] = particles->z[k];
-                        //                        printf("Adding on E\n");
                         // Assign new marker point properties
-                        AssignMarkerProperties ( particles, Nb_part, k, &model, mesh );
+//                        AssignMarkerProperties ( particles, Nb_part, k, &model, mesh, 1 )
+                        AssignMarkerProperties ( particles, Nb_part, k, &model, mesh, model.DirectNeighbour );
                         Nb_part++;
                     }
                     else {
@@ -551,7 +578,7 @@ reduction(+:npW,npE )
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void AssignMarkerProperties (markers* particles, int new_ind, int min_index, params *model, grid* mesh ) {
+void AssignMarkerProperties (markers* particles, int new_ind, int min_index, params *model, grid* mesh, int DirectNeighbour ) {
     
     particles->phase[new_ind]         = particles->phase[min_index];
     particles->Vx[new_ind]            = particles->Vx[min_index];
@@ -563,26 +590,34 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
     particles->strain_exp[new_ind]    = particles->strain_exp[min_index];
     particles->strain_lin[new_ind]    = particles->strain_lin[min_index];
     particles->strain_gbs[new_ind]    = particles->strain_gbs[min_index];
-//    particles->d[new_ind]             = particles->d[min_index];
     particles->divth[new_ind]         = particles->divth[min_index]; // to be changed
-//    particles->T[new_ind]             = particles->T[min_index];
-//    particles->P[new_ind]             = particles->P[min_index];
-    particles->d[new_ind]             = Centers2Particle( particles, mesh->d_n,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
-//    particles->divth[new_ind]         = Centers2Particle( particles, mesh->p_in,  mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
-    particles->T[new_ind]             = Centers2Particle( particles, mesh->T,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
-    particles->P[new_ind]             = Centers2Particle( particles, mesh->p_in,  mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
+    if ( DirectNeighbour == 1 ) {
+        particles->d[new_ind]             = particles->d[min_index];
+        particles->T[new_ind]             = particles->T[min_index];
+        particles->P[new_ind]             = particles->P[min_index];
+    }
+    else {
+        particles->d[new_ind]             = Centers2Particle( particles, mesh->d_n,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
+        particles->T[new_ind]             = Centers2Particle( particles, mesh->T,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
+        particles->P[new_ind]             = Centers2Particle( particles, mesh->p_in,  mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
+    }
 
     particles->phi[new_ind]           = particles->phi[min_index]; // to be changed
     particles->X[new_ind]             = particles->X[min_index];   // to be changed
 //    //    particles->generation[new_ind]    = particles->generation[min_index];
-//    particles->rho[new_ind]           = particles->rho[min_index];
-//    particles->sxxd[new_ind]          = particles->sxxd[min_index];
-//    particles->szzd[new_ind]          = particles->szzd[min_index];
-//    particles->sxz[new_ind]           = particles->sxz[min_index];
-    particles->rho[new_ind]           = Centers2Particle( particles, mesh->rho_n,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
-    particles->sxxd[new_ind]          = Centers2Particle( particles, mesh->sxxd,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
-    particles->szzd[new_ind]          = Centers2Particle( particles, mesh->szzd,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
-    particles->sxz[new_ind]           = Vertices2Particle( particles, mesh->sxz,     mesh->xg_coord,  mesh->zg_coord,  mesh->Nx-0, mesh->Nz-0, mesh->BCg.type, mesh->dx, mesh->dz, new_ind );
+    if ( DirectNeighbour == 1 ) {
+        particles->rho[new_ind]           = particles->rho[min_index];
+        particles->sxxd[new_ind]          = particles->sxxd[min_index];
+        particles->szzd[new_ind]          = particles->szzd[min_index];
+        particles->sxz[new_ind]           = particles->sxz[min_index];
+    }
+    else {
+        particles->rho[new_ind]           = Centers2Particle( particles, mesh->rho_n,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
+        particles->sxxd[new_ind]          = Centers2Particle( particles, mesh->sxxd,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
+        particles->szzd[new_ind]          = Centers2Particle( particles, mesh->szzd,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
+//        particles->sxz[new_ind]           = Vertices2Particle( particles, mesh->sxz,     mesh->xg_coord,  mesh->zg_coord,  mesh->Nx-0, mesh->Nz-0, mesh->BCg.type, mesh->dx, mesh->dz, new_ind );
+        particles->sxz[new_ind]          = Centers2Particle( particles, mesh->sxz_n,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
+    }
     particles->dsxxd[new_ind]         = particles->dsxxd[min_index];
     particles->dszzd[new_ind]         = particles->dszzd[min_index];
     particles->dsxz[new_ind]          = particles->dsxz[min_index];
@@ -724,7 +759,7 @@ void FindClosestPhase( markers* particles, int ic, int jc, grid mesh, int *ind_l
     }
 
     // Assign new marker point properties
-    AssignMarkerProperties ( particles, new_ind, min_index, model, &mesh );
+    AssignMarkerProperties ( particles, new_ind, min_index, model, &mesh, model->DirectNeighbour );
 
 }
 
@@ -774,7 +809,7 @@ int FindClosestPhase2( markers* particles, double *newx, double* newz, int ic, i
     return min_index;
 
     // Assign new marker point properties
-    // AssignMarkerProperties ( particles, new_ind, min_index, &mesh );
+    // AssignMarkerProperties ( particles, new_ind, min_index, &mesh, model->DirectNeighbour );
 }
 
 
@@ -810,7 +845,7 @@ void FindClosestPhaseVertex( markers* particles, int ic, int jc, grid mesh, int 
     }
 
     // Assign new marker point properties
-    AssignMarkerProperties ( particles, new_ind, min_index, model, &mesh );
+    AssignMarkerProperties ( particles, new_ind, min_index, model, &mesh, model->DirectNeighbour );
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -3731,7 +3766,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
                     particles->x[k]          = newx[ith][ip];
                     particles->z[k]          = newz[ith][ip];
                     particles->generation[k] = 1;
-                    AssignMarkerProperties( particles, k, newi[ith][ip], &model, mesh );
+                    AssignMarkerProperties( particles, k, newi[ith][ip], &model, mesh, model.DirectNeighbour );
                 }
             }
         }

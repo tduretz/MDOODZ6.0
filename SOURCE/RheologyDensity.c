@@ -2278,6 +2278,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
         mesh->sxxd[c0]        = 0.0;
         mesh->szzd[c0]        = 0.0;
         mesh->eII_el[c0]      = 0.0;
+        mesh->sxz_n[c0]       = 0.0;
         mesh->eII_pl[c0]      = 0.0;
         mesh->eII_pwl[c0]     = 0.0;
         mesh->eII_exp[c0]     = 0.0;
@@ -2330,6 +2331,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 if (average == 0 || average == 2 ) {
                     if ( cond == 1 ) mesh->sxxd[c0]   += mesh->phase_perc_n[p][c0] * txx1;
                     if ( cond == 1 ) mesh->szzd[c0]   += mesh->phase_perc_n[p][c0] * tzz1;
+                    if ( cond == 1 ) mesh->sxz_n[c0]  += mesh->phase_perc_n[p][c0] * txz1;
                 }
                 if ( cond == 1 ) mesh->VE_n[c0]       += mesh->phase_perc_n[p][c0] * VEcoeff;
                 if ( cond == 1 ) mesh->eII_el[c0]     += mesh->phase_perc_n[p][c0] * eII_el;
@@ -2363,6 +2365,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 if (average == 1) {
                     if ( cond == 1 ) mesh->sxxd[c0]       += mesh->phase_perc_n[p][c0] * 1.0/txx1;
                     if ( cond == 1 ) mesh->szzd[c0]       += mesh->phase_perc_n[p][c0] * 1.0/tzz1;
+                    if ( cond == 1 ) mesh->sxz_n[c0]      += mesh->phase_perc_n[p][c0] * 1.0/txz1;
                     if ( cond == 1 ) mesh->eta_n[c0]      += mesh->phase_perc_n[p][c0] * 1.0/etaVE;
                     if ( cond == 1 ) mesh->eta_phys_n[c0] += mesh->phase_perc_n[p][c0] * 1.0/eta;
                     if ( cond == 1 ) mesh->detadexx_n[c0] += mesh->phase_perc_n[p][c0] * detadexx     / pow(etaVE,2.0);
@@ -2388,6 +2391,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
             if (average == 1) {
                 mesh->sxxd[c0]       = 1.0/mesh->sxxd[c0];
                 mesh->szzd[c0]       = 1.0/mesh->szzd[c0];
+                mesh->sxz_n[c0]      = 1.0/mesh->sxz_n[c0];
                 mesh->eta_n[c0]      = 1.0/mesh->eta_n[c0];
                 mesh->eta_phys_n[c0] = 1.0/mesh->eta_phys_n[c0];
                 mesh->detadexx_n[c0] *= pow(mesh->eta_n[c0],2.0);
