@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00100
+istep = 00050
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -16,13 +16,13 @@ V   = 1.0e-10
 T   = 700
 
 /**** SPACE-TIME ****/
-Nx      = 101
-Nz      = 101
-Nt      = 100
-xmin    =-2000.0
-zmin    = 0.0
-xmax    =  0.0
-zmax    =  2000.0
+Nx      = 51
+Nz      = 51
+Nt      = 50
+xmin    =-1.0
+zmin    =-1.0
+xmax    = 1.0
+zmax    = 1.0
 advection         = 1
 dt                = 1e11
 dt_constant       = 0
@@ -46,7 +46,7 @@ StressUpdate    = 0
 compressible    = 1
 iselastic       = 1
 ProgReac        = 1           / !!!!
-NoReturn        = 1 
+NoReturn        = 0 
 VolChangeReac   = 0
 ismechanical    = 1
 RK              = 4
