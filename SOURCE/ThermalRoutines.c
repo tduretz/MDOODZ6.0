@@ -109,7 +109,7 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
     cs_di *At;
 
     double *Hs, *Ha, dexz_th, dexz_el, dexz_tot, dexx_th, dexx_el, dexx_tot, diss_limit=1.0e-8/(scaling.S*scaling.E);
-    double dezz_el, dezz_th, dezz_tot, deyy_el, deyy_th, deyy_tot;
+    double dezz_el, dezz_th, dezz_tot, deyy_el, deyy_th, deyy_tot, sumW;
     int neq, nnz, it;
 
     // Number of equations
@@ -141,7 +141,7 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
         //----------------------------------------------------//
 
         // Build right-hand side
-#pragma omp parallel for shared ( b, Hs, Ha, eqn_t, mesh ) private ( l, k, c1, c2, c3, eqn, rhoCp, dexx_el, dexx_th, dexx_tot, dezz_el, dezz_th, dezz_tot, deyy_el, deyy_th, deyy_tot, dexz_el, dexz_th, dexz_tot, Wth, Wel, Wtot, syyd, eyyd, eyyd_el, eyyd_diss  ) firstprivate ( nx, ncx, nxvz, shear_heating, adiab_heating, model, transient, dt, Hr, diss_limit, scaling ) reduction( +:dUe, dW )
+#pragma omp parallel for shared ( b, Hs, Ha, eqn_t, mesh ) private ( l, k, c1, c2, c3, eqn, rhoCp, dexx_el, dexx_th, dexx_tot, dezz_el, dezz_th, dezz_tot, deyy_el, deyy_th, deyy_tot, dexz_el, dexz_th, dexz_tot, Wth, Wel, Wtot, syyd, eyyd, eyyd_el, eyyd_diss, sumW  ) firstprivate ( nx, ncx, nxvz, shear_heating, adiab_heating, model, transient, dt, Hr, diss_limit, scaling ) reduction( +:dUe, dW )
         for( c2=0; c2<ncz*ncx; c2++) {
                 k   = mesh->kp[c2];
                 l   = mesh->lp[c2];
@@ -165,25 +165,32 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
                         dexz_el  = 0.0;
                         dexz_th  = 0.0;
                         dexz_tot = 0.0;
+                        sumW     = 0.0;
 
                         // Average shear dissipation
                         dexz_th   =  0.0;
-                        dexz_th  +=  0.25*mesh->sxz[c1]*(mesh->exz_diss[c1]);
-                        dexz_th  +=  0.25*mesh->sxz[c1+1]*(mesh->exz_diss[c1+1]);
-                        dexz_th  +=  0.25*mesh->sxz[c1+nx]*(mesh->exz_diss[c1+nx]);
-                        dexz_th  +=  0.25*mesh->sxz[c1+nx+1]*(mesh->exz_diss[c1+nx+1]);
+                        if (mesh->BCg.type[c1     ] =! 30) { dexz_th  +=  0.25*mesh->sxz[c1     ]*(mesh->exz_diss[c1     ]); sumW += 0.25;}
+                        if (mesh->BCg.type[c1+1   ] =! 30) { dexz_th  +=  0.25*mesh->sxz[c1+1   ]*(mesh->exz_diss[c1+1   ]); sumW += 0.25;}
+                        if (mesh->BCg.type[c1+nx  ] =! 30) { dexz_th  +=  0.25*mesh->sxz[c1+nx  ]*(mesh->exz_diss[c1+nx  ]); sumW += 0.25;}
+                        if (mesh->BCg.type[c1+nx+1] =! 30) { dexz_th  +=  0.25*mesh->sxz[c1+nx+1]*(mesh->exz_diss[c1+nx+1]); sumW += 0.25;}
 
                         dexz_el   =  0.0;
-                        dexz_el  +=  0.25*mesh->sxz[c1]*(mesh->exz_el[c1]);
-                        dexz_el  +=  0.25*mesh->sxz[c1+1]*(mesh->exz_el[c1+1]);
-                        dexz_el  +=  0.25*mesh->sxz[c1+nx]*(mesh->exz_el[c1+nx]);
-                        dexz_el  +=  0.25*mesh->sxz[c1+nx+1]*( mesh->exz_el[c1+nx+1]);
+                        if (mesh->BCg.type[c1     ] =! 30)   dexz_el  +=  0.25*mesh->sxz[c1]*(mesh->exz_el[c1]);
+                        if (mesh->BCg.type[c1+1   ] =! 30)   dexz_el  +=  0.25*mesh->sxz[c1+1]*(mesh->exz_el[c1+1]);
+                        if (mesh->BCg.type[c1+nx  ] =! 30)   dexz_el  +=  0.25*mesh->sxz[c1+nx]*(mesh->exz_el[c1+nx]);
+                        if (mesh->BCg.type[c1+nx+1] =! 30)   dexz_el  +=  0.25*mesh->sxz[c1+nx+1]*( mesh->exz_el[c1+nx+1]);
 
                         dexz_tot  =  0.0;
-                        dexz_tot +=  0.25*mesh->sxz[c1]*(mesh->exz[c1]);
-                        dexz_tot +=  0.25*mesh->sxz[c1+1]*(mesh->exz[c1+1]);
-                        dexz_tot +=  0.25*mesh->sxz[c1+nx]*(mesh->exz[c1+nx]);
-                        dexz_tot +=  0.25*mesh->sxz[c1+nx+1]*( mesh->exz[c1+nx+1]);
+                        if (mesh->BCg.type[c1     ] =! 30)   dexz_tot +=  0.25*mesh->sxz[c1]*(mesh->exz[c1]);
+                        if (mesh->BCg.type[c1+1   ] =! 30)   dexz_tot +=  0.25*mesh->sxz[c1+1]*(mesh->exz[c1+1]);
+                        if (mesh->BCg.type[c1+nx  ] =! 30)   dexz_tot +=  0.25*mesh->sxz[c1+nx]*(mesh->exz[c1+nx]);
+                        if (mesh->BCg.type[c1+nx+1] =! 30)   dexz_tot +=  0.25*mesh->sxz[c1+nx+1]*( mesh->exz[c1+nx+1]);
+                        
+                        if (sumW>0.0) {
+                            dexz_th  /= sumW;
+                            dexz_el  /= sumW;
+                            dexz_tot /= sumW;
+                        }
 
                         // Contribution from normal dissipation
                         dexx_tot  =  mesh->sxxd[c2]*mesh->exxd[c2];
@@ -216,9 +223,10 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
 
                         if (dexx_th < 0.0 && fabs(dexx_th) > diss_limit ) {
                             printf("Normal component:\n");
-                            printf("txx = %2.2e Exx = %2.2e dExx = %2.2e \n", mesh->sxxd[c2]*scaling.S, mesh->exx_diss[c2]*scaling.E, (mesh->exx_diss[c2]-mesh->exx_el[c2])*scaling.E);
-                            printf("Wxx = %2.2e Wxz = %2.2e Wth = %2.2e diss_limit = %2.2e\n", mesh->sxxd[c2]*(mesh->exxd[c2]-1.0*mesh->exx_el[c2]), dexz_th, Wth*scaling.E*scaling.S, diss_limit*scaling.E*scaling.S );
+                            printf("txx = %2.2e exx = %2.2e exx_diss = %2.2e \n", mesh->sxxd[c2]*scaling.S, mesh->exxd[c2]*scaling.E, mesh->exx_diss[c2]*scaling.E);
+//                            printf("Wxx = %2.2e Wxz = %2.2e Wth = %2.2e diss_limit = %2.2e\n", mesh->sxxd[c2]*(mesh->exxd[c2]-1.0*mesh->exx_el[c2]), dexz_th, Wth*scaling.E*scaling.S, diss_limit*scaling.E*scaling.S );
                             printf("xc=%2.2e zc=%2.2e\n", mesh->xc_coord[k]*scaling.L, mesh->zc_coord[k]*scaling.L);
+                            printf("index = %d flag C = %d   ", c2, mesh->BCt.type[c2] );
                             if (l<ncz-1) printf("flag N = %d   ", mesh->BCt.type[c2+ncx] );
                             if (l>0    ) printf("flag S = %d   ", mesh->BCt.type[c2-ncx] );
                             if (k<ncx-1) printf("flag E = %d   ", mesh->BCt.type[c2+1  ] );
@@ -227,10 +235,10 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
 
                         if (dexz_th < 0.0 && fabs(dexz_th) > diss_limit ) {
                             printf("Shear component %lf:\n", dexz_th);
-                            printf("txzSW = %2.2e exzSW = %2.2e ExzSW = %2.2e dExzSW = %2.2e \n", mesh->sxz[c1]*scaling.S, mesh->exz[c1]*scaling.E, mesh->exz_diss[c1]*scaling.E, (mesh->exz_diss[c1]-mesh->exz_el[c1])*scaling.E);
-                            printf("txzSE = %2.2e exzSE = %2.2e ExzSE = %2.2e dExzSE = %2.2e \n", mesh->sxz[c1+1]*scaling.S, mesh->exz[c1+1]*scaling.E, mesh->exz_diss[c1+1]*scaling.E, (mesh->exz_diss[c1+1]-mesh->exz_el[c1+1])*scaling.E);
-                            printf("txzNW = %2.2e exzNW = %2.2e ExzNW = %2.2e dExzNW = %2.2e \n", mesh->sxz[c1+ncx]*scaling.S, mesh->exz[c1+ncx]*scaling.E, mesh->exz_diss[c1+ncx]*scaling.E, (mesh->exz_diss[c1+ncx]-mesh->exz_el[c1+ncx])*scaling.E);
-                            printf("txzNE = %2.2e exzNE = %2.2e ExzNE = %2.2e dExzNE = %2.2e \n", mesh->sxz[c1+ncx+1]*scaling.S, mesh->exz[c1+ncx+1]*scaling.E, mesh->exz_diss[c1+ncx+1]*scaling.E, (mesh->exz_diss[c1+ncx+1]-mesh->exz_el[c1+ncx+1])*scaling.E);
+                            printf("txzSW = %2.2e exzSW = %2.2e exz_dissSW = %2.2e \n", mesh->sxz[c1]*scaling.S, mesh->exz[c1]*scaling.E, mesh->exz_diss[c1]*scaling.E);
+                            printf("txzSE = %2.2e exzSE = %2.2e exz_dissSE = %2.2e \n", mesh->sxz[c1+1]*scaling.S, mesh->exz[c1+1]*scaling.E, mesh->exz_diss[c1+1]*scaling.E);
+                            printf("txzNW = %2.2e exzNW = %2.2e exz_disszNW = %2.2e \n", mesh->sxz[c1+ncx]*scaling.S, mesh->exz[c1+ncx]*scaling.E, mesh->exz_diss[c1+ncx]*scaling.E);
+                            printf("txzNE = %2.2e exzNE = %2.2e exz_dissNE = %2.2e \n", mesh->sxz[c1+ncx+1]*scaling.S, mesh->exz[c1+ncx+1]*scaling.E, mesh->exz_diss[c1+ncx+1]*scaling.E);
                             printf("\n");
                             Wth = 0.0;
                         }

@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00200
+istep = 00050
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -16,9 +16,9 @@ V   = 1.0e-10
 T   = 700
 
 /**** SPACE-TIME ****/
-Nx      = 101
-Nz      = 101
-Nt      = 200
+Nx      = 401
+Nz      = 401
+Nt      = 50
 xmin    =-2000.0
 zmin    = 0.0
 xmax    =  0.0
@@ -37,9 +37,10 @@ pc_type           = 1
 eta_avg           = 1
 num_deriv         = 0
 StressRotation    = 0
-safe_mode         = 1
+safe_mode         = 0
 nstagmax          = 5
-IncrementalUpdateGrid = 0
+IncrementalUpdateGrid = 1
+StressUpdate    = 0
 
 /**** SWITCHES ****/
 compressible    = 1
@@ -61,7 +62,6 @@ subgrid_diff    = 2
 shear_heat      = 0
 adiab_heat      = 0
 fstrain         = 0
-StressUpdate    = 0
 
 /**** SETUP DEPENDANT ****/
 shear_style     = 0

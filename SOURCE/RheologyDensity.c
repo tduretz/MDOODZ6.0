@@ -1919,8 +1919,8 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         Exz  = exz + Txz0/(2.0*G*dt);
         Eyy  = eyy + Tyy0/(2.0*G*dt);
     }
-    Eii  = sqrt(1.0/2.0*Exx*Exx + 1.0/2.0*Ezz*Ezz + 1.0/2.0*Eyy*Eyy + Exz*Exz);
-    eII  = sqrt(1.0/2.0*exx*exx + 1.0/2.0*ezz*ezz + 1.0/2.0*eyy*eyy + exz*exz);
+    Eii  = sqrt(1.0/2.0*(Exx*Exx + Ezz*Ezz + Eyy*Eyy) + Exz*Exz);
+    eII  = sqrt(1.0/2.0*(exx*exx + ezz*ezz + eyy*eyy) + exz*exz);
     if (Eii*scaling->E<1e-30) Eii=1e-30/scaling->E;
 
     //------------------------------------------------------------------------//
@@ -1998,7 +1998,8 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         res = fabs(r_eta_ve/Eii);
         if (it==0) res0 = res;
         if (noisy>=1) printf("Visco-Elastic iterations It. %02d, r abs. = %2.2e r rel. = %2.2e tol = %2.2e eta_ve = %2.2e eta_lo = %2.2e eta_up = %2.2e eta_lin = %2.2e eta_pwl = %2.2e eta_exp = %2.2e %d\n", it, res, res/res0, tol, eta_ve, eta_lo, eta_up, eta_lin, eta_pwl, eta_exp, nitmax);
-        if (res < tol) break;
+//        printf("Visco-Elastic iterations It. %02d, r abs. = %2.2e r rel. = %2.2e tol = %2.2e eta_ve = %2.2e eta_lo = %2.2e eta_up = %2.2e eta_lin = %2.2e eta_pwl = %2.2e eta_exp = %2.2e, exz=%2.2e\n", it, res, res/res0, tol, eta_ve, eta_lo, eta_up, eta_lin, eta_pwl, eta_exp, exz*scaling->E);
+        if (res < tol/100) break;
 
         // Analytical derivative of function
         dfdeta  = 0.0;
@@ -2020,6 +2021,37 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     Tzz                  = 2.0*eta_ve*Ezz;
     Txz                  = 2.0*eta_ve*Exz;
     Tii                  = 2.0*eta_ve*Eii;
+    
+    /*-----------------------------------------------*/
+    
+    eta_pwl  = pow(2.0*C_pwl,-1.0) * pow(Tii, 1.0-n_pwl);
+    eta_lin  = B_lin * pow( *Eii_lin, 1.0/n_lin - 1.0 ) * pow(*d1, m_lin/n_lin);
+    eta_exp  = B_exp * pow( *Eii_exp, 1.0/(ST+n_exp) - 1.0 );
+    if ( elastic     == 1 ) *Exx_el =  (double)elastic*(Txx-Txx0)/2.0/eta_el;
+    if ( elastic     == 1 ) *Ezz_el =  (double)elastic*(Tzz-Tzz0)/2.0/eta_el;
+    if ( elastic     == 1 ) *Exz_el =  (double)elastic*(Txz-Txz0)/2.0/eta_el;
+    Exx_pl = 0.0;
+    Ezz_pl = 0.0;
+    Exz_pl = 0.0;
+    if ( dislocation == 1 ) Exx_pwl = Txx/2.0/eta_pwl;
+    if ( dislocation == 1 ) Ezz_pwl = Tzz/2.0/eta_pwl;
+    if ( dislocation == 1 ) Exz_pwl = Txz/2.0/eta_pwl;
+    if ( diffusion   == 1 ) Exx_lin = Txx/2.0/eta_lin;
+    if ( diffusion   == 1 ) Ezz_lin = Tzz/2.0/eta_lin;
+    if ( diffusion   == 1 ) Exz_lin = Txz/2.0/eta_lin;
+    if ( peierls     == 1 ) Exx_exp = Txx/2.0/eta_exp;
+    if ( peierls     == 1 ) Ezz_exp = Tzz/2.0/eta_exp;
+    if ( peierls     == 1 ) Exz_exp = Txz/2.0/eta_exp;
+    if ( constant    == 1 ) Exx_cst = Txx/2.0/eta_cst;
+    if ( constant    == 1 ) Ezz_cst = Tzz/2.0/eta_cst;
+    if ( constant    == 1 ) Exz_cst = Txz/2.0/eta_cst;
+
+    
+//    printf("exx_tot = %2.2e exx_el = %2.2e exx_pwl = %2.2e exx_exp = %2.2e exx_cst = %2.2e exx_exp = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", exx*scaling->E, *Exx_el*scaling->E, Exx_pwl*scaling->E, Exx_lin*scaling->E, Exx_cst*scaling->E, Exx_exp*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
+//    printf("ezz_tot = %2.2e ezz_el = %2.2e exx_pwl = %2.2e exx_exp = %2.2e exx_cst = %2.2e exx_exp = %2.2e ezz_pl = %2.2e, ezz_net = %2.2e\n", ezz*scaling->E, *Ezz_el*scaling->E, Ezz_pwl*scaling->E, Ezz_lin*scaling->E, Ezz_cst*scaling->E, Ezz_exp*scaling->E, Ezz_pl*scaling->E, (ezz - (*Ezz_el+Ezz_pwl+Ezz_lin+Ezz_cst+Ezz_exp+Ezz_pl))*scaling->E);
+//      //       printf("exx_el = %2.2e exx_vis = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", *Exx_el*scaling->E, (Exx_pwl+Exx_lin+Exx_cst+Exx_exp)*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
+//    printf("exz_tot = %2.2e exz_el = %2.2e exz_pwl = %2.2e exz_exp = %2.2e exz_cst = %2.2e exz_exp = %2.2e exz_pl = %2.2e, exz_net = %2.2e\n", exz*scaling->E, *Exz_el*scaling->E, Exz_pwl*scaling->E, Exz_lin*scaling->E, Exz_cst*scaling->E, Exz_exp*scaling->E, Exz_pl*scaling->E, (exz - (*Exz_el+Exz_pwl+Exz_lin+Exz_cst+Exz_exp+Exz_pl))*scaling->E);
+//    exit(1);
 
     //    printf("%2.10e %2.10e\n", Tii, sqrt(0.5*(Txx*Txx + Tyy*Tyy + Tzz*Tzz) +Txz*Txz) );
 
@@ -2190,6 +2222,9 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     Ezz_pwl = Tzz/2.0/eta_pwl;
     Exz_pwl = Txz/2.0/eta_pwl;
 
+    
+//    printf("%2.8e %2.8e\n", Txz/2.0/eta_pwl, *Eii_pwl * Txz/Tii);
+
     // Compute dissipative strain rate components
     *Exx_diss =  Exx_pl + Exx_lin +  Exx_pwl + Exx_exp + Exx_gbs + Exx_cst;
     *Ezz_diss =  Ezz_pl + Ezz_lin +  Ezz_pwl + Exx_exp + Exx_gbs + Exx_cst;
@@ -2208,11 +2243,40 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     *VEcoeff   = eta_ve/eta_el;
     if (elastic==0) *VEcoeff = 0.0;
 
-    // Override viscosty at step 0 (100% visco-plastic)
+    // Override viscosity at step 0 (100% visco-plastic)
     if ( model->step == 0 ) *etaVE = eta;
     *txxn = Txx;
     *tzzn = Tzz;
     *txzn = Txz;
+    
+//    printf("exx_tot = %2.2e exx_el = %2.2e exx_vis = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", exx*scaling->E, *Exx_el*scaling->E, (Exx_pwl+Exx_lin+Exx_cst+Exx_exp)*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
+//            printf("ezz_tot = %2.2e ezz_el = %2.2e ezz_vis = %2.2e ezz_pl = %2.2e, ezz_net = %2.2e\n", ezz*scaling->E, *Ezz_el*scaling->E, (Ezz_pwl+Ezz_lin+Ezz_cst+Ezz_exp)*scaling->E, Ezz_pl*scaling->E, (ezz - (*Ezz_el+Ezz_pwl+Ezz_lin+Ezz_cst+Ezz_exp+Ezz_pl))*scaling->E);
+//    //       printf("exx_el = %2.2e exx_vis = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", *Exx_el*scaling->E, (Exx_pwl+Exx_lin+Exx_cst+Exx_exp)*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
+//            printf("exz_tot = %2.2e exz_el = %2.2e exz_vis = %2.2e exz_pl = %2.2e, exz_net = %2.2e\n", exz*scaling->E, *Exz_el*scaling->E, (Exz_pwl+Exz_lin+Exz_cst+Exz_exp)*scaling->E, Exz_pl*scaling->E, (exz - (*Exz_el+Exz_pwl+Exz_lin+Exz_cst+Exz_exp+Exz_pl))*scaling->E);
+    
+//    if (Txx<0.0 && *Exx_diss>0.0) {
+//        printf("Error 11\n");
+//    }
+//    if (Txx>0.0 && *Exx_diss<0.0) {
+//        printf("Error 11\n");
+//    }
+//
+//    if (Txz<0.0 && *Exz_diss>0.0) {
+//        printf("Error 1\n");
+//        printf("Txz = %2.2e, exz = %2.2e exz_diss = %2.2e\n",   Txz*scaling->S, exz*scaling->E, (Exz_pwl+Exz_lin+Exz_cst+Exz_exp)*scaling->E);
+//             printf("exx_tot = %2.2e exx_el = %2.2e exx_pwl = %2.2e exx_exp = %2.2e exx_cst = %2.2e exx_exp = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", exx*scaling->E, *Exx_el*scaling->E, Exx_pwl*scaling->E, Exx_lin*scaling->E, Exx_cst*scaling->E, Exx_exp*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
+//         printf("ezz_tot = %2.2e ezz_el = %2.2e exx_pwl = %2.2e exx_exp = %2.2e exx_cst = %2.2e exx_exp = %2.2e ezz_pl = %2.2e, ezz_net = %2.2e\n", ezz*scaling->E, *Ezz_el*scaling->E, Ezz_pwl*scaling->E, Ezz_lin*scaling->E, Ezz_cst*scaling->E, Ezz_exp*scaling->E, Ezz_pl*scaling->E, (ezz - (*Ezz_el+Ezz_pwl+Ezz_lin+Ezz_cst+Ezz_exp+Ezz_pl))*scaling->E);
+//           //       printf("exx_el = %2.2e exx_vis = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", *Exx_el*scaling->E, (Exx_pwl+Exx_lin+Exx_cst+Exx_exp)*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
+//         printf("exz_tot = %2.2e exz_el = %2.2e exz_pwl = %2.2e exz_exp = %2.2e exz_cst = %2.2e exz_exp = %2.2e exz_pl = %2.2e, exz_net = %2.2e\n", exz*scaling->E, *Exz_el*scaling->E, Exz_pwl*scaling->E, Exz_lin*scaling->E, Exz_cst*scaling->E, Exz_exp*scaling->E, Exz_pl*scaling->E, (exz - (*Exz_el+Exz_pwl+Exz_lin+Exz_cst+Exz_exp+Exz_pl))*scaling->E);
+//
+//        exit(1); }
+//    if (Txz>0.0 && *Exz_diss<0.0) {
+//         printf("Error 2\n");
+//             printf("exx_tot = %2.2e exx_el = %2.2e exx_pwl = %2.2e exx_exp = %2.2e exx_cst = %2.2e exx_exp = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", exx*scaling->E, *Exx_el*scaling->E, Exx_pwl*scaling->E, Exx_lin*scaling->E, Exx_cst*scaling->E, Exx_exp*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
+//         printf("ezz_tot = %2.2e ezz_el = %2.2e exx_pwl = %2.2e exx_exp = %2.2e exx_cst = %2.2e exx_exp = %2.2e ezz_pl = %2.2e, ezz_net = %2.2e\n", ezz*scaling->E, *Ezz_el*scaling->E, Ezz_pwl*scaling->E, Ezz_lin*scaling->E, Ezz_cst*scaling->E, Ezz_exp*scaling->E, Ezz_pl*scaling->E, (ezz - (*Ezz_el+Ezz_pwl+Ezz_lin+Ezz_cst+Ezz_exp+Ezz_pl))*scaling->E);
+//           //       printf("exx_el = %2.2e exx_vis = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", *Exx_el*scaling->E, (Exx_pwl+Exx_lin+Exx_cst+Exx_exp)*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
+//         printf("exz_tot = %2.2e exz_el = %2.2e exz_pwl = %2.2e exz_exp = %2.2e exz_cst = %2.2e exz_exp = %2.2e exz_pl = %2.2e, exz_net = %2.2e\n", exz*scaling->E, *Exz_el*scaling->E, Exz_pwl*scaling->E, Exz_lin*scaling->E, Exz_cst*scaling->E, Exz_exp*scaling->E, Exz_pl*scaling->E, (exz - (*Exz_el+Exz_pwl+Exz_lin+Exz_cst+Exz_exp+Exz_pl))*scaling->E);
+//    }//exit(1); }
 
     // Viscosity limiter
     if( eta > maxEta ) {
@@ -2277,8 +2341,8 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
         mesh->VE_n[c0]        = 0.0;
         mesh->sxxd[c0]        = 0.0;
         mesh->szzd[c0]        = 0.0;
-        mesh->eII_el[c0]      = 0.0;
         mesh->sxz_n[c0]       = 0.0;
+        mesh->eII_el[c0]      = 0.0;
         mesh->eII_pl[c0]      = 0.0;
         mesh->eII_pwl[c0]     = 0.0;
         mesh->eII_exp[c0]     = 0.0;
@@ -2318,6 +2382,13 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 if ( cond == 1 ) {
                     eta =  Viscosity( p, mesh->mu_n[c0], mesh->T[c0], mesh->p_in[c0], mesh->d0_n[c0], mesh->phi0_n[c0], mesh->X0_n[c0], mesh->exxd[c0], mesh->ezzd[c0], mesh->exz_n[c0], mesh->sxxd0[c0], mesh->szzd0[c0], mesh->sxz0_n[c0], materials    , model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &d1, mesh->strain_n[c0], mesh->dil_n[c0], mesh->fric_n[c0], mesh->C_n[c0], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_n[c0], &Xreac, &OverS, &ddivpdexx, &ddivpdezz, &ddivpdexz, &ddivpdp, &Pcorr, mesh->bet_n[c0], mesh->div_u[c0], &div_el, &div_pl, &div_r );
                 }
+                
+//                if (txx1<0.0 && exx_diss>0.0) {
+//                    printf("Error 11\n");
+//                }
+//                if (txx1>0.0 && exx_diss<0.0) {
+//                    printf("Error 11\n");
+//                }
 
                 // ARITHMETIC AVERAGE
                 if (average == 0) {
@@ -2432,10 +2503,21 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 mesh->sxxd[c0] =  mesh->D11_n[c0]*mesh->exxd[c0] + mesh->D12_n[c0]*mesh->ezzd[c0] +  2.0*mesh->D13_n[c0]*mesh->exz_n[c0];
                 mesh->szzd[c0] =  mesh->D21_n[c0]*mesh->exxd[c0] + mesh->D22_n[c0]*mesh->ezzd[c0] +  2.0*mesh->D23_n[c0]*mesh->exz_n[c0];
             }
+            
+            
+//            if (c0==150907) printf("Txx=%2.2e exx_diss=%2.2e\n", mesh->sxxd[c0]*scaling->S, mesh->exx_diss[c0]*scaling->E);
+//            if ( mesh->sxxd[c0]<0.0 && mesh->exx_diss[c0]>0.0) {
+//                printf("Error 11\n");
+//            }
+//            if ( mesh->sxxd[c0]>0.0 && mesh->exx_diss[c0]<0.0) {
+//                printf("Error 11\n");
+//            }
 
         }
     }
-    ;
+//    printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+//    printf("Cell centrer rheology updated\n");
+//    printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 
     // Calculate vertices viscosity
     double d1s; // dummy variable that stores updated grain size on current vertice
@@ -2472,7 +2554,10 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
 
                     eta =  Viscosity( p, mesh->mu_s[c1], mesh->T_s[c1], mesh->P_s[c1], mesh->d0_s[c1], mesh->phi0_s[c1], mesh->X0_s[c1], mesh->exxd_s[c1], mesh->ezzd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->szzd0_s[c1], mesh->sxz0[c1], materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &d1s, mesh->strain_s[c1], mesh->dil_s[c1], mesh->fric_s[c1], mesh->C_s[c1], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_s[c1], &Xreac, &OverS, &ddivpdexx, &ddivpdezz, &ddivpdexz, &ddivpdp, &Pcorr, mesh->bet_s[c1], mesh->div_u_s[c1], &div_el, &div_pl, &div_r );
                 }
-
+                
+                if (exz_diss>0.0 && txz1<0.0) exit(11);
+                if (exz_diss<0.0 && txz1>0.0) exit(12);
+                
                 if (average ==0) {
                     if ( cond == 1 ) mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] * etaVE;
                     if ( cond == 1 ) mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] * eta;
@@ -2483,6 +2568,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
 
                     //                    if (fabs(mesh->detadexx_s[c1])>1e10 ) printf("%d %2.2e %2.2e %2.2e\n", p, mesh->detadexx_s[c1], mesh->phase_perc_s[p][c1], detadexx );
                 }
+                
                 if (average ==0 || average==2) {
                     if ( cond == 1 ) mesh->sxz[c1]    += mesh->phase_perc_s[p][c1] * txz1;
                 }
@@ -2555,6 +2641,11 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 //                printf("%2.2e %2.2e\n",2.0*mesh->D33_s[c1]*mesh->exz[c1], mesh->sxz[c1]);
                 mesh->sxz[c1] =  mesh->D31_s[c1]*mesh->exxd_s[c1] + mesh->D32_s[c1]*mesh->ezzd_s[c1] + 2.0*mesh->D33_s[c1]*mesh->exz[c1];
             }
+            
+            if (mesh->exz_diss[c1]>0.0 && mesh->sxz[c1]<0.0) exit(21);
+            if (mesh->exz_diss[c1]<0.0 && mesh->sxz[c1]>0.0) exit(22);
+            
+            
         }
     }
 
@@ -3816,6 +3907,8 @@ firstprivate( model, materials )
 
         }
     }
+    MinMaxArray( particles->dsxxd, scaling->S, particles->Nb_part, "dsxxm" );
+
 
     DoodzFree(txxm0);
     DoodzFree(tzzm0);
@@ -3866,6 +3959,8 @@ void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* 
             double *dsxxd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
             double *dszzd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
             double *dsxz  = DoodzCalloc ( Nx*Nz,   sizeof(double));
+                MinMaxArrayTag( dsxxd, scaling->S, Ncx*Ncz, "dsxxd", mesh->BCp.type );
+
             Interp_P2C ( *particles, particles->dsxxd, mesh, dsxxd,   mesh->xg_coord, mesh->zg_coord, 1, 0 );
             Interp_P2C ( *particles, particles->dszzd, mesh, dszzd,   mesh->xg_coord, mesh->zg_coord, 1, 0 );
             Interp_P2N ( *particles, particles->dsxz,  mesh, dsxz ,   mesh->xg_coord, mesh->zg_coord, 1, 0, model );

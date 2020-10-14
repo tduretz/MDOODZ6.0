@@ -1040,32 +1040,6 @@ int main( int nargs, char *args[] ) {
             MinMaxArray( topo_chain_ini.Vz,  scaling.V, topo_chain_ini.Nb_part,   "Vz surf. ini." );
         }
 
-        //--------------------------------------------------------------------------------------------------------------------------------//
-
-
-        if (model.StressUpdate==1)TotalStresses( &mesh, &particles, scaling, &model );
-
-        // Update stresses on markers
-       if (model.StressUpdate==0) UpdateParticleStress(  &mesh, &particles, &model, &materials, &scaling );
-
-        // Update pressure on markers
-        UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
-        //        Interp_Grid2P_centroids( particles, particles.P, &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
-
-        UpdateParticleX( &mesh, scaling, model, &particles, &materials );
-
-        // Grain size evolution
-        UpdateParticleGrainSize( &mesh, scaling, model, &particles, &materials );
-        MinMaxArrayTag( mesh.d0_n   , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d0", mesh.BCp.type );
-        MinMaxArrayTag( mesh.d_n    , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d ", mesh.BCp.type );
-        MinMaxArrayPart( particles.d, scaling.L, particles.Nb_part, "d on markers", particles.phase ) ;
-
-        // Update density on the particles
-        UpdateParticleDensity( &mesh, scaling, model, &particles, &materials );
-
-        // Update phi on the particles
-        UpdateParticlePhi( &mesh, scaling, model, &particles, &materials );
-
         //------------------------------------------------------------------------------------------------------------------------------//
 
         if (model.isthermal == 1 ) {
@@ -1089,6 +1063,33 @@ int main( int nargs, char *args[] ) {
 
             printf("** Time for Thermal solver = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
         }
+        
+        //--------------------------------------------------------------------------------------------------------------------------------//
+
+
+        if (model.StressUpdate==1) TotalStresses( &mesh, &particles, scaling, &model );
+
+         // Update stresses on markers
+        if (model.StressUpdate==0) UpdateParticleStress(  &mesh, &particles, &model, &materials, &scaling );
+
+         // Update pressure on markers
+         UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
+         //        Interp_Grid2P_centroids( particles, particles.P, &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
+
+         UpdateParticleX( &mesh, scaling, model, &particles, &materials );
+
+         // Grain size evolution
+         UpdateParticleGrainSize( &mesh, scaling, model, &particles, &materials );
+         MinMaxArrayTag( mesh.d0_n   , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d0", mesh.BCp.type );
+         MinMaxArrayTag( mesh.d_n    , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d ", mesh.BCp.type );
+         MinMaxArrayPart( particles.d, scaling.L, particles.Nb_part, "d on markers", particles.phase ) ;
+
+         // Update density on the particles
+         UpdateParticleDensity( &mesh, scaling, model, &particles, &materials );
+
+         // Update phi on the particles
+         UpdateParticlePhi( &mesh, scaling, model, &particles, &materials );
+
 
         //------------------------------------------------------------------------------------------------------------------------------//
 
@@ -1254,13 +1255,11 @@ int main( int nargs, char *args[] ) {
                 CleanUpSurfaceParticles( &particles, &mesh, topo, scaling );
                 CellFlagging( &mesh, model, topo, scaling );
             }
-
-            ComputeIncrementsOnParticles( &mesh, &particles, &model, &materials, &scaling );
-
-
             ////            }
             //            model.dt = whole_dt;
         }
+        
+        if ( model.IncrementalUpdateGrid == 1 ) ComputeIncrementsOnParticles( &mesh, &particles, &model, &materials, &scaling );
 
         // Update time
         model.time += model.dt;
