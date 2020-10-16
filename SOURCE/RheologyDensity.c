@@ -2616,8 +2616,8 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 mesh->sxz[c1] =  mesh->D31_s[c1]*mesh->exxd_s[c1] + mesh->D32_s[c1]*mesh->ezzd_s[c1] + 2.0*mesh->D33_s[c1]*mesh->exz[c1];
             }
 
-            if (mesh->exz_diss[c1]>0.0 && mesh->sxz[c1]<0.0) exit(21);
-            if (mesh->exz_diss[c1]<0.0 && mesh->sxz[c1]>0.0) exit(22);
+            // if (mesh->exz_diss[c1]>0.0 && mesh->sxz[c1]<0.0) exit(21);
+            // if (mesh->exz_diss[c1]<0.0 && mesh->sxz[c1]>0.0) exit(22);
 
 
         }
