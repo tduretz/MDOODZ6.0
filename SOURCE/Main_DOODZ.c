@@ -1124,9 +1124,6 @@ printf("DoodzBoobz #6\n");
             printf("*************************************\n");
 
             t_omp = (double)omp_get_wtime();
-            //EvaluateCourantCriterion_BEN( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
-            //EvaluateCourantCriterion( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
-            Check_dt_for_advection( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
 
             //            double whole_dt = model.dt;
             //            int nsub, isub;
