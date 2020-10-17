@@ -805,51 +805,51 @@ void Check_dt_for_advection( double* Vx, double* Vz, params *model, scale scalin
     double dt_solve =0.0;
     
     if (model->dt_constant == 0) {
-        // Get current dt value;
-        dt_solve = model->dt;
-        
-        // Compute dt_Courant value;
-        for (k=0; k<model->Nx; k++) {
-            for (l=0; l<model->Nz+1; l++) {
-                c = k + l*model->Nx;
-                maxVx = MAXV(maxVx, (Vx[c]));
-                minVx = MINV(minVx, (Vx[c]));
-            }
+    // Get current dt value;
+    dt_solve = model->dt;
+    
+    // Compute dt_Courant value;
+    for (k=0; k<model->Nx; k++) {
+        for (l=0; l<model->Nz+1; l++) {
+            c = k + l*model->Nx;
+            maxVx = MAXV(maxVx, (Vx[c]));
+            minVx = MINV(minVx, (Vx[c]));
         }
-        
-        for (k=0; k<model->Nx+1; k++) {
-            for (l=0; l<model->Nz; l++) {
-                c = k + l*(model->Nx+1);
-                maxVz = MAXV(maxVz, (Vz[c]));
-                minVz = MINV(minVz, (Vz[c]));
-            }
+    }
+    
+    for (k=0; k<model->Nx+1; k++) {
+        for (l=0; l<model->Nz; l++) {
+            c = k + l*(model->Nx+1);
+            maxVz = MAXV(maxVz, (Vz[c]));
+            minVz = MINV(minVz, (Vz[c]));
         }
-        if (quiet==0) printf("Min Vxm = %2.2e m/s / Max Vxm = %2.2e m/s\n", minVx * scaling.V, maxVx * scaling.V);
-        if (quiet==0) printf("Min Vzm = %2.2e m/s / Max Vzm = %2.2e m/s\n", minVz * scaling.V, maxVz * scaling.V);
+    }
+    if (quiet==0) printf("Min Vxm = %2.2e m/s / Max Vxm = %2.2e m/s\n", minVx * scaling.V, maxVx * scaling.V);
+    if (quiet==0) printf("Min Vzm = %2.2e m/s / Max Vzm = %2.2e m/s\n", minVz * scaling.V, maxVz * scaling.V);
+    
+    dmin = MINV(model->dx, model->dz);
+    vmax = MAXV(fabs(maxVx), fabs(maxVz));
+    vmin = MAXV(fabs(minVx), fabs(minVz));
+    vmax = MAXV(fabs(vmax),  fabs(vmin));
         
-        dmin = MINV(model->dx, model->dz);
-        vmax = MAXV(fabs(maxVx), fabs(maxVz));
-        vmin = MAXV(fabs(minVx), fabs(minVz));
-        vmax = MAXV(fabs(vmax),  fabs(vmin));
-            
-        // Courant dt
-        dtc = C * dmin / fabs(vmax);
-        
-        // If timestep is adaptive
+    // Courant dt
+    dtc = C * dmin / fabs(vmax);
+    
+    // If timestep is adaptive
         printf("dt_Courant = %2.2e\n", dtc*scaling.t);
         printf("dt_Solve   = %2.2e\n", dt_solve*scaling.t);
-            
-        model->dt = MINV(dtc,dt_solve);
-            
+        
+    model->dt = MINV(dtc,dt_solve);
+        
         printf("dt selected for advection = %2.2e\n",  model->dt*scaling.t);
-            
+        
         // If there is no motion, then the timestep becomes huge: cut off the motion.
         if( model->dt>1.0e30 || vmax<1.0e-30) {
             dtc = 0.0;
             model->dt = model->dt_start;
         }
-            
-            //if (quiet==0) printf("Current dt = %2.2e s / Courant dt = %2.2e s\n", model->dt * scaling.t, dtc * scaling.t );
+        
+        //if (quiet==0) printf("Current dt = %2.2e s / Courant dt = %2.2e s\n", model->dt * scaling.t, dtc * scaling.t );
     }
     else {
         model->dt = model->dt_start;

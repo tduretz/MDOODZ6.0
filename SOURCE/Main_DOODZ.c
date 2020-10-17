@@ -1049,32 +1049,7 @@ printf("DoodzBoobz #6\n");
         }
 
         //------------------------------------------------------------------------------------------------------------------------------//
-
-        if (model.isthermal == 1 ) {
-
-            printf("*************************************\n");
-            printf("*********** Thermal solver **********\n");
-            printf("*************************************\n");
-
-            t_omp = (double)omp_get_wtime();
-
-            // Matrix assembly and direct solve
-            EnergyDirectSolve( &mesh, model,  mesh.T,  mesh.dT,  mesh.rhs_t, mesh.T, &particles, model.dt, model.shear_heat, model.adiab_heat, scaling, 1 );
-            MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. before UpdateParticleEnergy");
-
-            // Update energy on particles
-            UpdateParticleEnergy( &mesh, scaling, model, &particles, &materials );
-            MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. after UpdateParticleEnergy");
-
-            // Calculate energies
-            if ( model.write_energies == 1 ) Energies( &mesh, model, scaling );
-
-            printf("** Time for Thermal solver = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
-        }
-
-        //--------------------------------------------------------------------------------------------------------------------------------//
-
-
+        
         if (model.StressUpdate==1) TotalStresses( &mesh, &particles, scaling, &model );
 
          // Update stresses on markers
@@ -1100,6 +1075,30 @@ printf("DoodzBoobz #6\n");
 
 
         //------------------------------------------------------------------------------------------------------------------------------//
+
+        if (model.isthermal == 1 ) {
+
+            printf("*************************************\n");
+            printf("*********** Thermal solver **********\n");
+            printf("*************************************\n");
+
+            t_omp = (double)omp_get_wtime();
+
+            // Matrix assembly and direct solve
+            EnergyDirectSolve( &mesh, model,  mesh.T,  mesh.dT,  mesh.rhs_t, mesh.T, &particles, model.dt, model.shear_heat, model.adiab_heat, scaling, 1 );
+            MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. before UpdateParticleEnergy");
+
+            // Update energy on particles
+            UpdateParticleEnergy( &mesh, scaling, model, &particles, &materials );
+            MinMaxArray(particles.T, scaling.T, particles.Nb_part, "T part. after UpdateParticleEnergy");
+
+            // Calculate energies
+            if ( model.write_energies == 1 ) Energies( &mesh, model, scaling );
+
+            printf("** Time for Thermal solver = %lf sec\n", (double)((double)omp_get_wtime() - t_omp));
+        }
+
+        //--------------------------------------------------------------------------------------------------------------------------------//
 
         // Update maximum pressure and temperature on markers
         if ( model.rec_T_P_x_z == 1 )  UpdateMaxPT( scaling, model, &particles );

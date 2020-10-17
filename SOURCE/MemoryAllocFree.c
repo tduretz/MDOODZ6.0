@@ -471,6 +471,9 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->BCt.valE = DoodzCalloc ((Nz-1),sizeof(double));
     mesh->BCt.valS = DoodzCalloc ((Nx-1),sizeof(double));
     mesh->BCt.valN = DoodzCalloc ((Nx-1),sizeof(double));
+    mesh->Wdiss    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->Wel      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->Wtot     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
 
     // Grid tagging (free surf)
     mesh->BCg.type = DoodzCalloc ((Nx)*(Nz),sizeof(char));
@@ -756,6 +759,9 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->BCt.typE);
     DoodzFree(mesh->BCt.typS);
     DoodzFree(mesh->BCt.typN);
+    DoodzFree(mesh->Wdiss);
+    DoodzFree(mesh->Wel);
+    DoodzFree(mesh->Wtot);
 
     // Grid tagging
     DoodzFree(mesh->BCg.val);

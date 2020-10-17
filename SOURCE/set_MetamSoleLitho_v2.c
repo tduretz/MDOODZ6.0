@@ -249,25 +249,6 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
         ZC[l] = mesh->zc_coord[l];
     }
     
-    // Change particle color if in field of interest
-    double Pmin = 0.6e9/scaling.S;
-    double Pmax = 1.25e9/scaling.S;
-    double Tmin = (700.0+zeroC)/scaling.T;
-    double Tmax = (900.0+zeroC)/scaling.T;
-    
-#pragma omp parallel for shared ( particles ) private ( k ) firstprivate ( Pmin, Pmax, Tmin, Tmax )
-    for (k=0;k<particles->Nb_part;k++) {
-        
-        if ( particles->T[k]>=Tmin && particles->T[k]<=Tmax && particles->P[k]>=Pmin && particles->P[k]<=Pmax ) {
-        
-            if ( particles->phase[k] == 4 ) particles->phase[k] = 9;
-            if ( particles->phase[k] == 5 ) particles->phase[k] = 10;
-            if ( particles->phase[k] == 7 ) particles->phase[k] = 11;
-            
-        }
-    }
-
-    
     /* --------------------------------------------------------------------------------------------------------*/
     /* Set the BCs for Vx on all grid levels                                                                   */
     /* Type  0: Dirichlet point that matches the physical boundary (Vx: left/right, Vz: bottom/top)            */

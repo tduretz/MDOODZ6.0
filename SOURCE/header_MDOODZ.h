@@ -206,7 +206,7 @@ struct _grid {
     
     double *cell_min_z, *cell_max_z, *vert_min_z, *vert_max_z;
     double *dil_n, *dil_s, *fric_n, *fric_s, *C_n, *C_s;
-    double *exz_n_el, *exz_n_diss, *exz_n_pl;
+    double *exz_n_el, *exz_n_diss, *exz_n_pl, *Wdiss, *Wel, *Wtot;
 };
 
 // Contains information needed for the direct solver

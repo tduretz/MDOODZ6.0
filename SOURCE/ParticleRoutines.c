@@ -536,8 +536,8 @@ reduction(+:npW,npE )
                         particles->x[Nb_part] = particles->x[k]-dx2;
                         particles->z[Nb_part] = particles->z[k];
                         // Assign new marker point properties
-//                        AssignMarkerProperties ( particles, Nb_part, k, &model, mesh, 1 );
-                        AssignMarkerProperties ( particles, Nb_part, k, &model, mesh, model.DirectNeighbour );
+                        AssignMarkerProperties ( particles, Nb_part, k, &model, mesh, 1 );
+//                        AssignMarkerProperties ( particles, Nb_part, k, &model, mesh, model.DirectNeighbour );
                         Nb_part++;
                     }
                     else {
@@ -555,8 +555,8 @@ reduction(+:npW,npE )
                         particles->x[Nb_part] = particles->x[k]+dx2;
                         particles->z[Nb_part] = particles->z[k];
                         // Assign new marker point properties
-//                        AssignMarkerProperties ( particles, Nb_part, k, &model, mesh, 1 )
-                        AssignMarkerProperties ( particles, Nb_part, k, &model, mesh, model.DirectNeighbour );
+                        AssignMarkerProperties ( particles, Nb_part, k, &model, mesh, 1 );
+//                        AssignMarkerProperties ( particles, Nb_part, k, &model, mesh, model.DirectNeighbour );
                         Nb_part++;
                     }
                     else {
@@ -615,8 +615,8 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
         particles->rho[new_ind]           = Centers2Particle( particles, mesh->rho_n,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
         particles->sxxd[new_ind]          = Centers2Particle( particles, mesh->sxxd,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
         particles->szzd[new_ind]          = Centers2Particle( particles, mesh->szzd,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
-//        particles->sxz[new_ind]           = Vertices2Particle( particles, mesh->sxz,     mesh->xg_coord,  mesh->zg_coord,  mesh->Nx-0, mesh->Nz-0, mesh->BCg.type, mesh->dx, mesh->dz, new_ind );
-        particles->sxz[new_ind]          = Centers2Particle( particles, mesh->sxz_n,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
+        particles->sxz[new_ind]           = Vertices2Particle( particles, mesh->sxz,     mesh->xg_coord,  mesh->zg_coord,  mesh->Nx-0, mesh->Nz-0, mesh->BCg.type, mesh->dx, mesh->dz, new_ind );
+//        particles->sxz[new_ind]          = Centers2Particle( particles, mesh->sxz_n,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
     }
     particles->dsxxd[new_ind]         = particles->dsxxd[min_index];
     particles->dszzd[new_ind]         = particles->dszzd[min_index];

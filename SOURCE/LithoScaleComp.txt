@@ -4,7 +4,7 @@ irestart = 0
 
 /**** OUTPUT FILES ****/
 writer          = 1
-writer_step     = 100
+writer_step     = 50
 writer_markers  = 0
 writer_debug    = 0
 writer_energies = 0
@@ -17,14 +17,14 @@ T   = 100
 
 /**** SPACE-TIME ****/
 Nx      = 201
-Nz      = 62
+Nz      = 75
 Nt      = 400
 xmin    = -150.000000e3
 zmin    = -100.000000e3
 xmax    =  150.000000e3
 zmax    =  10.000000e3
 dt_constant = 1
-dt          = 4e11
+dt          = 2e11
 dt_max      = 1e12
 Courant     = 0.25
 
@@ -62,7 +62,7 @@ subgrid_diff   = 2
 line_search_min = 0.1
 nexp_radial_basis = 2.0
 Plith_trick     = 0
-DirectNeighbour = 0
+
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = 1e-15
@@ -253,7 +253,7 @@ min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
 Newton  = 0 
-nit_max = 0
+nit_max = 1
 rel_tol_KSP = 1e-4
 tol_u   = 1e-9
 tol_p   = 1e-9

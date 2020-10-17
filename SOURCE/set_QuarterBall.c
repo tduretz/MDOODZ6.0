@@ -111,10 +111,20 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
 //            if (particles->phase[np]==5 || particles->phase[np]==4) particles->phase[np] = 3;
 //        }
         //==================================================================
-                // 1ere elliptical inclusion
+        
+        // ------------------------------------------------
+        // 1ere elliptical inclusion
         double rad=0.25/scaling.L;
         double X,Xn,Z,Zn, xc=model.xmax, zc=model.zmin, la= 1.00*rad, sa = 1.00*rad, theta=(90.0)*M_PI/180.0;
-        xc=0.0;
+        X = particles->x[np]-xc;
+        Z = particles->z[np]-zc;
+        // elliptical inclusion
+        Xn = X*cos(theta) - Z*sin(theta);
+        Zn = X*sin(theta) + Z*cos(theta);
+        if ( pow(Xn/la,2) + pow(Zn/sa,2) - 1 < 0 ) particles->phase[np] = 1;
+        
+        // 2eme elliptical inclusion
+        xc=model.xmin;
         zc=model.zmin;
         la= 1.0*rad;
         sa = 1.0*rad;
@@ -126,31 +136,6 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         Xn = X*cos(theta) - Z*sin(theta);
         Zn = X*sin(theta) + Z*cos(theta);
         if ( pow(Xn/la,2) + pow(Zn/sa,2) - 1 < 0 ) particles->phase[np] = 1;
-        
-        // ------------------------------------------------
-//        // 1ere elliptical inclusion
-//        double rad=0.25/scaling.L;
-//        double X,Xn,Z,Zn, xc=model.xmax, zc=model.zmin, la= 1.00*rad, sa = 1.00*rad, theta=(90.0)*M_PI/180.0;
-//        X = particles->x[np]-xc;
-//        Z = particles->z[np]-zc;
-//        // elliptical inclusion
-//        Xn = X*cos(theta) - Z*sin(theta);
-//        Zn = X*sin(theta) + Z*cos(theta);
-//        if ( pow(Xn/la,2) + pow(Zn/sa,2) - 1 < 0 ) particles->phase[np] = 1;
-//
-//        // 2eme elliptical inclusion
-//        xc=model.xmin;
-//        zc=model.zmin;
-//        la= 1.0*rad;
-//        sa = 1.0*rad;
-//        //theta=(90.0)*M_PI/180.0;
-//
-//        X = particles->x[np]-xc;
-//        Z = particles->z[np]-zc;
-//
-//        Xn = X*cos(theta) - Z*sin(theta);
-//        Zn = X*sin(theta) + Z*cos(theta);
-//        if ( pow(Xn/la,2) + pow(Zn/sa,2) - 1 < 0 ) particles->phase[np] = 1;
 //
 //        // 3eme elliptical inclusion
 //        xc=+0.4/scaling.L;
@@ -377,14 +362,14 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                         if (l==0 ) { //&& (k>0 && k<NX-1) ) {
                             mesh->BCu.type[c] =  11;
 //                            mesh->BCu.val[c]  = -model->EpsBG*Lz/1.0;
-                            mesh->BCu.val[c]  = 2.0*(mesh->zvx_coord[l]-model->zmin)*model->EpsBG;
+                            mesh->BCu.val[c]  = (mesh->zvx_coord[l]-model->zmin)*model->EpsBG;
                         }
                         
                         // Free slip N
                         if ( l==mesh->Nz) {// && (k>0 && k<NX-1)) {
                             mesh->BCu.type[c] =  11;
 //                            mesh->BCu.val[c]  =  model->EpsBG*Lz/1.0;
-                            mesh->BCu.val[c]  = 2.0*(mesh->zvx_coord[l]-model->zmin)*model->EpsBG;
+                            mesh->BCu.val[c]  = (mesh->zvx_coord[l]-model->zmin)*model->EpsBG;
                         }
                         
                     }
