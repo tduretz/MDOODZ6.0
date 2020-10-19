@@ -790,15 +790,15 @@ void EvaluateStokesResidual( SparseMat *Stokes, Nparams *Nmodel, grid *mesh, par
 
 
     if ( quiet == 0 ) {
-        printf("Fu = %2.6e\n", Nmodel->resx * scaling.S * scaling.L ); // Units of momentum
-        printf("Fv = %2.6e\n", Nmodel->resz * scaling.S * scaling.L ); // Units of momentum
-        printf("Fp = %2.6e\n", Nmodel->resp * scaling.E * scaling.L * scaling.L ); // Units of velocity gradient
+        printf("Fu = %2.6e\n", Nmodel->resx ); // Units of momentum
+        printf("Fv = %2.6e\n", Nmodel->resz ); // Units of momentum
+        printf("Fp = %2.6e\n", Nmodel->resp ); // Units of velocity gradient
     }
 
     if ( isnan(Nmodel->resx) || isnan(Nmodel->resz) || isnan(Nmodel->resp) ) {
-        printf("Fu = %2.6e\n", Nmodel->resx * scaling.S * scaling.L ); // Units of momentum
-        printf("Fv = %2.6e\n", Nmodel->resz * scaling.S * scaling.L ); // Units of momentum
-        printf("Fp = %2.6e\n", Nmodel->resp * scaling.E * scaling.L * scaling.L );// Units of velocity gradient
+        printf("Fu = %2.6e\n", Nmodel->resx ); // Units of momentum
+        printf("Fv = %2.6e\n", Nmodel->resz ); // Units of momentum
+        printf("Fp = %2.6e\n", Nmodel->resp );// Units of velocity gradient
         printf("Solve went wrong - Nan residuals...\nExiting...\n");
         exit(122);
     }
@@ -872,9 +872,9 @@ void EvaluateStokesResidualDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
     }
 
     if ( quiet == 0 ) {
-        printf("Fu abs. = %2.6e --- Fu rel. = %2.6e\n", Nmodel->resx * scaling.S * scaling.L,             Nmodel->resx/Nmodel->resx0 ); // Units of momentum
-        printf("Fv abs. = %2.6e --- Fv rel. = %2.6e\n", Nmodel->resz * scaling.S * scaling.L,             Nmodel->resz/Nmodel->resz0 ); // Units of momentum
-        printf("Fp abs. = %2.6e --- Fp rel. = %2.6e\n", Nmodel->resp * scaling.E * scaling.L * scaling.L, Nmodel->resp/Nmodel->resp0 ); // Units of velocity gradient
+        printf("Fu abs. = %2.6e --- Fu rel. = %2.6e\n", Nmodel->resx, Nmodel->resx/Nmodel->resx0 ); // Units of momentum
+        printf("Fv abs. = %2.6e --- Fv rel. = %2.6e\n", Nmodel->resz, Nmodel->resz/Nmodel->resz0 ); // Units of momentum
+        printf("Fp abs. = %2.6e --- Fp rel. = %2.6e\n", Nmodel->resp, Nmodel->resp/Nmodel->resp0 ); // Units of velocity gradient
     }
 
     if ( isnan(Nmodel->resx) || isnan(Nmodel->resz) || isnan(Nmodel->resp) ) {

@@ -325,22 +325,14 @@ int main( int nargs, char *args[] ) {
             printf("******* Initialize viscosity ********\n");
             printf("*************************************\n");
 
-            printf("DoodzBoobz #1\n");
-
             if ( model.iselastic == 1 ) ShearModCompExpGrid( &mesh, materials, model, scaling );
-
-printf("DoodzBoobz #2\n");
-
+            
             // Compute cohesion and friction angle on the grid
             CohesionFrictionDilationGrid( &mesh, &particles, materials, model, scaling );
 
-            printf("DoodzBoobz #3\n");
             Interp_Grid2P_centroids2( particles, particles.P,    &mesh, mesh.p_in, mesh.xvz_coord,  mesh.zvx_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
-printf("DoodzBoobz #4\n");
             Interp_Grid2P_centroids2( particles, particles.T,    &mesh, mesh.T,    mesh.xvz_coord,  mesh.zvx_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type, &model );
-printf("DoodzBoobz #5\n");
             NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
-printf("DoodzBoobz #6\n");
         } // end of no_markers --- debug
         else {
 
