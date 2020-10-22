@@ -62,6 +62,7 @@ int main( int nargs, char *args[] ) {
     int          Nx, Nz, Ncx, Ncz;
 
     double *rx_abs, *rz_abs, *rp_abs, *rx_rel, *rz_rel, *rp_rel;
+    int    *Newt_on;
 
     // Initialise integrated quantities
     mesh.W    = 0.0; // Work
@@ -114,10 +115,11 @@ int main( int nargs, char *args[] ) {
     // Get grid indices
     GridIndices( &mesh );
 
-    rx_abs = DoodzCalloc(Nmodel.nit_max+1, sizeof(double)); rx_rel = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
-    rz_abs = DoodzCalloc(Nmodel.nit_max+1, sizeof(double)); rz_rel = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
-    rp_abs = DoodzCalloc(Nmodel.nit_max+1, sizeof(double)); rp_rel = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
-
+    rx_abs  = DoodzCalloc(Nmodel.nit_max+1, sizeof(double)); rx_rel = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
+    rz_abs  = DoodzCalloc(Nmodel.nit_max+1, sizeof(double)); rz_rel = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
+    rp_abs  = DoodzCalloc(Nmodel.nit_max+1, sizeof(double)); rp_rel = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
+    Newt_on = DoodzCalloc(Nmodel.nit_max+1, sizeof(int));
+    
     Nx = mesh.Nx; Nz = mesh.Nz; Ncx = Nx-1; Ncz = Nz-1;
     if ( model.aniso == 1 ) model.Newton = 1;
 
@@ -260,6 +262,8 @@ int main( int nargs, char *args[] ) {
             if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
             if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling  );
             if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling  );
+            if (model.cpc== 2) CountPartCell2    ( &particles, &mesh, model, topo, topo_ini, 0, scaling  );
+            
 
             StrainRateComponents( &mesh, scaling, &model );
 
@@ -404,6 +408,7 @@ int main( int nargs, char *args[] ) {
         Initialise1DArrayDouble( mesh.sxz,   (mesh.Nx)  *(mesh.Nz)  , 0.0 );
         // Generate deformation maps
         if ( model.def_maps == 1 ) GenerateDeformationMaps( &mesh, &materials, &model, Nmodel, &scaling );
+        particles.Nb_part_ini = particles.Nb_part;
     }
     else {
         // Which step do we restart from (BreakpointXXXX.dat)
@@ -466,8 +471,10 @@ int main( int nargs, char *args[] ) {
                     Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kx,   mesh.xg_coord, mesh.zvx_coord,  mesh.Nx, mesh.Nz+1,   0, mesh.BCu.type , &model);
 
                     // Get T and dTdt from previous step from particles
-                    Interp_P2C ( particles, particles.T,    &mesh, mesh.T,    mesh.xg_coord, mesh.zg_coord,  1, 0 );
+                    Interp_P2C ( particles, particles.T,    &mesh, mesh.T0_n,    mesh.xg_coord, mesh.zg_coord,  1, 0 );
                     Interp_P2C ( particles, particles.divth, &mesh, mesh.divth0_n, mesh.xg_coord, mesh.zg_coord,  1, 0 );
+                // Make sure T is up to date for rheology evaluation
+                    ArrayEqualArray( mesh.T, mesh.T0_n, (mesh.Nx-1)*(mesh.Nz-1) );
 //                }
 
                 // Get physical properties that are constant throughout each timestep
@@ -763,14 +770,32 @@ int main( int nargs, char *args[] ) {
                 printf("Run CHOLMOD analysis yes/no: %d \n", CholmodSolver.Analyze);
             }
 
+            if ( model.Newton==1 && Nmodel.Picard2Newton==1 ) Nmodel.ActivateNewton = 0;
+            if ( model.Newton==1 && Nmodel.Picard2Newton==0 ) Nmodel.ActivateNewton = 1;
+            if ( model.Newton==0                            ) Nmodel.ActivateNewton = 0;
+        
+//            if ( Nmodel.Picard2Newton==1 ) {
+//                Nmodel.ActivateNewton = 0;
+//            }
+//            else {
+//                Nmodel.ActivateNewton = 1;
+//            }
+            
+            
             int Nmax_picard = Nmodel.nit_max;
 
             while ( Nmodel.nit <= Nmax_picard && nstag<model.nstagmax) {
 
-                printf("**********************************************\n");
-                printf("*** Non-linear it. %02d of %02d (step = %05d) ***\n", Nmodel.nit, Nmodel.nit_max, model.step);
-                printf("**********************************************\n");
+                printf("******************************************\n");
+                if ( model.Newton==1 && Nmodel.ActivateNewton==1 ) printf("*** Newton it. %02d of %02d (step = %05d) ***\n", Nmodel.nit, Nmodel.nit_max, model.step);
+                if ( model.Newton==1 && Nmodel.ActivateNewton==0 ) printf("*** Picard it. %02d of %02d (step = %05d) ***\n", Nmodel.nit, Nmodel.nit_max, model.step);
+                if ( model.Newton==0                             ) printf("*** Picard it. %02d of %02d (step = %05d) ***\n", Nmodel.nit, Nmodel.nit_max, model.step);
+                printf("******************************************\n");
 
+                if ( model.Newton==1 && Nmodel.ActivateNewton==1 ) Newt_on[Nmodel.nit] = 1;
+                if ( model.Newton==1 && Nmodel.ActivateNewton==0 ) Newt_on[Nmodel.nit] = 0;
+                if ( model.Newton==0                             ) Newt_on[Nmodel.nit] = 0;
+                
                 UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
                 RheologicalOperators( &mesh, &model, &scaling, 0 );
                 NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
@@ -799,11 +824,14 @@ int main( int nargs, char *args[] ) {
                 // Build discrete system of equations - MATRIX
                 if ( model.decoupled_solve == 0 ) BuildStokesOperator           ( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, 1 );
                 if ( model.decoupled_solve == 1 ) BuildStokesOperatorDecoupled  ( &mesh, model, 0, mesh.p_corr, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, 1 );
+                
 
                 if (model.aniso == 0) {
                     if ( model.Newton          == 1  && model.num_deriv==1) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling );
-                    if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
-                    if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_corr, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
+                    if ( model.Newton          == 1  && Nmodel.ActivateNewton==0) RheologicalOperators( &mesh, &model, &scaling, 0 );
+                    if ( model.Newton          == 1  && Nmodel.ActivateNewton==0) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_corr, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
+                    if ( model.Newton          == 1  && Nmodel.ActivateNewton==1) RheologicalOperators( &mesh, &model, &scaling, 1 );
+                    if ( model.Newton          == 1  && Nmodel.ActivateNewton==1) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_corr, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
                 }
                 else {
                     RheologicalOperators( &mesh, &model, &scaling, 0 );
@@ -854,6 +882,11 @@ int main( int nargs, char *args[] ) {
                 Nmodel.resx_f = Nmodel.resx; rx_abs[Nmodel.nit] = Nmodel.resx; rx_rel[Nmodel.nit] = Nmodel.resx/Nmodel.resx0;
                 Nmodel.resz_f = Nmodel.resz; rz_abs[Nmodel.nit] = Nmodel.resz; rz_rel[Nmodel.nit] = Nmodel.resz/Nmodel.resz0;
                 Nmodel.resp_f = Nmodel.resp; rp_abs[Nmodel.nit] = Nmodel.resp; rp_rel[Nmodel.nit] = Nmodel.resp/Nmodel.resp0;
+                
+                if ( Nmodel.Picard2Newton == 1 && ( rx_rel[Nmodel.nit] < Nmodel.Pic2NewtCond || rz_rel[Nmodel.nit] < Nmodel.Pic2NewtCond ) ) {
+                    printf("Activating Newton 4 real\n");
+                    Nmodel.ActivateNewton = 1;
+                }
 
                 if ( model.write_debug == 1 ) WriteResiduals( mesh, model, Nmodel, scaling );
 
@@ -883,7 +916,9 @@ int main( int nargs, char *args[] ) {
                 if ( model.decoupled_solve == 0 ) SolveStokesDefect( &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling );
                 if ( model.decoupled_solve == 1 ) {
                     if ( model.Newton==0 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling, &StokesA, &StokesB, &StokesC );
-                    if ( model.Newton==1 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling,  &JacobA,  &JacobB,  &JacobC );
+                    SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling,  &JacobA,  &JacobB,  &JacobC );
+//                    if ( model.Newton==1 && Nmodel.ActivateNewton==1 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling,  &JacobA,  &JacobB,  &JacobC );
+//                    if ( model.Newton==1 && Nmodel.ActivateNewton==0 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling, &StokesA, &StokesB, &StokesC );
 
 
                     if ( Nmodel.stagnated == 1 && model.safe_mode <= 0 ) {
@@ -993,7 +1028,8 @@ int main( int nargs, char *args[] ) {
             if (Nmodel.nit>=Nmodel.nit_max)  nit = Nmodel.nit_max;
             if (Nmodel.nit<Nmodel.nit_max)  nit = Nmodel.nit;
             for (i=0; i<=nit; i++) {
-                printf("Non-Linear it. %02d: |Fx abs.| = %2.2e - |Fz abs.| = %2.2e --- |Fx rel.| = %2.2e - |Fz rel.| = %2.2e\n", i, rx_abs[i], rz_abs[i], rx_rel[i], rz_rel[i]);
+                if (Newt_on[i] == 0) printf("Picard it. %02d: |Fx abs.| = %2.2e - |Fz abs.| = %2.2e --- |Fx rel.| = %2.2e - |Fz rel.| = %2.2e\n", i, rx_abs[i], rz_abs[i], rx_rel[i], rz_rel[i]);
+                if (Newt_on[i] == 1) printf("Newton it. %02d: |Fx abs.| = %2.2e - |Fz abs.| = %2.2e --- |Fx rel.| = %2.2e - |Fz rel.| = %2.2e\n", i, rx_abs[i], rz_abs[i], rx_rel[i], rz_rel[i]);
                 if (i == Nmodel.nit_max && model.safe_mode == 1) {
                     printf("Exit: Max iteration reached: Nmodel.nit_max = %02d! Check what you wanna do now...\n",Nmodel.nit_max);
                     if ( (Nmodel.resx < Nmodel.abs_tol_u) && (Nmodel.resz < Nmodel.abs_tol_u) && (Nmodel.resp < Nmodel.abs_tol_p) ) {}
@@ -1097,16 +1133,38 @@ int main( int nargs, char *args[] ) {
 
         //------------------------------------------------------------------------------------------------------------------------------//
 
-//        // Count the number of particle per cell
-//        t_omp = (double)omp_get_wtime();
-//        if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
-//        if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
-//        if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
-//        if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
+        
+        
+        
+        printf("*************************************\n");
+        printf("************** Reseeding ************\n");
+        printf("*************************************\n");
+        
+        // Count the number of particle per cell
+        t_omp = (double)omp_get_wtime();
+        if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
+        if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
+        if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
+        if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
+        
+        if (model.cpc== 2) CountPartCell2   ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
+        if (model.cpc== 2) CountPartCell2   ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
+        
+        printf("After re-seeding :\n");
+        printf("Initial number of particles = %d\n", particles.Nb_part_ini);
+        printf("New number of particles     = %d\n", particles.Nb_part    );
+
 //        printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
 //
 //        printf("After re-seeding : number of particles = %d\n", particles.Nb_part);
 //        printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
+        
+        
+        
+        
+        
+        
+        
 
         if ( model.advection == 1 ) {
 
@@ -1231,21 +1289,21 @@ int main( int nargs, char *args[] ) {
                 WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particlesxx", materials, scaling );
             }
 #endif
-            // Count the number of particle per cell
-            printf("Before re-seeding : number of particles = %d\n", particles.Nb_part);
-            t_omp = (double)omp_get_wtime();
+//            // Count the number of particle per cell
+//            printf("Before re-seeding : number of particles = %d\n", particles.Nb_part);
+//            t_omp = (double)omp_get_wtime();
 
-            // Count the number of particle per cell
-            t_omp = (double)omp_get_wtime();
-            if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
-            if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
-            if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
-            if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
-            printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
-
-            printf("After re-seeding : number of particles = %d\n", particles.Nb_part);
-            printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
-
+//            // Count the number of particle per cell
+//            t_omp = (double)omp_get_wtime();
+//            if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
+//            if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
+//            if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
+//            if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
+//            printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
+//
+//            printf("After re-seeding : number of particles = %d\n", particles.Nb_part);
+//            printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
+//
             // Remove particles that would be above the surface
             if ( model.free_surf == 1 ) {
                 CleanUpSurfaceParticles( &particles, &mesh, topo, scaling );
@@ -1351,6 +1409,7 @@ int main( int nargs, char *args[] ) {
     DoodzFree( rx_rel );
     DoodzFree( rz_rel );
     DoodzFree( rp_rel );
+    DoodzFree( Newt_on );
 
     printf("\n********************************************************\n");
     printf("************* Ending MDOODZ 6.0 simulation *************\n");

@@ -531,41 +531,53 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
 //                    }
 //                }
 //                alpha = alphav[ix];
+        
+        // SEARCH --- 1
 
         // Look for the minimum predicted residuals
-        double r;
-        minx  = sqrt( pow( rx[0],2 ) + pow( rz[0],2 ) );
-        ix = 0;
+        double r, minxz, minz, fxz, fx, fz;
+        int ixz, ix, iz;
+        minxz  = sqrt( pow( rx[0],2 ) + pow( rz[0],2 ) );
+        minx   = rx[0];
+        minz   = rz[0];
+        ixz    = 0;
+        ix     = 0;
+        iz     = 0;
         for( k=1; k<ntry[niter]; k++ ) {
-            r = sqrt( pow( rx[k],2 ) + pow( rz[k],2 ) );
-            if( r < minx ) {
-                minx = r;
-                ix = k;
+            fxz = sqrt( pow( rx[k],2 ) + pow( rz[k],2 ) );
+            fx  = rx[k];
+            fz  = rz[k];
+            if( fxz < minxz ) {
+                minxz = fxz;
+                ixz  = k;
+            }
+            if( fx < minx ) {
+                minx= fx;
+                ix  = k;
+            }
+            if( fz < minz ) {
+                minz= fz;
+                iz  = k;
             }
         }
-        alpha = alphav[ix];
+        alpha = alphav[ixz];
+        
 
         // if the minmimun residuals are lower than starting ones, then success
-        if ( rx[ix] < frac*Nmodel->resx_f || rz[ix]<frac*Nmodel->resz_f  ) { //|| rp[ix]<frac*Nmodel->resp
+        if ( rx[ixz] < frac*Nmodel->resx_f || rz[ixz]<frac*Nmodel->resz_f  ) { //|| rp[ix]<frac*Nmodel->resp
             success = 1;
             //            printf("\e[1;34mPredicted Residuals\e[m : alpha  = %lf --> rx = %2.4e rz = %2.4e rp = %2.4e\n", alphav[ix], rx[ix]*(scaling.F/pow(scaling.L,3)), rz[ix]* (scaling.F/pow(scaling.L,3)), rp[ix]*scaling.E);
             printf("\e[1;34mPredicted Residuals\e[m : alpha  = %lf --> rx = %2.4e rz = %2.4e rp = %2.4e\n", alphav[ix], rx[ix], rz[ix], rp[ix]);
-
         }
-
-        //        if (success == 0 ) {
-        //            // Look for the minimum predicted residuals
-        //            minx  = rz[0];
-        //            ix = 0;
-        //            for( k=1; k<ntry[niter]; k++ ) {
-        //                if(rz[k]<minx) {
-        //                    minx = rz[k];
-        //                    ix = k;
-        //                }
-        //            }
-        //            alpha = alphav[ix];
-        //        }
-
+        if (success==0 && rx[ix] < frac*Nmodel->resx_f) {
+            alpha = alphav[ix];
+            success = 1;
+        }
+        if (success==0 && rz[iz] < frac*Nmodel->resz_f) {
+            alpha = alphav[iz];
+            success = 1;
+        }
+            
         DoodzFree(rx);
         DoodzFree(rz);
         DoodzFree(rp);

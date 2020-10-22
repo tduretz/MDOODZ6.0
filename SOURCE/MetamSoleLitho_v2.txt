@@ -1,6 +1,6 @@
 **** RESTART ****/
-istep =00010
-irestart = 0
+istep =00400
+irestart = 1
 
 /**** OUTPUT FILES ****/
 writer         = 1
@@ -20,7 +20,7 @@ T   = 100
 /**** SPACE-TIME ****/
 Nx   = 601
 Nz   = 301
-Nt   = 00
+Nt   = 401
 xmin    = -100e3
 xmax    =  100e3
 zmin    = -60e3
@@ -60,7 +60,7 @@ pc_type         = 0
 aniso          = 0
  
 /**** SETUP DEPENDANT ****/
-EpsBG           = 2e-14 /Background strain rate
+EpsBG           = 2e-15 /Background strain rate
 PrBG            = 0.0
 surf_diff       = 0
 user0           = 700
@@ -68,7 +68,7 @@ user1           = 0.3e3 /radius
 user2           = 0 /0:circle 1:layer 
 user3           = -20e3 / depth asthenosphere
 user4           = -1.5e3 /base sediments
-user5           = 12e3 / LAB step
+user5           = 6e3 / LAB step
 user6           = 0
 
 /**** GRAVITY ****/
@@ -76,7 +76,7 @@ gx =  0.0000
 gz = -9.81000
 
 /**** PHASE PROPERTIES ****/
-Nb_phases = 9
+Nb_phases = 12
 
 ID   = 0
 rho  = 2800.00 /inclusion
@@ -326,6 +326,100 @@ pwlv = 40
 linv = 40
 gbsv = 0
 expv = 40
+gsel = 0
+eta0 = 1e1
+npwl = 1
+Qpwl = 0
+aniso        = 0
+aniso_angle  = 65
+aniso_factor = 10
+
+
+ID   = 9
+rho  = 2800.00 /basalt
+mu   = 3e10
+Cv   = 1050
+k    = 2.0
+Qr   = 0
+C    = 5e7
+phi  = 32
+eta_vp = 1e20
+n_vp = 1.0
+Slim = 500e9
+alp  = 10.0e-6
+bet  = 5e-11
+drho = 0
+cstv = 0
+pwlv = 29
+linv = 0
+gbsv = 0
+expv = 0
+gsel = 0
+eta0 = 1e1
+npwl = 1
+Qpwl = 0
+aniso        = 0
+aniso_angle  = 65
+aniso_factor = 10
+plss = 0.0
+plse = 1.0
+phi_soft = 1
+coh_soft = 1
+phie = 10.0
+Ce   = 20.0e6
+
+ID   = 10
+rho  = 2800.00 /gabbro
+mu   = 3e10
+Cv   = 1050
+k    = 2.0
+Qr   = 0
+C    = 5e7
+phi  = 32
+eta_vp = 1e20
+n_vp = 1.0
+Slim = 500e9
+alp  = 10.0e-6
+bet  = 5e-11
+drho = 0
+cstv = 0
+pwlv = 11
+linv = 0
+gbsv = 0
+expv = 0
+gsel = 0
+eta0 = 1e1
+npwl = 1
+Qpwl = 0
+aniso        = 0
+aniso_angle  = 65
+aniso_factor = 10
+phi_soft = 1
+coh_soft = 0
+plss = 0.0
+plse = 1.5
+phie = 20.0
+Ce   = 50.0e6
+
+ID   = 11
+rho  = 2800.00 /sediments
+mu   = 3e10
+Cv   = 1050
+k    = 2.0
+Qr   = 0
+C    = 5e7
+phi  = 5
+eta_vp = 1e20
+n_vp = 1.0
+Slim = 500e9
+alp  = 10.0e-6
+bet  = 5e-11
+drho = 0
+cstv = 0
+pwlv = 18
+linv = 0
+gbsv = 0
+expv = 0
 gsel = 0
 eta0 = 1e1
 npwl = 1

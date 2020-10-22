@@ -3,13 +3,13 @@ clear
 step = 1;
 
 % Data from MDOODZ:
-path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/';
-filename = [path 'Stokes_01cpu_step', num2str(step,'%02d'), '_iter00.gzip.h5'];
+path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/';
+filename = [path 'Stokes_04cpu_step', num2str(step,'%02d'), '_iter22.gzip.h5'];
 [ MA, MB, MC, MD, rSt, rPt, fSt, fPt ] = ExtractDecoupledMatrixFromMDoodz( filename );
 
 % Data from MDOODZ:
-path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/';
-filename = [path 'Jacobian_01cpu_step', num2str(step,'%02d'), '_iter00.gzip.h5'];
+path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/';
+filename = [path 'Jacobian_04cpu_step', num2str(step,'%02d'), '_iter22.gzip.h5'];
 [ JA, JB, JC, JD, rJSt, rJPt, fJSt, fJPt ] = ExtractDecoupledMatrixFromMDoodz( filename );
 
 D = 0*diag(size(MC,1)-1,size(MC,1)-1);
@@ -23,6 +23,8 @@ diff = K-J;
 [i,j,s] = find(diff);
 s(abs(s)<1e-6) = 0;
 diff = sparse(i,j,s);
+min(diff(:))
+max(diff(:))
 % diff(diff<1e-4) = 0;
 
 figure(1)
@@ -30,10 +32,10 @@ subplot(131), spy(K)
 subplot(132), spy(J)
 subplot(133), spy(diff)
 
-fprintf('Picard')
-K(1,:)
-fprintf('Jacobian')
-J(1,:)
+% fprintf('Picard')
+% K(1,:)
+% fprintf('Jacobian')
+% J(1,:)
 % 
 % fprintf('Matlab')
 % M1(699,:)
