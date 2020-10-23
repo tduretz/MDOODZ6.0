@@ -758,6 +758,7 @@ int main( int nargs, char *args[] ) {
             model.nit        = 0;
             Nmodel.stagnated = 0;
             nstag            = 0;
+            Nmodel.ActivateNewton = 0;
 
             ArrayEqualArray( mesh.p_start,    mesh.p_in,      (mesh.Nx-1)*(mesh.Nz-1) );
             ArrayEqualArray( mesh.u_start,    mesh.u_in,      (mesh.Nx)  *(mesh.Nz+1) );
@@ -769,6 +770,8 @@ int main( int nargs, char *args[] ) {
                 if ( Nmodel.nit==0 ) CholmodSolver.Analyze = 1;
                 printf("Run CHOLMOD analysis yes/no: %d \n", CholmodSolver.Analyze);
             }
+            
+            printf("%d %d %d\n", model.Newton, Nmodel.Picard2Newton, Nmodel.ActivateNewton);
 
             if ( model.Newton==1 && Nmodel.Picard2Newton==1 ) Nmodel.ActivateNewton = 0;
             if ( model.Newton==1 && Nmodel.Picard2Newton==0 ) Nmodel.ActivateNewton = 1;
@@ -883,7 +886,7 @@ int main( int nargs, char *args[] ) {
                 Nmodel.resz_f = Nmodel.resz; rz_abs[Nmodel.nit] = Nmodel.resz; rz_rel[Nmodel.nit] = Nmodel.resz/Nmodel.resz0;
                 Nmodel.resp_f = Nmodel.resp; rp_abs[Nmodel.nit] = Nmodel.resp; rp_rel[Nmodel.nit] = Nmodel.resp/Nmodel.resp0;
                 
-                if ( Nmodel.Picard2Newton == 1 && ( rx_rel[Nmodel.nit] < Nmodel.Pic2NewtCond || rz_rel[Nmodel.nit] < Nmodel.Pic2NewtCond ) ) {
+                if ( model.Newton == 1 && Nmodel.Picard2Newton == 1 && ( rx_rel[Nmodel.nit] < Nmodel.Pic2NewtCond || rz_rel[Nmodel.nit] < Nmodel.Pic2NewtCond ) ) {
                     printf("Activating Newton 4 real\n");
                     Nmodel.ActivateNewton = 1;
                 }
@@ -917,8 +920,8 @@ int main( int nargs, char *args[] ) {
                 if ( model.decoupled_solve == 1 ) {
                     if ( model.Newton==0 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling, &StokesA, &StokesB, &StokesC );
                     SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling,  &JacobA,  &JacobB,  &JacobC );
-//                    if ( model.Newton==1 && Nmodel.ActivateNewton==1 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling,  &JacobA,  &JacobB,  &JacobC );
-//                    if ( model.Newton==1 && Nmodel.ActivateNewton==0 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling, &StokesA, &StokesB, &StokesC );
+                    if ( model.Newton==1 && Nmodel.ActivateNewton==1 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling,  &JacobA,  &JacobB,  &JacobC );
+                    if ( model.Newton==1 && Nmodel.ActivateNewton==0 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling, &StokesA, &StokesB, &StokesC );
 
 
                     if ( Nmodel.stagnated == 1 && model.safe_mode <= 0 ) {
