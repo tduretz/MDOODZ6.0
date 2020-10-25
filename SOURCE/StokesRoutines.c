@@ -521,7 +521,6 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
 
         }
 
-
         
         // SEARCH --- 1
 
@@ -551,11 +550,10 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
                 iz  = k;
             }
         }
-        alpha = alphav[ixz];
-
 
         // if the minmimun residuals are lower than starting ones, then success
         if ( rx[ixz] < frac*Nmodel->resx_f || rz[ixz]<frac*Nmodel->resz_f  ) { //|| rp[ix]<frac*Nmodel->resp
+            alpha = alphav[ixz];
             success = 1;
             //            printf("\e[1;34mPredicted Residuals\e[m : alpha  = %lf --> rx = %2.4e rz = %2.4e rp = %2.4e\n", alphav[ix], rx[ix]*(scaling.F/pow(scaling.L,3)), rz[ix]* (scaling.F/pow(scaling.L,3)), rp[ix]*scaling.E);
             printf("\e[1;34mPredicted Residuals\e[m : alpha  = %lf --> rx = %2.4e rz = %2.4e rp = %2.4e\n", alphav[ix], rx[ix], rz[ix], rp[ix]);
@@ -568,27 +566,6 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
             alpha = alphav[iz];
             success = 1;
         }
-        
-//        // Look for the minimum predicted residuals
-//        double r;
-//        minx  = sqrt( pow( rx[0],2 ) + pow( rz[0],2 ) );
-//        ix = 0;
-//        for( k=1; k<ntry[niter]; k++ ) {
-//            r = sqrt( pow( rx[k],2 ) + pow( rz[k],2 ) );
-//            if( r < minx ) {
-//                minx = r;
-//                ix = k;
-//            }
-//        }
-//        alpha = alphav[ix];
-//
-//        // if the minmimun residuals are lower than starting ones, then success
-//        if ( rx[ix] < frac*Nmodel->resx_f || rz[ix]<frac*Nmodel->resz_f  ) { //|| rp[ix]<frac*Nmodel->resp
-//            success = 1;
-//            //            printf("\e[1;34mPredicted Residuals\e[m : alpha  = %lf --> rx = %2.4e rz = %2.4e rp = %2.4e\n", alphav[ix], rx[ix]*(scaling.F/pow(scaling.L,3)), rz[ix]* (scaling.F/pow(scaling.L,3)), rp[ix]*scaling.E);
-//            printf("\e[1;34mPredicted Residuals\e[m : alpha  = %lf --> rx = %2.4e rz = %2.4e rp = %2.4e\n", alphav[ix], rx[ix], rz[ix], rp[ix]);
-//
-//        }
             
         DoodzFree(rx);
         DoodzFree(rz);

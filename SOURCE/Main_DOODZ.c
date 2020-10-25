@@ -60,7 +60,7 @@ int main( int nargs, char *args[] ) {
     SparseMat    StokesA, StokesB, StokesC, StokesD;
     SparseMat    JacobA,  JacobB,  JacobC,  JacobD;
     int          Nx, Nz, Ncx, Ncz;
-    int          Newton, *Newt_on;
+    int          Newton, *Newt_on, first_Newton;
 
     double *rx_abs, *rz_abs, *rp_abs, *rx_rel, *rz_rel, *rp_rel;
 
@@ -263,6 +263,8 @@ int main( int nargs, char *args[] ) {
             if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
             if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling  );
             if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling  );
+            if (model.cpc== 2) CountPartCell2    ( &particles, &mesh, model, topo, topo_ini, 0, scaling  );
+            
 
             StrainRateComponents( &mesh, scaling, &model );
 
@@ -407,6 +409,7 @@ int main( int nargs, char *args[] ) {
         Initialise1DArrayDouble( mesh.sxz,   (mesh.Nx)  *(mesh.Nz)  , 0.0 );
         // Generate deformation maps
         if ( model.def_maps == 1 ) GenerateDeformationMaps( &mesh, &materials, &model, Nmodel, &scaling );
+        particles.Nb_part_ini = particles.Nb_part;
     }
     else {
         // Which step do we restart from (BreakpointXXXX.dat)
@@ -469,8 +472,10 @@ int main( int nargs, char *args[] ) {
                     Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kx,   mesh.xg_coord, mesh.zvx_coord,  mesh.Nx, mesh.Nz+1,   0, mesh.BCu.type , &model);
 
                     // Get T and dTdt from previous step from particles
-                    Interp_P2C ( particles, particles.T,    &mesh, mesh.T,    mesh.xg_coord, mesh.zg_coord,  1, 0 );
+                    Interp_P2C ( particles, particles.T,    &mesh, mesh.T0_n,    mesh.xg_coord, mesh.zg_coord,  1, 0 );
                     Interp_P2C ( particles, particles.divth, &mesh, mesh.divth0_n, mesh.xg_coord, mesh.zg_coord,  1, 0 );
+                // Make sure T is up to date for rheology evaluation
+                    ArrayEqualArray( mesh.T, mesh.T0_n, (mesh.Nx-1)*(mesh.Nz-1) );
 //                }
 
                 // Get physical properties that are constant throughout each timestep
@@ -765,17 +770,22 @@ int main( int nargs, char *args[] ) {
                 if ( Nmodel.nit==0 ) CholmodSolver.Analyze = 1;
                 printf("Run CHOLMOD analysis yes/no: %d \n", CholmodSolver.Analyze);
             }
-
+                    
             int Nmax_picard = Nmodel.nit_max;
             
-            if ( Newton == 1 && Nmodel.Picard2Newton == 1 ) model.Newton = 0;
+            if ( Newton == 1 && Nmodel.Picard2Newton == 1 ) {
+                model.Newton = 0;
+                first_Newton = 1;
+            }
 
             while ( Nmodel.nit <= Nmax_picard && nstag<model.nstagmax) {
-                
+
                 if ( Nmodel.nit > 0 && Nmodel.Picard2Newton == 1 ) {
                     if ( rx_rel[Nmodel.nit-1] < Nmodel.Pic2NewtCond || rz_rel[Nmodel.nit-1] < Nmodel.Pic2NewtCond ) {
+                        if ( first_Newton == 1 ) CholmodSolver.Analyze = 1;
+                        if ( first_Newton == 0 ) CholmodSolver.Analyze = 0;
+                        if ( first_Newton == 1 ) first_Newton = 0;
                         model.Newton          = 1;
-                        CholmodSolver.Analyze = 1;
                     }
                 }
                     
@@ -812,6 +822,7 @@ int main( int nargs, char *args[] ) {
                 // Build discrete system of equations - MATRIX
                 if ( model.decoupled_solve == 0 ) BuildStokesOperator           ( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, 1 );
                 if ( model.decoupled_solve == 1 ) BuildStokesOperatorDecoupled  ( &mesh, model, 0, mesh.p_corr, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, 1 );
+                
 
                 if (model.aniso == 0) {
                     if ( model.Newton          == 1  && model.num_deriv==1) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling );
@@ -881,7 +892,7 @@ int main( int nargs, char *args[] ) {
                         FreeMat( &StokesC );
                         FreeMat( &StokesD );
                     }
-                    if ( Newton == 1 ) {
+                    if ( model.Newton == 1 ) {
                         FreeMat( &JacobA );
                         FreeMat( &JacobB );
                         FreeMat( &JacobC );
@@ -896,15 +907,8 @@ int main( int nargs, char *args[] ) {
                 if ( model.decoupled_solve == 0 ) SolveStokesDefect( &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling );
                 if ( model.decoupled_solve == 1 ) {
                     
-//                    if ( model.nit <= 0 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling, &StokesA, &StokesB, &StokesC );
-//                    if ( model.nit  > 1 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling,  &JacobA,  &JacobB,  &JacobC );
-                    
-//                    SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling, &StokesA, &StokesB, &StokesC );
-//                    SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling,  &JacobA,  &JacobB,  &JacobC );
-                    
                     if ( model.Newton==0 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling, &StokesA, &StokesB, &StokesC );
                     if ( model.Newton==1 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling,  &JacobA,  &JacobB,  &JacobC );
-
 
                     if ( Nmodel.stagnated == 1 && model.safe_mode <= 0 ) {
                         printf( "Non-linear solver stagnated to res_u = %2.2e res_z = %2.2e\n", Nmodel.resx_f, Nmodel.resz_f );
@@ -1118,16 +1122,38 @@ int main( int nargs, char *args[] ) {
 
         //------------------------------------------------------------------------------------------------------------------------------//
 
-//        // Count the number of particle per cell
-//        t_omp = (double)omp_get_wtime();
-//        if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
-//        if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
-//        if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
-//        if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
+        
+        
+        
+        printf("*************************************\n");
+        printf("************** Reseeding ************\n");
+        printf("*************************************\n");
+        
+        // Count the number of particle per cell
+        t_omp = (double)omp_get_wtime();
+        if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
+        if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
+        if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
+        if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
+        
+        if (model.cpc== 2) CountPartCell2   ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
+        if (model.cpc== 2) CountPartCell2   ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
+        
+        printf("After re-seeding :\n");
+        printf("Initial number of particles = %d\n", particles.Nb_part_ini);
+        printf("New number of particles     = %d\n", particles.Nb_part    );
+
 //        printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
 //
 //        printf("After re-seeding : number of particles = %d\n", particles.Nb_part);
 //        printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
+        
+        
+        
+        
+        
+        
+        
 
         if ( model.advection == 1 ) {
 
@@ -1252,21 +1278,21 @@ int main( int nargs, char *args[] ) {
                 WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particlesxx", materials, scaling );
             }
 #endif
-            // Count the number of particle per cell
-            printf("Before re-seeding : number of particles = %d\n", particles.Nb_part);
-            t_omp = (double)omp_get_wtime();
+//            // Count the number of particle per cell
+//            printf("Before re-seeding : number of particles = %d\n", particles.Nb_part);
+//            t_omp = (double)omp_get_wtime();
 
-            // Count the number of particle per cell
-            t_omp = (double)omp_get_wtime();
-            if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
-            if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
-            if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
-            if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
-            printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
-
-            printf("After re-seeding : number of particles = %d\n", particles.Nb_part);
-            printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
-
+//            // Count the number of particle per cell
+//            t_omp = (double)omp_get_wtime();
+//            if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
+//            if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
+//            if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
+//            if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
+//            printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
+//
+//            printf("After re-seeding : number of particles = %d\n", particles.Nb_part);
+//            printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
+//
             // Remove particles that would be above the surface
             if ( model.free_surf == 1 ) {
                 CleanUpSurfaceParticles( &particles, &mesh, topo, scaling );

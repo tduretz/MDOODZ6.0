@@ -2221,8 +2221,8 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     cs_di  AJ, BJ, CJ, *AJc, *BJc, *CJc;
     cs_di  *PC, *Jt, *Jts, *Js;
     DoodzFP  *u0, *p0, *F;
-    int  noisy=1;
-    int nitmax=20, k, cc, i; //nitmax=5
+    int  noisy = 1;
+    int nitmax = 20, k, cc, i; //nitmax=5
     double celvol = model.dx*model.dz;
     double maxdiv0, mindiv, maxdiv, maxdivit=0, rel_tol_div=model.rel_tol_div;
 

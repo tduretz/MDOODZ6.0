@@ -581,6 +581,7 @@ reduction(+:npW,npE )
 void AssignMarkerProperties (markers* particles, int new_ind, int min_index, params *model, grid* mesh, int DirectNeighbour ) {
     
     particles->phase[new_ind]         = particles->phase[min_index];
+    if (particles->phase[min_index]==-1) {printf("AssignMarkerProperties\n" ); exit(99);}
     particles->Vx[new_ind]            = particles->Vx[min_index];
     particles->Vz[new_ind]            = particles->Vz[min_index];
     particles->strain[new_ind]        = particles->strain[min_index];
@@ -595,15 +596,18 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
         particles->d[new_ind]             = particles->d[min_index];
         particles->T[new_ind]             = particles->T[min_index];
         particles->P[new_ind]             = particles->P[min_index];
+        particles->phi[new_ind]           = particles->phi[min_index]; // to be changed
+        particles->X[new_ind]             = particles->X[min_index];   // to be changed
     }
     else {
         particles->d[new_ind]             = Centers2Particle( particles, mesh->d_n,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
         particles->T[new_ind]             = Centers2Particle( particles, mesh->T,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
         particles->P[new_ind]             = Centers2Particle( particles, mesh->p_in,  mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
+        particles->phi[new_ind]           = Centers2Particle( particles, mesh->phi_n,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
+        particles->X[new_ind]             = Centers2Particle( particles, mesh->X_n,  mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
     }
 
-    particles->phi[new_ind]           = particles->phi[min_index]; // to be changed
-    particles->X[new_ind]             = particles->X[min_index];   // to be changed
+   
 //    //    particles->generation[new_ind]    = particles->generation[min_index];
     if ( DirectNeighbour == 1 ) {
         particles->rho[new_ind]           = particles->rho[min_index];
@@ -4553,4 +4557,3 @@ firstprivate( ncx, mesh ) schedule( static )
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
-
