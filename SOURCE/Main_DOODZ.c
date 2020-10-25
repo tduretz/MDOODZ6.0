@@ -782,6 +782,7 @@ int main( int nargs, char *args[] ) {
 
                 if ( Nmodel.nit > 0 && Nmodel.Picard2Newton == 1 ) {
                     if ( rx_rel[Nmodel.nit-1] < Nmodel.Pic2NewtCond || rz_rel[Nmodel.nit-1] < Nmodel.Pic2NewtCond ) {
+                        if ( first_Newton == 1 ) cholmod_free_factor ( &CholmodSolver.Lfact, &CholmodSolver.c);
                         if ( first_Newton == 1 ) CholmodSolver.Analyze = 1;
                         if ( first_Newton == 0 ) CholmodSolver.Analyze = 0;
                         if ( first_Newton == 1 ) first_Newton = 0;
