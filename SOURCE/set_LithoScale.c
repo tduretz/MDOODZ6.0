@@ -163,23 +163,6 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     NXVZ = NX+1;
     NZVX = NZ+1;
     
-    X  = malloc (NX*sizeof(double));
-    Z  = malloc (NZ*sizeof(double));
-    XC = malloc (NCX*sizeof(double));
-    ZC = malloc (NCZ*sizeof(double));
-    
-    for (k=0; k<NX; k++) {
-        X[k] = mesh->xg_coord[k];
-    }
-    for (k=0; k<NCX; k++) {
-        XC[k] = mesh->xc_coord[k];
-    }
-    for (l=0; l<NZ; l++) {
-        Z[l] = mesh->zg_coord[l];
-    }
-    for (l=0; l<NCZ; l++) {
-        ZC[l] = mesh->zc_coord[l];
-    }
     
     if (model->step == 0) {
         materials->k_eff[2] = k_crazy;
@@ -225,28 +208,6 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     printf("Vx Outflow         = %2.2e Vx Inflow = %2.2e\n", VxOut*scaling.V,  VxIn*scaling.V);
     printf("Total influx       = %2.2e\n", influx*scaling.V*scaling.L);
     
-    NX  = mesh->Nx;
-    NZ  = mesh->Nz;
-    NCX = NX-1;
-    NCZ = NZ-1;
-    
-    X  = malloc (NX*sizeof(double));
-    Z  = malloc (NZ*sizeof(double));
-    XC = malloc (NCX*sizeof(double));
-    ZC = malloc (NCZ*sizeof(double));
-    
-    for (k=0; k<NX; k++) {
-        X[k] = mesh->xg_coord[k];
-    }
-    for (k=0; k<NCX; k++) {
-        XC[k] = mesh->xc_coord[k];
-    }
-    for (l=0; l<NZ; l++) {
-        Z[l] = mesh->zg_coord[l];
-    }
-    for (l=0; l<NCZ; l++) {
-        ZC[l] = mesh->zc_coord[l];
-    }
     
     /* --------------------------------------------------------------------------------------------------------*/
     /* Set the BCs for Vx on all grid levels                                                                   */
@@ -458,11 +419,7 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
         }
         
     }
-    
-    free(X);
-    free(Z);
-    free(XC);
-    free(ZC);
+
     printf("Velocity and pressure were initialised\n");
     printf("Boundary conditions were set up\n");
 }

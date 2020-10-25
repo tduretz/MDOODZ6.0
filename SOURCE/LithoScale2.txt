@@ -1,10 +1,10 @@
 /**** RESTART ****/
-istep = 00080
+istep = 00003
 irestart = 0
 
 /**** OUTPUT FILES ****/
 writer          = 1
-writer_step     = 10
+writer_step     = 1
 writer_markers  = 0
 writer_debug    = 0
 writer_energies = 0
@@ -16,9 +16,9 @@ V   = 1e-9
 T   = 100
 
 /**** SPACE-TIME ****/
-Nx      = 201
-Nz      = 62
-Nt      = 80
+Nx      = 401
+Nz      = 124
+Nt      = 3
 xmin    = -150.000000e3
 zmin    = -100.000000e3
 xmax    =  150.000000e3
@@ -62,10 +62,12 @@ subgrid_diff   = 2
 line_search_min = 0.1
 nexp_radial_basis = 2.0
 Plith_trick     = 0
-
+DirectNeighbour = 0
+cpc             = 1
+IncrementalUpdateGrid = 1
 
 /**** SETUP DEPENDANT ****/
-EpsBG           = -1e-15
+EpsBG           = 1e-15
 user0           = 1450     /mantle temperature [oC]
 user1           = 160e3    /lithospheric thickness [m]
 user2           = 3.17e-10 /plate velocity [m/s]
@@ -102,7 +104,7 @@ gsel = 0
 eta0 = 1e22
 npwl = 1
 Qpwl = 0
-eta_vp = 1e21
+eta_vp = 2e20
 n_vp   = 1.0
 
 ID   = 1
@@ -128,7 +130,7 @@ gsel = 0
 eta0 = 1e22
 npwl = 2
 Qpwl = 0
-eta_vp = 1e21
+eta_vp = 2e20
 n_vp   = 1.0
 
 ID   = 2       / astheno
@@ -154,7 +156,7 @@ gsel = 0
 eta0 = 5e20
 npwl = 1
 Qpwl = 0
-eta_vp = 1e21
+eta_vp = 2e20
 n_vp   = 1.0
 
 ID   = 3       / uc
@@ -177,7 +179,7 @@ linv = 0
 gbsv = 0
 expv = 0
 gsel = 0
-eta_vp = 1e21
+eta_vp = 2e20
 n_vp   = 1.0
 plss     = 0.0
 plse     = 0.5
@@ -204,7 +206,7 @@ linv = 0
 gbsv = 0
 expv = 0
 gsel = 0
-eta_vp = 1e21
+eta_vp = 2e20
 n_vp   = 1.0
 plss     = 0.0
 plse     = 0.5
@@ -231,7 +233,7 @@ linv = 0
 gbsv = 0
 expv = 0
 gsel = 0
-eta_vp = 1e21
+eta_vp = 2e20
 n_vp   = 1.0
 
 /**** DEFMAPS ****/
@@ -252,10 +254,12 @@ Nz_part  = 4
 min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
-Newton  = 0 
-nit_max = 1
-rel_tol_KSP = 1e-4
-tol_u   = 1e-9
-tol_p   = 1e-9
-mineta  = 1e17
-maxeta  = 1e25
+Newton        = 1 
+nit_max       = 40
+Picard2Newton = 1
+Pic2NewtCond  = 7.5e-1
+rel_tol_KSP   = 1e-4
+tol_u         = 1e-9
+tol_p         = 1e-9
+mineta        = 1e17
+maxeta        = 1e25

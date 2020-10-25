@@ -61,7 +61,7 @@ struct _mat_prop {
 // markers is the particles structure
 typedef struct _p_markers markers;
 struct _p_markers {
-	int    Nx_part, Nz_part, Nb_part, Nb_part_max, min_part_cell;
+	int    Nx_part, Nz_part, Nb_part, Nb_part_max, min_part_cell, Nb_part_ini;
 	DoodzFP *x, *z, *Vx, *Vz, *P, *sxxd, *szzd, *sxz, *progress, *rho, *T, *d, *phi, *X, *syy, *dsyy;
     DoodzFP *strain, *strain_el, *strain_pl, *strain_pwl, *strain_exp, *strain_lin, *strain_gbs;
 	int    *phase, *generation;
@@ -158,6 +158,8 @@ struct _n_params {
     double resx0, resz0, resp0;
     double resx_f, resz_f, resp_f;
 	double vrlx,  prlx, trlx;
+    int    Picard2Newton, ActivateNewton;
+    double Pic2NewtCond;
 };
 
 // grid contains all the fine grid arrays (double *)
@@ -290,6 +292,7 @@ void Initialise2DArrayInt( int*, int, int, int );
 void MinMaxArray( double*, double, int, char* );
 void MinMaxArrayVal( DoodzFP*, int, double*, double* );
 void MinMaxArrayTag( DoodzFP*, double, int, char*, char* );
+void MinMaxArrayTagInt( int*, double, int, char*, char* );
 void MinMaxArrayPart( DoodzFP*, double, int, char*, int* ) ;
 double SumArray( double*, double, int, char*);
 //void MinMaxArrayF( float*, double, int, char*);
@@ -418,6 +421,8 @@ void isout( markers*, params );
 void isoutPart( markers*, params*, int );
 void CountPartCell    ( markers*, grid* , params, surface, surface, int, scale );
 void CountPartCell_Old( markers*, grid* , params, surface, int, scale );
+void CountPartCell2   ( markers*, grid* , params, surface, surface, int, scale );
+
 void AccumulatedStrain( grid*, scale , params, markers* );
 void PureShearALE( params*,  grid*, markers*, scale );
 void VelocitiesOnCenters( double*, double*, double*, double*, int, int, scale );

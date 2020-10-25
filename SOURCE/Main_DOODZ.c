@@ -60,6 +60,7 @@ int main( int nargs, char *args[] ) {
     SparseMat    StokesA, StokesB, StokesC, StokesD;
     SparseMat    JacobA,  JacobB,  JacobC,  JacobD;
     int          Nx, Nz, Ncx, Ncz;
+    int          Newton, *Newt_on;
 
     double *rx_abs, *rz_abs, *rp_abs, *rx_rel, *rz_rel, *rp_rel;
 
@@ -114,12 +115,14 @@ int main( int nargs, char *args[] ) {
     // Get grid indices
     GridIndices( &mesh );
 
-    rx_abs = DoodzCalloc(Nmodel.nit_max+1, sizeof(double)); rx_rel = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
-    rz_abs = DoodzCalloc(Nmodel.nit_max+1, sizeof(double)); rz_rel = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
-    rp_abs = DoodzCalloc(Nmodel.nit_max+1, sizeof(double)); rp_rel = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
+    rx_abs  = DoodzCalloc(Nmodel.nit_max+1, sizeof(double)); rx_rel = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
+    rz_abs  = DoodzCalloc(Nmodel.nit_max+1, sizeof(double)); rz_rel = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
+    rp_abs  = DoodzCalloc(Nmodel.nit_max+1, sizeof(double)); rp_rel = DoodzCalloc(Nmodel.nit_max+1, sizeof(double));
+    Newt_on = DoodzCalloc(Nmodel.nit_max+1, sizeof(int));
 
     Nx = mesh.Nx; Nz = mesh.Nz; Ncx = Nx-1; Ncz = Nz-1;
-    if ( model.aniso == 1 ) model.Newton = 1;
+    if ( model.aniso  == 1 ) model.Newton = 1;
+    if ( model.Newton == 1 ) Newton = 1;
 
     printf("*************************************\n");
     printf("******* Initialize particles ********\n");
@@ -723,16 +726,16 @@ int main( int nargs, char *args[] ) {
             //        if ( model.ispureshear_ale == 1 ) InitialiseSolutionFields( &mesh, &model );
             InitialiseSolutionFields( &mesh, &model );
             EvalNumberOfEquations( &mesh, &Stokes );
-            if ( model.Newton == 1 ) EvalNumberOfEquations( &mesh, &Jacob  );
+            if ( Newton == 1 ) EvalNumberOfEquations( &mesh, &Jacob  );
             SAlloc( &Stokes,  Stokes.neq );
-            if ( model.Newton == 1 ) SAlloc(  &Jacob,   Jacob.neq );
+            if ( Newton == 1 ) SAlloc(  &Jacob,   Jacob.neq );
             if ( model.decoupled_solve == 1 ) {
                 SAlloc( &StokesA, Stokes.neq_mom );
                 SAlloc( &StokesB, Stokes.neq_mom );
                 SAlloc( &StokesC, Stokes.neq_cont);
                 SAlloc( &StokesD, Stokes.neq_cont );
             }
-            if ( model.Newton == 1 ) {
+            if ( Newton == 1 ) {
                 SAlloc( &JacobA, Stokes.neq_mom );
                 SAlloc( &JacobB, Stokes.neq_mom );
                 SAlloc( &JacobC, Stokes.neq_cont);
@@ -764,11 +767,21 @@ int main( int nargs, char *args[] ) {
             }
 
             int Nmax_picard = Nmodel.nit_max;
+            
+            if ( Newton == 1 && Nmodel.Picard2Newton == 1 ) model.Newton = 0;
 
             while ( Nmodel.nit <= Nmax_picard && nstag<model.nstagmax) {
-
+                
+                if ( Nmodel.nit > 0 && Nmodel.Picard2Newton == 1 ) {
+                    if ( rx_rel[Nmodel.nit-1] < Nmodel.Pic2NewtCond || rz_rel[Nmodel.nit-1] < Nmodel.Pic2NewtCond ) {
+                        model.Newton          = 1;
+                        CholmodSolver.Analyze = 1;
+                    }
+                }
+                    
                 printf("**********************************************\n");
-                printf("*** Non-linear it. %02d of %02d (step = %05d) ***\n", Nmodel.nit, Nmodel.nit_max, model.step);
+                if ( model.Newton == 0 ) { printf("*** Picard it. %02d of %02d (step = %05d) ***\n", Nmodel.nit, Nmodel.nit_max, model.step); Newt_on[Nmodel.nit] = 0;}
+                if ( model.Newton == 1 ) { printf("*** Newton it. %02d of %02d (step = %05d) ***\n", Nmodel.nit, Nmodel.nit_max, model.step); Newt_on[Nmodel.nit] = 1;}
                 printf("**********************************************\n");
 
                 UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
@@ -868,7 +881,7 @@ int main( int nargs, char *args[] ) {
                         FreeMat( &StokesC );
                         FreeMat( &StokesD );
                     }
-                    if ( model.Newton == 1 ) {
+                    if ( Newton == 1 ) {
                         FreeMat( &JacobA );
                         FreeMat( &JacobB );
                         FreeMat( &JacobC );
@@ -882,6 +895,13 @@ int main( int nargs, char *args[] ) {
                 t_omp = (double)omp_get_wtime();
                 if ( model.decoupled_solve == 0 ) SolveStokesDefect( &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling );
                 if ( model.decoupled_solve == 1 ) {
+                    
+//                    if ( model.nit <= 0 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling, &StokesA, &StokesB, &StokesC );
+//                    if ( model.nit  > 1 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling,  &JacobA,  &JacobB,  &JacobC );
+                    
+//                    SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling, &StokesA, &StokesB, &StokesC );
+//                    SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling,  &JacobA,  &JacobB,  &JacobC );
+                    
                     if ( model.Newton==0 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling, &StokesA, &StokesB, &StokesC );
                     if ( model.Newton==1 ) SolveStokesDefectDecoupled( &StokesA, &StokesB, &StokesC, &StokesD, &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling,  &JacobA,  &JacobB,  &JacobC );
 
@@ -993,7 +1013,8 @@ int main( int nargs, char *args[] ) {
             if (Nmodel.nit>=Nmodel.nit_max)  nit = Nmodel.nit_max;
             if (Nmodel.nit<Nmodel.nit_max)  nit = Nmodel.nit;
             for (i=0; i<=nit; i++) {
-                printf("Non-Linear it. %02d: |Fx abs.| = %2.2e - |Fz abs.| = %2.2e --- |Fx rel.| = %2.2e - |Fz rel.| = %2.2e\n", i, rx_abs[i], rz_abs[i], rx_rel[i], rz_rel[i]);
+                if (Newt_on[i] == 0) printf("Picard it. %02d: |Fx abs.| = %2.2e - |Fz abs.| = %2.2e --- |Fx rel.| = %2.2e - |Fz rel.| = %2.2e\n", i, rx_abs[i], rz_abs[i], rx_rel[i], rz_rel[i]);
+                if (Newt_on[i] == 1) printf("Newton it. %02d: |Fx abs.| = %2.2e - |Fz abs.| = %2.2e --- |Fx rel.| = %2.2e - |Fz rel.| = %2.2e\n", i, rx_abs[i], rz_abs[i], rx_rel[i], rz_rel[i]);
                 if (i == Nmodel.nit_max && model.safe_mode == 1) {
                     printf("Exit: Max iteration reached: Nmodel.nit_max = %02d! Check what you wanna do now...\n",Nmodel.nit_max);
                     if ( (Nmodel.resx < Nmodel.abs_tol_u) && (Nmodel.resz < Nmodel.abs_tol_u) && (Nmodel.resp < Nmodel.abs_tol_p) ) {}
@@ -1262,14 +1283,14 @@ int main( int nargs, char *args[] ) {
 
         // Free solution arrays
         SFree( &Stokes );
-        if ( model.Newton == 1 ) SFree( &Jacob );
+        if ( Newton == 1 ) SFree( &Jacob );
         if ( model.decoupled_solve == 1 ) {
             SFree( &StokesA );
             SFree( &StokesB );
             SFree( &StokesC );
             SFree( &StokesD );
         }
-        if ( model.Newton == 1 ) {
+        if ( Newton == 1 ) {
             SFree( &JacobA );
             SFree( &JacobB );
             SFree( &JacobC );
@@ -1278,7 +1299,7 @@ int main( int nargs, char *args[] ) {
         DoodzFree( Stokes.eqn_u );
         DoodzFree( Stokes.eqn_v );
         DoodzFree( Stokes.eqn_p );
-        if ( model.Newton == 1 ) {
+        if ( Newton == 1 ) {
             DoodzFree( Jacob.eqn_u );
             DoodzFree( Jacob.eqn_v );
             DoodzFree( Jacob.eqn_p );
@@ -1351,6 +1372,7 @@ int main( int nargs, char *args[] ) {
     DoodzFree( rx_rel );
     DoodzFree( rz_rel );
     DoodzFree( rp_rel );
+    DoodzFree( Newt_on );
 
     printf("\n********************************************************\n");
     printf("************* Ending MDOODZ 6.0 simulation *************\n");

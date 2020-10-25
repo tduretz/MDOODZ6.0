@@ -2024,9 +2024,9 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
 
     /*-----------------------------------------------*/
 
-    if ( dislocation == 1 ) eta_pwl  = pow(2.0*C_pwl,-1.0) * pow(Tii, 1.0-n_pwl);
-    if ( diffusion   == 1 ) eta_lin  = B_lin * pow( *Eii_lin, 1.0/n_lin - 1.0 ) * pow(*d1, m_lin/n_lin);
-    if ( peierls     == 1 ) eta_exp  = B_exp * pow( *Eii_exp, 1.0/(ST+n_exp) - 1.0 );
+    eta_pwl  = pow(2.0*C_pwl,-1.0) * pow(Tii, 1.0-n_pwl);
+    eta_lin  = B_lin * pow( *Eii_lin, 1.0/n_lin - 1.0 ) * pow(*d1, m_lin/n_lin);
+    eta_exp  = B_exp * pow( *Eii_exp, 1.0/(ST+n_exp) - 1.0 );
     if ( elastic     == 1 ) *Exx_el =  (double)elastic*(Txx-Txx0)/2.0/eta_el;
     if ( elastic     == 1 ) *Ezz_el =  (double)elastic*(Tzz-Tzz0)/2.0/eta_el;
     if ( elastic     == 1 ) *Exz_el =  (double)elastic*(Txz-Txz0)/2.0/eta_el;
