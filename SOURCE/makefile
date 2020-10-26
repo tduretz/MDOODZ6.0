@@ -1,8 +1,7 @@
 # MDOODZ 6.0 makefile
 
 # Compiler
-#CC = gcc
-CC=/opt/local/bin/gcc-mp-7
+CC = /opt/local/bin/gcc-mp-8
 
 #---------------------------------------------------#
 # C flags
@@ -34,7 +33,7 @@ CFLAGS += -Wno-unused-variable  -Wno-comment
 LIBS = -lz -lhdf5
 
 # Related to SuiteSparse
-LIBS += -llapack -lcxsparse -lumfpack -lcblas -lamd -lcholmod -lcolamd -lbtf -lsuitesparseconfig -lblas
+LIBS += -L /usr/lib/ -llapack -lcxsparse -lumfpack -lcblas -lamd -lcholmod -lcolamd -lbtf -lsuitesparseconfig -lblas
 
 # Link to openmp
 ifeq ($(OMP),yes)
@@ -45,7 +44,7 @@ endif
 # Rules
 all: Doodzi_$(MODEL)
 
-FILES = Main_DOODZ.o Solvers.o Routines_BEN.o StokesRoutines.o StokesAssemblyCoupled.o StokesAssemblyDecoupled.o AdvectionRoutines.o RheologyDensity.o HDF5Output.o SparseTools.o ThermalRoutines.o ThermalSolver.o ParticleRoutines.o free_surf.o FlowLaws.o MemoryAllocFree.o InputOutput.o MiscFunctions.o GridRoutines.o
+FILES = Main_DOODZ.o ParticleReseeding.o Solvers.o Routines_BEN.o StokesRoutines.o StokesAssemblyCoupled.o StokesAssemblyDecoupled.o AdvectionRoutines.o RheologyDensity.o HDF5Output.o SparseTools.o ThermalRoutines.o ThermalSolver.o ParticleRoutines.o free_surf.o FlowLaws.o MemoryAllocFree.o InputOutput.o MiscFunctions.o GridRoutines.o
 
 ifeq ($(NEW_INPUT),yes)
         FILES += BC.o

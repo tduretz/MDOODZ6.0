@@ -1132,13 +1132,13 @@ int main( int nargs, char *args[] ) {
         
         // Count the number of particle per cell
         t_omp = (double)omp_get_wtime();
-        if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
-        if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
-        if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
-        if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
+        if (model.cpc ==-1)                       CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
+        if (model.cpc == 0)                       CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
+        if (model.cpc == 1 && model.Reseed == 1 ) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
+        if (model.cpc == 1)                       CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
         
-        if (model.cpc== 2) CountPartCell2   ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
-        if (model.cpc== 2) CountPartCell2   ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
+        if (model.cpc == 2 && model.Reseed == 1 ) CountPartCell2   ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
+        if (model.cpc == 2)                       CountPartCell2   ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
         
         printf("After re-seeding :\n");
         printf("Initial number of particles = %d\n", particles.Nb_part_ini);
