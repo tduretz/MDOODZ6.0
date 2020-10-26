@@ -158,7 +158,7 @@ struct _n_params {
     double resx0, resz0, resp0;
     double resx_f, resz_f, resp_f;
 	double vrlx,  prlx, trlx;
-    int    Picard2Newton, ActivateNewton;
+    int    Picard2Newton, let_res_grow;
     double Pic2NewtCond;
 };
 

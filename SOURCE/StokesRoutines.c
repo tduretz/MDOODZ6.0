@@ -552,10 +552,9 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
         }
 
         // if the minmimun residuals are lower than starting ones, then success
-        if ( rx[ixz] < frac*Nmodel->resx_f || rz[ixz]<frac*Nmodel->resz_f  ) { //|| rp[ix]<frac*Nmodel->resp
+        if ( rx[ixz] < frac*Nmodel->resx_f && rz[ixz]<frac*Nmodel->resz_f  ) { //|| rp[ix]<frac*Nmodel->resp
             alpha = alphav[ixz];
             success = 1;
-            //            printf("\e[1;34mPredicted Residuals\e[m : alpha  = %lf --> rx = %2.4e rz = %2.4e rp = %2.4e\n", alphav[ix], rx[ix]*(scaling.F/pow(scaling.L,3)), rz[ix]* (scaling.F/pow(scaling.L,3)), rp[ix]*scaling.E);
             printf("\e[1;34mPredicted Residuals\e[m : alpha  = %lf --> rx = %2.4e rz = %2.4e rp = %2.4e\n", alphav[ix], rx[ix], rz[ix], rp[ix]);
         }
         if (success==0 && rx[ix] < frac*Nmodel->resx_f) {
@@ -576,8 +575,14 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
 
     if ( fabs(alpha)<1e-13 || success == 0 ) {
         printf( "Found minimum of the function -- cannot iterate further down\n" );
-        Nmodel->stagnated = 1;
-        alpha = 0.0;
+        if ( Nmodel->let_res_grow == 1 ) {
+            Nmodel->stagnated = 0;
+            alpha = min_step;
+        }
+        else {
+            Nmodel->stagnated = 1;
+            alpha = 0.0;
+        }
     }
 
     // Reset solutions

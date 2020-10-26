@@ -1465,6 +1465,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     // Nonlinear iteration parameters
     model->Newton           = ReadInt2( fin, "Newton", 0 );
     Nmodel->Picard2Newton   = ReadInt2( fin, "Picard2Newton", 0 );
+    Nmodel->let_res_grow    = ReadInt2( fin, "let_res_grow",  0 );
     Nmodel->Pic2NewtCond    = ReadDou2( fin, "Pic2NewtCond", 1e-1 );
     
     model->rel_tol_KSP      = ReadDou2( fin, "rel_tol_KSP", 1e-4 );
