@@ -576,12 +576,12 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
     if ( fabs(alpha)<1e-13 || success == 0 ) {
         printf( "Found minimum of the function -- cannot iterate further down\n" );
         if ( Nmodel->let_res_grow == 1 ) {
-            printf("Letting residual grow\n!")
+            printf("Letting residual grow\n!");
             Nmodel->stagnated = 0;
             alpha = min_step;
         }
         else {
-            printf("Stagnating...\n!")
+            printf("Stagnating...\n!");
             Nmodel->stagnated = 1;
             alpha = 0.0;
         }
