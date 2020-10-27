@@ -1123,38 +1123,6 @@ int main( int nargs, char *args[] ) {
 
         //------------------------------------------------------------------------------------------------------------------------------//
 
-        
-        
-        
-        printf("*************************************\n");
-        printf("************** Reseeding ************\n");
-        printf("*************************************\n");
-        
-        // Count the number of particle per cell
-        t_omp = (double)omp_get_wtime();
-        if (model.cpc ==-1)                       CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
-        if (model.cpc == 0)                       CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
-        if (model.cpc == 1 && model.Reseed == 1 ) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
-        if (model.cpc == 1)                       CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
-        
-        if (model.cpc == 2 && model.Reseed == 1 ) CountPartCell2   ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
-        if (model.cpc == 2)                       CountPartCell2   ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
-        
-        printf("After re-seeding :\n");
-        printf("Initial number of particles = %d\n", particles.Nb_part_ini);
-        printf("New number of particles     = %d\n", particles.Nb_part    );
-
-//        printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
-//
-//        printf("After re-seeding : number of particles = %d\n", particles.Nb_part);
-//        printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
-        
-        
-        
-        
-        
-        
-        
 
         if ( model.advection == 1 ) {
 
@@ -1279,21 +1247,27 @@ int main( int nargs, char *args[] ) {
                 WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particlesxx", materials, scaling );
             }
 #endif
-//            // Count the number of particle per cell
-//            printf("Before re-seeding : number of particles = %d\n", particles.Nb_part);
-//            t_omp = (double)omp_get_wtime();
+//
+        printf("*************************************\n");
+        printf("************** Reseeding ************\n");
+        printf("*************************************\n");
+        
+        // Count the number of particle per cell
+        t_omp = (double)omp_get_wtime();
+        if (model.cpc ==-1)                       CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
+        if (model.cpc == 0)                       CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
+        if (model.cpc == 1 && model.Reseed == 1 ) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
+        if (model.cpc == 1)                       CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
+        
+        if (model.cpc == 2 && model.Reseed == 1 ) CountPartCell2   ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
+        if (model.cpc == 2)                       CountPartCell2   ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
+        
+        printf("After re-seeding :\n");
+        printf("Initial number of particles = %d\n", particles.Nb_part_ini);
+        printf("New number of particles     = %d\n", particles.Nb_part    );
 
-//            // Count the number of particle per cell
-//            t_omp = (double)omp_get_wtime();
-//            if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
-//            if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
-//            if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
-//            if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
-//            printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
-//
-//            printf("After re-seeding : number of particles = %d\n", particles.Nb_part);
-//            printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
-//
+            printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
+
             // Remove particles that would be above the surface
             if ( model.free_surf == 1 ) {
                 CleanUpSurfaceParticles( &particles, &mesh, topo, scaling );
