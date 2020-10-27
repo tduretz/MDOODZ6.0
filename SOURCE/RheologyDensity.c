@@ -1826,9 +1826,14 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     if (  ProgressiveReaction == 1 ) {
 
         X     = (X0*tau_kin - 0.5*dt*erfc((P - Pr)/dPr) + dt)/(dt + tau_kin);
-        if ( X<X0 && NoReturn == 1 ) retro = 0.0;
-        dXdP   = 1.0*dt*exp(-pow(P - Pr, 2.0)/pow(dPr, 2.0))/(sqrt(M_PI)*dPr*(dt + tau_kin));
-        d2XdP2 = -1.0*dt*(2.0*P - 2.0*Pr)*exp(-pow(P - Pr, 2.0)/pow(dPr, 2.0))/(sqrt(M_PI)*pow(dPr, 3.0)*(dt + tau_kin));
+
+        if ( X<X0 && NoReturn == 1 ) {
+            retro = 0.0;
+            X = X0;
+        }
+        
+        dXdP   = retro*dt*exp(-pow(P - Pr, 2.0)/pow(dPr, 2.0))/(sqrt(M_PI)*dPr*(dt + tau_kin));
+        d2XdP2 = -retro*dt*(2.0*P - 2.0*Pr)*exp(-pow(P - Pr, 2.0)/pow(dPr, 2.0))/(sqrt(M_PI)*pow(dPr, 3.0)*(dt + tau_kin));
 
         ndis1  = materials->npwl[phase];
         Adis1  = materials->Apwl[phase];
