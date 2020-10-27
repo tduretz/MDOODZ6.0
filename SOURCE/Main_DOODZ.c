@@ -781,7 +781,7 @@ int main( int nargs, char *args[] ) {
             while ( Nmodel.nit <= Nmax_picard && nstag<model.nstagmax) {
 
                 if ( Nmodel.nit > 0 && Nmodel.Picard2Newton == 1 ) {
-                    if ( rx_rel[Nmodel.nit-1] < Nmodel.Pic2NewtCond || rz_rel[Nmodel.nit-1] < Nmodel.Pic2NewtCond ) {
+                    if ( rx_rel[Nmodel.nit-1] < Nmodel.Pic2NewtCond || rz_rel[Nmodel.nit-1] < Nmodel.Pic2NewtCond || Nmodel.nit>= Nmodel.nit_Pic_max) {
                         if ( first_Newton == 1 ) cholmod_free_factor ( &CholmodSolver.Lfact, &CholmodSolver.c);
                         if ( first_Newton == 1 ) CholmodSolver.Analyze = 1;
                         if ( first_Newton == 0 ) CholmodSolver.Analyze = 0;
@@ -959,8 +959,8 @@ int main( int nargs, char *args[] ) {
                     printf( "\e[1;31mReducing the timestep, and restart the iterations cycle...\e[m\n");
                     printf( "Before reduction: model.dt =, %2.2e\n", model.dt*scaling.t);
                     // ----------------------
-                    model.dt /= 5.0;
-                    printf( "HARD-CODED: Timestep divided by 5.0 => NEW CURRENT model.dt =, %2.2e\n", model.dt*scaling.t);
+                    model.dt /= model.safe_dt_div;
+                    printf( "HARD-CODED: Timestep divided by %2.2f => NEW CURRENT model.dt =, %2.2e\n", model.safe_dt_div, model.dt*scaling.t);
                     Nmodel.stagnated = 0;
                     // ----------------------
                     Nmodel.nit = -1;

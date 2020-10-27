@@ -1063,6 +1063,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->pc_type         = ReadInt2( fin, "pc_type",       0 );
     model->num_deriv       = ReadInt2( fin, "num_deriv",     0 );
     model->safe_mode       = ReadInt2( fin, "safe_mode",     0 );
+    model->safe_dt_div     = ReadDou2( fin, "safe_dt_div",  5.0 );
     model->nstagmax        = ReadInt2( fin, "nstagmax",      3 );
     model->noisy           = ReadInt2( fin, "noisy",         1 );  // prints a lot of info to standard output
 
@@ -1468,6 +1469,8 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     Nmodel->Picard2Newton   = ReadInt2( fin, "Picard2Newton", 0 );
     Nmodel->let_res_grow    = ReadInt2( fin, "let_res_grow",  0 );
     Nmodel->Pic2NewtCond    = ReadDou2( fin, "Pic2NewtCond", 1e-1 );
+    Nmodel->nit_Pic_max     = ReadInt2( fin, "nit_Pic_max", 10 );
+    
     
     model->rel_tol_KSP      = ReadDou2( fin, "rel_tol_KSP", 1e-4 );
     Nmodel->nit_max         = ReadInt2( fin, "nit_max", 1 );

@@ -120,7 +120,7 @@ struct _params {
     int decoupled_solve, lsolver, diag_scaling, pc_type;
     double penalty, abs_tol_div, rel_tol_div, auto_penalty, compressible, rel_tol_KSP;
     // Non-linear solver
-    double line_search_min, num_deriv;
+    double line_search_min, num_deriv, safe_dt_div;
     int    safe_mode, nstagmax;
     // Deformation maps
     int nT, nE, nd, def_maps;
@@ -158,7 +158,7 @@ struct _n_params {
     double resx0, resz0, resp0;
     double resx_f, resz_f, resp_f;
 	double vrlx,  prlx, trlx;
-    int    Picard2Newton, let_res_grow;
+    int    Picard2Newton, let_res_grow, nit_Pic_max;
     double Pic2NewtCond;
 };
 
