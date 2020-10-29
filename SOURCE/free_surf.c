@@ -920,14 +920,10 @@ void SurfaceDensityCorrection( grid *mesh, params model, surface topo, scale sca
             if (mesh->BCp.type[c1] == -1 && mesh->BCp.type[c1+ncx] == 31 ) {
                 h  = topo.b[i] + topo.a[i]*mesh->xc_coord[i];
                 h0               = fabs(h - mesh->zc_coord[j]);
-                mesh->rho_n[c1] *= h0/dz;
-                mesh->rho_n[c1]  = mesh->rho_n[c1];
-//                if (i==0) printf("SurfaceDensityCorrection WEST %2.2e x= %2.10e z= %2.10e h= %2.10e\n", mesh->rho_n[c1]*scaling.rho, mesh->xc_coord[i], mesh->zc_coord[i], h);
-//                if (i==ncx-1) printf("SurfaceDensityCorrection EAST %2.2e x= %2.10e z= %2.10e h= %2.10e\n", mesh->rho_n[c1]*scaling.rho, mesh->xc_coord[i], mesh->zc_coord[i] , h);
-
+                mesh->rho_n[c1]  *= h0/dz;
+                mesh->rho0_n[c1] *= h0/dz;
             }
             if ( mesh->BCp.type[c1] == 30 || mesh->BCp.type[c1] == 31 ) {
-                mesh->rho_app_n[c1] = 1.0/scaling.rho;
                 mesh->rho_n[c1]     = 1.0/scaling.rho;
             }
         }
@@ -946,12 +942,10 @@ void SurfaceDensityCorrection( grid *mesh, params model, surface topo, scale sca
                     h  = 0.5*(topo.b[i] + topo.a[i]*mesh->xc_coord[i]);
                     h += 0.5*(topo.b[i-1] + topo.a[i-1]*mesh->xc_coord[i-1]);
                 }
-                h0              = fabs(h - mesh->zg_coord[j]);
-                mesh->rho_s[c1] = h0/dz*mesh->rho_s[c1];
-                mesh->rho_app_s[c1] = mesh->rho_s[c1];
+                h0               = fabs(h - mesh->zg_coord[j]);
+                mesh->rho_s[c1] *= h0/dz;
             }
-            if ( mesh->BCg.type[c1] == 30 ){
-                mesh->rho_app_s[c1] = 1.0/scaling.rho;
+            if ( mesh->BCg.type[c1] == 30 ) {
                 mesh->rho_s[c1]     = 1.0/scaling.rho;
             }
         }
@@ -1003,10 +997,6 @@ void SurfaceDensityCorrection( grid *mesh, params model, surface topo, scale sca
     //            }
     //        }
     //    }
-    
-    ArrayEqualArray( mesh->rho_app_n, mesh->rho_n,  (mesh->Nx-1) * (mesh->Nz-1) );
-    ArrayEqualArray( mesh->rho_app_s, mesh->rho_s,  (mesh->Nx-0) * (mesh->Nz-0) );
-    
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/

@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 01000
+istep = 00480
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -57,7 +57,7 @@ isthermal       = 0
 line_search     = 1
 free_surf       = 0
 free_surf_stab  = 0
-eqn_state       = 1
+eqn_state       = 3
 thermal_eq      = 0
 subgrid_diff    = 2
 shear_heat      = 0
@@ -109,6 +109,7 @@ reac_phase = 5
 Pr         = 1.8e9
 dPr        = 1e8
 tr         = 3.1558e8
+density_model = 3
 
 /**** PHASE 1 ****/
 ID   = 1
@@ -135,6 +136,7 @@ eta0 = 0
 npwl = 0
 Qpwl = 0
 reac_soft  = 0
+density_model = 3
 
 /**** PHASE 2 ****/
 ID   = 2
@@ -161,6 +163,7 @@ eta0 = 0
 npwl = 0
 Qpwl = 0
 reac_soft  = 0
+density_model = 3
 
 /**** PHASE 3 ****/
 ID   = 3
@@ -191,6 +194,7 @@ reac_phase = 5
 Pr         = 1.8e9
 dPr        = 1e8
 tr         = 3.1558e8
+density_model = 3
 
 /**** PHASE 4 ****/
 ID   = 4
@@ -217,6 +221,7 @@ eta0 = 1.0e18
 npwl = 0
 Qpwl = 0
 reac_soft  = 0
+density_model = 3
 
 /**** PHASE 5 ****/
 ID   = 5
@@ -243,6 +248,7 @@ eta0 = 0
 npwl = 0
 Qpwl = 0
 reac_soft  = 0
+density_model = 3
 
 /**** PHASE 6 ****/
 ID   = 6
@@ -269,6 +275,7 @@ eta0 = 0
 npwl = 0
 Qpwl = 0
 reac_soft  = 0
+density_model = 3
 
 /**** DEFMAPS ****/
 nT    =    51      / Temperature resolutin []

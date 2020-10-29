@@ -965,7 +965,7 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                     if (mesh->BCg.type[ixyN] != 30 && mesh->BCu.type[iVxN] != 13) inN = 1.0;
 
                     // Gravity force: take apparent viscosity (free surface correction)
-                    rhoVx             = 0.5*(mesh->rho_app_s[ixyS] + mesh->rho_app_s[ixyN]);
+                    rhoVx             = 0.5*(mesh->rho_s[ixyS] + mesh->rho_s[ixyN]);
                     mesh->roger_x[c]  = - gx * rhoVx;
 
                     // Elastic force
@@ -1038,7 +1038,7 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                     if (mesh->BCg.type[ixyE] != 30 && mesh->BCv.type[iVyE] != 13 ) inE = 1.0;
 
                     // Gravity force: use apparent density (free surface correction)
-                    rhoVz             = 0.5 * (mesh->rho_app_s[ixyW] + mesh->rho_app_s[ixyE]);  // USE THIS ALWAYS
+                    rhoVz             = 0.5 * (mesh->rho_s[ixyW] + mesh->rho_s[ixyE]);  // USE THIS ALWAYS
                     mesh->roger_z[c]  = - gz * rhoVz;
 
                     // Elastic force
@@ -1090,7 +1090,8 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
 
                 if (model.compressible == 1 ) {
                     if (mesh->comp_cells[c] == 1) {
-                        mesh->rhs_p[c] += mesh->p0_n[c]*mesh->bet_n[c]/model.dt;
+                        if ( model.VolChangeReac == 0 ) mesh->rhs_p[c] += mesh->p0_n[c]*mesh->bet_n[c]/model.dt;
+                        if ( model.VolChangeReac == 1 ) mesh->rhs_p[c] += log(mesh->rho0_n[c])/model.dt;
                         if (model.adiab_heat > 0 ) {
                             mesh->rhs_p[c] += mesh->divth0_n[c];
                         }

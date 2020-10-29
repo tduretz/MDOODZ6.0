@@ -173,7 +173,7 @@ struct _grid {
 	BC     BCu, BCv, BCp, BCp_exp;
 	BCT    BCt, BCg;
 	double *xg_coord, *zg_coord, *xc_coord, *zc_coord, *xvz_coord, *zvx_coord, *xg_coord0, *zg_coord0, *xg_coord_ext, *zg_coord_ext;
-	double *eta_s, *eta_n, *rho_s, *rho_n, *rho_app_s, *rho_app_n;
+	double *eta_s, *eta_n, *rho_s, *rho_n;
     double *X_s, *X_n, *X0_s, *X0_n, *p0_n, *p0_s;
     double *OverS_n,  *OverS_s;
     double *strain_n, *strain_s;

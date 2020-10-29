@@ -434,7 +434,7 @@ void ComputeLithostaticPressure( grid *mesh, params *model, double RHO_REF, scal
 
             // density
             if ( mode == 0 ) rho_eff = RHO_REF;
-            if ( mode == 1 ) rho_eff = mesh->rho_app_n[c];
+            if ( mode == 1 ) rho_eff = mesh->rho_n[c];
 
             // Initialise pressure variables : Compute lithostatic pressure
             if ( mesh->BCp.type[c] != 30 && mesh->BCp.type[c] != 31 ) { // First row (surface)

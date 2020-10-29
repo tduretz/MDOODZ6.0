@@ -300,11 +300,11 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     // ---------------------------------------------------------
     // Cast grid arrays
     Crho_s  = DoodzMalloc( sizeof(float)*model.Nx*model.Nz);
-    DoubleToFloat( mesh->rho_app_s, Crho_s, model.Nx*model.Nz);
+    DoubleToFloat( mesh->rho_s, Crho_s, model.Nx*model.Nz);
     ScaleBack( Crho_s, scaling.rho, model.Nx*model.Nz );
 
     Crho_n  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
-    DoubleToFloat( mesh->rho_app_n, Crho_n, (model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->rho_n, Crho_n, (model.Nx-1)*(model.Nz-1));
     ScaleBack( Crho_n, scaling.rho, (model.Nx-1)*(model.Nz-1));
 
     Ceta_s  = DoodzMalloc( sizeof(float)*model.Nx*model.Nz);
@@ -1175,9 +1175,9 @@ void WriteResiduals( grid Mmesh, params model, Nparams Nmodel, scale scaling ) {
 
     // Scaling
     ArrayTimesScalar( Mmesh.eta_phys_n, scaling.eta, (model.Nx-1)*(model.Nz-1) );
-    ArrayTimesScalar( Mmesh.rho_app_n,  scaling.rho, (model.Nx-1)*(model.Nz-1) );
+    ArrayTimesScalar( Mmesh.rho_n,  scaling.rho, (model.Nx-1)*(model.Nz-1) );
     ArrayTimesScalar( Mmesh.eta_phys_s, scaling.eta, (model.Nx)*(model.Nz) );
-    ArrayTimesScalar( Mmesh.rho_app_s,  scaling.rho, (model.Nx)*(model.Nz) );
+    ArrayTimesScalar( Mmesh.rho_s,  scaling.rho, (model.Nx)*(model.Nz) );
     ArrayTimesScalar( Mmesh.rp,      scaling.E,   (model.Nx-1)*(model.Nz-1) );
     ArrayTimesScalar( Mmesh.ru,      scaling.F,   (model.Nx)*(model.Nz+1) );
     ArrayTimesScalar( Mmesh.rv,      scaling.F,   (model.Nx+1)*(model.Nz) );
@@ -1188,16 +1188,16 @@ void WriteResiduals( grid Mmesh, params model, Nparams Nmodel, scale scaling ) {
     AddFieldToGroup_generic( _TRUE_, name, "VxNodes" , "ru"  , 'd', model.Nx*(model.Nz+1),     Mmesh.ru, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "VzNodes" , "rv"  , 'd', (model.Nx+1)*model.Nz,     Mmesh.rv, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "rp"  , 'd', (model.Nx-1)*(model.Nz-1), Mmesh.rp, 1 );
-    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "rho"  , 'd', (model.Nx-1)*(model.Nz-1), Mmesh.rho_app_n, 1 );
-    AddFieldToGroup_generic( _TRUE_, name, "Vertices" , "rho"  , 'd', (model.Nx)*(model.Nz), Mmesh.rho_app_s, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "rho"  , 'd', (model.Nx-1)*(model.Nz-1), Mmesh.rho_n, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Vertices" , "rho"  , 'd', (model.Nx)*(model.Nz), Mmesh.rho_s, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "eta"  , 'd', (model.Nx-1)*(model.Nz-1), Mmesh.eta_phys_n, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Vertices" , "eta"  , 'd', (model.Nx)*(model.Nz), Mmesh.eta_phys_s, 1 );
 
     // Scaling
     ArrayTimesScalar( Mmesh.eta_phys_n, 1.0/scaling.eta, (model.Nx-1)*(model.Nz-1) );
-    ArrayTimesScalar( Mmesh.rho_app_n,  1.0/scaling.rho, (model.Nx-1)*(model.Nz-1) );
+    ArrayTimesScalar( Mmesh.rho_n,  1.0/scaling.rho, (model.Nx-1)*(model.Nz-1) );
     ArrayTimesScalar( Mmesh.eta_phys_s, 1.0/scaling.eta, (model.Nx)*(model.Nz) );
-    ArrayTimesScalar( Mmesh.rho_app_s,  1.0/scaling.rho, (model.Nx)*(model.Nz) );
+    ArrayTimesScalar( Mmesh.rho_s,  1.0/scaling.rho, (model.Nx)*(model.Nz) );
     ArrayTimesScalar( Mmesh.rp,      1.0/scaling.E,   (model.Nx-1)*(model.Nz-1) );
     ArrayTimesScalar( Mmesh.ru,      1.0/scaling.F,   (model.Nx)*(model.Nz+1) );
     ArrayTimesScalar( Mmesh.rv,      1.0/scaling.F,   (model.Nx+1)*(model.Nz) );

@@ -1162,6 +1162,8 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     // ************** D ************** //
     SuiteSparse_long rsize;
     double gamma  = model.penalty, penalty;//1e12;//1e10*model.Nx*model.Nz;
+    int vol_change = model.VolChangeReac;
+
     rsize = Stokes->neq_cont;
     Dcm0  = cholmod_speye (rsize, rsize, CHOLMOD_REAL, &c );
     D1cm0  = cholmod_speye (rsize, rsize, CHOLMOD_REAL, &c );
@@ -1172,7 +1174,7 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     //    printf("-gamma*celvol = %2.2e %2.2e %2.2e %d %d\n", -gamma*celvol, model.dx*scaling.L, model.dz*scaling.L, model.Nx, model.Nz);
     
     
-#pragma omp parallel for shared(D1cm0, Dcm0, mesh, Stokes, matA, matD ) private( i ) firstprivate( model, celvol )
+#pragma omp parallel for shared(D1cm0, Dcm0, mesh, Stokes, matA, matD ) private( i ) firstprivate( model, celvol, vol_change )
     for( k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
         if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31 ) {
             i = Stokes->eqn_p[k] - matA->neq;
@@ -1182,7 +1184,9 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
             
             // Here Dcm0 is the pressure block
             if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[i] *= 0.0;
-            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i]  = mesh->bet_n[k] / model.dt * celvol * matD->d[k]*matD->d[k];
+            if (mesh->comp_cells[k]==1 && vol_change == 0 ) ((double*)D1cm0->x)[i]  = mesh->bet_n[k] / model.dt * celvol * matD->d[k]*matD->d[k];
+            if (mesh->comp_cells[k]==1 && vol_change == 1 ) ((double*)D1cm0->x)[i]  = mesh->drhodp_n[k] / (mesh->rho_n[k]*model.dt) * celvol * matD->d[k]*matD->d[k];
+
             // Here Dcm0 is the inverse of the pressure block
             if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i] *= penalty; // Should be /celvol
             if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k]; // Should be /celvol
@@ -2258,6 +2262,8 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     // ************** D ************** //
     SuiteSparse_long rsize;
     double gamma        = model.penalty, penalty;//1e12;//1e10*model.Nx*model.Nz;
+    int vol_change = model.VolChangeReac;
+
     rsize               = Stokes->neq_cont;
     Dcm0                = cholmod_speye( rsize, rsize, CHOLMOD_REAL, &c );
     D1cm0               = cholmod_speye( rsize, rsize, CHOLMOD_REAL, &c );
@@ -2271,13 +2277,14 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
 //    MinMaxArray(matD->d, 1, matD->neq, "diag. D" );
 //    exit(1);
 
-#pragma omp parallel for shared( whos_incompressible, D1cm0, Dcm0, mesh, Stokes, matA, matD ) private( i ) firstprivate( model, celvol )
+#pragma omp parallel for shared( whos_incompressible, D1cm0, Dcm0, mesh, Stokes, matA, matD ) private( i ) firstprivate( model, celvol, vol_change )
     for( k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
         if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31 ) {
             i = Stokes->eqn_p[k] - matA->neq;
             // Here Dcm0 is the pressure block - This relates to physics (0 is incompressible, Beta/dt is compressible)
             if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[i] *= 0.0;
-            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i]  = mesh->bet_n[k] / model.dt * celvol * matD->d[i]*matD->d[i]  * 1e0;
+            if (mesh->comp_cells[k]==1 && vol_change == 0 ) ((double*)D1cm0->x)[i]  = mesh->bet_n[k] / model.dt * celvol * matD->d[k]*matD->d[k];
+            if (mesh->comp_cells[k]==1 && vol_change == 1 ) ((double*)D1cm0->x)[i]  = mesh->drhodp_n[k] / (mesh->rho_n[k]*model.dt) * celvol * matD->d[k]*matD->d[k];
             // Here Dcm0 is the inverse of the pressure block - This relates to numerics in this incompressible case (penalty) or physics in the compressible case (dt/Beta)
             if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i]  *= penalty;
             if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]   = 1.0 /  ((double*)D1cm0->x)[i];

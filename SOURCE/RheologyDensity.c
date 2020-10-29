@@ -1726,7 +1726,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     double  dFdExx=0.0, dFdEzz=0.0, dFdExz=0.0, dFdP=0.0, K = 1.0/beta, dQdP=0.0, g=0.0, dlamdExx=0.0, dlamdEzz=0.0, dlamdExz=0.0, dlamdP=0.0, a=0.0, deta_vep_dExx=0.0, deta_vep_dEzz=0.0, deta_vep_dExz=0.0, deta_vep_dP=0.0, deta_vp_dExx, deta_vp_dEzz, deta_vp_dExz, deta_vp_dP, deta;
 
     double F_trial0 = F_trial;
-    double dFdgdot, divp=0.0, Pc = P;
+    double dFdgdot, divp=0.0, Pc = P, dummy;
 
     // Mix of constant viscosity
     int phase_two    = materials->phase_two[phase];
@@ -1739,7 +1739,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     double tau_kin = materials->tau_kin[phase], Pr = materials->Pr[phase], dPr = materials->dPr[phase];
     double dXdP=0.0, d2XdP2=0.0, dEadP=0.0, dfdn=0.0, dndP=0.0, dfdP=0.0, dAdP=0.0, retro = 1.0;
     double ddivrdpc = 0.0, divr = 0.0, drhodX = 0.0;
-    double dCgbsdP = 0.0, dClindP = 0.0, dCpwldP = 0.0, Jii;
+    double dCgbsdP = 0.0, dClindP = 0.0, dCpwldP = 0.0, Jii, alpha, rho_ref, drho_ref_dP;
 
     if (model->diffuse_X==0) constant_mix  = 0;
 
@@ -1786,7 +1786,6 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         B_pwl = pre_factor * F_pwl * pow(A_pwl,-1.0/n_pwl) * exp( (Ea_pwl + P*Va_pwl)/R/n_pwl/T ) * pow(d, m_pwl/n_pwl) * pow(f_pwl, -r_pwl/n_pwl) * exp(-a_pwl*phi/n_pwl);
         C_pwl   = pow(2.0*B_pwl, -n_pwl);
         dCpwldP = -C_pwl*Va_pwl/R/T;
-        //        printf("%2.2e %2.6e %2.6e\n",  exp( (Ea_pwl + P*Va_pwl)/R/n_pwl/T ), Ea_pwl*scaling->J,  R*n_pwl*T *scaling->J);
     }
     if ( diffusion == 1 ) {
         if (m_lin>0.0 && d<1e-13/scaling->L){
@@ -1848,6 +1847,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         Qdis2  = materials->Qpwl[materials->reac_phase[phase]];
 
         rho1   = materials->rho[phase];
+        alpha  = materials->alp[phase];
         rho2   = materials->rho[materials->reac_phase[phase]];
 
         // Huet et al 2014 ---------------
@@ -2055,7 +2055,6 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     if ( constant    == 1 ) Ezz_cst = Tzz/2.0/eta_cst;
     if ( constant    == 1 ) Exz_cst = Txz/2.0/eta_cst;
 
-
 //    printf("exx_tot = %2.2e exx_el = %2.2e exx_pwl = %2.2e exx_exp = %2.2e exx_cst = %2.2e exx_exp = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", exx*scaling->E, *Exx_el*scaling->E, Exx_pwl*scaling->E, Exx_lin*scaling->E, Exx_cst*scaling->E, Exx_exp*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
 //    printf("ezz_tot = %2.2e ezz_el = %2.2e exx_pwl = %2.2e exx_exp = %2.2e exx_cst = %2.2e exx_exp = %2.2e ezz_pl = %2.2e, ezz_net = %2.2e\n", ezz*scaling->E, *Ezz_el*scaling->E, Ezz_pwl*scaling->E, Ezz_lin*scaling->E, Ezz_cst*scaling->E, Ezz_exp*scaling->E, Ezz_pl*scaling->E, (ezz - (*Ezz_el+Ezz_pwl+Ezz_lin+Ezz_cst+Ezz_exp+Ezz_pl))*scaling->E);
 //      //       printf("exx_el = %2.2e exx_vis = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", *Exx_el*scaling->E, (Exx_pwl+Exx_lin+Exx_cst+Exx_exp)*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
@@ -2069,22 +2068,25 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     if (dislocation == 1) deta += -C_pwl * pow(Tii, n_pwl    - 3.0)*(n_pwl    - 1.0);
     if (peierls     == 1) deta += -C_exp * pow(Tii, n_exp+ST - 3.0)*(n_exp+ST - 1.0);
     if (diffusion   == 1) deta += -C_lin * pow(Tii, n_lin    - 3.0)*(n_lin    - 1.0) * pow(*d1,-m_lin);
+//    if (gbs         == 1)
     detadTxx     =     deta*(2.0*Txx + Tzz)*pow(eta_ve,2.0); // Out-of-plane deviatoric stress was substituted here
     detadTzz     =     deta*(2.0*Tzz + Txx)*pow(eta_ve,2.0); // ... and there
     detadTxz     = 2.0*deta*Txz*pow(eta_ve,2.0);
     deta_ve_dExx = detadTxx * 2.0*eta_ve / (1.0 - 2.0*(detadTxx*Exx + detadTzz*Ezz + detadTxz*Exz));
     deta_ve_dEzz = detadTzz * 2.0*eta_ve / (1.0 - 2.0*(detadTxx*Exx + detadTzz*Ezz + detadTxz*Exz));
     deta_ve_dExz = detadTxz * 2.0*eta_ve / (1.0 - 2.0*(detadTxx*Exx + detadTzz*Ezz + detadTxz*Exz));
+
+    dummy = 0.0;
     Jii = Tii*Tii;
-    deta_ve_dP   = pow(eta_ve, 2)*(-2*pow(Jii, (1.0/2.0)*n_gbs - 1.0/2.0)*dCgbsdP - 2*pow(Jii, (1.0/2.0)*n_lin - 1.0/2.0)*pow(d, -m_lin)*dClindP - 2*pow(Jii, (1.0/2.0)*n_pwl - 1.0/2.0)*dCpwldP);
-    
-//    deta_ve_dP   = 0.0;
+    if (dislocation == 1) dummy += - 2.0*pow(Jii, (1.0/2.0)*n_pwl - 1.0/2.0)*dCpwldP;
+    if (diffusion   == 1) dummy += - 2.0*pow(Jii, (1.0/2.0)*n_lin - 1.0/2.0)*pow(d, -m_lin)*dClindP;
+//    if (gbs         == 1) dummy += - 2*pow(Jii, (1.0/2.0)*n_gbs - 1.0/2.0)*dCgbsdP;
+    deta_ve_dP   = pow(eta_ve, 2)*dummy;
+    //    deta_ve_dP   = 0.0;
 
-
-    if (  ProgressiveReaction == 1 ) {
+    if (  ProgressiveReaction == 1 ) { // if activation volume is activated: This will not work !!!!!!!!!
         deta_ve_dP   = pow(B_pwl, n_pwl)*Eii*eta_ve*pow(eta_el, 2)*pow(Eii*eta_ve, n_pwl)*(-A_pwl*F_pwl*Ea_pwl*dndP + A_pwl*F_pwl*R*T*dndP*n_pwl*log(B_pwl) - A_pwl*F_pwl*R*T*dndP*n_pwl*log(Eii*eta_ve) + A_pwl*F_pwl*R*T*dndP*log(A_pwl) + A_pwl*F_pwl*dQdP*n_pwl + A_pwl*R*T*dfdP*pow(n_pwl, 2) - F_pwl*R*T*dAdP*n_pwl)/(A_pwl*F_pwl*R*T*n_pwl*(pow(B_pwl, 2*n_pwl)*pow(Eii, 2)*pow(eta_ve, 2) + 2*pow(B_pwl, n_pwl)*Eii*eta_ve*eta_el*pow(Eii*eta_ve, n_pwl) + pow(B_pwl, n_pwl)*Eii*pow(eta_el, 2)*n_pwl*pow(Eii*eta_ve, n_pwl) - pow(B_pwl, n_pwl)*Eii*pow(eta_el, 2)*pow(Eii*eta_ve, n_pwl) + pow(eta_el, 2)*pow(Eii*eta_ve, 2*n_pwl)));
     }
-
 
     //------------------------------------------------------------------------//
 
@@ -2169,6 +2171,19 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     }
 
     // ----------------- Reaction volume changes
+    
+    rho_ref      = (1.0-X)*rho1 + X*rho2;
+    drhodX       = rho2 - rho1;
+    drho_ref_dP  = drhodX * dXdP;
+    *rho         = rho_ref * exp(1.0/K * Pc - alpha * T);
+    *drhodp      = (*rho)/K + exp(1.0/K * Pc - alpha * T) * drho_ref_dP;
+    
+//    rho_ref      = rho1;
+//    drhodX       = 0.0;
+//    drho_ref_dP  = 0.0;
+//    *rho         = rho_ref * exp(1.0/K * Pc - alpha * T);
+//    *drhodp      = (*rho)/K + exp(1.0/K * Pc - alpha * T) * drho_ref_dP;
+
 
 //    // Activate volume changes only if reaction is taking place
 //    if ( VolChangeReac == 1 && fabs(X-X0)>0.0 ) {
@@ -2478,6 +2493,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                     if ( cond == 1 ) mesh->detadp_n[c0]   += mesh->phase_perc_n[p][c0] * detadp       / etaVE;
                 }
                 
+                // Volume changes
                 if ( model->VolChangeReac == 1 ) {
                     if ( cond == 1 ) mesh->rho_n[c0]       += mesh->phase_perc_n[p][c0] * rho;
                     if ( cond == 1 ) mesh->drhodp_n[c0]    += mesh->phase_perc_n[p][c0] * drhodp;

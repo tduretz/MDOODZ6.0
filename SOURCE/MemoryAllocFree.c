@@ -507,9 +507,6 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->VzVx   = DoodzCalloc (Nx*NzVx,sizeof(double));
     mesh->VxVz   = DoodzCalloc (NxVz*Nz,sizeof(double));
 
-    mesh->rho_app_n  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
-    mesh->rho_app_s  = DoodzCalloc ((Nx)*(Nz),sizeof(double));
-
     mesh->Uthermal   = DoodzCalloc (model->Nt,sizeof(double));
     mesh->Uelastic   = DoodzCalloc (model->Nt,sizeof(double));
     mesh->Work       = DoodzCalloc (model->Nt,sizeof(double));
@@ -802,9 +799,6 @@ void GridFree( grid* mesh, params* model ) {
     // Inertia
     DoodzFree(mesh->VxVz);
     DoodzFree(mesh->VzVx);
-
-    DoodzFree( mesh->rho_app_n  );
-    DoodzFree( mesh->rho_app_s  );
 
     // Array containing the number of particles in each cell
     DoodzFree(mesh->nb_part_cell);

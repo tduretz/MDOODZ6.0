@@ -134,7 +134,7 @@ void Xmomentum_WestNeumann( SparseMat *Stokes, int Assemble, int lev, int stab, 
     double pW  =   one_dx;
     double pE  =  -pW;
 
-    double rhoVx = 0.5*(mesh->rho_app_s[c1] + mesh->rho_app_s[c1-nx]);
+    double rhoVx = 0.5*(mesh->rho_s[c1] + mesh->rho_s[c1-nx]);
 
     // Inertia
     if (model.isinertial == 1 || model.isinertial == 2 ) {
@@ -202,7 +202,7 @@ void Xmomentum_EastNeumann( SparseMat *Stokes, int Assemble, int lev, int stab, 
     // Pressure gradient
     double pW  =   one_dx;
 
-    double rhoVx = 0.5*(mesh->rho_app_s[c1] + mesh->rho_app_s[c1-nx]);
+    double rhoVx = 0.5*(mesh->rho_s[c1] + mesh->rho_s[c1-nx]);
 
     // Inertia
     if (model.isinertial == 1 || model.isinertial == 2 ) {
@@ -365,7 +365,7 @@ void Xmomentum_WestPeriodic( SparseMat *Stokes, int Assemble, int lev, int stab,
     double pW  =   one_dx;
     double pE  =  -pW;
 
-    double rhoVx = 0.5*(mesh->rho_app_s[c1] + mesh->rho_app_s[c1-nx]);
+    double rhoVx = 0.5*(mesh->rho_s[c1] + mesh->rho_s[c1-nx]);
 
 
     // Inertia
@@ -381,9 +381,9 @@ void Xmomentum_WestPeriodic( SparseMat *Stokes, int Assemble, int lev, int stab,
 
     // Stabilisation with density gradients
     if (stab == 1) {
-        double correction = - om*0.5*model.dt * model.gx * (mesh->rho_app_n[c2+1] - mesh->rho_app_n[c2]) * one_dx;
+        double correction = - om*0.5*model.dt * model.gx * (mesh->rho_n[c2+1] - mesh->rho_n[c2]) * one_dx;
         uC += correction;
-        correction = - om*0.5*model.dt * model.gx * (mesh->rho_app_s[l*nx] - mesh->rho_app_s[l*nx-nx]) * one_dz;
+        correction = - om*0.5*model.dt * model.gx * (mesh->rho_s[l*nx] - mesh->rho_s[l*nx-nx]) * one_dz;
         vSW += 0.25*correction;
         vNE += 0.25*correction;
         vNW += 0.25*correction;
@@ -482,9 +482,9 @@ void Xmomentum_EastPeriodic( SparseMat *Stokes, int Assemble, int lev, int stab,
 //
 //    // Stabilisation with density gradients
 //    if ( stab == 1 ) {
-//        double correction = - om*0.5*model.dt * model.gx * (mesh->rho_app_n[c2+1] - mesh->rho_app_n[c2]) * one_dx;
+//        double correction = - om*0.5*model.dt * model.gx * (mesh->rho_n[c2+1] - mesh->rho_n[c2]) * one_dx;
 //        uC += correction;
-//        correction = - om*0.5*model.dt * model.gx * (mesh->rho_app_s[c1] - mesh->rho_app_s[c1-nx]) * one_dz;
+//        correction = - om*0.5*model.dt * model.gx * (mesh->rho_s[c1] - mesh->rho_s[c1-nx]) * one_dz;
 //        vSW += 0.25*correction;
 //        vNE += 0.25*correction;
 //        vNW += 0.25*correction;
@@ -528,7 +528,7 @@ void Xmomentum_InnerNodes( SparseMat *Stokes, int Assemble, int lev, int stab, i
     double AN = mesh->eta_s[c1];
     double AS = mesh->eta_s[c1-nx];
 
-    double rhoVx = 0.5*(mesh->rho_app_s[c1] + mesh->rho_app_s[c1-nx]);
+    double rhoVx = 0.5*(mesh->rho_s[c1] + mesh->rho_s[c1-nx]);
 
 
     double uS=0.0, uN=0.0, uW=0.0, uE=0.0, uC=0.0, vSW=0.0, vSE=0.0, vNW=0.0, vNE=0.0, pE=0.0, pW=0.0;
@@ -638,9 +638,9 @@ void Xmomentum_InnerNodes( SparseMat *Stokes, int Assemble, int lev, int stab, i
     // Stabilisation with density gradients
     if ( stab == 1 ) {
 
-        //        double correction = - om*0.5*model.dt * model.gx * (mesh->rho_app_n[c2+1] - mesh->rho_app_n[c2]) * one_dx;
+        //        double correction = - om*0.5*model.dt * model.gx * (mesh->rho_n[c2+1] - mesh->rho_n[c2]) * one_dx;
         //        uC += correction;
-        //        correction = - om*0.5*model.dt * model.gx * (mesh->rho_app_s[c1] - mesh->rho_app_s[c1-nx]) * one_dz;
+        //        correction = - om*0.5*model.dt * model.gx * (mesh->rho_s[c1] - mesh->rho_s[c1-nx]) * one_dz;
         //        vSW += 0.25*correction;
         //        vNE += 0.25*correction;
         //        vNW += 0.25*correction;
@@ -939,7 +939,7 @@ void Zmomentum_NorthNeumann( SparseMat *Stokes, int Assemble, int lev, int stab,
     // Pressure gradient
     double pS  =   one_dz;
 
-    double rhoVz = 0.5 * (mesh->rho_app_s[c1] + mesh->rho_app_s[c1+1]);
+    double rhoVz = 0.5 * (mesh->rho_s[c1] + mesh->rho_s[c1+1]);
 
     // Inertial terms
     if (model.isinertial == 1 || model.isinertial == 2 ) {
@@ -1087,8 +1087,8 @@ void Zmomentum_SouthNeumann( SparseMat *Stokes, int Assemble, int lev, int stab,
 
     // Stabilisation with density gradients
     if (stab==1) {
-        double drhodz = (mesh->rho_app_n[c2+ncx] - mesh->rho_app_n[c2])*one_dz;
-//        double drhodx = (mesh->rho_app_s[c1]   - mesh->rho_app_s[c1-1])*one_dx;
+        double drhodz = (mesh->rho_n[c2+ncx] - mesh->rho_n[c2])*one_dz;
+//        double drhodx = (mesh->rho_s[c1]   - mesh->rho_s[c1-1])*one_dx;
         vC  += - 1.00 * om * model.dt * model.gz * drhodz;
         //        // Non-symmetric contibution to the system of equation
         //        uNW += - 0.25 * om * model.dt * model.gz * drhodx;
@@ -1180,7 +1180,7 @@ void Zmomentum_SouthNeumann( SparseMat *Stokes, int Assemble, int lev, int stab,
     //    double vE  =  one_dx_dx * AE;
     //    double vN  =  2*one_dz_dz * 2*AN;// - comp*2.0/3.0*2*AN*one_dz_dz;
     //
-    //    double rhoVz = 0.5 * (mesh->rho_app_s[c1] + mesh->rho_app_s[c1+1]);
+    //    double rhoVz = 0.5 * (mesh->rho_s[c1] + mesh->rho_s[c1+1]);
     //
     //    vE -= rhoVz/2*one_dx*mesh->VxVz[c3];
     //    vW += rhoVz/2*one_dx*mesh->VxVz[c3];
@@ -1316,7 +1316,7 @@ void Zmomentum_InnerNodes( SparseMat *Stokes, int Assemble, int lev, int stab, i
         double drhodx = (mesh->rho_s[c1+1]   - mesh->rho_s[c1]);
         double correction = - 1.0/om * 0.5 * model.dt * model.gz * drhodz * one_dz;
         vC += correction;
-//        double drhodz  = (mesh->rho_app_n[c2+ncx] - mesh->rho_app_n[c2])*one_dz;
+//        double drhodz  = (mesh->rho_n[c2+ncx] - mesh->rho_n[c2])*one_dz;
 //        double vC_corr = - 1.00 * om * model.dt * model.gz * drhodz;
 
 //        om = 0.15;
@@ -1339,8 +1339,8 @@ void Zmomentum_InnerNodes( SparseMat *Stokes, int Assemble, int lev, int stab, i
 
 //    // Stabilisation with density gradients
 //    if (stab==1) {
-//        double drhodz = (mesh->rho_app_n[c2+ncx] - mesh->rho_app_n[c2])*one_dz;
-////        double drhodx = (mesh->rho_app_s[c1]   - mesh->rho_app_s[c1-1])*one_dx;
+//        double drhodz = (mesh->rho_n[c2+ncx] - mesh->rho_n[c2])*one_dz;
+////        double drhodx = (mesh->rho_s[c1]   - mesh->rho_s[c1-1])*one_dx;
 //        vC  += - 1.00 * om * model.dt * model.gz * drhodz;
 //        //        // Non-symmetric contibution to the system of equation
 //        //        uNW += - 0.25 * om * model.dt * model.gz * drhodx;

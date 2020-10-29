@@ -272,10 +272,6 @@ int main( int nargs, char *args[] ) {
             if ( model.free_surf == 1 ) {
                 SurfaceDensityCorrection( &mesh, model, topo, scaling  );
             }
-            else {
-                ArrayEqualArray( mesh.rho_app_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
-                ArrayEqualArray( mesh.rho_app_s, mesh.rho_s, (mesh.Nx)*(mesh.Nz) );
-            }
             ArrayEqualArray( mesh.rho0_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
 
             // Lithostatic pressure for initial visco-plastic viscosity field
@@ -305,9 +301,8 @@ int main( int nargs, char *args[] ) {
             if ( model.eqn_state > 0 ) {
                 UpdateDensity( &mesh, &particles, &materials, &model, &scaling );
             }
+            Interp_Grid2P_centroids( particles, particles.rho, &mesh, mesh.rho_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
             ArrayEqualArray( mesh.rho0_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
-            ArrayEqualArray( mesh.rho_app_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
-            ArrayEqualArray( mesh.rho_app_s, mesh.rho_s, (mesh.Nx)*(mesh.Nz) );
 
             printf("*************************************\n");
             printf("****** Initialize composition *******\n");
@@ -492,10 +487,6 @@ int main( int nargs, char *args[] ) {
                 if ( model.free_surf == 1 ) {
                     SurfaceDensityCorrection( &mesh, model, topo, scaling  );
                 }
-                else {
-                    ArrayEqualArray( mesh.rho_app_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
-                    ArrayEqualArray( mesh.rho_app_s, mesh.rho_s, (mesh.Nx  )*(mesh.Nz  ) );
-                }
 
                 // Lithostatic pressure
                 ArrayEqualArray(  mesh.p_lith0,   mesh.p_lith, Ncx*Ncz );
@@ -624,10 +615,6 @@ int main( int nargs, char *args[] ) {
                 if ( model.free_surf == 1 ) {
                     SurfaceDensityCorrection( &mesh, model, topo, scaling  );
                 }
-                else {
-                    ArrayEqualArray( mesh.rho_app_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
-                    ArrayEqualArray( mesh.rho_app_s, mesh.rho_s, (mesh.Nx  )*(mesh.Nz  ) );
-                }
 
                 // Lithostatic pressure
                 ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 1 );
@@ -684,9 +671,6 @@ int main( int nargs, char *args[] ) {
             MinMaxArray(particles.rho, scaling.rho, particles.Nb_part, "rho part  ");
             MinMaxArray(particles.T,   scaling.T,   particles.Nb_part, "T part    ");
             MinMaxArrayTag( mesh.p0_n,         scaling.S,    (mesh.Nx-1)*(mesh.Nz-1),   "p0_n",   mesh.BCp.type );
-            MinMaxArrayTag( mesh.rho0_n,   scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho0_n  ", mesh.BCp.type );
-            MinMaxArrayTag( mesh.rho_s,    scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s   ", mesh.BCg.type );
-            MinMaxArrayTag( mesh.rho_n,    scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n   ", mesh.BCp.type );
             MinMaxArrayTag( mesh.sxz0,     scaling.S,   (mesh.Nx)*(mesh.Nz),     "sxz0    ", mesh.BCg.type );
             MinMaxArrayTag( mesh.sxxd0,    scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "sxx0    ", mesh.BCp.type );
             MinMaxArrayTag( mesh.szzd0,    scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "szz0    ", mesh.BCp.type );
@@ -1087,6 +1071,7 @@ int main( int nargs, char *args[] ) {
 
          // Update density on the particles
          UpdateParticleDensity( &mesh, scaling, model, &particles, &materials );
+        MinMaxArrayPart( particles.rho, scaling.rho, particles.Nb_part, "rho on markers", particles.phase ) ;
 
          // Update phi on the particles
          UpdateParticlePhi( &mesh, scaling, model, &particles, &materials );

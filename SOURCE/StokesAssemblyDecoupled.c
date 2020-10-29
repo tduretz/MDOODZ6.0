@@ -91,7 +91,10 @@ void Continuity_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesC, Spar
         // d ln rho
 //        dlnrhodt = (log(rhoc) - log(rhoc0)) /dt;
 //        if comp==1, fp = -divc - dlnrhodt; resnlp = norm(fp(:))/length(fp); end
-        StokesC->F[eqn] = pc*p[c2] + uW*u[c1] + uE*u[c1+1] + vS*v[c3] + vN*v[c3+nxvz];
+        //                                               = beta*(p - p0)/dt + div(v)
+        if ( model.VolChangeReac == 0 ) StokesC->F[eqn] =                      pc*p[c2] + uW*u[c1] + uE*u[c1+1] + vS*v[c3] + vN*v[c3+nxvz];
+        //                                               = d(ln(rho))/dt + div(v)
+        if ( model.VolChangeReac == 1 ) StokesC->F[eqn] = log(mesh->rho_n[c2])/model.dt + uW*u[c1] + uE*u[c1+1] + vS*v[c3] + vN*v[c3+nxvz];
         StokesC->F[eqn] -= StokesC->b[eqn];
         StokesC->F[eqn] *= celvol;
         StokesD->F[eqn] = StokesC->F[eqn] ;
@@ -159,7 +162,7 @@ void Xmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
     
     // Stabilisation with density gradients
     if (stab==1) {
-        double drhodx  = (mesh->rho_app_n[c2+1] - mesh->rho_app_n[c2])*one_dx;
+        double drhodx  = (mesh->rho_n[c2+1] - mesh->rho_n[c2])*one_dx;
         double uC_corr = 1.00 * om * model.dt * mesh->gx[c1] * drhodx;
         // Importante trique, voire meme gigantesque!
         if (uC+uC_corr>0.0) uC += uC_corr;
@@ -309,9 +312,9 @@ void Xmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
 //
 //    //    // Stabilisation with density gradients
 //    //    if ( stab == 1 ) {
-//    ////        double correction = - om*0.5*model.dt * model.gx * (mesh->rho_app_n[c2+1] - mesh->rho_app_n[c2]) * one_dx;
+//    ////        double correction = - om*0.5*model.dt * model.gx * (mesh->rho_n[c2+1] - mesh->rho_n[c2]) * one_dx;
 //    ////        uC += correction;
-//    ////        correction = - om*0.5*model.dt * model.gx * (mesh->rho_app_s[c1] - mesh->rho_app_s[c1-nx]) * one_dz;
+//    ////        correction = - om*0.5*model.dt * model.gx * (mesh->rho_s[c1] - mesh->rho_s[c1-nx]) * one_dz;
 //    ////        vSW += 0.25*correction;
 //    ////        vNE += 0.25*correction;
 //    ////        vNW += 0.25*correction;
@@ -320,7 +323,7 @@ void Xmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
 //
 //    // Stabilisation with density gradients
 //    if (stab==1) {
-//        double drhodx  = (mesh->rho_app_n[c2+1] - mesh->rho_app_n[c2])*one_dx;
+//        double drhodx  = (mesh->rho_n[c2+1] - mesh->rho_n[c2])*one_dx;
 //        double uC_corr = - 1.00 * om * model.dt * model.gx * drhodx;
 //        // Importante trique, voire meme gigantesque!
 //                if (uC+uC_corr<0.0)  uC += uC_corr;
@@ -330,7 +333,7 @@ void Xmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
 //        //        if (vN+.25*vC_corr>0)  vN += .25*vC_corr;
 //
 //        // Non-symmetric contibution to the system of equation
-//        //        double drhodx = (mesh->rho_app_s[c1]   - mesh->rho_app_s[c1-1])*one_dx;
+//        //        double drhodx = (mesh->rho_s[c1]   - mesh->rho_s[c1-1])*one_dx;
 //        //        uNW += - 0.25 * om * model.dt * model.gz * drhodx;
 //        //        uNE += - 0.25 * om * model.dt * model.gz * drhodx;
 //        //        uSW += - 0.25 * om * model.dt * model.gz * drhodx;
@@ -479,7 +482,7 @@ void Xmomentum_WestNeumannDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spar
     etaS = mesh->eta_s[c1-nx];
 
 
-    //    double rhoVx = 0.5*(mesh->rho_app_s[c1] + mesh->rho_app_s[c1-nx]);
+    //    double rhoVx = 0.5*(mesh->rho_s[c1] + mesh->rho_s[c1-nx]);
 
     double uS=0.0, uN=0.0, uW=0.0, uE=0.0, uC=0.0, vSW=0.0, vSE=0.0, vNW=0.0, vNE=0.0, pE=0.0, pW=0.0;
 
@@ -659,7 +662,7 @@ void Xmomentum_EastNeumannDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spar
     etaN = mesh->eta_s[c1];
     etaS = mesh->eta_s[c1-nx];
 
-    //    double rhoVx = 0.5*(mesh->rho_app_s[c1] + mesh->rho_app_s[c1-nx]);
+    //    double rhoVx = 0.5*(mesh->rho_s[c1] + mesh->rho_s[c1-nx]);
     double uS=0.0, uN=0.0, uW=0.0, uE=0.0, uC=0.0, vSW=0.0, vSE=0.0, vNW=0.0, vNE=0.0, pE=0.0, pW=0.0;
 
     StokesA->b[eqn] += mesh->BCu.val[c1]*one_dx;
@@ -716,9 +719,9 @@ void Xmomentum_EastNeumannDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spar
 
     // Stabilisation with density gradients
     if ( stab == 1 ) {
-        //        double correction = - om*0.5*model.dt * model.gx * (mesh->rho_app_n[c2+1] - mesh->rho_app_n[c2]) * one_dx;
+        //        double correction = - om*0.5*model.dt * model.gx * (mesh->rho_n[c2+1] - mesh->rho_n[c2]) * one_dx;
         //        uC += correction;
-        //        correction = - om*0.5*model.dt * model.gx * (mesh->rho_app_s[c1] - mesh->rho_app_s[c1-nx]) * one_dz;
+        //        correction = - om*0.5*model.dt * model.gx * (mesh->rho_s[c1] - mesh->rho_s[c1-nx]) * one_dz;
         //        vSW += 0.25*correction;
         //        vNE += 0.25*correction;
         //        vNW += 0.25*correction;
@@ -846,7 +849,7 @@ void Zmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
 
     // Stabilisation with density gradients
     if (stab==1) {
-        double drhodz  = (mesh->rho_app_n[c2+ncx] - mesh->rho_app_n[c2])*one_dz;
+        double drhodz  = (mesh->rho_n[c2+ncx] - mesh->rho_n[c2])*one_dz;
         double vC_corr = 1.00 * om * model.dt * mesh->gz[c3] * drhodz;
         // Importante trique, voire meme gigantesque!
         if (vC+vC_corr>0.0) { vC += vC_corr;
@@ -1042,7 +1045,7 @@ void Zmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
 //
 //    // Stabilisation with density gradients
 //    if (stab==1) {
-//        double drhodz  = (mesh->rho_app_n[c2+ncx] - mesh->rho_app_n[c2])*one_dz;
+//        double drhodz  = (mesh->rho_n[c2+ncx] - mesh->rho_n[c2])*one_dz;
 //        double vC_corr = - 1.00 * om * model.dt * model.gz * drhodz;
 //        // Importante trique, voire meme gigantesque!
 //
@@ -1053,7 +1056,7 @@ void Zmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
 //        //        if (vN+.25*vC_corr>0)  vN += .25*vC_corr;
 //
 //        // Non-symmetric contibution to the system of equation
-//        //        double drhodx = (mesh->rho_app_s[c1]   - mesh->rho_app_s[c1-1])*one_dx;
+//        //        double drhodx = (mesh->rho_s[c1]   - mesh->rho_s[c1-1])*one_dx;
 //        //        uNW += - 0.25 * om * model.dt * model.gz * drhodx;
 //        //        uNE += - 0.25 * om * model.dt * model.gz * drhodx;
 //        //        uSW += - 0.25 * om * model.dt * model.gz * drhodx;
@@ -1200,8 +1203,8 @@ void Zmomentum_SouthNeumannDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
 
     // Stabilisation with density gradients
     if (stab==1) {
-        double drhodz = (mesh->rho_app_n[c2+ncx] - mesh->rho_app_n[c2])*one_dz;
-        //        double drhodx = (mesh->rho_app_s[c1]   - mesh->rho_app_s[c1-1])*one_dx;
+        double drhodz = (mesh->rho_n[c2+ncx] - mesh->rho_n[c2])*one_dz;
+        //        double drhodx = (mesh->rho_s[c1]   - mesh->rho_s[c1-1])*one_dx;
         vC  +=  1.00 * om * model.dt * model.gz * drhodz;
         //        // Non-symmetric contibution to the system of equation
         //        uNW += - 0.25 * om * model.dt * model.gz * drhodx;
@@ -1333,8 +1336,8 @@ void Zmomentum_NorthNeumannDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
 
     // Stabilisation with density gradients
     if (stab==1) {
-        double drhodz = (mesh->rho_app_n[c2+ncx] - mesh->rho_app_n[c2])*one_dz;
-        //        double drhodx = (mesh->rho_app_s[c1]   - mesh->rho_app_s[c1-1])*one_dx;
+        double drhodz = (mesh->rho_n[c2+ncx] - mesh->rho_n[c2])*one_dz;
+        //        double drhodx = (mesh->rho_s[c1]   - mesh->rho_s[c1-1])*one_dx;
         vC  += - 1.00 * om * model.dt * model.gz * drhodz;
         //        // Non-symmetric contibution to the system of equation
         //        uNW += - 0.25 * om * model.dt * model.gz * drhodx;
@@ -2323,7 +2326,7 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
 
     // Stabilisation with density gradients
     if (stab==1) {
-        double drhodx  = (mesh->rho_app_n[c2+1] - mesh->rho_app_n[c2])*one_dx;
+        double drhodx  = (mesh->rho_n[c2+1] - mesh->rho_n[c2])*one_dx;
         double uC_corr = 1.00 * om * model.dt * mesh->gx[c1] * drhodx;
         // Importante trique, voire meme gigantesque!
         if (uC+uC_corr>0.0) uC += uC_corr;
@@ -2746,7 +2749,7 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
 
     // Stabilisation with density gradients
     if (stab==1) {
-        double drhodz  = (mesh->rho_app_n[c2+ncx] - mesh->rho_app_n[c2])*one_dz;
+        double drhodz  = (mesh->rho_n[c2+ncx] - mesh->rho_n[c2])*one_dz;
         double vC_corr = 1.00 * om * model.dt * mesh->gz[c3] * drhodz;
         // Importante trique, voire meme gigantesque!
         if (vC+vC_corr>0.0) vC += vC_corr;
@@ -3150,7 +3153,7 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
 
     // Stabilisation with density gradients
     if (stab==1) {
-        double drhodx  = (mesh->rho_app_n[c2+1] - mesh->rho_app_n[c2])*one_dx;
+        double drhodx  = (mesh->rho_n[c2+1] - mesh->rho_n[c2])*one_dx;
         double uC_corr = 1.00 * om * model.dt * mesh->gx[c1] * drhodx;
         // Importante trique, voire meme gigantesque!
         if (uC+uC_corr>0.0) uC += uC_corr;
@@ -3550,7 +3553,7 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
 
     // Stabilisation with density gradients
     if (stab==1) {
-        double drhodz  = (mesh->rho_app_n[c2+ncx] - mesh->rho_app_n[c2])*one_dz;
+        double drhodz  = (mesh->rho_n[c2+ncx] - mesh->rho_n[c2])*one_dz;
         double vC_corr = 1.00 * om * model.dt * mesh->gz[c3] * drhodz;
         // Importante trique, voire meme gigantesque!
         if (vC+vC_corr>0.0) vC += vC_corr;
