@@ -87,6 +87,10 @@ void Continuity_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesC, Spar
         if ( mesh->BCv.type[c3+nxvz] != 13 )    AddCoeff2( JtempC[ith], AtempC[ith], eqn, Stokes->eqn_v[c3+nxvz], &(nnzc2C[ith]), vN*celvol, mesh->BCv.type[c3+nxvz], mesh->BCv.val[c3+nxvz], StokesC->bbc );
     }
     else {
+        
+        // d ln rho
+//        dlnrhodt = (log(rhoc) - log(rhoc0)) /dt;
+//        if comp==1, fp = -divc - dlnrhodt; resnlp = norm(fp(:))/length(fp); end
         StokesC->F[eqn] = pc*p[c2] + uW*u[c1] + uE*u[c1+1] + vS*v[c3] + vN*v[c3+nxvz];
         StokesC->F[eqn] -= StokesC->b[eqn];
         StokesC->F[eqn] *= celvol;

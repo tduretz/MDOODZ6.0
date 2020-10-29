@@ -1108,7 +1108,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->polar           = ReadInt2( fin, "polar",          0 ); // Activate polar-Cartesian coordinates
     model->ProgReac        = ReadInt2( fin, "ProgReac",       0 ); // Activate progressive reactions
     model->NoReturn        = ReadInt2( fin, "NoReturn",       0 ); // Turns off retrogression if 1.0
-    model->VolChangeReac   = ReadInt2( fin, "VolChangeReac", -1 ); // Turns on volume change due to reaction if 1
+    model->VolChangeReac   = ReadInt2( fin, "VolChangeReac", 0 ); // Turns on volume change due to reaction if 1
     model->Plith_trick     = ReadInt2( fin, "Plith_trick", 0 );
     model->IncrementalUpdateGrid     = ReadInt2( fin, "IncrementalUpdateGrid", 1);
     model->DirectNeighbour           = ReadInt2( fin, "DirectNeighbour", 0);
@@ -1220,7 +1220,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         materials->reac_soft[k]  = (int)ReadMatProps( fin, "reac_soft",   k,    0.0  );
         materials->reac_phase[k] = (int)ReadMatProps( fin, "reac_phase",   k,    0.0  );
         materials->Pr[k]         = ReadMatProps( fin, "Pr",  k,    0.0  ) / scaling->S;
-        materials->dPr[k]        = ReadMatProps( fin, "dPr",  k,    0.0  ) / scaling->S;
+        materials->dPr[k]        = ReadMatProps( fin, "dPr", k,    0.0  ) / scaling->S;
         materials->tau_kin[k]    = ReadMatProps( fin, "tr",  k,    0.0  ) / scaling->t;
         // Density models
         materials->density_model[k]     = (int)ReadMatProps( fin, "density_model",     k,    1  );

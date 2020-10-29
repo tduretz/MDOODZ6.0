@@ -4,7 +4,7 @@ irestart = 0
 
 /**** OUTPUT FILES ****/
 writer          = 1
-writer_step     = 1
+writer_step     = 10
 writer_markers  = 0
 writer_debug    = 0
 writer_energies = 0
@@ -16,9 +16,9 @@ V   = 1e-9
 T   = 100
 
 /**** SPACE-TIME ****/
-Nx      = 401
-Nz      = 124
-Nt      = 3
+Nx      = 201
+Nz      = 62
+Nt      = 50
 xmin    = -150.000000e3
 zmin    = -100.000000e3
 xmax    =  150.000000e3

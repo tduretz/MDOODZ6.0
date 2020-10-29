@@ -201,6 +201,7 @@ struct _grid {
     double *detadexx_n,  *detadezz_n,  *detadgxz_n,  *detadp_n;
     double *ddivpdexx_n, *ddivpdezz_n, *ddivpdgxz_n, *ddivpdp_n;
     double *detadexx_s,  *detadezz_s,  *detadgxz_s,  *detadp_s;
+    double *drhodp_n;
     double *phi0_s, *d0_s, *T_s, *P_s;
     // For anisotropy
     double *nx_n, *nz_n, *nx_s, *nz_s, *FS_AR_n, *FS_AR_s, *aniso_factor_n, *aniso_factor_s;

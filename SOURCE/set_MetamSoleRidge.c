@@ -80,10 +80,12 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     L = (model.xmax - model.xmin);
     
     double gsbg = 2e-3/scaling.L;
-    double Temperature = (model.user0+zeroC)/scaling.T;
-    double rad=model.user1/scaling.L, xc=-0e3/scaling.L, zc=-0e3/scaling.L;
-    double spacing = 5.0e-3/scaling.L;
-    int layer = (int)(model.user2);
+    double Temperature = (700.0+zeroC)/scaling.T;
+//    double Temperature = (model.user0+zeroC)/scaling.T;
+////    double rad=model.user1/scaling.L, xc=-0e3/scaling.L, zc=-0e3/scaling.L;
+////    double spacing = 5.0e-3/scaling.L;
+//    int layer = (int)(model.user2);
+    double red_left = (double)(model.user0);
     double z_ast = (double)(model.user3)/scaling.L;
     double z_sed = (double)(model.user4)/scaling.L;
     
@@ -91,12 +93,12 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double x_ell, z_ell, a_ell = model.user1/scaling.L, b_ell = model.user1/scaling.L * AspectRatio, angle = 70*M_PI/180;
     double x0 = 0.0*350e3/scaling.L;
     double z0 = -5e3/scaling.L;
-    double Huc   = 4e3/scaling.L;
-    double Hlc   = 4e3/scaling.L;
+    double z_uc   = (double)(model.user1)/scaling.L;
+    double z_lc   = (double)(model.user2)/scaling.L;
     double Hserp = 1e3/scaling.L;
     double Hstep = 1e3/scaling.L;
-    double VplateW = 2.5e-10/scaling.V;
-    double VplateE = 5e-10/scaling.V;
+    double VplateW = (double)(model.user5)/scaling.V;
+    double VplateE = (double)(model.user6)/scaling.V;
     double Kappa   = 1e-6/( (scaling.L*scaling.L)/scaling.t );
     double coeff   = -1.9439;
 //    double coeff   = myErfInv2( coeff )
@@ -113,11 +115,20 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         //----------------------------------
         
         // Basalt layer
-        if ( particles->z[np] > -Huc ) {
+        if ( particles->z[np] > z_uc && particles->x[np] > 0.0) {
             particles->phase[np] = 4;
         }
         // Gabbro layer
-        if ( particles->z[np] > -(Huc + Hlc) && particles->z[np] < -Huc ) {
+        if ( particles->z[np] > z_lc && particles->z[np] < z_uc && particles->x[np] > 0.0 ) {
+            particles->phase[np] = 5;
+        }
+        
+        // Basalt layer
+        if ( particles->z[np] > z_uc*red_left && particles->x[np] <= 0.0) {
+            particles->phase[np] = 4;
+        }
+        // Gabbro layer
+        if ( particles->z[np] > z_lc*red_left && particles->z[np] < z_uc*red_left && particles->x[np] <= 0.0 ) {
             particles->phase[np] = 5;
         }
         
@@ -144,25 +155,25 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
 //            particles->phase[np] = 8;
 //        }
         
-        // Astenosphere
+        // Sediments
         if ( particles->z[np] > z_sed ) {
             particles->phase[np] = 7;
         }
         
         //------------------------------------------//
-        if ( layer == 1 ) {
-            // Central layer
-            if ( pow(particles->z[np],2) < pow(rad,2) ) {
-                particles->phase[np] = 0;
-            }
-        }
-        else {
+//        if ( layer == 1 ) {
+//            // Central layer
+//            if ( pow(particles->z[np],2) < pow(rad,2) ) {
+//                particles->phase[np] = 0;
+//            }
+//        }
+//        else {
             
-            x_ell = (particles->x[np]-x0)*cos(angle) + (particles->z[np]-z0)*sin(angle);
-            z_ell =-(particles->x[np]-x0)*sin(angle) + (particles->z[np]-z0)*cos(angle);
-            if (pow(x_ell/a_ell,2) + pow(z_ell/b_ell,2) < 1) particles->phase[np] = 6;
+//            x_ell = (particles->x[np]-x0)*cos(angle) + (particles->z[np]-z0)*sin(angle);
+//            z_ell =-(particles->x[np]-x0)*sin(angle) + (particles->z[np]-z0)*cos(angle);
+//            if (pow(x_ell/a_ell,2) + pow(z_ell/b_ell,2) < 1) particles->phase[np] = 6;
 
-        }
+//        }
 
         //----------------------------------
         // STRIPES STRIPES STRIPES STRIPES

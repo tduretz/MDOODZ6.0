@@ -796,8 +796,8 @@ int main( int nargs, char *args[] ) {
                 printf("**********************************************\n");
 
                 UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
-                RheologicalOperators( &mesh, &model, &scaling, 0 );
-                NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
+                RheologicalOperators( &mesh, &model, &scaling, 0 );                               // ??????????? déjà fait dans UpdateNonLinearity
+                NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );    // ??????????? déjà fait dans UpdateNonLinearity
 
                 if ( model.noisy == 1 ) {
                     MinMaxArrayTag( mesh.exxd,      scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "exxd      ", mesh.BCp.type );

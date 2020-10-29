@@ -1176,6 +1176,10 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     for( k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
         if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31 ) {
             i = Stokes->eqn_p[k] - matA->neq;
+            
+            //            cPC    = drhodPc ./ (rhoc.*dt); %% new diagonal coefficient (= 1/(K*dt) for standard EOS)
+            
+            
             // Here Dcm0 is the pressure block
             if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[i] *= 0.0;
             if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i]  = mesh->bet_n[k] / model.dt * celvol * matD->d[k]*matD->d[k];

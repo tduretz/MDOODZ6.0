@@ -240,6 +240,7 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
 //                        Hs[c2]  = Wth;
 //                        dW     += Wtot*model.dx*model.dz*dt;
                         b[eqn] += mesh->Wdiss[c2];
+                        Hs[c2]  = mesh->Wdiss[c2];
                     }
 
                     // Contribution from adiabatic heat
