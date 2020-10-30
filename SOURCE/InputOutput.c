@@ -1474,8 +1474,8 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     
     model->rel_tol_KSP      = ReadDou2( fin, "rel_tol_KSP", 1e-4 );
     Nmodel->nit_max         = ReadInt2( fin, "nit_max", 1 );
-    Nmodel->abs_tol_u       = ReadDou2( fin, "abs_tol_u", 1.0e-6 ) / (scaling->S * scaling->L);                  // Fx * cel_vol
-    Nmodel->abs_tol_p       = ReadDou2( fin, "abs_tol_p", 1.0e-6 ) / (scaling->E * scaling->L * scaling->L );    // Fp * cel_vol
+    Nmodel->abs_tol_u       = ReadDou2( fin, "abs_tol_u", 1.0e-6 );// / (scaling->S * scaling->L);                  // Fx * cel_vol
+    Nmodel->abs_tol_p       = ReadDou2( fin, "abs_tol_p", 1.0e-6 );// / (scaling->E * scaling->L * scaling->L );    // Fp * cel_vol
     Nmodel->rel_tol_u       = ReadDou2( fin, "rel_tol_u", 1.0e-6 );
     Nmodel->rel_tol_p       = ReadDou2( fin, "rel_tol_p", 1.0e-6 );
     model->mineta           = ReadDou2( fin, "mineta", 1.0e18 ) / scaling->eta;

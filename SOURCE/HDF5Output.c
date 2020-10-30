@@ -898,25 +898,25 @@ void WriteOutputHDF5Particles( grid *mesh, markers *particles, surface *topo, ma
     double A[8];
     char  *part_ph, *part_gen;
     float *part_x, *part_z, *part_Vx, *part_Vz, *part_T, *part_P, *part_sxxd, *part_sxz;
-    int d_part, ind=0, Nb_part_viz=particles->Nb_part, *part_index;
+    int d_part=1, ind=0, Nb_part_viz=particles->Nb_part, *part_index;
     float *Cxtopo, *Cztopo, *Cvxtopo, *Cvztopo, *Cheight, *Cvxsurf, *Cvzsurf;
     float *Cxtopo_ini, *Cztopo_ini, *Cvxtopo_ini, *Cvztopo_ini, *Cheight_ini, *Cvxsurf_ini, *Cvzsurf_ini;
     int k;
 
 //    // Only save a give number of particles
 //    if(particles->Nb_part<Nb_part_viz) {
-//        Nb_part_viz = particles->Nb_part;
+        Nb_part_viz = particles->Nb_part;
 //    }
     
-    // Tracer: find number of particles after filtering
-    Nb_part_viz = 0;
-    for (k=0; k<particles->Nb_part; k++) {
-        if (particles->phase[k]==1) { // filter the mantle - VALID FOR MY MODEL ONLY
-            Nb_part_viz++;
-        }
-    }
-    
-    printf("Saving %d particles of crust\n",  Nb_part_viz);
+//    // Tracer: find number of particles after filtering
+//    Nb_part_viz = 0;
+//    for (k=0; k<particles->Nb_part; k++) {
+//        if (particles->phase[k]==1) { // filter the mantle - VALID FOR MY MODEL ONLY
+//            Nb_part_viz++;
+//        }
+//    }
+//
+//    printf("Saving %d particles of crust\n",  Nb_part_viz);
     
 //    d_part      = particles->Nb_part / (Nb_part_viz);
 //    d_part      = particles->Nb_part / (Nb_part_viz);
@@ -932,38 +932,38 @@ void WriteOutputHDF5Particles( grid *mesh, markers *particles, surface *topo, ma
     part_sxz    = DoodzMalloc( sizeof(float) *Nb_part_viz );
     part_index  = DoodzMalloc( sizeof(int) *Nb_part_viz );  // Tracer: allocate
     
-    // Tracer: store selected particle
-    for (k=0; k<particles->Nb_part; k++) {
-        if (particles->phase[k]==1) {
-        part_x[ind]     = (float)particles->x[k];
-        part_z[ind]     = (float)particles->z[k];
-        part_Vx[ind]    = (float)particles->Vx[k];
-        part_Vz[ind]    = (float)particles->Vz[k];
-        part_P[ind]     = (float)particles->P[k];
-        part_T[ind]     = (float)particles->T[k];
-        part_sxxd[ind]  = (float)particles->sxxd[k];
-        part_sxz[ind]   = (float)particles->sxz[k];
-        part_ph[ind]    = (char)particles->phase[k];
-        part_gen[ind]   = (char)particles->generation[k];
-        part_index[ind] = k;
-        ind ++;
-        }
-    }
-
-//    for (k=0; k<Nb_part_viz; k++) {
-//        part_x[k]     = (float)particles->x[ind];
-//        part_z[k]     = (float)particles->z[ind];
-//        part_Vx[k]    = (float)particles->Vx[ind];
-//        part_Vz[k]    = (float)particles->Vz[ind];
-//        part_P[k]     = (float)particles->P[ind];
-//        part_T[k]     = (float)particles->T[ind];
-//        part_sxxd[k]  = (float)particles->sxxd[ind];
-//        part_sxz[k]   = (float)particles->sxz[ind];
-//        part_ph[k]    = (char)particles->phase[ind];
-//        part_gen[k]   = (char)particles->generation[ind];
-//        part_index[k] = k;
-//        ind += d_part;
+//    // Tracer: store selected particle
+//    for (k=0; k<particles->Nb_part; k++) {
+//        if (particles->phase[k]==1) {
+//        part_x[ind]     = (float)particles->x[k];
+//        part_z[ind]     = (float)particles->z[k];
+//        part_Vx[ind]    = (float)particles->Vx[k];
+//        part_Vz[ind]    = (float)particles->Vz[k];
+//        part_P[ind]     = (float)particles->P[k];
+//        part_T[ind]     = (float)particles->T[k];
+//        part_sxxd[ind]  = (float)particles->sxxd[k];
+//        part_sxz[ind]   = (float)particles->sxz[k];
+//        part_ph[ind]    = (char)particles->phase[k];
+//        part_gen[ind]   = (char)particles->generation[k];
+//        part_index[ind] = k;
+//        ind ++;
+//        }
 //    }
+
+    for (k=0; k<Nb_part_viz; k++) {
+        part_x[k]     = (float)particles->x[ind];
+        part_z[k]     = (float)particles->z[ind];
+        part_Vx[k]    = (float)particles->Vx[ind];
+        part_Vz[k]    = (float)particles->Vz[ind];
+        part_P[k]     = (float)particles->P[ind];
+        part_T[k]     = (float)particles->T[ind];
+        part_sxxd[k]  = (float)particles->sxxd[ind];
+        part_sxz[k]   = (float)particles->sxz[ind];
+        part_ph[k]    = (char)particles->phase[ind];
+        part_gen[k]   = (char)particles->generation[ind];
+        part_index[k] = k;
+        ind += d_part;
+    }
 
     ScaleBack( part_x,     scaling.L, Nb_part_viz );
     ScaleBack( part_z,     scaling.L, Nb_part_viz );

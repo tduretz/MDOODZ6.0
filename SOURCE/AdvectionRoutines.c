@@ -405,6 +405,8 @@ void RogerGuntherII( markers *particles, params model, grid mesh, int precise, s
 private ( k, xA, zA, VxA, VzA, VxB, VzB, VxC, VzC, VxD, VzD, OmA, OmB, OmC, OmD, txx, tzz, txz, angle, dudxA, dvdzA, dudzA, dvdxA, dudxB, dvdzB, dudzB, dvdxB, dudxC, dvdzC, dudzC, dvdxC, dudxD, dvdzD, dudzD, dvdxD, VEA,VEB,VEC,VED, nx, nz, ndotx, ndotz, w12, norm ) \
 firstprivate( model, dx, dz, new )
     for (k=0;k<Nb_part;k++) {
+        
+//        if (particles->phase[k] != -1) {
 
 //        if ( model.iselastic == 1 || model.aniso == 1 ) OmA   = Grid2P( particles, om_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
 //        if ( model.iselastic == 1 || model.aniso == 1 ) dudzA = Grid2P( particles, dudz_s, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type, dx, dz, k );
@@ -507,6 +509,7 @@ firstprivate( model, dx, dz, new )
 //            }
         }
         isoutPart( particles, &model, k );
+//        }
     }
 
 //    if ( model.iselastic == 1 || model.aniso == 1 ) {
