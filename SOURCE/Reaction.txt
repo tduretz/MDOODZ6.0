@@ -38,6 +38,7 @@ eta_avg           = 1
 num_deriv         = 0
 StressRotation    = 1
 safe_mode         = 1
+safe_dt_div       = 2.0
 nstagmax          = 5
 IncrementalUpdateGrid = 1
 StressUpdate    = 0

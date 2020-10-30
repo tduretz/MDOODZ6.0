@@ -2172,19 +2172,28 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
 
     // ----------------- Reaction volume changes
     
-    rho_ref      = (1.0-X)*rho1 + X*rho2;
-    drhodX       = rho2 - rho1;
-    drho_ref_dP  = drhodX * dXdP;
-    *rho         = rho_ref * exp(1.0/K * Pc - alpha * T);
-    *drhodp      = (*rho)/K + exp(1.0/K * Pc - alpha * T) * drho_ref_dP;
+    if (ProgressiveReaction == 1) {
+        
+        rho_ref      = (1.0-X)*rho1 + X*rho2;
+        drhodX       = rho2 - rho1;
+        drho_ref_dP  = drhodX * dXdP;
+        *rho         = rho_ref * exp(1.0/K * Pc - alpha * T);
+        *drhodp      = (*rho)/K + exp(1.0/K * Pc - alpha * T) * drho_ref_dP;
+        printf("ph=%d ; X= %2.2e; rho1 = %2.2e, rho2= %2.2e; *rho= %2.2e\n", phase, X, rho1*scaling->rho, rho2*scaling->rho, *rho*scaling->rho);
+       
+    }
     
-//    rho_ref      = rho1;
-//    drhodX       = 0.0;
-//    drho_ref_dP  = 0.0;
-//    *rho         = rho_ref * exp(1.0/K * Pc - alpha * T);
-//    *drhodp      = (*rho)/K + exp(1.0/K * Pc - alpha * T) * drho_ref_dP;
+    else {
+        rho_ref      = materials->rho[phase];
+        drhodX       = 0.0;
+        drho_ref_dP  = 0.0;
+        *rho         = rho_ref * exp(1.0/K * Pc - alpha * T);
+        *drhodp      = (*rho)/K;
+        printf("ph=%d ; rho_ref = %2.2e; *rho= %2.2e\n", phase, rho_ref*scaling->rho, *rho*scaling->rho);
 
+    }
 
+    
 //    // Activate volume changes only if reaction is taking place
 //    if ( VolChangeReac == 1 && fabs(X-X0)>0.0 ) {
 //        rho       = rho1 * (1-X) + rho2 * X;
@@ -2340,6 +2349,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
     double eta, txx1, tzz1, txz1, Pn, Tn, etaVE, VEcoeff=0.0, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, d1, div_el, div_pl, div_r;
     double exx_pwl, exz_pwl, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, Wtot, Wel, Wdiss;
     int average = model->eta_avg;
+    int vol_change = model->VolChangeReac;
     double detadexx, detadezz, detadexz, detadp;
     double Xreac;
     double OverS;
@@ -2357,7 +2367,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
     InterpCentroidsToVerticesDouble( mesh->phi0_n,  mesh->phi0_s,  mesh, model ); // ACHTUNG NOT FRICTION ANGLE
 
     // Evaluate cell center viscosities
-#pragma omp parallel for shared( mesh  ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, d1, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, detadexx, detadezz, detadexz, detadp, Xreac, OverS, ddivpdexx, ddivpdezz, ddivpdexz, ddivpdp, Pcorr, drhodp, rho, div_el, div_pl, div_r, Wel, Wdiss, Wtot ) firstprivate( materials, scaling, average, model, Ncx, Ncz )
+//#pragma omp parallel for shared( mesh  ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, d1, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, detadexx, detadezz, detadexz, detadp, Xreac, OverS, ddivpdexx, ddivpdezz, ddivpdexz, ddivpdp, Pcorr, drhodp, rho, div_el, div_pl, div_r, Wel, Wdiss, Wtot ) firstprivate( materials, scaling, average, model, Ncx, Ncz, vol_change )
     for ( k1=0; k1<Ncx*Ncz; k1++ ) {
 
         //    for ( l=0; l<Ncz; l++ ) {
@@ -2406,7 +2416,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
         mesh->OverS_n[c0]    = 0.0;
         
         
-        if ( model->VolChangeReac == 1 ) {
+        if ( vol_change == 1 ) {
             mesh->rho_n[c0]  = 0.0;
             mesh->drhodp_n[c0] = 0.0;
         }
@@ -2494,7 +2504,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 }
                 
                 // Volume changes
-                if ( model->VolChangeReac == 1 ) {
+                if ( vol_change == 1 ) {
                     if ( cond == 1 ) mesh->rho_n[c0]       += mesh->phase_perc_n[p][c0] * rho;
                     if ( cond == 1 ) mesh->drhodp_n[c0]    += mesh->phase_perc_n[p][c0] * drhodp;
                 }
@@ -2556,7 +2566,10 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
    // printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 
     // Calculate vertices viscosity
-#pragma omp parallel for shared( mesh  ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, d1, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, detadexx, detadezz, detadexz, detadp, Xreac, OverS, ddivpdexx, ddivpdezz, ddivpdexz, ddivpdp, Pcorr, drhodp, rho, div_el, div_pl, div_r, Wtot, Wdiss, Wel ) firstprivate( materials, scaling, average, model, Nx, Nz )
+
+    //#pragma omp parallel for shared( mesh  ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, d1, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, detadexx, detadezz, detadexz, detadp, Xreac, OverS, ddivpdexx, ddivpdezz, ddivpdexz, ddivpdp, Pcorr, drhodp, rho, div_el, div_pl, div_r, Wel, Wdiss, Wtot ) firstprivate( materials, scaling, average, model, Ncx, Ncz, vol_change )
+
+    //#pragma omp parallel for shared( mesh  ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, d1, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, detadexx, detadezz, detadexz, detadp, Xreac, OverS, ddivpdexx, ddivpdezz, ddivpdexz, ddivpdp, Pcorr, drhodp, rho, div_el, div_pl, div_r, Wtot, Wdiss, Wel ) firstprivate( materials, scaling, average, model, Nx, Nz, vol_change )
     for ( k1=0; k1<Nx*Nz; k1++ ) {
 
         k  = mesh->kn[k1];
