@@ -1774,10 +1774,10 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     *d1 = materials->gs_ref[phase];
 
     // Tensional cut-off
-    if ( model->gz>0.0 && P<0.0     ) { P = 0.0; printf("Aie aie aie P < 0 !!!\n"); exit(122);}
-
+//    if ( model->gz<0.0 && P<0.0     ) { P = 0.0; printf("Aie aie aie P < 0 !!!\n"); exit(122);}
+    
     // Visco-plastic limit
-    if ( elastic==0                 ) { G = 10.0; K = 10.0;};
+    if ( elastic==0                 ) { G = 1e1; K = 1e1; dil = 0.0;};
 
     // Zero C limit
     if ( T< zeroC/scaling->T        ) T = zeroC/scaling->T;
@@ -1815,13 +1815,30 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         B_exp = 0.5*pow(C_exp, -1./(n_exp+ST) );
     }
 
-    Tyield     = C*cos(fric) + P*sin(fric);
+    double cos_fric = cos(fric);
+    double sin_fric = sin(fric);
+    double sin_dil = sin(dil);
+    Tyield     = C*cos_fric + P*sin_fric;
 
     // Von-Mises cut-off
     if (materials->Slim[phase] < Tyield) {
-        fric   = 0.0;
-        C      = materials->Slim[phase];
-        Tyield = materials->Slim[phase];
+        sin_fric   = 0.0;
+        cos_fric   = 1.0;
+        sin_dil    = 0.0;
+        C          = materials->Slim[phase];
+        Tyield     = materials->Slim[phase];
+    }
+    
+    // Tension cut-off
+    int    tens = 0;
+    double P_tens = -25e6/scaling->S;
+    double sin_fric_tens = -C*cos_fric/P_tens; // Compute appropriate slope of the tension yield (SimpleYields.m)
+    
+    if (C*cos_fric + P*sin_fric_tens < Tyield) {
+        if (noisy>0) printf("Switching to tension yield stress, P = %2.2e\n", P*scaling->S);
+        sin_fric   = sin_fric_tens;
+        Tyield     = C*cos_fric + P*sin_fric_tens;
+        tens       = 1;
     }
 
     //------------------------------------------------------------------------//
@@ -2006,7 +2023,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         // Residual check
         res = fabs(r_eta_ve/Eii);
         if (it==0) res0 = res;
-        if (noisy>=1) printf("Visco-Elastic iterations It. %02d, r abs. = %2.2e r rel. = %2.2e tol = %2.2e eta_ve = %2.2e eta_lo = %2.2e eta_up = %2.2e eta_lin = %2.2e eta_pwl = %2.2e eta_exp = %2.2e %d\n", it, res, res/res0, tol, eta_ve, eta_lo, eta_up, eta_lin, eta_pwl, eta_exp, nitmax);
+//        if (noisy>=1) printf("Visco-Elastic iterations It. %02d, r abs. = %2.2e r rel. = %2.2e tol = %2.2e eta_ve = %2.2e eta_lo = %2.2e eta_up = %2.2e eta_lin = %2.2e eta_pwl = %2.2e eta_exp = %2.2e %d\n", it, res, res/res0, tol, eta_ve, eta_lo, eta_up, eta_lin, eta_pwl, eta_exp, nitmax);
 //        printf("Visco-Elastic iterations It. %02d, r abs. = %2.2e r rel. = %2.2e tol = %2.2e eta_ve = %2.2e eta_lo = %2.2e eta_up = %2.2e eta_lin = %2.2e eta_pwl = %2.2e eta_exp = %2.2e, exz=%2.2e\n", it, res, res/res0, tol, eta_ve, eta_lo, eta_up, eta_lin, eta_pwl, eta_exp, exz*scaling->E);
         if (res < tol/100) break;
 
@@ -2094,22 +2111,32 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     F_trial = Tii - Tyield;
 
     double Tyield_trial = Tyield;
-    double F_trial_trial = F_trial;
+    double F_corr1=F_trial, F_corr2=F_trial, Tc, aa;
+    
+    // Select appropriate dialtion angle for tensile domain, see SimpleYields.m
+    if (tens == 1) {
+        aa      = Tii / P;
+        Pc      = -(C*cos_fric) / (-aa+sin_fric);
+        Tc      = -aa*Pc;
+        sin_dil = eta_ve*(-Pc + P) / (K*dt*(C*cos_fric + Pc*sin_fric - Tii));
+    }
 
     if (F_trial > 1e-17) {
 
         // Initial guess - eta_vp = 0
         is_pl   = 1;
+        
         eta_vp  = eta_vp0 * pow(eII, 1.0/n_vp - 1);
-        gdot    = F_trial / ( eta_ve + eta_vp + K*dt*sin(fric)*sin(dil));
-        gdot    = F_trial / ( eta_ve + K*dt*sin(fric)*sin(dil) ); // neglect visco-plastic viscosity for initial guess
-        gdot    = eII;
+        gdot    = F_trial / ( eta_ve + eta_vp + K*dt*sin_fric*sin_dil);
+//        gdot    = F_trial / ( eta_ve + K*dt*sin(fric)*sin(dil) ); // neglect visco-plastic viscosity for initial guess
+//        gdot    = eII;
         dQdtxx  = Txx/2.0/Tii;
         dQdtyy  = Tyy/2.0/Tii;
         dQdtzz  = Tzz/2.0/Tii;
         dQdtxz  = Txz/1.0/Tii;
-        dQdP    = -sin(dil); //printf("%2.2e %2.2e\n", dQdP, K*scaling->S);
+        dQdP    = -sin_dil; //printf("%2.2e %2.2e\n", dQdP, K*scaling->S);
         res0    = F_trial;
+        F_trial0 = F_trial;
 
         // Return mapping --> find plastic multiplier rate (gdot)
         for (it=0; it<nitmax; it++) {
@@ -2117,33 +2144,48 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
             divp    = -gdot*dQdP;
             Pc      = P + K*dt*divp; // P0 - k*dt*(div-divp) = P + k*dt*divp
             eta_vp  = eta_vp0 * pow(fabs(gdot), 1.0/n_vp - 1);
-            Tyield  = C*cos(fric) + Pc*sin(fric) +  gdot*eta_vp;
+            Tyield  = C*cos_fric + Pc*sin_fric +  gdot*eta_vp;
             F_trial = Tii - eta_ve*gdot - Tyield;
 
             // Residual check
             res = fabs(F_trial);
             //            if (it==0) res0 = res;
-            if (noisy>1) printf("Visco-Plastic iterations It. %02d, F = %2.2e Frel = %2.2e --- n_vp = %2.2e, eta_vp = %2.2e\n", it, res, res/F_trial0, n_vp, eta_vp);
+            if (noisy>0) printf("Visco-Plastic iterations It. %02d, tens = %d F = %2.2e Frel = %2.2e --- n_vp = %2.2e, eta_vp = %2.2e\n", it, tens, res, res/F_trial0, n_vp, eta_vp*scaling->eta);
             if ( res < tol || res/F_trial0 < tol ) break;
-            dFdgdot  = - eta_ve - eta_vp/n_vp - K*dt*sin(fric)*sin(dil);
+            dFdgdot  = - eta_ve - eta_vp/n_vp - K*dt*sin_fric*sin_dil;
             gdot    -= F_trial / dFdgdot;
+            
         }
         if ( it==nitmax-1 && (res > tol || res/F_trial0 > tol)  ) { printf("Visco-Plastic iterations failed!\n"); exit(0);}
 
+        double Tii_corr= Tii- eta_ve*gdot;
+        double Tii_trial=Tii;
+        
         Txx     = 2.0*eta_ve*(Exx - gdot*dQdtxx    );
-        Tyy     = 2.0*eta_ve*(Eyy - gdot*dQdtyy    ); // Tyy     = -(Txx+Tzz);
+//        Tyy     = 2.0*eta_ve*(Eyy - gdot*dQdtyy    ); // Tyy     = -(Txx+Tzz);
         Tzz     = 2.0*eta_ve*(Ezz - gdot*dQdtzz    );
+        Tyy     = -(Txx+Tzz);
+
         //        printf("%2.6e %2.6e\n", Tyy,  2.0*eta_ve*(Eyy - gdot*dQdtyy    ) );
         Txz     = 2.0*eta_ve*(Exz - gdot*dQdtxz/2.0);
         Tii     = sqrt( 0.5*( pow(Txx,2.0) + pow(Tzz,2.0) + pow(Tyy,2.0) ) + pow(Txz,2.0)  );
         eta_vep = Tii / (2.0*Eii);
-        F_corr  = Tii - Tyield;
+        F_corr1  = Tii - Tyield;
         *Eii_pl = gdot/2.0;
         Tii     = 2.0*eta_vep*Eii;
-        F_corr  = Tii - Tyield;
+        F_corr2  = Tii - Tyield;
         // Compute over stress
         *OverS = eta_vp*gdot;
         *Pcorr = Pc;
+  
+    
+    if (is_pl ==1 && (fabs(F_corr1) > 1e-7) && (fabs(F_corr1)/res0 > 1e-7) ) {
+        printf("Problem with F_corr in phase = %d\n", phase);
+        printf("is_pl %d --- it = %03d --- tens = %d --- ty = %2.2e F_trial_0 = %2.2e --- F_trial = %2.2e --- F_corr = %2.2e --- F_corr1 = %2.2e --- F_corr2 = %2.2e\n", is_pl, it, tens, Tyield*scaling->S, res0, res, F_corr, F_corr1, F_corr2);
+        printf("Pc = %2.2e P0 = %2.2e\n", Pc*scaling->S, P*scaling->S);
+        printf("Tii_trial = %2.2e Tii_corr1 = %2.2e Tii_corr = %2.2e\n", Tii_trial*scaling->S, Tii*scaling->S, Tii_corr*scaling->S);
+        exit(90);
+    }
     }
 
     //------------------------------------------------------------------------//
@@ -2153,8 +2195,8 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         dFdExx        =     (2.0*Exx + Ezz)*eta_ve/Eii + 2.0*Eii*deta_ve_dExx;
         dFdEzz        =     (2.0*Ezz + Exx)*eta_ve/Eii + 2.0*Eii*deta_ve_dEzz;
         dFdExz        =             2.0*Exz*eta_ve/Eii + 2.0*Eii*deta_ve_dExz;
-        dFdP          =                     -sin(fric) + 2.0*Eii*deta_ve_dP;
-        g             = 1.0 / ( eta_ve + eta_vp/n_vp + K*dt*sin(fric)*sin(dil) );
+        dFdP          =                     -sin_fric + 2.0*Eii*deta_ve_dP;
+        g             = 1.0 / ( eta_ve + eta_vp/n_vp + K*dt*sin_fric*sin_dil );
         dlamdExx      = g * (dFdExx - gdot *deta_ve_dExx);
         dlamdEzz      = g * (dFdEzz - gdot *deta_ve_dEzz);
         dlamdExz      = g * (dFdExz - gdot *deta_ve_dExz);
@@ -2163,11 +2205,11 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         deta_vp_dEzz  = eta_vp/gdot*dlamdEzz*(1.0/n_vp - 1.0);
         deta_vp_dExz  = eta_vp/gdot*dlamdExz*(1.0/n_vp - 1.0);
         deta_vp_dP    = eta_vp/gdot*dlamdP  *(1.0/n_vp - 1.0);
-        a             =  eta_vp +  K*dt*sin(fric)*sin(dil);
+        a             =  eta_vp +  K*dt*sin_fric*sin_dil;
         deta_vep_dExx = -0.5*(2.0*Exx + Ezz)*Tyield/(2.0*pow(Eii,3.0)) + (a*dlamdExx + gdot*deta_vp_dExx)/(2.0*Eii);
         deta_vep_dEzz = -0.5*(2.0*Ezz + Exx)*Tyield/(2.0*pow(Eii,3.0)) + (a*dlamdEzz + gdot*deta_vp_dEzz)/(2.0*Eii);
         deta_vep_dExz =                -Exz *Tyield/(2.0*pow(Eii,3.0)) + (a*dlamdExz + gdot*deta_vp_dExz)/(2.0*Eii);
-        deta_vep_dP   =                                     (sin(fric) +  a*dlamdP   + gdot*deta_vp_dP  )/(2.0*Eii);
+        deta_vep_dP   =                                     (sin_fric +  a*dlamdP   + gdot*deta_vp_dP  )/(2.0*Eii);
     }
 
     // ----------------- Reaction volume changes
@@ -2261,10 +2303,36 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
 
     // Compute dissipative strain rate components
     *Exx_diss =  Exx_pl + Exx_lin +  Exx_pwl + Exx_exp + Exx_gbs + Exx_cst;
-    *Ezz_diss =  Ezz_pl + Ezz_lin +  Ezz_pwl + Exx_exp + Exx_gbs + Exx_cst;
+    *Ezz_diss =  Ezz_pl + Ezz_lin +  Ezz_pwl + Ezz_exp + Ezz_gbs + Ezz_cst;
     *Exz_diss =  Exz_pl + Exz_lin +  Exz_pwl + Exz_exp + Exz_gbs + Exz_cst;
     
     *Wdiss = Txx*(*Exx_diss) + Tzz*(*Ezz_diss) + Tyy*(-(*Exx_diss + *Ezz_diss)) + 2.0*Txz*(*Exz_diss);
+    
+//    printf("*Wdiss = %2.2e\n", *Wdiss*scaling->S*scaling->E);
+    
+    if (*Wdiss<0.0) {
+        printf("Negative dissipation = %2.2e // %2.2e %2.2e %2.2e %2.2e\n", *Wdiss*scaling->S*scaling->E,  Txx*(*Exx_diss)*scaling->S*scaling->E, Tzz*(*Ezz_diss)*scaling->S*scaling->E, Tyy*(-(*Exx_diss + *Ezz_diss))*scaling->S*scaling->E, 2.0*Txz*(*Exz_diss)*scaling->S*scaling->E);
+        
+        printf("is_pl %d --- F_trial = %2.2e --- F_corr = %2.2e --- F_corr1 = %2.2e --- F_corr2 = %2.2e\n", is_pl, F_trial, F_corr, F_corr1, F_corr2);
+        
+          printf("exx_tot = %2.2e exx_el = %2.2e exx_vis = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", exx*scaling->E, *Exx_el*scaling->E, (Exx_pwl+Exx_lin+Exx_cst+Exx_exp)*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
+                    printf("ezz_tot = %2.2e ezz_el = %2.2e ezz_vis = %2.2e ezz_pl = %2.2e, ezz_net = %2.2e\n", ezz*scaling->E, *Ezz_el*scaling->E, (Ezz_pwl+Ezz_lin+Ezz_cst+Ezz_exp)*scaling->E, Ezz_pl*scaling->E, (ezz - (*Ezz_el+Ezz_pwl+Ezz_lin+Ezz_cst+Ezz_exp+Ezz_pl))*scaling->E);
+            //       printf("exx_el = %2.2e exx_vis = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", *Exx_el*scaling->E, (Exx_pwl+Exx_lin+Exx_cst+Exx_exp)*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
+                    printf("exz_tot = %2.2e exz_el = %2.2e exz_vis = %2.2e exz_pl = %2.2e, exz_net = %2.2e\n", exz*scaling->E, *Exz_el*scaling->E, (Exz_pwl+Exz_lin+Exz_cst+Exz_exp)*scaling->E, Exz_pl*scaling->E, (exz - (*Exz_el+Exz_pwl+Exz_lin+Exz_cst+Exz_exp+Exz_pl))*scaling->E);
+
+            if (Txx<0.0 && *Exx_diss>0.0) {
+                printf("Error 11\n");
+            }
+            if (Txx>0.0 && *Exx_diss<0.0) {
+                printf("Error 12\n");
+            }
+        
+            if (Txz<0.0 && *Exz_diss>0.0) {
+                printf("Error 13\n");
+            }
+        
+        exit(9);
+    }
     *Wel   = Txx*(*Exx_el)   + Tzz*(*Ezz_el)   + Tyy*(-(*Exx_el   + *Ezz_el))   + 2.0*Txz*(*Exz_el);
     *Wtot  = Txx*exx         + Tzz*ezz         + Tyy*eyy                        + 2.0*Txz*exz;
 
@@ -2291,16 +2359,16 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
 //            printf("ezz_tot = %2.2e ezz_el = %2.2e ezz_vis = %2.2e ezz_pl = %2.2e, ezz_net = %2.2e\n", ezz*scaling->E, *Ezz_el*scaling->E, (Ezz_pwl+Ezz_lin+Ezz_cst+Ezz_exp)*scaling->E, Ezz_pl*scaling->E, (ezz - (*Ezz_el+Ezz_pwl+Ezz_lin+Ezz_cst+Ezz_exp+Ezz_pl))*scaling->E);
 //    //       printf("exx_el = %2.2e exx_vis = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", *Exx_el*scaling->E, (Exx_pwl+Exx_lin+Exx_cst+Exx_exp)*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
 //            printf("exz_tot = %2.2e exz_el = %2.2e exz_vis = %2.2e exz_pl = %2.2e, exz_net = %2.2e\n", exz*scaling->E, *Exz_el*scaling->E, (Exz_pwl+Exz_lin+Exz_cst+Exz_exp)*scaling->E, Exz_pl*scaling->E, (exz - (*Exz_el+Exz_pwl+Exz_lin+Exz_cst+Exz_exp+Exz_pl))*scaling->E);
-
+//
 //    if (Txx<0.0 && *Exx_diss>0.0) {
 //        printf("Error 11\n");
 //    }
 //    if (Txx>0.0 && *Exx_diss<0.0) {
-//        printf("Error 11\n");
+//        printf("Error 12\n");
 //    }
-//
-//    if (Txz<0.0 && *Exz_diss>0.0) {
-//        printf("Error 1\n");
+////
+////    if (Txz<0.0 && *Exz_diss>0.0) {
+////        printf("Error 1\n");
 //        printf("Txz = %2.2e, exz = %2.2e exz_diss = %2.2e\n",   Txz*scaling->S, exz*scaling->E, (Exz_pwl+Exz_lin+Exz_cst+Exz_exp)*scaling->E);
 //             printf("exx_tot = %2.2e exx_el = %2.2e exx_pwl = %2.2e exx_exp = %2.2e exx_cst = %2.2e exx_exp = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", exx*scaling->E, *Exx_el*scaling->E, Exx_pwl*scaling->E, Exx_lin*scaling->E, Exx_cst*scaling->E, Exx_exp*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
 //         printf("ezz_tot = %2.2e ezz_el = %2.2e exx_pwl = %2.2e exx_exp = %2.2e exx_cst = %2.2e exx_exp = %2.2e ezz_pl = %2.2e, ezz_net = %2.2e\n", ezz*scaling->E, *Ezz_el*scaling->E, Ezz_pwl*scaling->E, Ezz_lin*scaling->E, Ezz_cst*scaling->E, Ezz_exp*scaling->E, Ezz_pl*scaling->E, (ezz - (*Ezz_el+Ezz_pwl+Ezz_lin+Ezz_cst+Ezz_exp+Ezz_pl))*scaling->E);
@@ -2463,6 +2531,8 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 if ( cond == 1 ) mesh->Wtot[c0]       += mesh->phase_perc_n[p][c0] * Wtot;
                 if ( cond == 1 ) mesh->Wdiss[c0]      += mesh->phase_perc_n[p][c0] * Wdiss;
                 if ( cond == 1 ) mesh->Wel[c0]        += mesh->phase_perc_n[p][c0] * Wel;
+                
+                if (cond == 1 && Wdiss<0.0) {printf("negative dissipation: you crazy! --> Wdiss = %2.2e\n", Wdiss*scaling->S*scaling->E); exit(1);}
 
                 if ( cond == 1 ) mesh->ddivpdexx_n[c0] += mesh->phase_perc_n[p][c0] * ddivpdexx;
                 if ( cond == 1 ) mesh->ddivpdezz_n[c0] += mesh->phase_perc_n[p][c0] * ddivpdezz;
@@ -3043,6 +3113,12 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
         for ( p=0; p<model->Nb_phases; p++) {
 
             if ( fabs(mesh->phase_perc_n[p][c0])>epsi) {
+                
+                // T and P dependent density based on EOS
+                if ( materials->density_model[p] == 0 ) {
+                    rho0   = materials->rho [p];
+                    rhop   = rho0;
+                }
 
                 // T and P dependent density based on EOS
                 if ( materials->density_model[p] == 1 ) {

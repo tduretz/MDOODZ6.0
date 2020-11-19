@@ -409,6 +409,17 @@ firstprivate( ncx, mesh ) schedule( static )
                     if (l>0     && mesh->BCt.type[ic-ncx] != 30) neighs += mesh->nb_part_cell[ic-ncx];
                     if (l<ncz-1 && mesh->BCt.type[ic+ncx] != 30) neighs += mesh->nb_part_cell[ic+ncx];
                     
+                    // Diagonal neighbours
+                    neighs += mesh->nb_part_cell[ic-1-ncx];
+                    neighs += mesh->nb_part_cell[ic+1-ncx];
+                    neighs += mesh->nb_part_cell[ic-1+ncx];
+                    neighs += mesh->nb_part_cell[ic+1+ncx];
+                    // Extended neighbours
+                    neighs += mesh->nb_part_cell[ic-2];
+                    neighs += mesh->nb_part_cell[ic+2];
+                    neighs += mesh->nb_part_cell[ic-2*ncx];
+                    neighs += mesh->nb_part_cell[ic+2*ncx];
+                    
                     if (neighs == 0) {
                         printf("All the neighbouring CELLS of ix = %d iz = %d are empty, simulation will stop\n", k, l);
                         exit(1);
@@ -449,7 +460,52 @@ firstprivate( ncx, mesh ) schedule( static )
                             }
                         }
                         
-//                        printf("%d %d %d\n",mesh->nb_part_cell[ic],mesh->nb_part_cell[ic-ncx], neighs);
+                        
+                        
+                        
+                        // Diagonal cells: add particles from neigbours
+                        for ( nb=0; nb<mesh->nb_part_cell[ic-1-ncx]; nb++ ) {
+                            ind_list[oo] = ind_per_cell[ic-1-ncx][nb];
+                            oo++;
+                        }
+
+                        for ( nb=0; nb<mesh->nb_part_cell[ic+1-ncx]; nb++ ) {
+                            ind_list[oo] = ind_per_cell[ic+1-ncx][nb];
+                            oo++;
+                        }
+
+                        for ( nb=0; nb<mesh->nb_part_cell[ic-1+ncx]; nb++ ) {
+                            ind_list[oo] = ind_per_cell[ic-1+ncx][nb];
+                            oo++;
+                        }
+
+                        for ( nb=0; nb<mesh->nb_part_cell[ic+1+ncx]; nb++ ) {
+                            ind_list[oo] = ind_per_cell[ic+1+ncx][nb];
+                            oo++;
+                        }
+
+                        // Extended neighbours
+                        for ( nb=0; nb<mesh->nb_part_cell[ic-2]; nb++ ) {
+                            ind_list[oo] = ind_per_cell[ic-2][nb];
+                            oo++;
+                        }
+
+                        for ( nb=0; nb<mesh->nb_part_cell[ic+2]; nb++ ) {
+                            ind_list[oo] = ind_per_cell[ic+2][nb];
+                            oo++;
+                        }
+
+                        for ( nb=0; nb<mesh->nb_part_cell[ic-2*ncx]; nb++ ) {
+                            ind_list[oo] = ind_per_cell[ic-2*ncx][nb];
+                            oo++;
+                        }
+
+                        for ( nb=0; nb<mesh->nb_part_cell[ic+2*ncx]; nb++ ) {
+                            ind_list[oo] = ind_per_cell[ic+2*ncx][nb];
+                            oo++;
+                        }
+                        
+                        //                        printf("%d %d %d\n",mesh->nb_part_cell[ic],mesh->nb_part_cell[ic-ncx], neighs);
 //
                         //----------------
                         

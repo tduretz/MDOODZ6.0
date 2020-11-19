@@ -68,7 +68,7 @@ void V2P( double *Vxm, double *Vzm, markers* particles, double*Vx,  double*Vz, d
         }
         
         // Get the line:
-        dst    = fabs(particles->z[k]-zvx[0]);
+        dst    = (particles->z[k]-zvx[0]);
         i_part = ceil((dst/dz)) - 1;
         if (i_part<0) {
             i_part = 0;
@@ -131,7 +131,7 @@ void V2P( double *Vxm, double *Vzm, markers* particles, double*Vx,  double*Vz, d
         }
         
         // Get the line:
-        dst    = fabs(particles->z[k]-zg[0]);
+        dst    = (particles->z[k]-zg[0]);
         i_part = ceil((dst/dz)) - 1;
         if (i_part<0) {
             i_part = 0;
@@ -943,7 +943,7 @@ void AddPartCell2( int *pidx, int *Nb_part_thread, markers *particles, grid mesh
                 (*Nb_part_thread)++;
 
                 sedim = 0;
-                if ( new_z > h_ini ) sedim = 1;
+                if (model.surf_processes>0 && new_z > h_ini ) sedim = 1;
 
                 // Add 4 particules
                 newx[(*nnewp)] = new_x;

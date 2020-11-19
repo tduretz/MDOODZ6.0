@@ -416,6 +416,7 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
     maxalpha[0] = -min_step;
 
     if (model->Newton==1) minalpha[0] = -1.0;
+    if (model->Newton==0) maxalpha[0] = -0.0;
 
     //    ntry[0]     = 11;
     //    minalpha[0] = -2.25;

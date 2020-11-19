@@ -727,7 +727,7 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
 //    double time_reaction = 3.1558e11;
 //    int reaction_in_progress;
     
-    model->dt0 = model->dt;
+//    model->dt0 = model->dt;
 
     for (k=0; k<model->Nx; k++) {
         for (l=0; l<model->Nz+1; l++) {

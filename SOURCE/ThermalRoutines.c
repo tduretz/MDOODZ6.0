@@ -153,7 +153,7 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
 
                     // Contribution from transient
                     rhoCp   = mesh->rho_n[c2]*mesh->Cv[c2];
-                    b[eqn]  = transient * rhoCp * mesh->T0_n[c2]/ dt;
+                    b[eqn]  = transient * rhoCp * mesh->T[c2]/ dt;
 
                     // Contribution from radiogenic sources
                     eqn     = eqn_t[c2];

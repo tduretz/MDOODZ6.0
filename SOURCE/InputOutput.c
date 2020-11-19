@@ -1223,7 +1223,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         materials->dPr[k]        = ReadMatProps( fin, "dPr", k,    0.0  ) / scaling->S;
         materials->tau_kin[k]    = ReadMatProps( fin, "tr",  k,    0.0  ) / scaling->t;
         // Density models
-        materials->density_model[k]     = (int)ReadMatProps( fin, "density_model",     k,    1  );
+        materials->density_model[k]     = (int)ReadMatProps( fin, "density_model",     k,    3  );
         materials->phase_diagram[k]     = (int)ReadMatProps( fin, "phase_diagram",     k,   -1  );
         // Viscoplasticity
         materials->n_vp[k]      = ReadMatProps( fin, "n_vp",   k,       1.0 ) ;
