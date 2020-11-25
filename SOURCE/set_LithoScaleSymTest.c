@@ -33,11 +33,11 @@
 void BuildInitialTopography( surface *topo, markers *topo_chain, params model, grid mesh, scale scaling ) {
     
     int k;
-    double TopoLevel = 2.e-1/scaling.L; // sets zero initial topography
-    double sig = 0.5/scaling.L;
+    double TopoLevel = 4e3/scaling.L; // sets zero initial topography
+    double sig = 50e3/scaling.L;
     
     for ( k=0; k<topo_chain->Nb_part; k++ ) {
-        topo_chain->z[k]     = 0;//TopoLevel * exp(-topo_chain->x[k]*topo_chain->x[k]/sig/sig) ;
+        topo_chain->z[k]     = 0.0;//-5e3/scaling.L + TopoLevel * exp(-topo_chain->x[k]*topo_chain->x[k]/sig/sig) ;
         topo_chain->phase[k] = 0;
     }
     
@@ -98,6 +98,8 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         x_ell = (particles->x[np]-x0)*cos(angle) + (particles->z[np]-z0)*sin(angle);
         z_ell =-(particles->x[np]-x0)*sin(angle) + (particles->z[np]-z0)*cos(angle);
         if (pow(x_ell/a_ell,2) + pow(z_ell/b_ell,2) < 1) particles->phase[np] = 1;
+        
+        if (particles->z[np]>0.0) particles->phase[np] = 6;
         
         
         // Weak zone

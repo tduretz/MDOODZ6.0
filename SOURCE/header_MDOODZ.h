@@ -51,7 +51,7 @@ struct _mat_prop {
     DoodzFP ppzm[20], Kpzm[20], Qpzm[20], Gpzm[20], cpzm[20], Lpzm[20], gs_ref[20];
     int     gs[20], cstv[20], pwlv[20], linv[20], expv[20], gbsv[20], phase_diagram[20], density_model[20];
     DoodzFP C_end[20], phi_end[20], psi_end[20], pls_start[20], pls_end[20], eta_vp[20], n_vp[20];
-    int     phi_soft[20], psi_soft[20], coh_soft[20];
+    int     phi_soft[20], psi_soft[20], coh_soft[20], is_tensile[20];
     DoodzFP Pr[20], tau_kin[20], dPr[20];
     int     reac_soft[20], reac_phase[20];
     int     phase_mix[20], phase_two[20];
@@ -554,7 +554,7 @@ void SetParticles_BEN( markers *, scale , params , mat_prop*   );
 void BuildInitialTopography_BEN( surface *, markers *, params , grid , scale  );
 void SolveStokes_BEN( SparseMat*, DirectSolver* );
 
-void V2P( double*, double*, markers*, double*,  double*, double*, double*, double*, double*, int, int, int, int, char*, char*, double, double, int );
+void V2P( double*, double*, markers*, double*,  double*, double*, double*, double*, double*, int, int, int, int, char*, char*, double, double, int, int );
 double Vertices2Particle( markers*, double*, double*, double*, int, int , char *, double, double, int );
 double Centers2Particle( markers*, double*, double*, double*, int, int, char*, double, double, int, int );
 void RogerGuntherII( markers*, params, grid, int, scale );
@@ -586,3 +586,8 @@ void Interp_Grid2P_centroids2( markers, DoodzFP* , grid *, double* , double* , d
 void ExpandCentroidArray( double*, double*, grid*, params* );
 void ComputeIncrementsOnParticles( grid*, markers*, params*, mat_prop*, scale* );
 void UpdateGridFields( grid*, markers*, params*, mat_prop*, scale* );
+
+
+
+void RogerGunther( markers *, params, grid, int, scale );
+void CheckSym( DoodzFP*, double, int, int, char*, int, int );

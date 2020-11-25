@@ -41,6 +41,38 @@
 #define printf(...) printf("")
 #endif
 
+
+void CheckSym( DoodzFP* array, double scale, int nx, int nz, char* text, int mode, int show ) {
+    
+
+    int i, j, c1;
+    double sump[nx];
+    double err = 0.0;
+    for ( i=0; i<nx; i++ ) {
+        sump[i] = 0.0;
+        for ( j=0; j<nz; j++ ) {
+            c1 = i + j*nx;
+            sump[i] += array[c1];
+        }
+    }
+    
+    
+    for ( i=0; i<nx; i++ ) {
+        if (mode ==0) {
+        if (fabs(sump[i] - sump[nx-1-i])>err) err = fabs(sump[i] - sump[nx-1-i]);
+        if (show==1)  printf("%s %2.6e %2.6e %2.6e\n", text, sump[i]*scale, sump[nx-1-i]*scale, (sump[i] - sump[nx-1-i])*scale);
+        }
+        else {
+            if (fabs(sump[i] + sump[nx-1-i])>err) err = fabs(sump[i] + sump[nx-1-i]);
+            if (show==1)  printf("%s %2.6e %2.6e %2.6e\n", text, sump[i]*scale, sump[nx-1-i]*scale, (sump[i] + sump[nx-1-i])*scale);
+        }
+                               
+    }
+    if (err>1e-10) {printf(text); exit(1);}
+    
+}
+
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/

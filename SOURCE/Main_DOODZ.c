@@ -590,12 +590,14 @@ int main( int nargs, char *args[] ) {
             }
             
             if (  model.IncrementalUpdateGrid == 1 ) {
-                
+                                
                 // Save old lithostatic pressure (to disappear ? )
                 ArrayEqualArray(  mesh.p_lith0,   mesh.p_lith, Ncx*Ncz );
                 
                 // Master routines that update solution increments
                 UpdateGridFields( &mesh, &particles, &model, &materials, &scaling );
+                //CheckSym( mesh.p_in, 1.0, mesh.Nx-1, mesh.Nz-1, "p_in main", 0, 0  );
+                //CheckSym( mesh.p0_n, 1.0, mesh.Nx-1, mesh.Nz-1, "p0_n main", 0, 0  );
                 
                 // Make sure T is up to date for rheology evaluation and RHS of heat eqaution
                 ArrayEqualArray( mesh.T, mesh.T0_n, (mesh.Nx-1)*(mesh.Nz-1) );
@@ -811,6 +813,20 @@ int main( int nargs, char *args[] ) {
                     MinMaxArrayTag( mesh.rho_s,      scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s     ", mesh.BCg.type );
                     MinMaxArrayTag( mesh.rho_n,      scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n     ", mesh.BCp.type );
                     MinMaxArrayTag( mesh.rho0_n,     scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho0_n    ", mesh.BCp.type );
+                    
+                    
+//                    for (int iphase=0; iphase<model.Nb_phases; iphase++) {
+//                                   CheckSym( mesh.phase_perc_n[iphase], 1.0, mesh.Nx-1, mesh.Nz-1, "perc_n" );
+//                                   CheckSym( mesh.phase_perc_s[iphase], 1.0, mesh.Nx-0, mesh.Nz-0, "perc_s" );
+//                    }
+//
+//                    CheckSym( mesh.rho_n, scaling.rho, mesh.Nx, mesh.Nz, "rho_n" );
+//                    CheckSym( mesh.rho_s, scaling.rho, mesh.Nx-1, mesh.Nz-1, "rho_s" );
+//
+//                    CheckSym( mesh.eta_n, scaling.eta, mesh.Nx-1, mesh.Nz-1, "eta_n" );
+//
+//                    CheckSym( mesh.eta_s, scaling.eta, mesh.Nx, mesh.Nz, "eta_s" );
+                    
                 }
                 
                 if ( model.write_debug == 1 ) {
@@ -1055,17 +1071,6 @@ int main( int nargs, char *args[] ) {
         
         //------------------------------------------------------------------------------------------------------------------------------//
         
-        // Free surface - interpolate velocity components on the free surface
-        if ( model.free_surf == 1 ) {
-            SurfaceVelocity( &mesh, model, &topo, &topo_chain, scaling );
-            MinMaxArray( topo_chain.Vx,      scaling.V, topo_chain.Nb_part,       "Vx surf." );
-            MinMaxArray( topo_chain.Vz,      scaling.V, topo_chain.Nb_part,       "Vz surf." );
-            MinMaxArray( topo_chain_ini.Vx,  scaling.V, topo_chain_ini.Nb_part,   "Vx surf. ini." );
-            MinMaxArray( topo_chain_ini.Vz,  scaling.V, topo_chain_ini.Nb_part,   "Vz surf. ini." );
-        }
-        
-        //------------------------------------------------------------------------------------------------------------------------------//
-        
         if (model.StressUpdate==1) TotalStresses( &mesh, &particles, scaling, &model );
         
         // Update stresses on markers
@@ -1132,23 +1137,23 @@ int main( int nargs, char *args[] ) {
             t_omp = (double)omp_get_wtime();
             
             double dt_solve = model.dt;
-            EvaluateCourantCriterion( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
+//            EvaluateCourantCriterion( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
             
-            int    nsub, isub;
+            int    nsub=1.0, isub;
             double dt_sub;
             
-            if ( model.dt<dt_solve ) {
-                nsub   = ceil(dt_solve/model.dt);
-                dt_sub = dt_solve / nsub;
-                printf("dt advection = %2.2e --- dt_solve = %2.2e\n", model.dt*scaling.t, dt_solve*scaling.t );
-                printf("dt is %lf larger than dt_solve: need sub %d substeps of %2.2e s\n", dt_solve/model.dt, nsub , dt_sub*scaling.t );
-                printf("So: nsub*dt_sub = %2.2e for dt_solve = %2.2e\n", nsub*dt_sub*scaling.t, dt_solve*scaling.t);
-                model.dt = dt_sub;
-            }
-            else {
-                nsub     = 1;
-                model.dt = dt_solve;
-            }
+//            if ( model.dt<dt_solve ) {
+//                nsub   = ceil(dt_solve/model.dt);
+//                dt_sub = dt_solve / nsub;
+//                printf("dt advection = %2.2e --- dt_solve = %2.2e\n", model.dt*scaling.t, dt_solve*scaling.t );
+//                printf("dt is %lf larger than dt_solve: need sub %d substeps of %2.2e s\n", dt_solve/model.dt, nsub , dt_sub*scaling.t );
+//                printf("So: nsub*dt_sub = %2.2e for dt_solve = %2.2e\n", nsub*dt_sub*scaling.t, dt_solve*scaling.t);
+//                model.dt = dt_sub;
+//            }
+//            else {
+//                nsub     = 1;
+//                model.dt = dt_solve;
+//            }
             
             
             //            Check_dt_for_advection( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
@@ -1170,13 +1175,12 @@ int main( int nargs, char *args[] ) {
                     PureShearALE( &model, &mesh, &topo_chain, scaling );
                 }
                 
-                // Advect free surface
-                if ( model.free_surf == 1 ) {
-                    AdvectFreeSurf( &topo_chain,     model, scaling );
-                    AdvectFreeSurf( &topo_chain_ini, model, scaling );
-                    MinMaxArray( topo_chain.z,      scaling.L, topo_chain.Nb_part,       "z surf.     " );
-                    MinMaxArray( topo_chain_ini.z,  scaling.L, topo_chain_ini.Nb_part,   "z surf. ini." );
-                }
+                // Save old topo
+                ArrayEqualArray( topo_chain.z0, topo_chain.z, topo_chain.Nb_part ); // save old z
+                
+                // Advect free surface with RK4
+                RogerGuntherII( &topo_chain, model, mesh, 1, scaling );
+                RogerGuntherII( &topo_chain_ini, model, mesh, 1, scaling );
                 
                 // Correction for particle inflow 0
                 if (model.ispureshear_ale == -1 && model.isperiodic_x == 0) ParticleInflowCheck( &particles, &mesh, model, topo, 0 );
@@ -1186,19 +1190,17 @@ int main( int nargs, char *args[] ) {
                 
                 // Correction for particle inflow 1
                 if (model.ispureshear_ale == -1 && model.isperiodic_x == 0) ParticleInflowCheck( &particles, &mesh, model, topo, 1 );
-                
+
                 // Update accumulated strain
                 AccumulatedStrainII( &mesh, scaling, model, &particles,  mesh.xc_coord,  mesh.zc_coord, mesh.Nx-1, mesh.Nz-1, mesh.BCp.type );
-                
+
                 // Update deformation gradient tensor components
                 if ( model.fstrain == 1 ) DeformationGradient( mesh, scaling, model, &particles );
-                
-                //#ifdef _HDF5_
+
                 if ( model.write_debug == 1 ) {
                     WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, model, "Output_BeforeSurfRemesh", materials, scaling );
                     WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particles_BeforeSurfRemesh", materials, scaling );
                 }
-                //#endif
                 
                 if ( model.free_surf == 1 ) {
                     
@@ -1208,30 +1210,32 @@ int main( int nargs, char *args[] ) {
                         ProjectTopography( &topo_ini, &topo_chain_ini, model, mesh, scaling, mesh.xg_coord, 0 );
                         MarkerChainPolyFit( &topo,     &topo_chain,     model, mesh );
                         MarkerChainPolyFit( &topo_ini, &topo_chain_ini, model, mesh );
+                        
                         // Remesh free surface I
                         RemeshMarkerChain( &topo_chain,     &topo,     model, scaling, &mesh, 1 );
                         RemeshMarkerChain( &topo_chain_ini, &topo_ini, model, scaling, &mesh, 1 );
                     }
                     
+
                     // Project topography on vertices
                     ProjectTopography( &topo,     &topo_chain,     model, mesh, scaling, mesh.xg_coord, 0 );
                     ProjectTopography( &topo_ini, &topo_chain_ini, model, mesh, scaling, mesh.xg_coord, 0 );
                     ArrayEqualArray( topo.height0, topo.height, mesh.Nx );
                     ArrayEqualArray( topo_ini.height0, topo_ini.height, mesh.Nx );
-                    
+
                     if ( model.write_debug == 1 ) {
                         WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, model, "Output_AfterSurfRemesh", materials, scaling );
                         WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particles_AfterSurfRemesh", materials, scaling );
                     }
-                    
-                    //                    // Diffuse topography
+
+                    // Diffuse topography
                     if ( model.surf_processes >= 1 )  DiffuseAlongTopography( &mesh, model, scaling, topo.height, mesh.Nx, 0.0, model.dt );
-                    //
-                    //                    // Marker chain polynomial fit
+
+                    // Marker chain polynomial fit
                     MarkerChainPolyFit( &topo,     &topo_chain,     model, mesh );
                     CorrectTopoIni( &particles, materials, &topo_chain_ini, &topo, model, scaling, &mesh);
                     MarkerChainPolyFit( &topo_ini, &topo_chain_ini, model, mesh );
-                    
+
                     // Sedimentation
                     if ( model.surf_processes >= 1 ) {
                         AddPartSed( &particles, materials, &topo_chain, &topo, model, scaling, &mesh);
@@ -1239,23 +1243,21 @@ int main( int nargs, char *args[] ) {
                         if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
                         if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
                     }
-                    
-#ifdef _HDF5_
+
                     if ( model.write_debug == 1 ) {
                         WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, model, "Outputx", materials, scaling );
                         WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particlesx", materials, scaling );
                     }
-#endif
-                    
+
                     // Remesh free surface II
                     RemeshMarkerChain( &topo_chain,     &topo,     model, scaling, &mesh, 2 );
                     RemeshMarkerChain( &topo_chain_ini, &topo_ini, model, scaling, &mesh, 2 );
                     CorrectTopoIni( &particles, materials, &topo_chain_ini, &topo, model, scaling, &mesh);
                     MarkerChainPolyFit( &topo_ini, &topo_chain_ini, model, mesh );
-                    
+
                     // Remove particles that are above the surface
                     CleanUpSurfaceParticles( &particles, &mesh, topo, scaling );
-                    
+
                     // Call cell flagging routine for free surface calculations
                     CellFlagging( &mesh, model, topo, scaling );
                 }
@@ -1279,14 +1281,14 @@ int main( int nargs, char *args[] ) {
                 if (model.cpc == 0)                       CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );
                 if (model.cpc == 1 && model.Reseed == 1 ) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
                 if (model.cpc == 1)                       CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
-                
+
                 if (model.cpc == 2 && model.Reseed == 1 ) CountPartCell2   ( &particles, &mesh, model, topo, topo_ini, 1, scaling );
                 if (model.cpc == 2)                       CountPartCell2   ( &particles, &mesh, model, topo, topo_ini, 0, scaling );
-                
+
                 printf("After re-seeding :\n");
                 printf("Initial number of particles = %d\n", particles.Nb_part_ini);
                 printf("New number of particles     = %d\n", particles.Nb_part    );
-                
+
                 printf("** Time for CountPartCell = %lf sec\n", (double)((double)omp_get_wtime() - t_omp) );
                 
                 // Remove particles that would be above the surface
@@ -1295,6 +1297,10 @@ int main( int nargs, char *args[] ) {
                     CellFlagging( &mesh, model, topo, scaling );
                 }
                 
+//                for (int iphase=0; iphase<model.Nb_phases; iphase++) {
+//                CheckSym( mesh.phase_perc_n[iphase], 1.0, mesh.Nx-1, mesh.Nz-1, "perc_n" );
+//                CheckSym( mesh.phase_perc_s[iphase], 1.0, mesh.Nx-0, mesh.Nz-0, "perc_s" );
+//                }
             }
             model.dt = dt_solve;
         }

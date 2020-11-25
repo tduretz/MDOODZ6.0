@@ -49,19 +49,22 @@ void AdvectFreeSurf( markers *topo_chain, params model, scale scaling ) {
 
 void SetTopoChainHorizontalCoords( surface *topo, markers *topo_chain, params model, grid Mmesh, scale scaling ) {
     
-    int fact = 23; // Best to use an odd number of markers --> symmetric
+    int Nb_part_per_cell = 4;
     int k, counter;
-    double dx = model.dx/fact;
-    topo_chain->Nb_part = model.Nx*fact-(fact-1) - 2;
+    double dxm = model.dx/Nb_part_per_cell;
+    topo_chain->Nb_part = (model.Nx-1)*Nb_part_per_cell;
     
-#pragma omp parallel for shared ( topo_chain ) firstprivate ( model, dx, scaling ) private ( k )
+#pragma omp parallel for shared ( topo_chain ) firstprivate ( model, dxm, scaling ) private ( k )
     for ( k=0; k<topo_chain->Nb_part; k++ ) {
 
-        topo_chain->x[k]     = model.xmin + k*dx + dx;
+        topo_chain->x[k]     = model.xmin + dxm/2 + k*dxm;
         topo_chain->z[k]     = 0.0/scaling.L;
+        topo_chain->z0[k]     = 0.0/scaling.L;
         topo_chain->phase[k] = 0;
     }
     printf( "Topographic chain initialised with %d markers\n", topo_chain->Nb_part );
+//    printf("%2.6e %2.6e\n", topo_chain->x[0],topo_chain->x[topo_chain->Nb_part-1] );
+//    exit(1);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -212,7 +215,7 @@ void RemeshMarkerChain( markers *topo_chain, surface *topo, params model, scale 
     int    in, minPartCell=4, NewInd, inc = 0;
     int    res = 2;
     
-    if (remesh==0) {
+    if ( remesh == 0 ) {
         // Here the entire topography is interpolated from advected marker chain to the remeshed chain
         // This procedure is likely diffusive
         // For each cell
@@ -254,28 +257,32 @@ void RemeshMarkerChain( markers *topo_chain, surface *topo, params model, scale 
     }
     else {
         
-        // Here the marker chain is not remeshed but new marker points are added is deficient locations
+        // Here the marker chain is not remeshed but new marker points are added in deficient locations
         NumMarkCell = DoodzCalloc( res*Ncx, sizeof(int) );
         
         if ( mode == 1 ) {
             
             // Find to which cell each marker contribute / find number of topo. markers per FINE cell column (DX/res)
             for (k=0;k<topo_chain->Nb_part;k++) {
+                                
                 if (topo_chain->x[k]<model.xmin) {
                     topo_chain->x[k] += model.dx/6.0;
+                    topo_chain->phase[k] = 0;
                 }
                 
-                //            if (topo_chain->x[k]>model.xmax) {
-                //                topo_chain->x[k] = model.xmax-model.dx/4;
-                //            }
+                if (topo_chain->x[k]>model.xmax) {
+                    topo_chain->x[k]    -= model.dx/6.0;
+                    topo_chain->phase[k] = 0;
+                }
                 
-                if (topo_chain->x[k]>model.xmax || topo_chain->x[k]<model.xmin  ) topo_chain->phase[k]=-1;
+                if (topo_chain->x[k]>model.xmax || topo_chain->x[k]<model.xmin  ) topo_chain->phase[k] = -1;
+                
                 else topo_chain->phase[k]=0;
                 // Index of the fine grid column
-                distance        = topo_chain->x[k] - (model.xmin + dx/2.0/res);
-                in              = ceil((distance/dx*res)+0.5) - 1;
-                if (in<0)    in = 0;
-                if (in>res*Ncx-1)in = res*Ncx-1;
+                distance             = topo_chain->x[k] - (model.xmin + dx/2.0/res);
+                in                   = ceil((distance/dx*res)+0.5) - 1;
+                if (in<0        ) in = 0;
+                if (in>res*Ncx-1) in = res*Ncx-1;
                 if (topo_chain->phase[k]!=-1) NumMarkCell[in]++;
             }
             
@@ -369,46 +376,77 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
     int k, in, Nx=mesh.Nx;
     double dx=mesh.dx, distance, dxm, mark_val, *Xc_virtual, *Wm, *BmWm;
     
-    // Allocate memory
-    Xc_virtual = DoodzMalloc ((Nx+1)*sizeof(double));
-    Wm         = DoodzCalloc ( Nx, sizeof(double));
-    BmWm       = DoodzCalloc ( Nx, sizeof(double));
     
-    // Create x cell center coordinate with additional boundary nodes
-    Xc_virtual[0]  = X_vect[0]-0.5*dx;
-    for (k=0;k<Nx-1;k++) {
-        Xc_virtual[k+1]= 0.5*(X_vect[k+1]+X_vect[k]);
-    }
-    Xc_virtual[Nx] = X_vect[Nx-1]+0.5*dx;
-    
-    // Find to which node each marker contribute
+    Wm              = DoodzCalloc ( Nx-1, sizeof(double));
+    BmWm            = DoodzCalloc ( Nx-1, sizeof(double));
+    double *heightc = DoodzCalloc ( Nx-1, sizeof(double));
+
     for (k=0;k<topo_chain->Nb_part;k++) {
-        if ( topo_chain->phase[k] != -1 ) {
-            distance        = (topo_chain->x[k]-X_vect[0]);
-            in              = ceil((distance/dx)+0.5) - 1;
-            if (in<0)    in = 0;
-            if (in>Nx-1) in = Nx-1;
-            dxm = fabs(0.5*(Xc_virtual[in]+Xc_virtual[in+1])-topo_chain->x[k]);
-            mark_val = topo_chain->z[k];
-            if (itp_type==1) mark_val =  1.0/mark_val;
-            if (itp_type==2) mark_val =  log(mark_val);
-            Wm[in]   += (1.0-(dxm/dx));
-            BmWm[in] += mark_val*(1.0-(dxm/dx));
-        }
+
+         if ( topo_chain->phase[k] != -1 ) {
+
+             distance = ( topo_chain->x[k] - mesh.xc_coord[0] );
+             in   = ceil( (distance/dx) + 0.5) - 1;
+             dxm = 2.0*fabs( mesh.xc_coord[in] - topo_chain->x[k]);
+             mark_val = topo_chain->z[k];
+
+             Wm[in]   += (1.0-(dxm/dx));
+             BmWm[in] += mark_val*(1.0-(dxm/dx));
+
+         }
     }
+
+    for (k=0;k<Nx-1;k++) {
+        heightc[k] += BmWm[k]/Wm[k];
+    }
+
+    for (k=1;k<Nx-1;k++) {
+         topo->height[k] = 0.5*(heightc[k]+heightc[k-1]);
+     }
+    topo->height[0]=topo->height[1];
+    topo->height[Nx-1]=topo->height[Nx-2];
     
-    // Recompute topography based on the sum of interpolation weights
-    for (k=0;k<Nx;k++) {
-        topo->height[k] = BmWm[k]/Wm[k];
-        
-        if (isnan(topo->height[k])) {
-            printf("%2.2e %2.2e %d\n", BmWm[k], Wm[k], k);
-            exit(1);
-        }
-        if (itp_type==1) topo->height[k] =  1.0 / topo->height[k];
-        if (itp_type==2) topo->height[k] =  exp(topo->height[k]);
-        topo->height0[k] = topo->height[k];
-    }
+//    // Allocate memory
+//    Xc_virtual = DoodzMalloc ((Nx+1)*sizeof(double));
+//    Wm         = DoodzCalloc ( Nx, sizeof(double));
+//    BmWm       = DoodzCalloc ( Nx, sizeof(double));
+//
+//    // Create x cell center coordinate with additional boundary nodes
+//    Xc_virtual[0]  = X_vect[0]-0.5*dx;
+//    for (k=0;k<Nx-1;k++) {
+//        Xc_virtual[k+1]= 0.5*(X_vect[k+1]+X_vect[k]);
+//    }
+//    Xc_virtual[Nx] = X_vect[Nx-1]+0.5*dx;
+//
+//    // Find to which node each marker contribute
+//    for (k=0;k<topo_chain->Nb_part;k++) {
+//        if ( topo_chain->phase[k] != -1 ) {
+//            distance        = (topo_chain->x[k]-X_vect[0]);
+//            in              = ceil((distance/dx)+0.5) - 1;
+////            if (in<0)    in = 0;
+////            if (in>Nx-1) in = Nx-1;
+////            dxm = fabs(0.5*(Xc_virtual[in]+Xc_virtual[in+1])-topo_chain->x[k]);
+//            dxm = 2.0*fabs(X_vect[in]-topo_chain->x[k]);
+//            mark_val = (topo_chain->z[k] - topo_chain->z0[k]);
+//            if (itp_type==1) mark_val =  1.0/mark_val;
+//            if (itp_type==2) mark_val =  log(mark_val);
+//            Wm[in]   += (1.0-(dxm/dx));
+//            BmWm[in] += mark_val*(1.0-(dxm/dx));
+//        }
+//    }
+//
+//    // Recompute topography based on the sum of interpolation weights
+//    for (k=0;k<Nx;k++) {
+//        topo->height[k] += BmWm[k]/Wm[k];
+//
+//        if (isnan(topo->height[k])) {
+//            printf("%2.2e %2.2e %d (isnan check in Project Topography - free_surf.c)\n", BmWm[k], Wm[k], k);
+//            exit(1);
+//        }
+//        if (itp_type==1) topo->height[k] =  1.0 / topo->height[k];
+//        if (itp_type==2) topo->height[k] =  exp(topo->height[k]);
+//        topo->height0[k] = topo->height[k];
+//    }
     
     // Correct for sides is the box in case of inflow conditions
     for (k=0;k<Nx;k++) {
@@ -442,8 +480,17 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
 //        }
 //    }
     
+//    double sym_check = fabs(topo->height[0]-topo->height[Nx-1-0]);
+//    for (k=0;k<Nx;k++) {
+//        if (fabs(topo->height[k]-topo->height[Nx-1-k]) >sym_check) sym_check = fabs(topo->height[k]-topo->height[Nx-1-k]);
+//        printf("%d %d %2.2e %2.2e %2.10e\n", k, Nx-1-k, topo->height[k]*scaling.L, topo->height[Nx-1-k]*scaling.L, (topo->height[k]-topo->height[Nx-1-k])*scaling.L);
+//        sym_check += (topo->height[k]-topo->height[Nx-1-k]);
+//    }
+//    printf("%2.8e (sym check in ProjectTopography )\n", sym_check*scaling.L);
+//    if (fabs(sym_check*scaling.L)>1e-3) exit(19);
+    
     // Free memory
-    DoodzFree(Xc_virtual);
+//    DoodzFree(Xc_virtual);
     DoodzFree(Wm);
     DoodzFree(BmWm);
 }
@@ -457,17 +504,41 @@ void MarkerChainPolyFit( surface *topo, markers *topo_chain, params model, grid 
     // Create a cell-based representation of the topography
     int ic;
     int ncx = model.Nx-1;
+    double dx = model.dx;
     
     // Linear polynomial for each cell based on vertex values of topography (y = a.x + b)
     for ( ic=0; ic<ncx; ic++ ) {
         // Save old topography
-        topo->a0[ic] =  (topo->height0[ic+1] - topo->height0[ic]) / (mesh.xg_coord[ic+1] - mesh.xg_coord[ic]);
+        topo->a0[ic] =  (topo->height0[ic+1] - topo->height0[ic]) / dx;
         topo->b0[ic] =  topo->height0[ic] - (mesh.xg_coord[ic]) * topo->a0[ic];
         // Find slope
-        topo->a[ic]  = (topo->height[ic+1] - topo->height[ic]) / (mesh.xg_coord[ic+1] - mesh.xg_coord[ic]);
+        topo->a[ic]  = (topo->height[ic+1] - topo->height[ic]) / dx;
         // Find origin value
         topo->b[ic]  =  topo->height[ic] - (mesh.xg_coord[ic]) * topo->a[ic];
     }
+    
+//    int Nx = ncx;
+//    double sym_check = fabs(topo->a[0]+topo->a[Nx-1-0]);
+//        for (int k=0;k<ncx;k++) {
+//            if (fabs(topo->a[k]+topo->a[Nx-1-k]) >sym_check) sym_check = fabs(topo->a[k]+topo->a[Nx-1-k]);
+//        }
+//        printf("%2.8e\n", sym_check);
+//    if (fabs(sym_check)>1e-3) {
+//        printf("slope");
+//        exit(19);
+//    }
+//
+//
+//     sym_check = fabs(topo->b[0]-topo->b[Nx-1-0]);
+//        for (int k=0;k<ncx;k++) {
+////            printf("%2.8e\n", topo->b[k] - topo->b[Nx-1-k]);
+//            if (fabs(topo->b[k]-topo->b[Nx-1-k]) >sym_check) sym_check = fabs(topo->b[k]-topo->b[Nx-1-k]);
+//        }
+//        printf("%2.8e\n", sym_check);
+//    if (fabs(sym_check)>1e-3) {
+//        printf("ordonnee");
+//        exit(19);
+//    }
 }
 
 
@@ -480,6 +551,8 @@ void AllocateMarkerChain( surface *topo, markers* topo_chain, params model ) {
     topo_chain->Nb_part_max = 50*model.Nx;
     topo_chain->x           = DoodzMalloc( topo_chain->Nb_part_max*sizeof(DoodzFP) );
     topo_chain->z           = DoodzMalloc( topo_chain->Nb_part_max*sizeof(DoodzFP) );
+    topo_chain->z0           = DoodzMalloc( topo_chain->Nb_part_max*sizeof(DoodzFP) );
+
     topo_chain->Vx          = DoodzCalloc( topo_chain->Nb_part_max, sizeof(DoodzFP) );
     topo_chain->Vz          = DoodzCalloc( topo_chain->Nb_part_max, sizeof(DoodzFP) );
     topo_chain->phase       = DoodzCalloc( topo_chain->Nb_part_max, sizeof(int) );
@@ -505,6 +578,7 @@ void FreeMarkerChain( surface *topo, markers* topo_chain ) {
     
     DoodzFree( topo_chain->x );
     DoodzFree( topo_chain->z );
+    DoodzFree( topo_chain->z0 );
     DoodzFree( topo_chain->Vx );
     DoodzFree( topo_chain->Vz );
     //    DoodzFree( topo_chain->Vx0 );
@@ -859,6 +933,66 @@ void CellFlagging( grid *mesh, params model, surface topo, scale scaling ) {
     
     DoodzFree( PVtag  );
     DoodzFree( PVtag0 );
+    
+    
+//    // symmetry Bcv
+//    nx = mesh->Nx+1;
+//    nz = mesh->Nz;
+//    double sumvz[nx];
+//    double err;
+//    for ( i=0; i<nx; i++ ) {
+//        sumvz[i] = 0.0;
+//        for ( j=0; j<nz; j++ ) {
+//            c1 = i + j*nx;
+//            sumvz[i] += (double)mesh->BCv.type[c1];
+//        }
+//    }
+//
+//    err = 0.0;
+//    for ( i=0; i<nx; i++ ) {
+//        if (abs(sumvz[i] - sumvz[nx-1-i])>err) err = sumvz[i] - sumvz[nx-1-i];
+////        printf("%2.6e %2.6e %2.6e\n", sum[i], sum[nx-1-i], sum[i] - sum[nx-1-i]);
+//    }
+//    if (err>1e-10) {printf("err tag Vz"); exit(1);}
+//
+//    // symmetry Bcv
+//        nx = mesh->Nx;
+//        nz = mesh->Nz+1;
+//        double sumvx[nx];
+//        for ( i=0; i<nx; i++ ) {
+//            sumvx[i] = 0.0;
+//            for ( j=0; j<nz; j++ ) {
+//                c1 = i + j*nx;
+//                sumvx[i] += (double)mesh->BCu.type[c1];
+//            }
+//        }
+//
+//        err = 0.0;
+//        for ( i=0; i<nx; i++ ) {
+//            if (abs(sumvx[i] - sumvx[nx-1-i])>err) err = sumvx[i] - sumvx[nx-1-i];
+//    //        printf("%2.6e %2.6e %2.6e\n", sum[i], sum[nx-1-i], sum[i] - sum[nx-1-i]);
+//        }
+//        if (err>1e-10) {printf("err tag Vx"); exit(1);}
+//
+//
+//    // symmetry Bcp
+//        nx = mesh->Nx-1;
+//        nz = mesh->Nz-1;
+//        double sump[nx];
+//        for ( i=0; i<nx; i++ ) {
+//            sump[i] = 0.0;
+//            for ( j=0; j<nz; j++ ) {
+//                c1 = i + j*nx;
+//                sump[i] += (double)mesh->BCp.type[c1];
+//            }
+//        }
+//
+//        err = 0.0;
+//        for ( i=0; i<nx; i++ ) {
+//            if (abs(sump[i] - sump[nx-1-i])>err) err = sump[i] - sump[nx-1-i];
+////            printf("%2.6e %2.6e %2.6e\n", sump[i], sump[nx-1-i], sump[i] - sump[nx-1-i]);
+//        }
+//        if (err>1e-10) {printf("err tag p"); exit(1);}
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -912,98 +1046,193 @@ void SurfaceDensityCorrection( grid *mesh, params model, surface topo, scale sca
     int i, j, c1;
     double h0, h, dz = fabs(mesh->zg_coord[1]-mesh->zg_coord[0]);
     
-    // Density on cell centers
-    for( j=0; j<ncz; j++ ) {
-        for( i=0; i<ncx; i++ ) {
-            c1 = i + j*(ncx);
-            
-            if (mesh->BCp.type[c1] == -1 && mesh->BCp.type[c1+ncx] == 31 ) {
-                h  = topo.b[i] + topo.a[i]*mesh->xc_coord[i];
-                h0               = fabs(h - mesh->zc_coord[j]);
-                mesh->rho_n[c1]  *= h0/dz;
-                mesh->rho0_n[c1] *= h0/dz;
-            }
-            if ( mesh->BCp.type[c1] == 30 || mesh->BCp.type[c1] == 31 ) {
-                mesh->rho_n[c1]     = 1.0/scaling.rho;
-            }
-        }
-    }
-    
-    // Density on cell vertices
-    for( j=0; j<nz; j++ ) {
-        for( i=0; i<nx; i++ ) {
-            
-            c1 = i + j*(nx);
-            
-            if (mesh->BCg.type[c1] == -1 && mesh->BCg.type[c1+nx] == 30) {
-                if (i==0)    h  = topo.b[i] + topo.a[i]*mesh->xc_coord[i];
-                if (i==nx-1) h  = topo.b[nx-2] + topo.a[nx-2]*mesh->xc_coord[nx-2];
-                if (i>0 && i<nx-1) {
-                    h  = 0.5*(topo.b[i] + topo.a[i]*mesh->xc_coord[i]);
-                    h += 0.5*(topo.b[i-1] + topo.a[i-1]*mesh->xc_coord[i-1]);
-                }
-                h0               = fabs(h - mesh->zg_coord[j]);
-                mesh->rho_s[c1] *= h0/dz;
-            }
-            if ( mesh->BCg.type[c1] == 30 ) {
-                mesh->rho_s[c1]     = 1.0/scaling.rho;
-            }
-        }
-    }
-    
-    
-    //    // Density on cell centers
-    //    for( i=0; i<ncx; i++ ) {
-    //        for( j=0; j<ncz-1; j++ ) {
-    //
-    //            c1 = i + j*(ncx);
-    //
-    //            if ( mesh->BCp.type[c1] == 30 || mesh->BCp.type[c1] == 31 ) {
-    //                mesh->rho_app_n[c1] = 1.0/scaling.rho;
-    //                mesh->rho_n[c1]  = 1.0/scaling.rho;
-    //            }
-    //            else {
-    //                mesh->rho_app_n[c1] = mesh->rho_n[c1];
-    //
-    //                if (mesh->BCp.type[c1] == -1 && mesh->BCp.type[c1+ncx] == 31 ) {
-    //                    h  = topo.b[i] + topo.a[i]*mesh->xc_coord[i];//0.5topo.height[i] + 0.5*topo.height[i+1];
-    //                    mesh->rho_app_n[c1] *= (h-mesh->zc_coord[j])/dz;
-    //                }
-    //            }
-    //        }
-    //    }
-    //
-    
-    //-----------------------------------------------------------------
-    
-    //    // Density on cell vertices
-    //    for( i=0; i<nx; i++ ) {
-    //        for( j=0; j<nz-1; j++ ) {
-    //
-    //            c1 = i + j*(nx);
-    //
-    //            if ( mesh->BCg.type[c1] == 30 ) {
-    //                mesh->rho_app_s[c1] = 1.0/scaling.rho;
-    //                mesh->rho_s[c1]  = 1.0/scaling.rho;
-    //            }
-    //            else {
-    //                mesh->rho_app_s[c1] = mesh->rho_s[c1];
-    //
-    //                if (mesh->BCg.type[c1] == -1 && mesh->BCg.type[c1+nx] == 30) {
-    //
-    //                    h = topo.height[i];
-    //                    mesh->rho_app_s[c1] *= (h-mesh->zg_coord[j])/dz;
-    //                }
-    //            }
-    //        }
-    //    }
+//    // Density on cell centers
+//    for( j=0; j<ncz; j++ ) {
+//        for( i=0; i<ncx; i++ ) {
+//            c1 = i + j*(ncx);
+//
+//            if (mesh->BCp.type[c1] == -1 && mesh->BCp.type[c1+ncx] == 31 ) {
+//                h  = topo.b[i] + topo.a[i]*mesh->xc_coord[i];
+//                h0               = fabs(h - mesh->zc_coord[j]);
+//                mesh->rho_n[c1]  *= h0/dz;
+//                mesh->rho0_n[c1] *= h0/dz;
+//            }
+//            if ( mesh->BCp.type[c1] == 30 || mesh->BCp.type[c1] == 31 ) {
+//                mesh->rho_n[c1]     = 1.0/scaling.rho;
+//            }
+//        }
+//    }
+//
+//    // Density on cell vertices
+//    for( j=0; j<nz; j++ ) {
+//        for( i=0; i<nx; i++ ) {
+//
+//            c1 = i + j*(nx);
+//
+//            if (mesh->BCg.type[c1] == -1 && mesh->BCg.type[c1+nx] == 30) {
+//                if (i==0)    h  = topo.b[i] + topo.a[i]*mesh->xc_coord[i];
+//                if (i==nx-1) h  = topo.b[nx-2] + topo.a[nx-2]*mesh->xc_coord[nx-2];
+//                if (i>0 && i<nx-1) {
+//                    h  = 0.5*(topo.b[i] + topo.a[i]*mesh->xc_coord[i]);
+//                    h += 0.5*(topo.b[i-1] + topo.a[i-1]*mesh->xc_coord[i-1]);
+//                }
+//                h0               = fabs(h - mesh->zg_coord[j]);
+//                mesh->rho_s[c1] *= h0/dz;
+//            }
+//            if ( mesh->BCg.type[c1] == 30 ) {
+//                mesh->rho_s[c1]     = 1.0/scaling.rho;
+//            }
+//        }
+//    }
+//
+//
+//    //    // Density on cell centers
+//    //    for( i=0; i<ncx; i++ ) {
+//    //        for( j=0; j<ncz-1; j++ ) {
+//    //
+//    //            c1 = i + j*(ncx);
+//    //
+//    //            if ( mesh->BCp.type[c1] == 30 || mesh->BCp.type[c1] == 31 ) {
+//    //                mesh->rho_app_n[c1] = 1.0/scaling.rho;
+//    //                mesh->rho_n[c1]  = 1.0/scaling.rho;
+//    //            }
+//    //            else {
+//    //                mesh->rho_app_n[c1] = mesh->rho_n[c1];
+//    //
+//    //                if (mesh->BCp.type[c1] == -1 && mesh->BCp.type[c1+ncx] == 31 ) {
+//    //                    h  = topo.b[i] + topo.a[i]*mesh->xc_coord[i];//0.5topo.height[i] + 0.5*topo.height[i+1];
+//    //                    mesh->rho_app_n[c1] *= (h-mesh->zc_coord[j])/dz;
+//    //                }
+//    //            }
+//    //        }
+//    //    }
+//    //
+//
+//    //-----------------------------------------------------------------
+//
+//    //    // Density on cell vertices
+//    //    for( i=0; i<nx; i++ ) {
+//    //        for( j=0; j<nz-1; j++ ) {
+//    //
+//    //            c1 = i + j*(nx);
+//    //
+//    //            if ( mesh->BCg.type[c1] == 30 ) {
+//    //                mesh->rho_app_s[c1] = 1.0/scaling.rho;
+//    //                mesh->rho_s[c1]  = 1.0/scaling.rho;
+//    //            }
+//    //            else {
+//    //                mesh->rho_app_s[c1] = mesh->rho_s[c1];
+//    //
+//    //                if (mesh->BCg.type[c1] == -1 && mesh->BCg.type[c1+nx] == 30) {
+//    //
+//    //                    h = topo.height[i];
+//    //                    mesh->rho_app_s[c1] *= (h-mesh->zg_coord[j])/dz;
+//    //                }
+//    //            }
+//    //        }
+//    //    }
 }
+
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+void DiffuseAlongTopography( grid *mesh, params model, scale scaling, double *array, int size, double dummy,  double diff_time ) {
+    
+    // Explicit diffusion solver;
+    int i, it;
+    double dx   = fabs(mesh->xg_coord[1]-mesh->xg_coord[0]);
+    double diff = model.surf_diff;
+    double dt   = 0.4*dx*dx/diff, time=0.0, dtr;
+    int nstep   = (int)(diff_time/dt + 1);
+    double correct[size], s;
+    
+    double base_level = model.surf_baselev;//0*array[0]; // left side
+    double sedi_rate  = model.surf_sedirate;
+    printf("Sedimentation rate: %2.2e m/y with base level: %2.2e m\n", model.surf_sedirate*scaling.V*3600.0*365.0*24.0, base_level*scaling.L);
+    
+    if ( model.surf_processes == 1 || model.surf_processes == 3 ) {
+        
+        // Calculate timestep for diffusion sub-steps
+        if (dt >diff_time) dtr = diff_time;
+        if (dt<=diff_time) dtr = diff_time/nstep;
+        
+        // Sub-time loop
+        for (it=0; it<nstep; it++) {
+            for (i=1; i<size-1; i++) {
+                correct[i]  = 0.5*dtr/dx/dx*diff*(array[i-1]+array[i+1]-2.0*array[i]);
+            }
+            for (i=size-2; i==1; i--) {
+                correct[i] += 0.5*dtr/dx/dx*diff*(array[i-1]+array[i+1]-2.0*array[i]);
+            }
+            for (i=1; i<size-1; i++) {
+                // Activate source term (sedimentation) only below base level
+                s = 0.0;
+                if (array[i]<base_level) s = sedi_rate;
+                array[i] += correct[i] + dtr*s;
+            }
+            time += dtr;
+        }
+        printf("Do %d topographic diffusion steps - whole time: %2.2e s - final time: %2.2e s - explicit dt: %2.2e s - diffusivity: %2.2e m^2/s\n", nstep, diff_time*scaling.t, time*scaling.t, dt*scaling.t, diff*pow(scaling.L,2)/scaling.t );
+    }
+    
+    
+    // Instantaneous basin filling
+    if (model.surf_processes == 2) {
+        
+        for (i=0; i<size; i++) {
+            if (array[i]<base_level)
+                //                array[i]  = base_level;
+                array[i]  = array[i] + sedi_rate*model.dt;
+        }
+    }
+    
+}
+
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ OBSOLETE -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+
 void SurfaceVelocity( grid *mesh, params model, surface *topo, markers* topo_chain, scale scaling ) {
+
+    int new = 0;
+    int k;
+    double dx = model.dx;
+    double dz = model.dz;
+    double VxA, VzA;
+    
+    
+    for (k=0;k<topo_chain->Nb_part;k++) {
+        
+        // un coup de puis Vx
+        V2P( &VxA, &VzA, topo_chain, mesh->u_in,  mesh->v_in, mesh->xg_coord, mesh->zg_coord, mesh->zvx_coord, mesh->xvz_coord, mesh->Nx, mesh->Nz, mesh->Nz+1, mesh->Nx+1, mesh->BCu.type, mesh->BCv.type, dx, dz, k, new );
+        topo_chain->Vx[k] = VxA;
+        topo_chain->Vz[k] = VzA;
+        
+    }
+    
+    double symx = 0.0;
+    double symz = 0.0;
+    int N = topo_chain->Nb_part;
+    for (k=0;k<topo_chain->Nb_part;k++) {
+        
+        if (fabs(topo_chain->Vx[k] + topo_chain->Vx[N-1-k]) > symx ) symx = fabs(topo_chain->Vx[k] + topo_chain->Vx[N-1-k]);
+        if (fabs(topo_chain->Vz[k] - topo_chain->Vz[N-1-k]) > symz ) symz = fabs(topo_chain->Vz[k] - topo_chain->Vz[N-1-k]);
+        printf(" Vx > %2.6e %2.6e %2.6e\n", topo_chain->Vx[k], topo_chain->Vx[N-1-k], topo_chain->Vx[k] + topo_chain->Vx[N-1-k]);
+
+        printf(" Vz > %2.6e %2.6e %2.6e\n", topo_chain->Vz[k], topo_chain->Vz[N-1-k], topo_chain->Vz[k] - topo_chain->Vz[N-1-k]);
+    }
+    
+    if ( symz > 1e-10 ) {printf("Vz"); exit(1); }
+
+    if ( symx > 1e-10 ) {printf("Vx"); exit(1); }
+}
+
+
+void SurfaceVelocity0( grid *mesh, params model, surface *topo, markers* topo_chain, scale scaling ) {
     
     int nx   = mesh->Nx;
     int nz   = mesh->Nz;
@@ -1204,66 +1433,4 @@ void SurfaceVelocity( grid *mesh, params model, surface *topo, markers* topo_cha
     //    Interp_Grid2P( *topo_chain, topo_chain->Vx,    mesh, Vxc, mesh->xc_coord,  mesh->zc_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type );
     //    Interp_Grid2P( *topo_chain, topo_chain->Vz,    mesh, Vzc, mesh->xc_coord,  mesh->zc_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type );
 }
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-void DiffuseAlongTopography( grid *mesh, params model, scale scaling, double *array, int size, double dummy,  double diff_time ) {
-    
-    // Explicit diffusion solver;
-    int i, it;
-    double dx   = fabs(mesh->xg_coord[1]-mesh->xg_coord[0]);
-    double diff = model.surf_diff;
-    double dt   = 0.4*dx*dx/diff, time=0.0, dtr;
-    int nstep   = (int)(diff_time/dt + 1);
-    double correct[size], s;
-    
-    double base_level = model.surf_baselev;//0*array[0]; // left side
-    double sedi_rate  = model.surf_sedirate;
-    printf("Sedimentation rate: %2.2e m/y with base level: %2.2e m\n", model.surf_sedirate*scaling.V*3600.0*365.0*24.0, base_level*scaling.L);
-    
-    if ( model.surf_processes == 1 || model.surf_processes == 3 ) {
-        
-        // Calculate timestep for diffusion sub-steps
-        if (dt >diff_time) dtr = diff_time;
-        if (dt<=diff_time) dtr = diff_time/nstep;
-        
-        // Sub-time loop
-        for (it=0; it<nstep; it++) {
-            for (i=1; i<size-1; i++) {
-                correct[i]  = 0.5*dtr/dx/dx*diff*(array[i-1]+array[i+1]-2.0*array[i]);
-            }
-            for (i=size-2; i==1; i--) {
-                correct[i] += 0.5*dtr/dx/dx*diff*(array[i-1]+array[i+1]-2.0*array[i]);
-            }
-            for (i=1; i<size-1; i++) {
-                // Activate source term (sedimentation) only below base level
-                s = 0.0;
-                if (array[i]<base_level) s = sedi_rate;
-                array[i] += correct[i] + dtr*s;
-            }
-            time += dtr;
-        }
-        printf("Do %d topographic diffusion steps - whole time: %2.2e s - final time: %2.2e s - explicit dt: %2.2e s - diffusivity: %2.2e m^2/s\n", nstep, diff_time*scaling.t, time*scaling.t, dt*scaling.t, diff*pow(scaling.L,2)/scaling.t );
-    }
-    
-    
-    // Instantaneous basin filling
-    if (model.surf_processes == 2) {
-        
-        for (i=0; i<size; i++) {
-            if (array[i]<base_level)
-                //                array[i]  = base_level;
-                array[i]  = array[i] + sedi_rate*model.dt;
-        }
-    }
-    
-}
-
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------ OBSOLETE -----------------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------*/
-
 

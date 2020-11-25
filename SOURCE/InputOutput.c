@@ -1202,9 +1202,10 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         materials->gs[k]    = ReadMatProps( fin, "gs",    k,    0.0   );
         materials->gs_ref[k]= ReadMatProps( fin, "gsref" ,k,  2.0e-3  ) /scaling->L;
         // Strain softening
-        materials->coh_soft[k]  = (int)ReadMatProps( fin, "coh_soft", k,    0.0   );
-        materials->phi_soft[k]  = (int)ReadMatProps( fin, "phi_soft", k,    0.0   );
-        materials->psi_soft[k]  = (int)ReadMatProps( fin, "psi_soft", k,    0.0   );
+        materials->coh_soft[k]   = (int)ReadMatProps( fin, "coh_soft",   k,    0.0   );
+        materials->phi_soft[k]   = (int)ReadMatProps( fin, "phi_soft",   k,    0.0   );
+        materials->psi_soft[k]   = (int)ReadMatProps( fin, "psi_soft",   k,    0.0   );
+        materials->is_tensile[k] = (int)ReadMatProps( fin, "is_tensile", k,    0.0   );
         materials->C_end[k]     = ReadMatProps( fin, "Ce",     k,    materials->C[k]*scaling->S    ) / scaling->S;
         materials->phi_end[k]   = ReadMatProps( fin, "phie",   k,    materials->phi[k]*180.0/M_PI  ) * M_PI / 180.0;
         materials->psi_end[k]   = ReadMatProps( fin, "psie",   k,    materials->psi[k]*180.0/M_PI  ) * M_PI / 180.0;
@@ -1228,6 +1229,10 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         // Viscoplasticity
         materials->n_vp[k]      = ReadMatProps( fin, "n_vp",   k,       1.0 ) ;
         materials->eta_vp[k]    = ReadMatProps( fin, "eta_vp", k,       0.0 ) / scaling->S / pow(scaling->t, 1.0/materials->n_vp[k]);
+        if ( materials->is_tensile[k]==1 && materials->n_vp[k]>1.0001 ) {
+            printf("Power-law visco-plasticity not yet compatible with tensile yielding\n");
+            exit(1);
+        }
         // Diffused rheological contrasts
         materials->phase_mix[k]  = (int)ReadMatProps( fin, "phase_mix",k,          0.0  );
         materials->phase_two[k]  = (int)ReadMatProps( fin, "phase_mix",k,    (double)k  );

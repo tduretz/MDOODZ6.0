@@ -736,6 +736,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
 
     if ( model.free_surf == 1 ) {
         AddFieldToGroup_generic( _TRUE_, name, "Topo", "z_grid" , 'f', (model.Nx), Cheight, 1 );
+//        AddFieldToGroup_generic( _TRUE_, name, "Topo", "z_grid" , 'd', (model.Nx), topo->height, 1 );
         AddFieldToGroup_generic( _TRUE_, name, "Topo", "Vx_grid" , 'f', (model.Nx), Ctopovx, 1 );
         AddFieldToGroup_generic( _TRUE_, name, "Topo", "Vz_grid" , 'f', (model.Nx+1), Ctopovz, 1 );
         AddFieldToGroup_generic( _TRUE_, name, "Topo", "x_mark" , 'f', topo_chain->Nb_part, Cxtopo, 1 );

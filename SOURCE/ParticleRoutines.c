@@ -42,13 +42,14 @@
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void V2P( double *Vxm, double *Vzm, markers* particles, double*Vx,  double*Vz, double*xg, double*zg, double *zvx, double *xvz, int Nxg, int Nzg, int NzVx, int NxVz, char *tagVx, char *tagVz, double dx, double dz, int k ) {
+void V2P( double *Vxm, double *Vzm, markers* particles, double*Vx,  double*Vz, double*xg, double*zg, double *zvx, double *xvz, int Nxg, int Nzg, int NzVx, int NxVz, char *tagVx, char *tagVz, double dx, double dz, int k, int TarasCorr ) {
     
     double val  = 0.0;
     double sumW = 0.0;
     double dxm, dzm, dst, vxm13, vxm24, vzm12, vzm34;
     int    i_part, j_part, iSW, iNW, iSE, iNE;
     int    Nx, Nz, iSEE, iNEE, iSWW, iNWW, iNNW, iNNE, iSSW, iSSE;
+    double VSEE, VSWW, VNEE, VNWW, VSSW, VSSE, VNNW, VNNE, VSW, VSE, VNW, VNE;
     
     (*Vxm) = 0.0;
     (*Vzm) = 0.0;
@@ -77,45 +78,69 @@ void V2P( double *Vxm, double *Vzm, markers* particles, double*Vx,  double*Vz, d
             i_part = Nz-2;
         }
         
-        dxm = particles->x[k] - xg[j_part];
-        dzm = particles->z[k] - zvx[i_part];
+        dxm = fabs(particles->x[k] - xg[j_part]);
+        dzm = fabs(particles->z[k] - zvx[i_part]);
         
         iSW = j_part+i_part*Nx;
         iSE = j_part+i_part*Nx+1;
         iNW = j_part+(i_part+1)*Nx;
         iNE = j_part+(i_part+1)*Nx+1;
         
-        if (tagVx[iSW] == 30) Vx[iSW] = Vx[iNW];
-        if (tagVx[iSE] == 30) Vx[iSE] = Vx[iNE];
-        if (tagVx[iNW] == 30) Vx[iNW] = Vx[iSW];
-        if (tagVx[iNE] == 30) Vx[iNE] = Vx[iSE];
+        VNW = Vx[iNW];
+        VNE = Vx[iNE];
+        VSW = Vx[iSW];
+        VSE = Vx[iSE];
         
-        vxm13 = Vx[iSW]*(1.0-dxm/dx) + Vx[iSE]*dxm/dx;
-        vxm24 = Vx[iNW]*(1.0-dxm/dx) + Vx[iNE]*dxm/dx;
+        if (tagVx[iSW] == 30) VSW = Vx[iNW];
+        if (tagVx[iSE] == 30) VSE = Vx[iNE];
+        if (tagVx[iNW] == 30) VNW = Vx[iSW];
+        if (tagVx[iNE] == 30) VNE = Vx[iSE];
+        
+        if (tagVx[iNE] == 30 && tagVx[iSE] == 30) {
+            VNE = VSW;
+            VSE = VSW;
+        }
+        
+        if (tagVx[iNW] == 30 && tagVx[iSW] == 30) {
+            VNW = VSE;
+            VSW = VSE;
+        }
+        
+        vxm13 = VSW*(1.0-dxm/dx) + VSE*dxm/dx;
+        vxm24 = VNW*(1.0-dxm/dx) + VNE*dxm/dx;
         
         // Compute correction
-        if (dxm/dx>=0.5) {
-            if(j_part<Nx-2) {
-                iSEE  = j_part+i_part*Nx+1 + 1;
-                iNEE  = j_part+(i_part+1)*Nx+1 + 1;
-                if (tagVx[iSEE] == 30) Vx[iSEE] = Vx[iSW];
-                if (tagVx[iNEE] == 30) Vx[iNEE] = Vx[iNW];
-                vxm13 = vxm13 + 0.5*pow((dxm/dx-0.5),2.0) * (Vx[iSW] - 2.0*Vx[iSE] + Vx[iSEE]);
-                vxm24 = vxm24 + 0.5*pow((dxm/dx-0.5),2.0) * (Vx[iNW] - 2.0*Vx[iNE] + Vx[iNEE]);
+        if (TarasCorr==1) {
+            if (dxm/dx>=0.5) {
+                if(j_part<Nx-2) {
+                    iSEE  = j_part+i_part*Nx+1 + 1;
+                    iNEE  = j_part+(i_part+1)*Nx+1 + 1;
+                    VSEE  = Vx[iSEE];
+                    VNEE  = Vx[iNEE];
+                    if (tagVx[iSEE] == 30) VSEE = Vx[iSW];
+                    if (tagVx[iNEE] == 30) VNEE = Vx[iNW];
+                    vxm13 = vxm13 + 0.5*pow((dxm/dx-0.5),2.0) * (VSW - 2.0*VSE + VSEE);
+                    vxm24 = vxm24 + 0.5*pow((dxm/dx-0.5),2.0) * (VNW - 2.0*VNE + VNEE);
+                }
+            }
+            else {
+                if(j_part>0) {
+                    iSWW  = j_part+i_part*Nx - 1;
+                    iNWW  = j_part+(i_part+1)*Nx - 1;
+                    VSWW  = Vx[iSWW];
+                    VNWW  = Vx[iNWW];
+                    if (tagVx[iSWW] == 30) VSWW = Vx[iSE];
+                    if (tagVx[iNWW] == 30) VNWW = Vx[iNE];
+                    vxm13 = vxm13 + 0.5*pow((dxm/dx-0.5),2.0) * (VSWW   -2.0*VSW   + VSE);
+                    vxm24 = vxm24 + 0.5*pow((dxm/dx-0.5),2.0) * (VNWW   -2.0*VNW   + VNE);
+                }
             }
         }
-        else {
-            if(j_part>0) {
-                iSWW  = j_part+i_part*Nx - 1;
-                iNWW  = j_part+(i_part+1)*Nx - 1;
-                if (tagVx[iSWW] == 30) Vx[iSWW] = Vx[iSE];
-                if (tagVx[iNWW] == 30) Vx[iNWW] = Vx[iNE];
-                vxm13 = vxm13 + 0.5*pow((dxm/dx-0.5),2.0) * (Vx[iSWW]   -2.0*Vx[iSW]   + Vx[iSE]);
-                vxm24 = vxm24 + 0.5*pow((dxm/dx-0.5),2.0) * (Vx[iNWW]   -2.0*Vx[iNW]   + Vx[iNE]);
-            }
-        }
-        
+
         (*Vxm) = (1.0-dzm/dz) * vxm13 + (dzm/dz) * vxm24;
+        
+        
+//        (*Vxm) =
         
         //---------------------------------------------------//
         
@@ -140,41 +165,62 @@ void V2P( double *Vxm, double *Vzm, markers* particles, double*Vx,  double*Vz, d
             i_part = Nz-2;
         }
         
-        dxm = particles->x[k] - xvz[j_part];
-        dzm = particles->z[k] - zg[i_part];
+        dxm = fabs(particles->x[k] - xvz[j_part]);
+        dzm = fabs(particles->z[k] - zg[i_part]);
         
         iSW = j_part+i_part*Nx;
         iSE = j_part+i_part*Nx+1;
         iNW = j_part+(i_part+1)*Nx;
         iNE = j_part+(i_part+1)*Nx+1;
-
-        if (tagVz[iSW] == 30) Vz[iSW] = Vz[iSE];
-        if (tagVz[iSE] == 30) Vz[iSE] = Vz[iSW];
-        if (tagVz[iNW] == 30) Vz[iNW] = Vz[iNE];
-        if (tagVz[iNE] == 30) Vz[iNE] = Vz[iNW];
         
-        vzm12 = Vz[iSW]*(1.0-dzm/dz) + Vz[iNW]*dzm/dz;
-        vzm34 = Vz[iSE]*(1.0-dzm/dz) + Vz[iNE]*dzm/dz;
+        VSE = Vz[iSE];
+        VSW = Vz[iSW];
+        VNE = Vz[iNE];
+        VNW = Vz[iNW];
+
+        if (tagVz[iSW] == 30) VSW = Vz[iNE];
+        if (tagVz[iSE] == 30) VSE = Vz[iNE];
+        if (tagVz[iNW] == 30) VNW = Vz[iSW];
+        if (tagVz[iNE] == 30) VNE = Vz[iSE];
+        
+        if (tagVz[iNE] == 30 && tagVz[iSE] == 30 ) {
+            VNE = VSW;
+            VSE = VSW;
+        }
+        
+        if (tagVz[iNW] == 30 && tagVz[iSW] == 30) {
+            VNW = VSE;
+            VSW = VSE;
+        }
+        
+        vzm12 = VSW*(1.0-dzm/dz) + VNW*dzm/dz;
+        vzm34 = VSE*(1.0-dzm/dz) + VNE*dzm/dz;
         
         // Compute correction
-        if(dzm/dz>=0.5) {
-            if(i_part<Nz-2) {
-                iNNW  = j_part+(i_part+2)*Nx;
-                iNNE  = j_part+(i_part+2)*Nx+1;
-                if (tagVz[iNNW] == 30) Vz[iNNW] = Vz[iSW];
-                if (tagVz[iNNE] == 30) Vz[iNNE] = Vz[iSE];
-                vzm12 = vzm12 + 0.5*pow((dzm/dz-0.5),2.0) * (Vz[iSW] - 2.0*Vz[iNW] + Vz[iNNW]);
-                vzm34 = vzm34 + 0.5*pow((dzm/dz-0.5),2.0) * (Vz[iSE] - 2.0*Vz[iNE] + Vz[iNNE]);
+        if (TarasCorr==1) {
+            if(dzm/dz>=0.5) {
+                if(i_part<Nz-2) {
+                    iNNW  = j_part+(i_part+2)*Nx;
+                    iNNE  = j_part+(i_part+2)*Nx + 1;
+                    VNNW  = Vz[iNNW];
+                    VNNE  = Vz[iNNE];
+                    if (tagVz[iNNW] == 30) VNNW = Vz[iSW];
+                    if (tagVz[iNNE] == 30) VNNE = Vz[iSE];
+                    vzm12 = vzm12 + 0.5*pow((dzm/dz-0.5),2.0) * (VSW - 2.0*VNW + VNNW);
+                    vzm34 = vzm34 + 0.5*pow((dzm/dz-0.5),2.0) * (VSE - 2.0*VNE + VNNE);
+                }
             }
-        }
-        else {
-            if(i_part>0) {
-                iSSW  = j_part+(i_part-1)*Nx;
-                iSSE  = j_part+(i_part-1)*Nx + 1;
-                if (tagVz[iSSW] == 30) Vz[iSSW] = Vz[iNW];
-                if (tagVz[iSSE] == 30) Vz[iSSE] = Vz[iNE];
-                vzm12 = vzm12 + 0.5*pow((dzm/dz-0.5),2) * (Vz[iSSW] - 2*Vz[iSW] + Vz[iNW]);
-                vzm34 = vzm34 + 0.5*pow((dzm/dz-0.5),2) * (Vz[iSSE] - 2*Vz[iSE] + Vz[iNE]);
+            else {
+                if(i_part>0) {
+                    iSSW  = j_part+(i_part-1)*Nx;
+                    iSSE  = j_part+(i_part-1)*Nx + 1;
+                    VSSW = Vz[iSSW];
+                    VSSE = Vz[iSSE];
+                    if (tagVz[iSSW] == 30) VSSW = Vz[iNW];
+                    if (tagVz[iSSE] == 30) VSSE = Vz[iNE];
+                    vzm12 = vzm12 + 0.5*pow((dzm/dz-0.5),2.0) * (VSSW - 2.0*VSW + VNW);
+                    vzm34 = vzm34 + 0.5*pow((dzm/dz-0.5),2.0) * (VSSE - 2.0*VSE + VNE);
+                }
             }
         }
         
@@ -1138,11 +1184,8 @@ void PutPartInBox( markers *particles, grid *mesh, params model, surface topo, s
                                 particles->z[np]+= random_z;
                                 
                                 isoutPart( particles, &model, np );
-                    
-                                
                             }
-                            
-                            
+            
                             np++;
                         }
                     }

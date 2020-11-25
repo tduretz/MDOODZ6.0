@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00100
+istep = 00300
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -16,15 +16,15 @@ V   = 1e-9
 T   = 100
 
 /**** SPACE-TIME ****/
-Nx      = 200
-Nz      = 74
-Nt      = 500
+Nx      = 101
+Nz      = 37
+Nt      = 300
 xmin    = -150.000000e3
 zmin    = -100.000000e3
 xmax    =  150.000000e3
 zmax    =  10.000000e3
 dt_constant = 1
-dt          = 2e11
+dt          = 4e11
 dt_max      = 1e12
 Courant     = 0.3
 
@@ -77,7 +77,7 @@ gx = 0.0000
 gz = -10.000
 
 /**** PHASE PROPERTIES ****/
-Nb_phases = 6
+Nb_phases = 7
 
 ID   = 0
 density_model = 3
@@ -235,6 +235,31 @@ gsel = 0
 eta_vp = 4e20
 n_vp   = 1.0
 
+
+ID   = 6       / air
+density_model = 3
+rho  = 1.00
+mu   = 3e100
+Cv   = 1050
+k    = 3000.0
+Qr   = 1e-6
+C    = 2e7
+phi  = 30
+psi  = 5
+Slim = 500e9
+alp  = 3.2e-5  /thermal expansion^M
+bet  = 5e-11   /incompressibility
+drho = 0
+cstv = 1
+pwlv = 0
+linv = 0
+gbsv = 0
+expv = 0
+gsel = 0
+eta_vp = 1e18
+n_vp   = 1.0
+
+
 /**** DEFMAPS ****/
 nT    =    51      / Temperature resolutin []
 nE    =    51      / Strain rate resolution []
@@ -254,7 +279,7 @@ min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
 Newton        = 1 
-nit_max       = 20
+nit_max       = 0
 Picard2Newton = 1
 Pic2NewtCond  = 1e-1
 let_res_grow  = 1
