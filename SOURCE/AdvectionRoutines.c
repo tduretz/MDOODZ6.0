@@ -884,10 +884,12 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
         }
 
         // If there is no motion, then the timestep becomes huge: cut off the motion.
-        if( model->dt>1.0e30 || vmax<1.0e-30) {
+        if ( model->dt>1.0e30 || vmax<1.0e-30) {
             dtc = 0.0;
             model->dt = model->dt_start;
         }
+        
+        if ( model->dt>model->dt_max ) model->dt = model->dt_max;
 
         if (quiet==0) printf("Current dt = %2.2e s / Courant dt = %2.2e s\n", model->dt * scaling.t, dtc * scaling.t );
     }

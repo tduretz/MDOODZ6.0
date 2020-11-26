@@ -52,7 +52,7 @@ struct _mat_prop {
     int     gs[20], cstv[20], pwlv[20], linv[20], expv[20], gbsv[20], phase_diagram[20], density_model[20];
     DoodzFP C_end[20], phi_end[20], psi_end[20], pls_start[20], pls_end[20], eta_vp[20], n_vp[20];
     int     phi_soft[20], psi_soft[20], coh_soft[20], is_tensile[20];
-    DoodzFP Pr[20], tau_kin[20], dPr[20];
+    DoodzFP Pr[20], tau_kin[20], dPr[20], k_chem[20];
     int     reac_soft[20], reac_phase[20];
     int     phase_mix[20], phase_two[20];
     double  aniso_factor[20], aniso_angle[20];
@@ -171,7 +171,7 @@ struct _grid {
 	int    *iter_smooth;
 	int    *nb_part_cell, *nb_part_vert;
 	BC     BCu, BCv, BCp, BCp_exp;
-	BCT    BCt, BCg;
+	BCT    BCt, BCg, BCc;
 	double *xg_coord, *zg_coord, *xc_coord, *zc_coord, *xvz_coord, *zvx_coord, *xg_coord0, *zg_coord0, *xg_coord_ext, *zg_coord_ext;
 	double *eta_s, *eta_n, *rho_s, *rho_n;
     double *X_s, *X_n, *X0_s, *X0_n, *p0_n, *p0_s;
@@ -210,6 +210,7 @@ struct _grid {
     double *cell_min_z, *cell_max_z, *vert_min_z, *vert_max_z;
     double *dil_n, *dil_s, *fric_n, *fric_s, *C_n, *C_s;
     double *exz_n_el, *exz_n_diss, *exz_n_pl, *Wdiss, *Wel, *Wtot;
+    double *kc_x, *kc_z;
 };
 
 // Contains information needed for the direct solver
@@ -591,3 +592,4 @@ void UpdateGridFields( grid*, markers*, params*, mat_prop*, scale* );
 
 void RogerGunther( markers *, params, grid, int, scale );
 void CheckSym( DoodzFP*, double, int, int, char*, int, int );
+void ChemicalDirectSolve( grid*, params, markers*, mat_prop*, double, scale );

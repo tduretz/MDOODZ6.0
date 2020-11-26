@@ -2468,15 +2468,15 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     // Reaction stuff: 2. Mixture rheology (Huet et al., 2014)
     if (  ProgressiveReaction == 1 ) {
 
-        X     = (X0*tau_kin - 0.5*dt*erfc((P - Pr)/dPr) + dt)/(dt + tau_kin);
-
-        if ( X<X0 && NoReturn == 1 ) {
-            retro = 0.0;
-            X = X0;
-        }
-        
-        dXdP   = retro*dt*exp(-pow(P - Pr, 2.0)/pow(dPr, 2.0))/(sqrt(M_PI)*dPr*(dt + tau_kin));
-        d2XdP2 = -retro*dt*(2.0*P - 2.0*Pr)*exp(-pow(P - Pr, 2.0)/pow(dPr, 2.0))/(sqrt(M_PI)*pow(dPr, 3.0)*(dt + tau_kin));
+//        X     = (X0*tau_kin - 0.5*dt*erfc((P - Pr)/dPr) + dt)/(dt + tau_kin);
+//
+//        if ( X<X0 && NoReturn == 1 ) {
+//            retro = 0.0;
+//            X = X0;
+//        }
+//
+//        dXdP   = retro*dt*exp(-pow(P - Pr, 2.0)/pow(dPr, 2.0))/(sqrt(M_PI)*dPr*(dt + tau_kin));
+//        d2XdP2 = -retro*dt*(2.0*P - 2.0*Pr)*exp(-pow(P - Pr, 2.0)/pow(dPr, 2.0))/(sqrt(M_PI)*pow(dPr, 3.0)*(dt + tau_kin));
 
         ndis1  = materials->npwl[phase];
         Adis1  = materials->Apwl[phase];
@@ -3116,7 +3116,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
         mesh->Wdiss[c0]       = 0.0;
         //        X                     =  mesh->Xreac_n[c0]; // Save X first
         //        if (model->ProgReac==1) mesh->Xreac_n[c0]    = 0.0;
-        mesh->X_n[c0]        = 0.0;
+//        mesh->X_n[c0]        = 0.0;
         mesh->OverS_n[c0]    = 0.0;
         
         
@@ -3182,7 +3182,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 if ( cond == 1 ) mesh->div_u_pl[c0]    += mesh->phase_perc_n[p][c0] * div_pl;
                 if ( cond == 1 ) mesh->div_u_r[c0]     += mesh->phase_perc_n[p][c0] * div_r;
 
-                if ( cond == 1 ) mesh->X_n[c0]         += mesh->phase_perc_n[p][c0] * Xreac;
+//                if ( cond == 1 ) mesh->X_n[c0]         += mesh->phase_perc_n[p][c0] * Xreac;
                 if ( cond == 1 ) mesh->OverS_n[c0]     += mesh->phase_perc_n[p][c0] * OverS;
 //                if ()
 
@@ -3315,7 +3315,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
         mesh->detadezz_s[c1] = 0.0;
         mesh->detadgxz_s[c1] = 0.0;
         mesh->detadp_s[c1]   = 0.0;
-        mesh->X_s[c1]        = 0.0;
+//        mesh->X_s[c1]        = 0.0;
         //        X                    = mesh->Xreac_s[c1];
         mesh->OverS_s[c1]    = 0.0;
 
@@ -3347,7 +3347,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 if ( cond == 1 ) mesh->exz_el[c1]     += mesh->phase_perc_s[p][c1] * exz_el;
                 if ( cond == 1 ) mesh->exz_diss[c1]   += mesh->phase_perc_s[p][c1] * exz_diss;
                 if ( cond == 1 ) mesh->OverS_s[c1]    += mesh->phase_perc_s[p][c1] * OverS;
-                if ( cond == 1 ) mesh->X_s[c1]        += mesh->phase_perc_s[p][c1] * Xreac;
+//                if ( cond == 1 ) mesh->X_s[c1]        += mesh->phase_perc_s[p][c1] * Xreac;
 
                 if (average == 1) {
                     if ( cond == 1 ) mesh->sxz[c1]        += mesh->phase_perc_s[p][c1] * 1.0/txz1;

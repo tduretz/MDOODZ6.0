@@ -1139,6 +1139,11 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->force_act_vol_ast = ReadInt2( fin, "force_act_vol_ast",   0 );
     model->act_vol_dis_ast   = ReadDou2( fin, "act_vol_dis_ast" ,  0.0 );
     model->act_vol_dif_ast   = ReadDou2( fin, "act_vol_dif_ast" ,  0.0 );
+    // Reaction
+//    model->Pr              = ReadDou2( fin, "Pr",          0.0  ) / scaling->S;
+//    model->dPr             = ReadDou2( fin, "dPr",         0.0  ) / scaling->S;
+//    model->tau_kin         = ReadDou2( fin, "tau_kin",     0.0  ) / scaling->t;
+//    model->k_chem          = ReadDou2( fin, "k_chem",      0.0  ) / (scaling->L*scaling->L/scaling->t);
 
     // Model user's delights
     model->user0           = ReadDou2( fin, "user0",           0.0 );
@@ -1152,7 +1157,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->user8           = ReadDou2( fin, "user8",           0.0 );
 
     // Derived quantities
-    model->dx                = (model->xmax - model->xmin) / (model->Nx - 1); printf("dx = %2.6e\n", model->dx );
+    model->dx                = (model->xmax - model->xmin) / (model->Nx - 1);
     model->dz                = (model->zmax - model->zmin) / (model->Nz - 1);
     model->dt0               = model->dt;
     model->dt_start          = model->dt;
@@ -1220,9 +1225,10 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         // Reaction stuff
         materials->reac_soft[k]  = (int)ReadMatProps( fin, "reac_soft",   k,    0.0  );
         materials->reac_phase[k] = (int)ReadMatProps( fin, "reac_phase",   k,    0.0  );
-        materials->Pr[k]         = ReadMatProps( fin, "Pr",  k,    0.0  ) / scaling->S;
-        materials->dPr[k]        = ReadMatProps( fin, "dPr", k,    0.0  ) / scaling->S;
-        materials->tau_kin[k]    = ReadMatProps( fin, "tr",  k,    0.0  ) / scaling->t;
+        materials->Pr[k]         = ReadMatProps( fin, "Pr",      k,    0.0  ) / scaling->S;
+        materials->dPr[k]        = ReadMatProps( fin, "dPr",     k,    0.0  ) / scaling->S;
+        materials->tau_kin[k]    = ReadMatProps( fin, "tau_kin", k,    0.0  ) / scaling->t;
+        materials->k_chem[k]     = ReadMatProps( fin, "k_chem",  k,    0.0  ) / (scaling->L*scaling->L/scaling->t);
         // Density models
         materials->density_model[k]     = (int)ReadMatProps( fin, "density_model",     k,    3  );
         materials->phase_diagram[k]     = (int)ReadMatProps( fin, "phase_diagram",     k,   -1  );

@@ -459,6 +459,8 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->Cv       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->kx       = DoodzCalloc (Nx*NzVx,sizeof(double));
     mesh->kz       = DoodzCalloc (NxVz*Nz,sizeof(double));
+    mesh->kc_x     = DoodzCalloc (Nx*NzVx,sizeof(double));
+    mesh->kc_z     = DoodzCalloc (NxVz*Nz,sizeof(double));
     mesh->Qr       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->rhs_t    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->BCt.type = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(char));
@@ -474,6 +476,18 @@ void GridAlloc ( grid* mesh, params* model ) {
     mesh->Wdiss    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->Wel      = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->Wtot     = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    
+    // Chemical diffusion
+    mesh->BCc.type = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(char));
+    mesh->BCc.typW = DoodzCalloc ((Nz-1),sizeof(char));
+    mesh->BCc.typE = DoodzCalloc ((Nz-1),sizeof(char));
+    mesh->BCc.typS = DoodzCalloc ((Nx-1),sizeof(char));
+    mesh->BCc.typN = DoodzCalloc ((Nx-1),sizeof(char));
+    mesh->BCc.val  = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->BCc.valW = DoodzCalloc ((Nz-1),sizeof(double));
+    mesh->BCc.valE = DoodzCalloc ((Nz-1),sizeof(double));
+    mesh->BCc.valS = DoodzCalloc ((Nx-1),sizeof(double));
+    mesh->BCc.valN = DoodzCalloc ((Nx-1),sizeof(double));
 
     // Grid tagging (free surf)
     mesh->BCg.type = DoodzCalloc ((Nx)*(Nz),sizeof(char));
@@ -746,6 +760,8 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->Cv);
     DoodzFree(mesh->kx);
     DoodzFree(mesh->kz);
+    DoodzFree(mesh->kc_x);
+    DoodzFree(mesh->kc_z);
     DoodzFree(mesh->Qr);
     DoodzFree(mesh->rhs_t);
     DoodzFree(mesh->BCt.val);
@@ -761,6 +777,18 @@ void GridFree( grid* mesh, params* model ) {
     DoodzFree(mesh->Wdiss);
     DoodzFree(mesh->Wel);
     DoodzFree(mesh->Wtot);
+    
+    // Chemical diffusion
+    DoodzFree(mesh->BCc.val);
+    DoodzFree(mesh->BCc.valW);
+    DoodzFree(mesh->BCc.valE);
+    DoodzFree(mesh->BCc.valS);
+    DoodzFree(mesh->BCc.valN);
+    DoodzFree(mesh->BCc.type);
+    DoodzFree(mesh->BCc.typW);
+    DoodzFree(mesh->BCc.typE);
+    DoodzFree(mesh->BCc.typS);
+    DoodzFree(mesh->BCc.typN);
 
     // Grid tagging
     DoodzFree(mesh->BCg.val);
