@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 01200
+istep = 00100
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -18,15 +18,15 @@ T   = 100
 /**** SPACE-TIME ****/
 Nx      = 200
 Nz      = 74
-Nt      = 1200
+Nt      = 100
 xmin    = -150.000000e3
 zmin    = -100.000000e3
 xmax    =  150.000000e3
 zmax    =  10.000000e3
-dt_constant = 1
+dt_constant = 0
 dt          = 2e11
-dt_max      = 1e12
-Courant     = 0.3
+dt_max      = 2e11
+Courant     = 0.25
 
 /**** SWITCHES ****/
 ismechanical    = 1
@@ -73,7 +73,7 @@ user4           = 0     /angle
 
 /**** GRAVITY ****/
 gx = 0.0000
-gz = -10.000
+gz = -9.81000
 
 /**** PHASE PROPERTIES ****/
 Nb_phases = 6
@@ -101,7 +101,7 @@ gsel = 0
 eta0 = 1e22
 npwl = 1
 Qpwl = 0
-eta_vp = 4e20
+eta_vp = 1e21
 n_vp   = 1.0
 
 ID   = 1
@@ -127,7 +127,7 @@ gsel = 0
 eta0 = 1e22
 npwl = 2
 Qpwl = 0
-eta_vp = 4e20
+eta_vp = 1e21
 n_vp   = 1.0
 
 ID   = 2       / astheno
@@ -153,7 +153,7 @@ gsel = 0
 eta0 = 5e20
 npwl = 1
 Qpwl = 0
-eta_vp = 4e20
+eta_vp = 1e21
 n_vp   = 1.0
 
 ID   = 3       / uc
@@ -176,13 +176,13 @@ linv = 0
 gbsv = 0
 expv = 0
 gsel = 0
-eta_vp =4e20
+eta_vp =1e21
 n_vp   = 1.0
 plss     = 0.0
 plse     = 0.5
 phi_soft = 1
 phie     = 10.0
-is_tensile = 0
+is_tensile = 1
 
 ID   = 4       / mc
 density_model = 3
@@ -204,7 +204,7 @@ linv = 0
 gbsv = 0
 expv = 0
 gsel = 0
-eta_vp = 4e20
+eta_vp = 1e21
 n_vp   = 1.0
 plss     = 0.0
 plse     = 0.5
@@ -231,7 +231,7 @@ linv = 0
 gbsv = 0
 expv = 0
 gsel = 0
-eta_vp = 4e20
+eta_vp = 1e21
 n_vp   = 1.0
 
 /**** DEFMAPS ****/
@@ -253,7 +253,7 @@ min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
 Newton        = 1 
-nit_max       = 1
+nit_max       = 20
 Picard2Newton = 1
 Pic2NewtCond  = 1e-1
 let_res_grow  = 1

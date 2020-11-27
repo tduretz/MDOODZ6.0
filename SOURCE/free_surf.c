@@ -49,7 +49,7 @@ void AdvectFreeSurf( markers *topo_chain, params model, scale scaling ) {
 
 void SetTopoChainHorizontalCoords( surface *topo, markers *topo_chain, params model, grid Mmesh, scale scaling ) {
     
-    int Nb_part_per_cell = 4;
+    int Nb_part_per_cell = 23;
     int k, counter;
     double dxm = model.dx/Nb_part_per_cell;
     topo_chain->Nb_part = (model.Nx-1)*Nb_part_per_cell;
@@ -377,76 +377,76 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
     double dx=mesh.dx, distance, dxm, mark_val, *Xc_virtual, *Wm, *BmWm;
     
     
-    Wm              = DoodzCalloc ( Nx-1, sizeof(double));
-    BmWm            = DoodzCalloc ( Nx-1, sizeof(double));
-    double *heightc = DoodzCalloc ( Nx-1, sizeof(double));
-
-    for (k=0;k<topo_chain->Nb_part;k++) {
-
-         if ( topo_chain->phase[k] != -1 ) {
-
-             distance = ( topo_chain->x[k] - mesh.xc_coord[0] );
-             in   = ceil( (distance/dx) + 0.5) - 1;
-             dxm = 2.0*fabs( mesh.xc_coord[in] - topo_chain->x[k]);
-             mark_val = topo_chain->z[k];
-
-             Wm[in]   += (1.0-(dxm/dx));
-             BmWm[in] += mark_val*(1.0-(dxm/dx));
-
-         }
-    }
-
-    for (k=0;k<Nx-1;k++) {
-        heightc[k] += BmWm[k]/Wm[k];
-    }
-
-    for (k=1;k<Nx-1;k++) {
-         topo->height[k] = 0.5*(heightc[k]+heightc[k-1]);
-     }
-    topo->height[0]=topo->height[1];
-    topo->height[Nx-1]=topo->height[Nx-2];
-    
-//    // Allocate memory
-//    Xc_virtual = DoodzMalloc ((Nx+1)*sizeof(double));
-//    Wm         = DoodzCalloc ( Nx, sizeof(double));
-//    BmWm       = DoodzCalloc ( Nx, sizeof(double));
+//    Wm              = DoodzCalloc ( Nx-1, sizeof(double));
+//    BmWm            = DoodzCalloc ( Nx-1, sizeof(double));
+//    double *heightc = DoodzCalloc ( Nx-1, sizeof(double));
 //
-//    // Create x cell center coordinate with additional boundary nodes
-//    Xc_virtual[0]  = X_vect[0]-0.5*dx;
-//    for (k=0;k<Nx-1;k++) {
-//        Xc_virtual[k+1]= 0.5*(X_vect[k+1]+X_vect[k]);
-//    }
-//    Xc_virtual[Nx] = X_vect[Nx-1]+0.5*dx;
-//
-//    // Find to which node each marker contribute
 //    for (k=0;k<topo_chain->Nb_part;k++) {
-//        if ( topo_chain->phase[k] != -1 ) {
-//            distance        = (topo_chain->x[k]-X_vect[0]);
-//            in              = ceil((distance/dx)+0.5) - 1;
-////            if (in<0)    in = 0;
-////            if (in>Nx-1) in = Nx-1;
-////            dxm = fabs(0.5*(Xc_virtual[in]+Xc_virtual[in+1])-topo_chain->x[k]);
-//            dxm = 2.0*fabs(X_vect[in]-topo_chain->x[k]);
-//            mark_val = (topo_chain->z[k] - topo_chain->z0[k]);
+//
+//         if ( topo_chain->phase[k] != -1 ) {
+//
+//             distance = ( topo_chain->x[k] - mesh.xc_coord[0] );
+//             in   = ceil( (distance/dx) + 0.5) - 1;
+//             dxm = 2.0*fabs( mesh.xc_coord[in] - topo_chain->x[k]);
+//             mark_val = topo_chain->z[k];
+//
+//             Wm[in]   += (1.0-(dxm/dx));
+//             BmWm[in] += mark_val*(1.0-(dxm/dx));
+//
+//         }
+//    }
+//
+//    for (k=0;k<Nx-1;k++) {
+//        heightc[k] += BmWm[k]/Wm[k];
+//    }
+//
+//    for (k=1;k<Nx-1;k++) {
+//         topo->height[k] = 0.5*(heightc[k]+heightc[k-1]);
+//     }
+//    topo->height[0]=topo->height[1];
+//    topo->height[Nx-1]=topo->height[Nx-2];
+    
+    // Allocate memory
+    Xc_virtual = DoodzMalloc ((Nx+1)*sizeof(double));
+    Wm         = DoodzCalloc ( Nx, sizeof(double));
+    BmWm       = DoodzCalloc ( Nx, sizeof(double));
+
+    // Create x cell center coordinate with additional boundary nodes
+    Xc_virtual[0]  = X_vect[0]-0.5*dx;
+    for (k=0;k<Nx-1;k++) {
+        Xc_virtual[k+1]= 0.5*(X_vect[k+1]+X_vect[k]);
+    }
+    Xc_virtual[Nx] = X_vect[Nx-1]+0.5*dx;
+
+    // Find to which node each marker contribute
+    for (k=0;k<topo_chain->Nb_part;k++) {
+        if ( topo_chain->phase[k] != -1 ) {
+            distance        = (topo_chain->x[k]-X_vect[0]);
+            in              = ceil((distance/dx)+0.5) - 1;
+//            if (in<0)    in = 0;
+//            if (in>Nx-1) in = Nx-1;
+//            dxm = fabs(0.5*(Xc_virtual[in]+Xc_virtual[in+1])-topo_chain->x[k]);
+            dxm = 2.0*fabs(X_vect[in]-topo_chain->x[k]);
+            mark_val = (topo_chain->z[k] - topo_chain->z0[k]);
 //            if (itp_type==1) mark_val =  1.0/mark_val;
 //            if (itp_type==2) mark_val =  log(mark_val);
-//            Wm[in]   += (1.0-(dxm/dx));
-//            BmWm[in] += mark_val*(1.0-(dxm/dx));
-//        }
-//    }
-//
-//    // Recompute topography based on the sum of interpolation weights
-//    for (k=0;k<Nx;k++) {
-//        topo->height[k] += BmWm[k]/Wm[k];
-//
-//        if (isnan(topo->height[k])) {
-//            printf("%2.2e %2.2e %d (isnan check in Project Topography - free_surf.c)\n", BmWm[k], Wm[k], k);
-//            exit(1);
-//        }
+            Wm[in]   += (1.0-(dxm/dx));
+            BmWm[in] += mark_val*(1.0-(dxm/dx));
+        }
+    }
+
+    // Recompute topography based on the sum of interpolation weights
+    for (k=0;k<Nx;k++) {
+        topo->height[k] += BmWm[k]/Wm[k];
+
+        if (isnan(topo->height[k])) {
+            printf("%2.2e %2.2e %d (isnan check in Project Topography - free_surf.c)\n", BmWm[k], Wm[k], k);
+            exit(1);
+        }
 //        if (itp_type==1) topo->height[k] =  1.0 / topo->height[k];
 //        if (itp_type==2) topo->height[k] =  exp(topo->height[k]);
-//        topo->height0[k] = topo->height[k];
-//    }
+        topo->height0[k] = topo->height[k];
+    }
     
     // Correct for sides is the box in case of inflow conditions
     for (k=0;k<Nx;k++) {
@@ -480,17 +480,17 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
 //        }
 //    }
     
-//    double sym_check = fabs(topo->height[0]-topo->height[Nx-1-0]);
-//    for (k=0;k<Nx;k++) {
-//        if (fabs(topo->height[k]-topo->height[Nx-1-k]) >sym_check) sym_check = fabs(topo->height[k]-topo->height[Nx-1-k]);
-//        printf("%d %d %2.2e %2.2e %2.10e\n", k, Nx-1-k, topo->height[k]*scaling.L, topo->height[Nx-1-k]*scaling.L, (topo->height[k]-topo->height[Nx-1-k])*scaling.L);
-//        sym_check += (topo->height[k]-topo->height[Nx-1-k]);
-//    }
-//    printf("%2.8e (sym check in ProjectTopography )\n", sym_check*scaling.L);
-//    if (fabs(sym_check*scaling.L)>1e-3) exit(19);
+    double sym_check = fabs(topo->height[0]-topo->height[Nx-1-0]);
+    for (k=0;k<Nx;k++) {
+        if (fabs(topo->height[k]-topo->height[Nx-1-k]) >sym_check) sym_check = fabs(topo->height[k]-topo->height[Nx-1-k]);
+        printf("%d %d %2.2e %2.2e %2.10e\n", k, Nx-1-k, topo->height[k]*scaling.L, topo->height[Nx-1-k]*scaling.L, (topo->height[k]-topo->height[Nx-1-k])*scaling.L);
+        sym_check += (topo->height[k]-topo->height[Nx-1-k]);
+    }
+    printf("%2.8e (sym check in ProjectTopography )\n", sym_check*scaling.L);
+    if (fabs(sym_check*scaling.L)>1e-3) exit(19);
     
     // Free memory
-//    DoodzFree(Xc_virtual);
+    DoodzFree(Xc_virtual);
     DoodzFree(Wm);
     DoodzFree(BmWm);
 }
