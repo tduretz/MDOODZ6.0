@@ -1074,91 +1074,91 @@ void SurfaceDensityCorrection( grid *mesh, params model, surface topo, scale sca
     int i, j, c1;
     double h0, h, dz = fabs(mesh->zg_coord[1]-mesh->zg_coord[0]);
     
-//    // Density on cell centers
-//    for( j=0; j<ncz; j++ ) {
-//        for( i=0; i<ncx; i++ ) {
-//            c1 = i + j*(ncx);
-//
-//            if (mesh->BCp.type[c1] == -1 && mesh->BCp.type[c1+ncx] == 31 ) {
-//                h  = topo.b[i] + topo.a[i]*mesh->xc_coord[i];
-//                h0               = fabs(h - mesh->zc_coord[j]);
-//                mesh->rho_n[c1]  *= h0/dz;
-//                mesh->rho0_n[c1] *= h0/dz;
-//            }
-//            if ( mesh->BCp.type[c1] == 30 || mesh->BCp.type[c1] == 31 ) {
-//                mesh->rho_n[c1]     = 1.0/scaling.rho;
-//            }
-//        }
-//    }
-//
-//    // Density on cell vertices
-//    for( j=0; j<nz; j++ ) {
-//        for( i=0; i<nx; i++ ) {
-//
-//            c1 = i + j*(nx);
-//
-//            if (mesh->BCg.type[c1] == -1 && mesh->BCg.type[c1+nx] == 30) {
-//                if (i==0)    h  = topo.b[i] + topo.a[i]*mesh->xc_coord[i];
-//                if (i==nx-1) h  = topo.b[nx-2] + topo.a[nx-2]*mesh->xc_coord[nx-2];
-//                if (i>0 && i<nx-1) {
-//                    h  = 0.5*(topo.b[i] + topo.a[i]*mesh->xc_coord[i]);
-//                    h += 0.5*(topo.b[i-1] + topo.a[i-1]*mesh->xc_coord[i-1]);
-//                }
-//                h0               = fabs(h - mesh->zg_coord[j]);
-//                mesh->rho_s[c1] *= h0/dz;
-//            }
-//            if ( mesh->BCg.type[c1] == 30 ) {
-//                mesh->rho_s[c1]     = 1.0/scaling.rho;
-//            }
-//        }
-//    }
-//
-//
-//    //    // Density on cell centers
-//    //    for( i=0; i<ncx; i++ ) {
-//    //        for( j=0; j<ncz-1; j++ ) {
-//    //
-//    //            c1 = i + j*(ncx);
-//    //
-//    //            if ( mesh->BCp.type[c1] == 30 || mesh->BCp.type[c1] == 31 ) {
-//    //                mesh->rho_app_n[c1] = 1.0/scaling.rho;
-//    //                mesh->rho_n[c1]  = 1.0/scaling.rho;
-//    //            }
-//    //            else {
-//    //                mesh->rho_app_n[c1] = mesh->rho_n[c1];
-//    //
-//    //                if (mesh->BCp.type[c1] == -1 && mesh->BCp.type[c1+ncx] == 31 ) {
-//    //                    h  = topo.b[i] + topo.a[i]*mesh->xc_coord[i];//0.5topo.height[i] + 0.5*topo.height[i+1];
-//    //                    mesh->rho_app_n[c1] *= (h-mesh->zc_coord[j])/dz;
-//    //                }
-//    //            }
-//    //        }
-//    //    }
-//    //
-//
-//    //-----------------------------------------------------------------
-//
-//    //    // Density on cell vertices
-//    //    for( i=0; i<nx; i++ ) {
-//    //        for( j=0; j<nz-1; j++ ) {
-//    //
-//    //            c1 = i + j*(nx);
-//    //
-//    //            if ( mesh->BCg.type[c1] == 30 ) {
-//    //                mesh->rho_app_s[c1] = 1.0/scaling.rho;
-//    //                mesh->rho_s[c1]  = 1.0/scaling.rho;
-//    //            }
-//    //            else {
-//    //                mesh->rho_app_s[c1] = mesh->rho_s[c1];
-//    //
-//    //                if (mesh->BCg.type[c1] == -1 && mesh->BCg.type[c1+nx] == 30) {
-//    //
-//    //                    h = topo.height[i];
-//    //                    mesh->rho_app_s[c1] *= (h-mesh->zg_coord[j])/dz;
-//    //                }
-//    //            }
-//    //        }
-//    //    }
+    // Density on cell centers
+    for( j=0; j<ncz; j++ ) {
+        for( i=0; i<ncx; i++ ) {
+            c1 = i + j*(ncx);
+
+            if (mesh->BCp.type[c1] == -1 && mesh->BCp.type[c1+ncx] == 31 ) {
+                h  = topo.b[i] + topo.a[i]*mesh->xc_coord[i];
+                h0               = fabs(h - mesh->zc_coord[j]);
+                mesh->rho_n[c1]  *= h0/dz;
+                mesh->rho0_n[c1] *= h0/dz;
+            }
+            if ( mesh->BCp.type[c1] == 30 || mesh->BCp.type[c1] == 31 ) {
+                mesh->rho_n[c1]     = 1.0/scaling.rho;
+            }
+        }
+    }
+
+    // Density on cell vertices
+    for( j=0; j<nz; j++ ) {
+        for( i=0; i<nx; i++ ) {
+
+            c1 = i + j*(nx);
+
+            if (mesh->BCg.type[c1] == -1 && mesh->BCg.type[c1+nx] == 30) {
+                if (i==0)    h  = topo.b[i] + topo.a[i]*mesh->xc_coord[i];
+                if (i==nx-1) h  = topo.b[nx-2] + topo.a[nx-2]*mesh->xc_coord[nx-2];
+                if (i>0 && i<nx-1) {
+                    h  = 0.5*(topo.b[i] + topo.a[i]*mesh->xc_coord[i]);
+                    h += 0.5*(topo.b[i-1] + topo.a[i-1]*mesh->xc_coord[i-1]);
+                }
+                h0               = fabs(h - mesh->zg_coord[j]);
+                mesh->rho_s[c1] *= h0/dz;
+            }
+            if ( mesh->BCg.type[c1] == 30 ) {
+                mesh->rho_s[c1]     = 1.0/scaling.rho;
+            }
+        }
+    }
+
+
+    //    // Density on cell centers
+    //    for( i=0; i<ncx; i++ ) {
+    //        for( j=0; j<ncz-1; j++ ) {
+    //
+    //            c1 = i + j*(ncx);
+    //
+    //            if ( mesh->BCp.type[c1] == 30 || mesh->BCp.type[c1] == 31 ) {
+    //                mesh->rho_app_n[c1] = 1.0/scaling.rho;
+    //                mesh->rho_n[c1]  = 1.0/scaling.rho;
+    //            }
+    //            else {
+    //                mesh->rho_app_n[c1] = mesh->rho_n[c1];
+    //
+    //                if (mesh->BCp.type[c1] == -1 && mesh->BCp.type[c1+ncx] == 31 ) {
+    //                    h  = topo.b[i] + topo.a[i]*mesh->xc_coord[i];//0.5topo.height[i] + 0.5*topo.height[i+1];
+    //                    mesh->rho_app_n[c1] *= (h-mesh->zc_coord[j])/dz;
+    //                }
+    //            }
+    //        }
+    //    }
+    //
+
+    //-----------------------------------------------------------------
+
+    //    // Density on cell vertices
+    //    for( i=0; i<nx; i++ ) {
+    //        for( j=0; j<nz-1; j++ ) {
+    //
+    //            c1 = i + j*(nx);
+    //
+    //            if ( mesh->BCg.type[c1] == 30 ) {
+    //                mesh->rho_app_s[c1] = 1.0/scaling.rho;
+    //                mesh->rho_s[c1]  = 1.0/scaling.rho;
+    //            }
+    //            else {
+    //                mesh->rho_app_s[c1] = mesh->rho_s[c1];
+    //
+    //                if (mesh->BCg.type[c1] == -1 && mesh->BCg.type[c1+nx] == 30) {
+    //
+    //                    h = topo.height[i];
+    //                    mesh->rho_app_s[c1] *= (h-mesh->zg_coord[j])/dz;
+    //                }
+    //            }
+    //        }
+    //    }
 }
 
 
