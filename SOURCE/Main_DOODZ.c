@@ -463,6 +463,8 @@ int main( int nargs, char *args[] ) {
             if ( model.free_surf == 1 ) {
                 CleanUpSurfaceParticles( &particles, &mesh, topo, scaling );
                 CellFlagging( &mesh, model, topo, scaling );
+                ArrayEqualArray(     topo.height0,     topo.height, mesh.Nx );
+                ArrayEqualArray( topo_ini.height0, topo_ini.height, mesh.Nx );
             }
             
             // Interpolate material properties from particles to nodes
@@ -1188,11 +1190,14 @@ int main( int nargs, char *args[] ) {
                     PureShearALE( &model, &mesh, &topo_chain, scaling );
                 }
                 
-                // Save old topo
-                ArrayEqualArray( topo_chain.z0, topo_chain.z, topo_chain.Nb_part ); // save old z
+                if ( model.free_surf == 1 ) {
+                    // Save old topo
+                    ArrayEqualArray( topo_chain.z0, topo_chain.z, topo_chain.Nb_part ); // save old z
+                    ArrayEqualArray( topo_chain_ini.z0, topo_chain_ini.z, topo_chain.Nb_part ); // save old z
+                }
                 
                 // Advect free surface with RK4
-                RogerGuntherII( &topo_chain, model, mesh, 1, scaling );
+                RogerGuntherII( &topo_chain,     model, mesh, 1, scaling );
                 RogerGuntherII( &topo_chain_ini, model, mesh, 1, scaling );
                 
                 // Correction for particle inflow 0
@@ -1233,8 +1238,8 @@ int main( int nargs, char *args[] ) {
                     // Project topography on vertices
                     ProjectTopography( &topo,     &topo_chain,     model, mesh, scaling, mesh.xg_coord, 0 );
                     ProjectTopography( &topo_ini, &topo_chain_ini, model, mesh, scaling, mesh.xg_coord, 0 );
-                    ArrayEqualArray( topo.height0, topo.height, mesh.Nx );
-                    ArrayEqualArray( topo_ini.height0, topo_ini.height, mesh.Nx );
+//                    ArrayEqualArray( topo.height0, topo.height, mesh.Nx );
+//                    ArrayEqualArray( topo_ini.height0, topo_ini.height, mesh.Nx );
 
                     if ( model.write_debug == 1 ) {
                         WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, model, "Output_AfterSurfRemesh", materials, scaling );

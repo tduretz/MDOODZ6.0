@@ -215,6 +215,8 @@ void RemeshMarkerChain( markers *topo_chain, surface *topo, params model, scale 
     int    in, minPartCell=4, NewInd, inc = 0;
     int    res = 2;
     
+    printf("Remesh surface markers, step %d \n", mode);
+    
     if ( remesh == 0 ) {
         // Here the entire topography is interpolated from advected marker chain to the remeshed chain
         // This procedure is likely diffusive
@@ -264,20 +266,22 @@ void RemeshMarkerChain( markers *topo_chain, surface *topo, params model, scale 
             
             // Find to which cell each marker contribute / find number of topo. markers per FINE cell column (DX/res)
             for (k=0;k<topo_chain->Nb_part;k++) {
-                                
+                          
+                // Kick lateral markers inside
                 if (topo_chain->x[k]<model.xmin) {
-                    topo_chain->x[k] += model.dx/6.0;
+                    topo_chain->x[k]    += model.dx/6.0;
                     topo_chain->phase[k] = 0;
                 }
                 
+                // Kick lateral markers inside
                 if (topo_chain->x[k]>model.xmax) {
                     topo_chain->x[k]    -= model.dx/6.0;
                     topo_chain->phase[k] = 0;
                 }
                 
                 if (topo_chain->x[k]>model.xmax || topo_chain->x[k]<model.xmin  ) topo_chain->phase[k] = -1;
-                
                 else topo_chain->phase[k]=0;
+                
                 // Index of the fine grid column
                 distance             = topo_chain->x[k] - (model.xmin + dx/2.0/res);
                 in                   = ceil((distance/dx*res)+0.5) - 1;
@@ -376,6 +380,8 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
     int k, in, Nx=mesh.Nx;
     double dx=mesh.dx, distance, dxm, mark_val, *Xc_virtual, *Wm, *BmWm;
     
+    printf("In project Topography:\n");
+        
     
 //    Wm              = DoodzCalloc ( Nx-1, sizeof(double));
 //    BmWm            = DoodzCalloc ( Nx-1, sizeof(double));
@@ -407,9 +413,25 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
 //    topo->height[Nx-1]=topo->height[Nx-2];
     
     // Allocate memory
+    
     Xc_virtual = DoodzMalloc ((Nx+1)*sizeof(double));
     Wm         = DoodzCalloc ( Nx, sizeof(double));
     BmWm       = DoodzCalloc ( Nx, sizeof(double));
+//  int *npn        = DoodzCalloc ( Nx, sizeof(in));
+//
+//    //-------
+//    int res = 2;
+//    int Ncx = Nx-1;
+//    int *NumMarkCell = DoodzCalloc( res*Ncx, sizeof(int) );
+//
+//     for (k=0;k<topo_chain->Nb_part;k++) {
+//         // Index of the fine grid column
+//         distance             = topo_chain->x[k] - (model.xmin + dx/2.0/res);
+//         in                   = ceil((distance/dx*res)+0.5) - 1;
+//         if (in<0        ) in = 0;
+//         if (in>res*Ncx-1) in = res*Ncx-1;
+//         if (topo_chain->phase[k]!=-1) NumMarkCell[in]++;
+//     }
 
     // Create x cell center coordinate with additional boundary nodes
     Xc_virtual[0]  = X_vect[0]-0.5*dx;
@@ -423,8 +445,9 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
         if ( topo_chain->phase[k] != -1 ) {
             distance        = (topo_chain->x[k]-X_vect[0]);
             in              = ceil((distance/dx)+0.5) - 1;
-//            if (in<0)    in = 0;
-//            if (in>Nx-1) in = Nx-1;
+            if (in<0)    in = 0;
+            if (in>Nx-1) in = Nx-1;
+//            npn[in]        += 1;
 //            dxm = fabs(0.5*(Xc_virtual[in]+Xc_virtual[in+1])-topo_chain->x[k]);
             dxm = 2.0*fabs(X_vect[in]-topo_chain->x[k]);
             mark_val = (topo_chain->z[k] - topo_chain->z0[k]);
@@ -437,15 +460,18 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
 
     // Recompute topography based on the sum of interpolation weights
     for (k=0;k<Nx;k++) {
-        topo->height[k] += BmWm[k]/Wm[k];
+        topo->height[k] = topo->height0[k] + BmWm[k]/Wm[k];
+        
+//        printf("k=%d, W: %d E:%d\n", k, NumMarkCell[2*k-1], NumMarkCell[2*k]);
 
         if (isnan(topo->height[k])) {
-            printf("%2.2e %2.2e %d (isnan check in Project Topography - free_surf.c)\n", BmWm[k], Wm[k], k);
+            printf("BMW=%2.2e W=%2.2e index=%d (isnan check in Project Topography - free_surf.c)\n", BmWm[k], Wm[k], k);
+//            printf("In small neighbouring half cells, node: %d W: %d E:%d\n", npn[k], NumMarkCell[2*k-1], NumMarkCell[2*k]);
             exit(1);
         }
 //        if (itp_type==1) topo->height[k] =  1.0 / topo->height[k];
 //        if (itp_type==2) topo->height[k] =  exp(topo->height[k]);
-        topo->height0[k] = topo->height[k];
+//        topo->height0[k] = topo->height[k];
     }
     
     // Correct for sides is the box in case of inflow conditions
@@ -493,6 +519,8 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
     DoodzFree(Xc_virtual);
     DoodzFree(Wm);
     DoodzFree(BmWm);
+//    DoodzFree(npn);
+//    DoodzFree(NumMarkCell);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
