@@ -506,14 +506,14 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
 //        }
 //    }
     
-    double sym_check = fabs(topo->height[0]-topo->height[Nx-1-0]);
-    for (k=0;k<Nx;k++) {
-        if (fabs(topo->height[k]-topo->height[Nx-1-k]) >sym_check) sym_check = fabs(topo->height[k]-topo->height[Nx-1-k]);
-        printf("%d %d %2.2e %2.2e %2.10e\n", k, Nx-1-k, topo->height[k]*scaling.L, topo->height[Nx-1-k]*scaling.L, (topo->height[k]-topo->height[Nx-1-k])*scaling.L);
-        sym_check += (topo->height[k]-topo->height[Nx-1-k]);
-    }
-    printf("%2.8e (sym check in ProjectTopography )\n", sym_check*scaling.L);
-    if (fabs(sym_check*scaling.L)>1e-3) exit(19);
+//    double sym_check = fabs(topo->height[0]-topo->height[Nx-1-0]);
+//    for (k=0;k<Nx;k++) {
+//        if (fabs(topo->height[k]-topo->height[Nx-1-k]) >sym_check) sym_check = fabs(topo->height[k]-topo->height[Nx-1-k]);
+//        printf("%d %d %2.2e %2.2e %2.10e\n", k, Nx-1-k, topo->height[k]*scaling.L, topo->height[Nx-1-k]*scaling.L, (topo->height[k]-topo->height[Nx-1-k])*scaling.L);
+//        sym_check += (topo->height[k]-topo->height[Nx-1-k]);
+//    }
+//    printf("%2.8e (sym check in ProjectTopography )\n", sym_check*scaling.L);
+//    if (fabs(sym_check*scaling.L)>1e-3) exit(19);
     
     // Free memory
     DoodzFree(Xc_virtual);
