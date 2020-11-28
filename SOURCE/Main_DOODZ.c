@@ -1073,6 +1073,15 @@ int main( int nargs, char *args[] ) {
         
         //------------------------------------------------------------------------------------------------------------------------------//
         
+        // Free surface - interpolate velocity components on the free surface
+        if ( model.free_surf == 1 ) {
+            SurfaceVelocity( &mesh, model, &topo, &topo_chain, scaling );
+            MinMaxArray( topo_chain.Vx,      scaling.V, topo_chain.Nb_part,       "Vx surf." );
+            MinMaxArray( topo_chain.Vz,      scaling.V, topo_chain.Nb_part,       "Vz surf." );
+            MinMaxArray( topo_chain_ini.Vx,  scaling.V, topo_chain_ini.Nb_part,   "Vx surf. ini." );
+            MinMaxArray( topo_chain_ini.Vz,  scaling.V, topo_chain_ini.Nb_part,   "Vz surf. ini." );
+        }
+        
         if (model.StressUpdate==1) TotalStresses( &mesh, &particles, scaling, &model );
         
         // Update stresses on markers
@@ -1196,9 +1205,17 @@ int main( int nargs, char *args[] ) {
                     ArrayEqualArray( topo_chain_ini.z0, topo_chain_ini.z, topo_chain.Nb_part ); // save old z
                 }
                 
-                // Advect free surface with RK4
-                RogerGuntherII( &topo_chain,     model, mesh, 1, scaling );
-                RogerGuntherII( &topo_chain_ini, model, mesh, 1, scaling );
+//                // Advect free surface with RK4
+//                RogerGuntherII( &topo_chain,     model, mesh, 1, scaling );
+//                RogerGuntherII( &topo_chain_ini, model, mesh, 1, scaling );
+                
+                // Advect free surface
+                if ( model.free_surf == 1 ) {
+                    AdvectFreeSurf( &topo_chain,     model, scaling );
+                    AdvectFreeSurf( &topo_chain_ini, model, scaling );
+                    MinMaxArray( topo_chain.z,      scaling.L, topo_chain.Nb_part,       "z surf.     " );
+                    MinMaxArray( topo_chain_ini.z,  scaling.L, topo_chain_ini.Nb_part,   "z surf. ini." );
+                }
                 
                 // Correction for particle inflow 0
                 if (model.ispureshear_ale == -1 && model.isperiodic_x == 0) ParticleInflowCheck( &particles, &mesh, model, topo, 0 );

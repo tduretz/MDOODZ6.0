@@ -1224,43 +1224,42 @@ void DiffuseAlongTopography( grid *mesh, params model, scale scaling, double *ar
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 
+//void SurfaceVelocity( grid *mesh, params model, surface *topo, markers* topo_chain, scale scaling ) {
+//
+//    int new = 0;
+//    int k;
+//    double dx = model.dx;
+//    double dz = model.dz;
+//    double VxA, VzA;
+//
+//
+//    for (k=0;k<topo_chain->Nb_part;k++) {
+//
+//        // un coup de puis Vx
+//        V2P( &VxA, &VzA, topo_chain, mesh->u_in,  mesh->v_in, mesh->xg_coord, mesh->zg_coord, mesh->zvx_coord, mesh->xvz_coord, mesh->Nx, mesh->Nz, mesh->Nz+1, mesh->Nx+1, mesh->BCu.type, mesh->BCv.type, dx, dz, k, new );
+//        topo_chain->Vx[k] = VxA;
+//        topo_chain->Vz[k] = VzA;
+//
+//    }
+//
+////    double symx = 0.0;
+////    double symz = 0.0;
+////    int N = topo_chain->Nb_part;
+////    for (k=0;k<topo_chain->Nb_part;k++) {
+////
+////        if (fabs(topo_chain->Vx[k] + topo_chain->Vx[N-1-k]) > symx ) symx = fabs(topo_chain->Vx[k] + topo_chain->Vx[N-1-k]);
+////        if (fabs(topo_chain->Vz[k] - topo_chain->Vz[N-1-k]) > symz ) symz = fabs(topo_chain->Vz[k] - topo_chain->Vz[N-1-k]);
+////        printf(" Vx > %2.6e %2.6e %2.6e\n", topo_chain->Vx[k], topo_chain->Vx[N-1-k], topo_chain->Vx[k] + topo_chain->Vx[N-1-k]);
+////
+////        printf(" Vz > %2.6e %2.6e %2.6e\n", topo_chain->Vz[k], topo_chain->Vz[N-1-k], topo_chain->Vz[k] - topo_chain->Vz[N-1-k]);
+////    }
+////
+////    if ( symz > 1e-10 ) {printf("Vz"); exit(1); }
+////    if ( symx > 1e-10 ) {printf("Vx"); exit(1); }
+//}
+
+
 void SurfaceVelocity( grid *mesh, params model, surface *topo, markers* topo_chain, scale scaling ) {
-
-    int new = 0;
-    int k;
-    double dx = model.dx;
-    double dz = model.dz;
-    double VxA, VzA;
-    
-    
-    for (k=0;k<topo_chain->Nb_part;k++) {
-        
-        // un coup de puis Vx
-        V2P( &VxA, &VzA, topo_chain, mesh->u_in,  mesh->v_in, mesh->xg_coord, mesh->zg_coord, mesh->zvx_coord, mesh->xvz_coord, mesh->Nx, mesh->Nz, mesh->Nz+1, mesh->Nx+1, mesh->BCu.type, mesh->BCv.type, dx, dz, k, new );
-        topo_chain->Vx[k] = VxA;
-        topo_chain->Vz[k] = VzA;
-        
-    }
-    
-    double symx = 0.0;
-    double symz = 0.0;
-    int N = topo_chain->Nb_part;
-    for (k=0;k<topo_chain->Nb_part;k++) {
-        
-        if (fabs(topo_chain->Vx[k] + topo_chain->Vx[N-1-k]) > symx ) symx = fabs(topo_chain->Vx[k] + topo_chain->Vx[N-1-k]);
-        if (fabs(topo_chain->Vz[k] - topo_chain->Vz[N-1-k]) > symz ) symz = fabs(topo_chain->Vz[k] - topo_chain->Vz[N-1-k]);
-        printf(" Vx > %2.6e %2.6e %2.6e\n", topo_chain->Vx[k], topo_chain->Vx[N-1-k], topo_chain->Vx[k] + topo_chain->Vx[N-1-k]);
-
-        printf(" Vz > %2.6e %2.6e %2.6e\n", topo_chain->Vz[k], topo_chain->Vz[N-1-k], topo_chain->Vz[k] - topo_chain->Vz[N-1-k]);
-    }
-    
-    if ( symz > 1e-10 ) {printf("Vz"); exit(1); }
-
-    if ( symx > 1e-10 ) {printf("Vx"); exit(1); }
-}
-
-
-void SurfaceVelocity0( grid *mesh, params model, surface *topo, markers* topo_chain, scale scaling ) {
     
     int nx   = mesh->Nx;
     int nz   = mesh->Nz;
