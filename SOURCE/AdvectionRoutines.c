@@ -39,46 +39,46 @@
 #endif
 
 void RogerGunther( markers *particles, params model, grid mesh, int precise, scale scaling ) {
-    
+
     DoodzFP *VxA, *VxB, *VxC, *VxD;
     DoodzFP *VzA, *VzB, *VzC, *VzD;
     DoodzFP *OmA, *OmB, *OmC, *OmD, *om_n;
     DoodzFP *xA, *zA;
     int k, k1, l, c1, c3, Nb_part = particles->Nb_part;
     clock_t t_omp = (double)omp_get_wtime();
-    
-    
+
+
     VxA = DoodzCalloc( Nb_part,sizeof(DoodzFP));
     VzA = DoodzCalloc( Nb_part,sizeof(DoodzFP));
-    
+
     VxB = DoodzCalloc( Nb_part,sizeof(DoodzFP));
     VzB = DoodzCalloc( Nb_part,sizeof(DoodzFP));
-    
+
     VxC = DoodzCalloc( Nb_part,sizeof(DoodzFP));
     VzC = DoodzCalloc( Nb_part,sizeof(DoodzFP));
-    
+
     VxD = DoodzCalloc( Nb_part,sizeof(DoodzFP));
     VzD = DoodzCalloc( Nb_part,sizeof(DoodzFP));
-    
+
     xA  = DoodzCalloc( Nb_part,sizeof(DoodzFP));
     zA  = DoodzCalloc( Nb_part,sizeof(DoodzFP));
-    
+
     // Caculate rotation rate of the stress tensor
     if ( model.iselastic == 1 ) {
-        
+
         om_n = DoodzMalloc ((model.Nx)*(model.Nz)*sizeof(double));
         OmA  = DoodzCalloc( Nb_part,sizeof(DoodzFP));
         OmB  = DoodzCalloc( Nb_part,sizeof(DoodzFP));
         OmC  = DoodzCalloc( Nb_part,sizeof(DoodzFP));
         OmD  = DoodzCalloc( Nb_part,sizeof(DoodzFP));
-        
+
 #pragma omp parallel for shared ( mesh, om_n ) \
 private ( k, l, k1, c1, c3 )                            \
 firstprivate( model ) // schedule( static )
         for ( k1=0; k1<model.Nx*model.Nz; k1++ ) {
             k  = mesh.kn[k1];
             l  = mesh.ln[k1];
-            
+
             //        for (k=0; k<model.Nx; k++) {
             //            for (l=0; l<model.Nz; l++) {
             c1 = k + l*model.Nx;
@@ -90,55 +90,55 @@ firstprivate( model ) // schedule( static )
         }
         Interp_Grid2P( *particles, OmA, &mesh, om_n, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type   );
     }
-    
+
     // Print2DArrayDouble( om_n, model.Nx, model.Nz, scaling.t );
-    
+
     // Initial position save
     ArrayEqualArray( xA, particles->x, particles->Nb_part );
     ArrayEqualArray( zA, particles->z, particles->Nb_part );
-    
+
     // Initial velocity save
     ArrayEqualArray( VxA, particles->Vx, particles->Nb_part );
     ArrayEqualArray( VzA, particles->Vz, particles->Nb_part );
-    
+
     // Calculate Runge-Kutta velocity (4th order)
     if ( precise == 1 ) {
-        
+
 #pragma omp parallel for shared ( particles, xA, zA, VxA, VzA ) \
 private ( k )                            \
 firstprivate( Nb_part, model ) // schedule( static )
         for(k=0; k<Nb_part; k++) {
-            
+
             // Marker shoot #1
             if (particles->phase[k] != -1) {
                 particles->x[k] = xA[k] + 0.5 * model.dt * VxA[k];
                 particles->z[k] = zA[k] + 0.5 * model.dt * VzA[k];
             }
         }
-        
+
         // Check if particles are outside of the box
         isout( particles, model );
-        
+
         //-----------------------------------------------------------------------------------------------------------------------
-        
+
         // Get the velocity after dt/2
         //        Interp_Grid2P( *particles, VxB, &mesh, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type );
         //        Interp_Grid2P( *particles, VzB, &mesh, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz, mesh.BCv.type   );
-        
+
 //        VelocitiesToParticles( &mesh, particles, VxB, VzB, model, scaling );
         if (model.iselastic == 1) Interp_Grid2P( *particles, OmB, &mesh, om_n, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type   );
-        
+
         // Get the velocity after dt/2
         Interp_Grid2P( *particles, VxB, &mesh, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type );
         Interp_Grid2P( *particles, VzB, &mesh, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz, mesh.BCv.type   );
-        
+
         if ( model.RK == 4 ) {
-            
+
             // Get xB and zB
 #pragma omp parallel for shared ( particles, xA, zA, VxB, VzB ) \
 private ( k )                            \
 firstprivate( Nb_part, model )  //schedule( static )
-            
+
             for(k=0; k<Nb_part; k++) {
                 // Marker shoot #2
                 if (particles->phase[k] != -1) {
@@ -146,28 +146,28 @@ firstprivate( Nb_part, model )  //schedule( static )
                     particles->z[k] = zA[k] + 0.5 * model.dt * VzB[k];
                 }
             }
-            
+
             // Check if particles are outside of the box
             isout( particles, model );
-            
+
             //-----------------------------------------------------------------------------------------------------------------------
-            
+
             // Get the velocity after dt/2
             //            Interp_Grid2P( *particles, VxC, &mesh, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1,  mesh.BCu.type );
             //            Interp_Grid2P( *particles, VzC, &mesh, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz,  mesh.BCv.type   );
 //            VelocitiesToParticles( &mesh, particles, VxC, VzC, model, scaling );
-            
+
             // Get the velocity after dt/2
             Interp_Grid2P( *particles, VxC, &mesh, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1,  mesh.BCu.type );
             Interp_Grid2P( *particles, VzC, &mesh, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz,  mesh.BCv.type   );
-            
+
             if (model.iselastic == 1) Interp_Grid2P( *particles, OmC, &mesh, om_n, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type   );
-            
+
             // Get xC and zC
 #pragma omp parallel for shared ( particles, xA, zA, VxC, VzC ) \
 private ( k )                            \
 firstprivate( Nb_part, model )  //schedule( static )
-            
+
             for(k=0; k<Nb_part; k++) {
                 // Marker shoot #3
                 if (particles->phase[k] != -1) {
@@ -175,33 +175,33 @@ firstprivate( Nb_part, model )  //schedule( static )
                     particles->z[k] = zA[k] + 1.0 * model.dt * VzC[k];
                 }
             }
-            
+
             // Check if particles are outside of the box
             isout( particles, model );
-            
+
             //-----------------------------------------------------------------------------------------------------------------------
-            
+
             // Get the velocity after dt
             //            Interp_Grid2P( *particles, VxD, &mesh, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type );
             //            Interp_Grid2P( *particles, VzD, &mesh, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz,  mesh.BCv.type   );
 //            VelocitiesToParticles( &mesh, particles, VxD, VzD, model, scaling );
-            
+
             // Get the velocity after dt
             Interp_Grid2P( *particles, VxD, &mesh, mesh.u_in, mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,   mesh.Nz+1, mesh.BCu.type );
             Interp_Grid2P( *particles, VzD, &mesh, mesh.v_in, mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz,  mesh.BCv.type   );
-            
+
             if (model.iselastic == 1) Interp_Grid2P( *particles, OmD, &mesh, om_n, mesh.xg_coord,  mesh.zg_coord,  mesh.Nx,   mesh.Nz, mesh.BCg.type   );
             //-----------------------------------------------------------------------------------------------------------------------
-            
+
         }
-        
+
         // Calculate Roger-Gunther velocity
 #pragma omp parallel for shared ( particles, VxA, VzA ,VxB, VzB, VxC, VzC, VxD, VzD, OmA, OmB, OmC, OmD) \
 private ( k )                              \
 firstprivate( Nb_part, model ) //schedule( static )
-        
+
         for(k=0; k<Nb_part; k++) {
-            
+
             // RK2
             if ( model.RK == 2 ) {
                 if (particles->phase[k] != -1) {
@@ -210,7 +210,7 @@ firstprivate( Nb_part, model ) //schedule( static )
                     if ( model.iselastic == 1 ) OmA[k] = 0.5 * (OmA[k] +  OmB[k]);
                 }
             }
-            
+
             // RK4
             if ( model.RK == 4 ) {
                 if (particles->phase[k] != -1) {
@@ -220,9 +220,9 @@ firstprivate( Nb_part, model ) //schedule( static )
                 }
             }
         }
-        
+
     }
-    
+
     // Regular first order in time
 #pragma omp parallel for shared ( particles, VxA, VzA, xA, zA )    \
 private ( k )                              \
@@ -234,10 +234,10 @@ firstprivate( Nb_part, model ) //schedule ( static )
         }
     }
     //    }
-    
+
     // Check if particles are outside of the box
     isout( particles, model );
-    
+
     DoodzFree(VxA);
     DoodzFree(VzA);
     DoodzFree(VzB);
@@ -248,7 +248,7 @@ firstprivate( Nb_part, model ) //schedule ( static )
     DoodzFree(VxD);
     DoodzFree(xA);
     DoodzFree(zA);
-    
+
     if ( model.iselastic == 1 ) {
         DoodzFree(om_n);
         DoodzFree(OmA);
@@ -256,9 +256,9 @@ firstprivate( Nb_part, model ) //schedule ( static )
         DoodzFree(OmC);
         DoodzFree(OmD);
     }
-    
+
     printf("** Time for Roger Gunther = %lf sec\n",  (double)((double)omp_get_wtime() - t_omp) );
-    
+
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -588,7 +588,7 @@ void RogerGuntherII( markers *particles, params model, grid mesh, int precise, s
 private ( k, xA, zA, VxA, VzA, VxB, VzB, VxC, VzC, VxD, VzD, OmA, OmB, OmC, OmD, txx, tzz, txz, angle, dudxA, dvdzA, dudzA, dvdxA, dudxB, dvdzB, dudzB, dvdxB, dudxC, dvdzC, dudzC, dvdxC, dudxD, dvdzD, dudzD, dvdxD, VEA,VEB,VEC,VED, nx, nz, ndotx, ndotz, w12, norm ) \
 firstprivate( model, dx, dz, new )
     for (k=0;k<Nb_part;k++) {
-        
+
 
         xA           = particles->x[k];
         zA           = particles->z[k];
@@ -597,19 +597,19 @@ firstprivate( model, dx, dz, new )
             particles->x[k] = xA + 0.5 * model.dt * VxA;
             particles->z[k] = zA + 0.5 * model.dt * VzA;
         }
-//        isoutPart( particles, &model, k );
+       isoutPart( particles, &model, k );
         V2P( &VxB, &VzB, particles, mesh.u_in,  mesh.v_in, mesh.xg_coord, mesh.zg_coord, mesh.zvx_coord, mesh.xvz_coord, mesh.Nx, mesh.Nz, mesh.Nz+1, mesh.Nx+1, mesh.BCu.type, mesh.BCv.type, dx, dz, k, new );
         if (particles->phase[k] != -1) {
             particles->x[k] = xA + 0.5 * model.dt * VxB;
             particles->z[k] = zA + 0.5 * model.dt * VzB;
         }
-//        isoutPart( particles, &model, k );
+       isoutPart( particles, &model, k );
         V2P( &VxC, &VzC, particles, mesh.u_in,  mesh.v_in, mesh.xg_coord, mesh.zg_coord, mesh.zvx_coord, mesh.xvz_coord, mesh.Nx, mesh.Nz, mesh.Nz+1, mesh.Nx+1, mesh.BCu.type, mesh.BCv.type, dx, dz, k, new );
         if (particles->phase[k] != -1) {
             particles->x[k] = xA + 1.0 * model.dt * VxC;
             particles->z[k] = zA + 1.0 * model.dt * VzC;
         }
-//        isoutPart( particles, &model, k );
+       isoutPart( particles, &model, k );
         V2P( &VxD, &VzD, particles, mesh.u_in,  mesh.v_in, mesh.xg_coord, mesh.zg_coord, mesh.zvx_coord, mesh.xvz_coord, mesh.Nx, mesh.Nz, mesh.Nz+1, mesh.Nx+1, mesh.BCu.type, mesh.BCv.type, dx, dz, k, new );
         VxA = (1.0/6.0) * ( VxA + 2.0 * VxB + 2.0 * VxC + VxD);
         VzA = (1.0/6.0) * ( VzA + 2.0 * VzB + 2.0 * VzC + VzD);
@@ -828,7 +828,7 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
     double C = model->Courant;
 //    double time_reaction = 3.1558e11;
 //    int reaction_in_progress;
-    
+
 //    model->dt0 = model->dt;
 
     for (k=0; k<model->Nx; k++) {
@@ -888,7 +888,7 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
             dtc = 0.0;
             model->dt = model->dt_start;
         }
-        
+
         if ( model->dt>model->dt_max ) model->dt = model->dt_max;
 
         if (quiet==0) printf("Current dt = %2.2e s / Courant dt = %2.2e s\n", model->dt * scaling.t, dtc * scaling.t );
@@ -905,16 +905,16 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void Check_dt_for_advection( double* Vx, double* Vz, params *model, scale scaling, grid *mesh, int quiet ) {
-    
+
     int k, l, c;
     double minVx=0.0, minVz=0.0, maxVx=0.0, maxVz=0.0, dmin, dtc=0.0, vmax, vmin;
     double C = model->Courant;
     double dt_solve =0.0;
-    
+
     if (model->dt_constant == 0) {
     // Get current dt value;
     dt_solve = model->dt;
-    
+
     // Compute dt_Courant value;
     for (k=0; k<model->Nx; k++) {
         for (l=0; l<model->Nz+1; l++) {
@@ -923,7 +923,7 @@ void Check_dt_for_advection( double* Vx, double* Vz, params *model, scale scalin
             minVx = MINV(minVx, (Vx[c]));
         }
     }
-    
+
     for (k=0; k<model->Nx+1; k++) {
         for (l=0; l<model->Nz; l++) {
             c = k + l*(model->Nx+1);
@@ -933,29 +933,29 @@ void Check_dt_for_advection( double* Vx, double* Vz, params *model, scale scalin
     }
     if (quiet==0) printf("Min Vxm = %2.2e m/s / Max Vxm = %2.2e m/s\n", minVx * scaling.V, maxVx * scaling.V);
     if (quiet==0) printf("Min Vzm = %2.2e m/s / Max Vzm = %2.2e m/s\n", minVz * scaling.V, maxVz * scaling.V);
-    
+
     dmin = MINV(model->dx, model->dz);
     vmax = MAXV(fabs(maxVx), fabs(maxVz));
     vmin = MAXV(fabs(minVx), fabs(minVz));
     vmax = MAXV(fabs(vmax),  fabs(vmin));
-        
+
     // Courant dt
     dtc = C * dmin / fabs(vmax);
-    
+
     // If timestep is adaptive
         printf("dt_Courant = %2.2e\n", dtc*scaling.t);
         printf("dt_Solve   = %2.2e\n", dt_solve*scaling.t);
-        
+
     model->dt = MINV(dtc,dt_solve);
-        
+
         printf("dt selected for advection = %2.2e\n",  model->dt*scaling.t);
-        
+
         // If there is no motion, then the timestep becomes huge: cut off the motion.
         if( model->dt>1.0e30 || vmax<1.0e-30) {
             dtc = 0.0;
             model->dt = model->dt_start;
         }
-        
+
         //if (quiet==0) printf("Current dt = %2.2e s / Courant dt = %2.2e s\n", model->dt * scaling.t, dtc * scaling.t );
     }
     else {

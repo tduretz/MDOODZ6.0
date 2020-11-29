@@ -95,6 +95,9 @@ void V2P( double *Vxm, double *Vzm, markers* particles, double*Vx,  double*Vz, d
         if (tagVx[iSE] == 30) VSE = Vx[iNE];
         if (tagVx[iNW] == 30) VNW = Vx[iSW];
         if (tagVx[iNE] == 30) VNE = Vx[iSE];
+
+        if (tagVx[iNE] == 30 && tagVx[iSE] == 30 && tagVx[iSW] == 30) exit(1130);
+        if (tagVx[iNW] == 30 && tagVx[iSW] == 30 && tagVx[iSE] == 30) exit(1131);
         
         if (tagVx[iNE] == 30 && tagVx[iSE] == 30) {
             VNE = VSW;
@@ -182,6 +185,9 @@ void V2P( double *Vxm, double *Vzm, markers* particles, double*Vx,  double*Vz, d
         if (tagVz[iSE] == 30) VSE = Vz[iNE];
         if (tagVz[iNW] == 30) VNW = Vz[iSW];
         if (tagVz[iNE] == 30) VNE = Vz[iSE];
+
+        if (tagVz[iNE] == 30 && tagVz[iSE] == 30 && tagVz[iSW] == 30) exit(1130);
+        if (tagVz[iNW] == 30 && tagVz[iSW] == 30 && tagVz[iSE] == 30) exit(1131);
         
         if (tagVz[iNE] == 30 && tagVz[iSE] == 30 ) {
             VNE = VSW;
