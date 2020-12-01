@@ -450,7 +450,7 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
 //            npn[in]        += 1;
 //            dxm = fabs(0.5*(Xc_virtual[in]+Xc_virtual[in+1])-topo_chain->x[k]);
             dxm = 2.0*fabs(X_vect[in]-topo_chain->x[k]);
-            mark_val = (topo_chain->z[k] - topo_chain->z0[k]);
+            mark_val = (topo_chain->z[k] - 0.0*topo_chain->z0[k]);
 //            if (itp_type==1) mark_val =  1.0/mark_val;
 //            if (itp_type==2) mark_val =  log(mark_val);
             Wm[in]   += (1.0-(dxm/dx));
@@ -460,7 +460,8 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
 
     // Recompute topography based on the sum of interpolation weights
     for (k=0;k<Nx;k++) {
-        topo->height[k] = topo->height0[k] + BmWm[k]/Wm[k];
+        // topo->height[k] = topo->height0[k] + BmWm[k]/Wm[k];
+        topo->height[k] =  BmWm[k]/Wm[k];
         
 //        printf("k=%d, W: %d E:%d\n", k, NumMarkCell[2*k-1], NumMarkCell[2*k]);
 
