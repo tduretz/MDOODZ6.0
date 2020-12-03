@@ -383,97 +383,97 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
     printf("In project Topography:\n");
         
     
-//    Wm              = DoodzCalloc ( Nx-1, sizeof(double));
-//    BmWm            = DoodzCalloc ( Nx-1, sizeof(double));
-//    double *heightc = DoodzCalloc ( Nx-1, sizeof(double));
-//
-//    for (k=0;k<topo_chain->Nb_part;k++) {
-//
-//         if ( topo_chain->phase[k] != -1 ) {
-//
-//             distance = ( topo_chain->x[k] - mesh.xc_coord[0] );
-//             in   = ceil( (distance/dx) + 0.5) - 1;
-//             dxm = 2.0*fabs( mesh.xc_coord[in] - topo_chain->x[k]);
-//             mark_val = topo_chain->z[k];
-//
-//             Wm[in]   += (1.0-(dxm/dx));
-//             BmWm[in] += mark_val*(1.0-(dxm/dx));
-//
-//         }
-//    }
-//
-//    for (k=0;k<Nx-1;k++) {
-//        heightc[k] += BmWm[k]/Wm[k];
-//    }
-//
-//    for (k=1;k<Nx-1;k++) {
-//         topo->height[k] = 0.5*(heightc[k]+heightc[k-1]);
-//     }
-//    topo->height[0]=topo->height[1];
-//    topo->height[Nx-1]=topo->height[Nx-2];
+   Wm              = DoodzCalloc ( Nx-1, sizeof(double));
+   BmWm            = DoodzCalloc ( Nx-1, sizeof(double));
+   double *heightc = DoodzCalloc ( Nx-1, sizeof(double));
+
+   for (k=0;k<topo_chain->Nb_part;k++) {
+
+        if ( topo_chain->phase[k] != -1 ) {
+
+            distance = ( topo_chain->x[k] - mesh.xc_coord[0] );
+            in   = ceil( (distance/dx) + 0.5) - 1;
+            dxm = 2.0*fabs( mesh.xc_coord[in] - topo_chain->x[k]);
+            mark_val = topo_chain->z[k];
+
+            Wm[in]   += (1.0-(dxm/dx));
+            BmWm[in] += mark_val*(1.0-(dxm/dx));
+
+        }
+   }
+
+   for (k=0;k<Nx-1;k++) {
+       heightc[k] += BmWm[k]/Wm[k];
+   }
+
+   for (k=1;k<Nx-1;k++) {
+        topo->height[k] = 0.5*(heightc[k]+heightc[k-1]);
+    }
+   topo->height[0]=topo->height[1];
+   topo->height[Nx-1]=topo->height[Nx-2];
     
     // Allocate memory
     
-    Xc_virtual = DoodzMalloc ((Nx+1)*sizeof(double));
-    Wm         = DoodzCalloc ( Nx, sizeof(double));
-    BmWm       = DoodzCalloc ( Nx, sizeof(double));
-//  int *npn        = DoodzCalloc ( Nx, sizeof(in));
-//
-//    //-------
-//    int res = 2;
-//    int Ncx = Nx-1;
-//    int *NumMarkCell = DoodzCalloc( res*Ncx, sizeof(int) );
-//
+//     Xc_virtual = DoodzMalloc ((Nx+1)*sizeof(double));
+//     Wm         = DoodzCalloc ( Nx, sizeof(double));
+//     BmWm       = DoodzCalloc ( Nx, sizeof(double));
+// //  int *npn        = DoodzCalloc ( Nx, sizeof(in));
+// //
+// //    //-------
+// //    int res = 2;
+// //    int Ncx = Nx-1;
+// //    int *NumMarkCell = DoodzCalloc( res*Ncx, sizeof(int) );
+// //
+// //     for (k=0;k<topo_chain->Nb_part;k++) {
+// //         // Index of the fine grid column
+// //         distance             = topo_chain->x[k] - (model.xmin + dx/2.0/res);
+// //         in                   = ceil((distance/dx*res)+0.5) - 1;
+// //         if (in<0        ) in = 0;
+// //         if (in>res*Ncx-1) in = res*Ncx-1;
+// //         if (topo_chain->phase[k]!=-1) NumMarkCell[in]++;
+// //     }
+
+//     // Create x cell center coordinate with additional boundary nodes
+//     Xc_virtual[0]  = X_vect[0]-0.5*dx;
+//     for (k=0;k<Nx-1;k++) {
+//         Xc_virtual[k+1]= 0.5*(X_vect[k+1]+X_vect[k]);
+//     }
+//     Xc_virtual[Nx] = X_vect[Nx-1]+0.5*dx;
+
+//     // Find to which node each marker contribute
 //     for (k=0;k<topo_chain->Nb_part;k++) {
-//         // Index of the fine grid column
-//         distance             = topo_chain->x[k] - (model.xmin + dx/2.0/res);
-//         in                   = ceil((distance/dx*res)+0.5) - 1;
-//         if (in<0        ) in = 0;
-//         if (in>res*Ncx-1) in = res*Ncx-1;
-//         if (topo_chain->phase[k]!=-1) NumMarkCell[in]++;
+//         if ( topo_chain->phase[k] != -1 ) {
+//             distance        = (topo_chain->x[k]-X_vect[0]);
+//             in              = ceil((distance/dx)+0.5) - 1;
+//             if (in<0)    in = 0;
+//             if (in>Nx-1) in = Nx-1;
+// //            npn[in]        += 1;
+// //            dxm = fabs(0.5*(Xc_virtual[in]+Xc_virtual[in+1])-topo_chain->x[k]);
+//             dxm = 2.0*fabs(X_vect[in]-topo_chain->x[k]);
+//             mark_val = (topo_chain->z[k] - 0.0*topo_chain->z0[k]);
+// //            if (itp_type==1) mark_val =  1.0/mark_val;
+// //            if (itp_type==2) mark_val =  log(mark_val);
+//             Wm[in]   += (1.0-(dxm/dx));
+//             BmWm[in] += mark_val*(1.0-(dxm/dx));
+//         }
 //     }
 
-    // Create x cell center coordinate with additional boundary nodes
-    Xc_virtual[0]  = X_vect[0]-0.5*dx;
-    for (k=0;k<Nx-1;k++) {
-        Xc_virtual[k+1]= 0.5*(X_vect[k+1]+X_vect[k]);
-    }
-    Xc_virtual[Nx] = X_vect[Nx-1]+0.5*dx;
-
-    // Find to which node each marker contribute
-    for (k=0;k<topo_chain->Nb_part;k++) {
-        if ( topo_chain->phase[k] != -1 ) {
-            distance        = (topo_chain->x[k]-X_vect[0]);
-            in              = ceil((distance/dx)+0.5) - 1;
-            if (in<0)    in = 0;
-            if (in>Nx-1) in = Nx-1;
-//            npn[in]        += 1;
-//            dxm = fabs(0.5*(Xc_virtual[in]+Xc_virtual[in+1])-topo_chain->x[k]);
-            dxm = 2.0*fabs(X_vect[in]-topo_chain->x[k]);
-            mark_val = (topo_chain->z[k] - 0.0*topo_chain->z0[k]);
-//            if (itp_type==1) mark_val =  1.0/mark_val;
-//            if (itp_type==2) mark_val =  log(mark_val);
-            Wm[in]   += (1.0-(dxm/dx));
-            BmWm[in] += mark_val*(1.0-(dxm/dx));
-        }
-    }
-
-    // Recompute topography based on the sum of interpolation weights
-    for (k=0;k<Nx;k++) {
-        // topo->height[k] = topo->height0[k] + BmWm[k]/Wm[k];
-        topo->height[k] =  BmWm[k]/Wm[k];
+//     // Recompute topography based on the sum of interpolation weights
+//     for (k=0;k<Nx;k++) {
+//         // topo->height[k] = topo->height0[k] + BmWm[k]/Wm[k];
+//         topo->height[k] =  BmWm[k]/Wm[k];
         
-//        printf("k=%d, W: %d E:%d\n", k, NumMarkCell[2*k-1], NumMarkCell[2*k]);
+// //        printf("k=%d, W: %d E:%d\n", k, NumMarkCell[2*k-1], NumMarkCell[2*k]);
 
-        if (isnan(topo->height[k])) {
-            printf("BMW=%2.2e W=%2.2e index=%d (isnan check in Project Topography - free_surf.c)\n", BmWm[k], Wm[k], k);
-//            printf("In small neighbouring half cells, node: %d W: %d E:%d\n", npn[k], NumMarkCell[2*k-1], NumMarkCell[2*k]);
-            exit(1);
-        }
-//        if (itp_type==1) topo->height[k] =  1.0 / topo->height[k];
-//        if (itp_type==2) topo->height[k] =  exp(topo->height[k]);
-//        topo->height0[k] = topo->height[k];
-    }
+//         if (isnan(topo->height[k])) {
+//             printf("BMW=%2.2e W=%2.2e index=%d (isnan check in Project Topography - free_surf.c)\n", BmWm[k], Wm[k], k);
+// //            printf("In small neighbouring half cells, node: %d W: %d E:%d\n", npn[k], NumMarkCell[2*k-1], NumMarkCell[2*k]);
+//             exit(1);
+//         }
+// //        if (itp_type==1) topo->height[k] =  1.0 / topo->height[k];
+// //        if (itp_type==2) topo->height[k] =  exp(topo->height[k]);
+// //        topo->height0[k] = topo->height[k];
+//     }
     
     // Correct for sides is the box in case of inflow conditions
     for (k=0;k<Nx;k++) {
