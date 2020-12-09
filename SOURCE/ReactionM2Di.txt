@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00500
+istep = 00150
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -16,16 +16,16 @@ V   = 2.0e-14
 T   = 100
 
 /**** SPACE-TIME ****/
-Nx      = 51
-Nz      = 51
-Nt      = 500
+Nx      = 201
+Nz      = 201
+Nt      = 1000
 xmin    =-0.0
 zmin    =-0.0
 xmax    = 1.0
 zmax    = 1.0
 advection         = 0
 dt                = 5e9
-dt_constant       = 1
+dt_constant       = 0
 Courant           = 0.2
 penalty           = 1e2
 lsolver           = 2
@@ -39,7 +39,7 @@ num_deriv         = 0
 StressRotation    = 1
 safe_mode         = 1
 safe_dt_div       = 2.0
-nstagmax          = 5
+nstagmax          = 10
 IncrementalUpdateGrid = 1
 StressUpdate    = 0
 
@@ -63,11 +63,12 @@ fstrain         = 0
 
 /**** CHEMICAL ****/
 ProgReac        = 1           / !!!!
-NoReturn        = 0 
+NoReturn        = 1 
 VolChangeReac   = 1
+UnsplitDiffReac = 1
 
 /**** SETUP DEPENDANT ****/
-shear_style     = 1
+shear_style     = 0
 EpsBG           = 2.0e-14
 PrBG            = 1.6e9
 user0           = 680.0     / temperature [°C]
@@ -109,9 +110,9 @@ Qpwl = 0
 reac_soft  = 1
 reac_phase = 5
 Pr   = 1.8e9
-dPr  = 1.0e7
+dPr  = 5.0e7
 tau_kin = 3.1558e8
-k_chem  = 5.0e-13
+k_chem  = 1.0e-13
 density_model = 3
 
 /**** PHASE 1 ****/
@@ -141,9 +142,9 @@ Qpwl = 0
 reac_soft  = 0
 reac_phase = 1
 Pr   = 1.0e80
-dPr  = 1.0e7
+dPr  = 5.0e7
 tau_kin = 3.1558e8
-k_chem  = 5.0e-16
+k_chem  = 1.0e-16
 density_model = 3
 
 /**** PHASE 2 ****/
@@ -173,9 +174,9 @@ Qpwl = 0
 reac_soft  = 0
 reac_phase = 2
 Pr   = 1.0e80
-dPr  = 1.0e7
+dPr  = 5.0e7
 tau_kin = 3.1558e8
-k_chem  = 5.0e-16
+k_chem  = 1.0e-16
 density_model = 3
 
 /**** PHASE 3 ****/
@@ -205,9 +206,9 @@ Qpwl = 0
 reac_soft  = 1
 reac_phase = 6
 Pr   = 1.8e9
-dPr  = 1.0e7
+dPr  = 5.0e7
 tau_kin = 3.1558e8
-k_chem  = 5.0e-13
+k_chem  = 1.0e-13
 density_model = 3
 
 /**** PHASE 4 ****/
@@ -237,14 +238,14 @@ Qpwl = 0
 reac_soft  = 0
 reac_phase = 4
 Pr   = 1e80
-dPr  = 1e7
+dPr  = 5e7
 tau_kin = 3.1558e8
-k_chem  = 5e-13
+k_chem  = 1.0e-13
 density_model = 3
 
 /**** PHASE 5 ****/
 ID   = 5
-rho  = 3000.00 / Omphacite
+rho  = 2800.00 / Omphacite
 mu   = 3.0e10
 Cv   = 1050.0
 k    = 2.3
@@ -269,14 +270,14 @@ Qpwl = 0
 reac_soft  = 0
 reac_phase = 5
 Pr   = 1e80
-dPr  = 1e7
+dPr  = 5e7
 tau_kin = 3.1558e8
-k_chem  = 5e-13
+k_chem  = 1.0e-13
 density_model = 3
 
 /**** PHASE 6 ****/
 ID   = 6
-rho  = 3000.00 / Omphacite
+rho  = 2800.00 / Omphacite
 mu   = 3.0e10
 Cv   = 1050.0
 k    = 2.3
@@ -301,9 +302,9 @@ Qpwl = 0
 reac_soft  = 0
 reac_phase = 6
 Pr   = 1e80
-dPr  = 1e7
+dPr  = 5e7
 tau_kin = 3.1558e8
-k_chem  = 5e-13
+k_chem  = 1.0e-13
 density_model = 3
 
 /**** DEFMAPS ****/

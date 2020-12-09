@@ -33,7 +33,7 @@
 void BuildInitialTopography( surface *topo, markers *topo_chain, params model, grid mesh, scale scaling ) {
     
     int k;
-    double TopoLevel = 0.0e3/scaling.L; // sets zero initial topography
+    double TopoLevel = 1.0e3/scaling.L; // sets zero initial topography
 
     for ( k=0; k<topo_chain->Nb_part; k++ ) {
         topo_chain->z[k]     = TopoLevel;
@@ -609,6 +609,76 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
         }
     }
 
+    //--------------------------------- CHEMICAL
+    
+    for (l=0; l<NZ-1; l++) {
+        for (k=0; k<NX-1; k++) {
+            
+            c = k + l*(NCX);
+            
+            if ( mesh->BCc.type[c] != 30 ) {
+                
+                if( model->isperiodic_x == 1 ){
+                    
+                    // WEST
+                    
+                    if ( k==0 ) {
+                        mesh->BCc.type[c] = -2;
+                        mesh->BCc.typW[l] = -2;
+                        mesh->BCc.valW[l] = 0.0;
+                    }
+                    
+                    // EAST
+                    if ( k==NCX-1 ) {
+                        mesh->BCc.type[c] = -2;
+                        mesh->BCc.typE[l] = -2;
+                        mesh->BCc.valE[l] = 0.0;
+                    }
+                }
+                else {
+                    // WEST
+                    if ( k==0 ) {
+                        mesh->BCc.type[c] = 0;
+                        mesh->BCc.typW[l] = 0;
+                        mesh->BCc.valW[l] = 0.0;
+                    }
+                    
+                    // EAST
+                    if ( k==NCX-1 ) {
+                        mesh->BCc.type[c] = 0;
+                        mesh->BCc.typE[l] = 0;
+                        mesh->BCc.valE[l] = 0.0;
+                    }
+                }
+                
+                // SOUTH
+                if ( l==0 ) {
+                    mesh->BCc.type[c] = 0;
+                    mesh->BCc.typS[k] = 0;
+                    mesh->BCc.valS[k] = 0.0;
+                }
+                
+                // NORTH
+                if ( l==NCZ-1 ) {
+                    mesh->BCc.type[c] = 0;
+                    mesh->BCc.typN[k] = 0;
+                    mesh->BCc.valN[k] = 0.0;
+                }
+                
+                // FREE SURFACE
+                else {
+                    if ((mesh->BCc.type[c] == -1 || mesh->BCc.type[c] == 1 || mesh->BCc.type[c] == 0) && mesh->BCc.type[c+NCX] == 30) {
+                        mesh->BCc.type[c] = 0;
+                        mesh->BCc.val[c]  = 0.0;
+                    }
+                }
+                
+                
+            }
+            
+        }
+    }
+    
 		
     
 	free(X);

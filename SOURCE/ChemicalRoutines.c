@@ -85,7 +85,7 @@ void ChemicalDirectSolve( grid *mesh, params model, markers *particles, mat_prop
     int neq, nnz, p, cond;
     
     double Xeq, Xeq_phase;
-    double *tau_kin, tau_kin_phase;
+    double *tau_kin, *prod, tau_kin_phase;
     double Pr,  Pr_phase;
     double dPr, dPr_phase;
 //    double tau_kin = model.tau_kin;
@@ -131,6 +131,7 @@ void ChemicalDirectSolve( grid *mesh, params model, markers *particles, mat_prop
     J  = DoodzMalloc(nnz     * sizeof(int));
     A  = DoodzMalloc(nnz     * sizeof(double));
     tau_kin = DoodzCalloc(ncx*ncz, sizeof(double));
+    prod    = DoodzCalloc(ncx*ncz, sizeof(double));
     
     //----------------------------------------------------//
     
@@ -146,27 +147,34 @@ void ChemicalDirectSolve( grid *mesh, params model, markers *particles, mat_prop
         if ( mesh->BCc.type[c2] != 30 ) {
             
             // Contribution from transient term
-            b[eqn]  = transient * mesh->X0_n[c2]/ dt;
+            if ( model.UnsplitDiffReac == 0 ) b[eqn]  = transient * mesh->X_n[c2]/ dt;
             
-            // Pr, dPr, tau_kin depends on phases
-            Pr          = 0.0;
-            dPr         = 0.0;
-            tau_kin[c2] = 0.0;
-            
-            for ( p=0; p<model.Nb_phases; p++ ) {
-                cond =  fabs(mesh->phase_perc_n[p][c2])>1.0e-13;
+            if ( model.UnsplitDiffReac == 1 ) {
+                b[eqn]  = transient * mesh->X0_n[c2]/ dt;
 
-                if ( cond == 1 ) Pr          += mesh->phase_perc_n[p][c2] * materials->Pr[p];
-                if ( cond == 1 ) dPr         += mesh->phase_perc_n[p][c2] * materials->dPr[p];
-                if ( cond == 1 ) tau_kin[c2] += mesh->phase_perc_n[p][c2] * materials->tau_kin[p];
+                // Pr, dPr, tau_kin depends on phases
+                Pr          = 0.0;
+                dPr         = 0.0;
+                tau_kin[c2] = 0.0;
+
+                for ( p=0; p<model.Nb_phases; p++ ) {
+                    cond =  fabs(mesh->phase_perc_n[p][c2])>1.0e-13;
+
+                    if ( cond == 1 ) Pr          += mesh->phase_perc_n[p][c2] * materials->Pr[p];
+                    if ( cond == 1 ) dPr         += mesh->phase_perc_n[p][c2] * materials->dPr[p];
+                    if ( cond == 1 ) tau_kin[c2] += mesh->phase_perc_n[p][c2] * materials->tau_kin[p];
+                }
+
+                // Contribution for source
+                Xeq     = 0.5*erfc((-mesh->p_in[c2] + Pr)/dPr) ;
+                
+                if (Xeq >= mesh->X0_n[c2]                      ) prod[c2] = 1.0;
+                if (Xeq <  mesh->X0_n[c2] && model.NoReturn==1 ) prod[c2] = 0.0;
+
+    //           printf("Xeq = %2.2e p_in = %2.2e Pr = %2.2e dPr = %2.2e\n", Xeq, mesh->p_in[c2]*scaling.S, Pr*scaling.S, dPr*scaling.S);
+
+                b[eqn] += prod[c2] * Xeq / tau_kin[c2];
             }
-
-            // Contribution for source
-            Xeq     = 0.5*erfc((-mesh->p_in[c2] + Pr)/dPr) ;
-            
-//           printf("Xeq = %2.2e p_in = %2.2e Pr = %2.2e dPr = %2.2e\n", Xeq, mesh->p_in[c2]*scaling.S, Pr*scaling.S, dPr*scaling.S);
-            
-            b[eqn] += Xeq / tau_kin[c2];
 
         }
         
@@ -220,7 +228,8 @@ void ChemicalDirectSolve( grid *mesh, params model, markers *particles, mat_prop
                 }
                 
                 // ----------------- Center point ----------------- //
-                val = transient/dt + 1.0/tau_kin[c2];
+                if ( model.UnsplitDiffReac == 1 ) val = transient/dt + prod[c2]/tau_kin[c2];
+                if ( model.UnsplitDiffReac == 0 ) val = transient/dt;
                 
                 // Average conductivity for surface values (avoid zero conductivity)
                 ks = 0.25*(AE+AW+AN+AS);
@@ -426,6 +435,7 @@ void ChemicalDirectSolve( grid *mesh, params model, markers *particles, mat_prop
     DoodzFree(J);
     DoodzFree(A);
     DoodzFree(tau_kin);
+    DoodzFree(prod);
     
     // Free factors
     cholmod_free_factor ( &Afact, &c) ;

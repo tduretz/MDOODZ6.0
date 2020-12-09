@@ -144,7 +144,7 @@ struct _params {
     int diffuse_X, diffuse_avg;
     double diffusion_length;
     // For Pips
-    int ProgReac, NoReturn, VolChangeReac, Plith_trick;
+    int ProgReac, NoReturn, VolChangeReac, Plith_trick, UnsplitDiffReac;
     // Anisotropy
     int aniso, aniso_fstrain;
 };

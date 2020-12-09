@@ -1134,11 +1134,11 @@ int main( int nargs, char *args[] ) {
         //--------------------------------------------------------------------------------------------------------------------------------//
         
         if (model.ProgReac == 1 ) {
-        
+
             printf("*************************************\n");
             printf("********** Chemical solver **********\n");
             printf("*************************************\n");
-            
+
             Interp_P2U ( particles, materials.k_chem,    &mesh, mesh.kc_z,       mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1,     mesh.Nz,   0, mesh.BCv.type , &model);
             Interp_P2U ( particles, materials.k_chem,    &mesh, mesh.kc_x,       mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,       mesh.Nz+1, 0, mesh.BCu.type , &model);
             ChemicalDirectSolve( &mesh, model, &particles, &materials, model.dt, scaling );

@@ -1,6 +1,6 @@
 /**** RESTART ****/
-istep = 00100
-irestart = 0
+istep = 01150
+irestart = 1
 
 /**** OUTPUT FILES ****/
 writer          = 1
@@ -16,9 +16,9 @@ V   = 1e-9
 T   = 100
 
 /**** SPACE-TIME ****/
-Nx      = 200
-Nz      = 74
-Nt      = 100
+Nx      = 501
+Nz      = 393
+Nt      = 2000
 xmin    = -150.000000e3
 zmin    = -100.000000e3
 xmax    =  150.000000e3
@@ -37,7 +37,7 @@ iselastic       = 1
 isthermal       = 1
 line_search     = 1
 free_surf       = 1
-free_surf_stab  = 1
+free_surf_stab  = 1.0
 eqn_state       = 1
 thermal_eq      = 1
 shear_heat      = 1
@@ -64,7 +64,7 @@ nexp_radial_basis = 2.0
 Plith_trick     = 0
 
 /**** SETUP DEPENDANT ****/
-EpsBG           = 1e-15
+EpsBG           = -1e-14
 user0           = 1450     /mantle temperature [oC]
 user1           = 160e3    /lithospheric thickness [m]
 user2           = 3.17e-10 /plate velocity [m/s]
@@ -73,7 +73,7 @@ user4           = 0     /angle
 
 /**** GRAVITY ****/
 gx = 0.0000
-gz = -9.81000
+gz = -9.810
 
 /**** PHASE PROPERTIES ****/
 Nb_phases = 6
@@ -101,7 +101,7 @@ gsel = 0
 eta0 = 1e22
 npwl = 1
 Qpwl = 0
-eta_vp = 1e21
+eta_vp = 2e20
 n_vp   = 1.0
 
 ID   = 1
@@ -127,7 +127,7 @@ gsel = 0
 eta0 = 1e22
 npwl = 2
 Qpwl = 0
-eta_vp = 1e21
+eta_vp = 2e20
 n_vp   = 1.0
 
 ID   = 2       / astheno
@@ -153,7 +153,7 @@ gsel = 0
 eta0 = 5e20
 npwl = 1
 Qpwl = 0
-eta_vp = 1e21
+eta_vp = 2e20
 n_vp   = 1.0
 
 ID   = 3       / uc
@@ -176,13 +176,12 @@ linv = 0
 gbsv = 0
 expv = 0
 gsel = 0
-eta_vp =1e21
+eta_vp = 2e20
 n_vp   = 1.0
 plss     = 0.0
 plse     = 0.5
 phi_soft = 1
 phie     = 10.0
-is_tensile = 1
 
 ID   = 4       / mc
 density_model = 3
@@ -204,7 +203,7 @@ linv = 0
 gbsv = 0
 expv = 0
 gsel = 0
-eta_vp = 1e21
+eta_vp = 2e20
 n_vp   = 1.0
 plss     = 0.0
 plse     = 0.5
@@ -231,7 +230,7 @@ linv = 0
 gbsv = 0
 expv = 0
 gsel = 0
-eta_vp = 1e21
+eta_vp = 2e20
 n_vp   = 1.0
 
 /**** DEFMAPS ****/
@@ -253,14 +252,14 @@ min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
 Newton        = 1 
-nit_max       = 20
+nit_max       = 1
 Picard2Newton = 1
 Pic2NewtCond  = 1e-1
 let_res_grow  = 1
 rel_tol_KSP   = 1e-4
-abs_tol_u   = 1e-11
-abs_tol_u   = 1e-11
-rel_tol_p   = 1e-11
-rel_tol_p   = 1e-11
+abs_tol_u   = 1e-9
+abs_tol_p   = 1e-9
+rel_tol_u   = 1e-9
+rel_tol_p   = 1e-9
 mineta  = 1e17
 maxeta  = 1e25
