@@ -826,6 +826,9 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
     int k, l, c;
     double minVx=0.0, minVz=0.0, maxVx=0.0, maxVz=0.0, dmin, dtc=0.0, vmax, vmin;
     double C = model->Courant;
+    double Vinc = model->surf_Vinc, dt_surf = 0.0;
+//    double min_vel = 1e-12/scalin.V;
+    
 //    double time_reaction = 3.1558e11;
 //    int reaction_in_progress;
 
@@ -853,6 +856,7 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
     vmax = MAXV(fabs(maxVx), fabs(maxVz));
     vmin = MAXV(fabs(minVx), fabs(minVz));
     vmax = MAXV(fabs(vmax),  fabs(vmin));
+    
 
     if (model->dt_constant == 0) {
 
@@ -868,29 +872,50 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
 
         // Courant dt
         dtc = C * dmin / fabs(vmax);
-
-        printf("Courant number = %2.2e --- dtc = %2.2e\n", C, dtc*scaling.t);
-
+        printf("Courant number = %2.2e --- dtc     = %2.2e\n", C, dtc*scaling.t);
+        
+        // Surface dt
+        if ( model->surf_processes>0 ) {
+            dt_surf = C * dmin / fabs(Vinc);
+            printf("Courant number = %2.2e --- dt_surf = %2.2e\n", C, dt_surf*scaling.t);
+        }
 
         // Timestep cutoff : Do not allow for very large timestep increase
         if (dtc > fact*model->dt0 ) {
             dtc = fact*model->dt0;
+            printf("Do not allow for large time step increase: dt0 = %2.2e \n", model->dt0*scaling.t);
         }
 
         // If timestep is adaptive
         if ( model->dt_constant != 1 ) {
-            if (dtc<model->dt) printf("Timestep limited by Courant\n");
+            
             model->dt = dtc;
+            
+//            if (dtc<model->dt) {
+                printf("Timestep limited by advection\n");
+//                model->dt = dtc;
+//            }
+            if ( model->surf_processes>0 && dt_surf<model->dt) {
+                printf("Timestep limited by surface processes\n");
+                model->dt = dt_surf;
+            }
         }
 
         // If there is no motion, then the timestep becomes huge: cut off the motion.
         if ( model->dt>1.0e30 || vmax<1.0e-30) {
+            printf("Cutting off dt because of negligible motion\n");
             dtc = 0.0;
             model->dt = model->dt_start;
         }
 
-        if ( model->dt>model->dt_max ) model->dt = model->dt_max;
-
+        if ( model->dt>model->dt_max ) {
+            printf("Setting dt to dt_max\n");
+            model->dt = model->dt_max;
+        }
+        if ( model->dt<model->dt_min ) {
+            printf("Setting dt to dt_min\n");
+            model->dt = model->dt_min;
+        }
         if (quiet==0) printf("Current dt = %2.2e s / Courant dt = %2.2e s\n", model->dt * scaling.t, dtc * scaling.t );
     }
     else {

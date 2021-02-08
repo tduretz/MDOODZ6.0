@@ -850,10 +850,25 @@ void Zmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
     // Stabilisation with density gradients
     if (stab==1) {
         double drhodz  = (mesh->rho_n[c2+ncx] - mesh->rho_n[c2])*one_dz;
+        double drhodx  = (mesh->rho_s[c1-1  ] - mesh->rho_s[c1])*one_dx;
         double vC_corr = 1.00 * om * model.dt * mesh->gz[c3] * drhodz;
+        double vy_corr = 0.25 * om * model.dt * mesh->gz[c3] * drhodx;
+        
+//        if (mesh->rho_n[c2+ncx]*1e27<1000) {
+//            drhodz = 3*drhodz;
+////            printf("mesh->rho_n[c2+ncx] = %2.2e\n", mesh->rho_n[c2+ncx]*1e27);
+////            printf("mesh->rho_n[c2] = %2.2e\n", mesh->rho_n[c2]*1e27);
+//        }
         // Importante trique, voire meme gigantesque!
-        if (vC+vC_corr>0.0) { vC += vC_corr;
+        if (vC+vC_corr>0.0) {
+            vC  += vC_corr;
+//            uSW += vy_corr;
+//            uSE += vy_corr;
+//            uNW += vy_corr;
+//            uNE += vy_corr;
 //            if (vC_corr>1e-6)printf("vC_corr = %2.2e gz=%2.2e\n",vC_corr, mesh->gz[c3]);
+//            printf(mesh->rho_n[c2+ncx])
+                  
         }
     }
 
@@ -2746,14 +2761,39 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     pSE = (-D34E*inE*inSEc*wE/dx);
     pNW = (D34W*inNWc*inW*wW/dx);
     pNE = (-D34E*inE*inNEc*wE/dx);
+    
 
-    // Stabilisation with density gradients
-    if (stab==1) {
-        double drhodz  = (mesh->rho_n[c2+ncx] - mesh->rho_n[c2])*one_dz;
-        double vC_corr = 1.00 * om * model.dt * mesh->gz[c3] * drhodz;
-        // Importante trique, voire meme gigantesque!
-        if (vC+vC_corr>0.0) vC += vC_corr;
-    }
+     // Stabilisation with density gradients
+        if (stab==1) {
+            double drhodz  = (mesh->rho_n[c2+ncx] - mesh->rho_n[c2])*one_dz;
+            double drhodx  = (mesh->rho_s[c1-1  ] - mesh->rho_s[c1])*one_dx;
+            double vC_corr = 1.00 * om * model.dt * mesh->gz[c3] * drhodz;
+            double vy_corr = 0.25 * om * model.dt * mesh->gz[c3] * drhodx;
+            
+    //        if (mesh->rho_n[c2+ncx]*1e27<1000) {
+    //            drhodz = 3*drhodz;
+    ////            printf("mesh->rho_n[c2+ncx] = %2.2e\n", mesh->rho_n[c2+ncx]*1e27);
+    ////            printf("mesh->rho_n[c2] = %2.2e\n", mesh->rho_n[c2]*1e27);
+    //        }
+            // Importante trique, voire meme gigantesque!
+            if (vC+vC_corr>0.0) {
+                vC  += vC_corr;
+//                uSW += vy_corr;
+//                uSE += vy_corr;
+//                uNW += vy_corr;
+//                uNE += vy_corr;
+    //            if (vC_corr>1e-6)printf("vC_corr = %2.2e gz=%2.2e\n",vC_corr, mesh->gz[c3]);
+    //            printf(mesh->rho_n[c2+ncx])
+                      
+            }
+        }
+//    // Stabilisation with density gradients
+//    if (stab==1) {
+//        double drhodz  = (mesh->rho_n[c2+ncx] - mesh->rho_n[c2])*one_dz;
+//        double vC_corr = 1.00 * om * model.dt * mesh->gz[c3] * drhodz;
+//        // Importante trique, voire meme gigantesque!
+//        if (vC+vC_corr>0.0) vC += vC_corr;
+//    }
 
 
     // Add contribution from non-conforming Dirichlets

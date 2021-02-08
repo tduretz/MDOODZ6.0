@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00001
+istep = 00200
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -18,7 +18,7 @@ T   = 700
 /**** SPACE-TIME ****/
 Nx      = 101
 Nz      = 101
-Nt      = 1
+Nt      = 200
 xmin    =-1.0
 zmin    =-1.0
 xmax    = 1.0
@@ -65,6 +65,7 @@ fstrain         = 0
 ProgReac        = 1           / !!!!
 NoReturn        = 0 
 VolChangeReac   = 1
+UnsplitDiffReac = 0
 
 /**** SETUP DEPENDANT ****/
 shear_style     = 0

@@ -1,10 +1,10 @@
 /**** RESTART ****/
-istep = 00150
-irestart = 0
+istep = 01000
+irestart = 1
 
 /**** OUTPUT FILES ****/
 writer          = 1
-writer_step     = 50
+writer_step     = 10
 writer_markers  = 0
 writer_debug    = 0
 writer_energies = 0
@@ -16,8 +16,8 @@ V   = 2.0e-14
 T   = 100
 
 /**** SPACE-TIME ****/
-Nx      = 201
-Nz      = 201
+Nx      = 101
+Nz      = 101
 Nt      = 1000
 xmin    =-0.0
 zmin    =-0.0
@@ -65,7 +65,7 @@ fstrain         = 0
 ProgReac        = 1           / !!!!
 NoReturn        = 1 
 VolChangeReac   = 1
-UnsplitDiffReac = 1
+UnsplitDiffReac = 0
 
 /**** SETUP DEPENDANT ****/
 shear_style     = 0

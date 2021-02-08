@@ -985,7 +985,8 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                     if (mesh->BCg.type[ixyN] != 30 && mesh->BCu.type[iVxN] != 13) inN = 1.0;
 
                     // Gravity force: take apparent viscosity (free surface correction)
-                    rhoVx             = 0.5*(mesh->rho_s[ixyS] + mesh->rho_s[ixyN]);
+                    if (model.polar==0) rhoVx             = 0.5*(mesh->rho_s[ixyS] + mesh->rho_s[ixyN]);
+                    if (model.polar==1) rhoVx             = 0.5*(mesh->rho_n[iPrW] + mesh->rho_n[iPrE]);
                     mesh->roger_x[c]  = - gx * rhoVx;
 
                     // Elastic force
@@ -999,14 +1000,6 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                             if ( inS ) mesh->roger_x[c]  -= 1.0/dz * (-mesh->eta_s[ixyS] / (mesh->mu_s[ixyS]*model.dt)  * mesh->sxz0[ixyS] );
                         }
 
-//                        // Inner nodes
-//                        if (  l>0 && l<NZVX-1 && k>0 && k<NX-1 && model.subgrid_diff!=4 ) {
-//                            // Elasticity
-//                            mesh->roger_x[c]  -= 1.0/dx * ( mesh->VE_n[c2] * mesh->sxxd0[c2] - mesh->VE_n[c2-1]  * mesh->sxxd0[c2-1] );
-//                            mesh->roger_x[c]  -= 1.0/dz * ( mesh->VE_s[c]  * mesh->sxz0[c]   - mesh->VE_s[c-NX]  * mesh->sxz0[c-NX]  );
-//                        }
-
-
                     }
                 }
             }
@@ -1018,6 +1011,11 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
     /* --------------------------------------------------------------------*/
     /* Here we calculate the forcing term -rho*gz on the finest grid level */
     /* --------------------------------------------------------------------*/
+    
+    double drhodz, om = model.free_surf_stab;
+    double Wvalley = model.surf_Winc;
+    double Vinc    = -model.surf_Vinc;
+
 
     // V POINTS
     for (l=0; l<NZ; l++) {
@@ -1058,9 +1056,20 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                     if (mesh->BCg.type[ixyE] != 30 && mesh->BCv.type[iVyE] != 13 ) inE = 1.0;
 
                     // Gravity force: use apparent density (free surface correction)
-                    rhoVz             = 0.5 * (mesh->rho_s[ixyW] + mesh->rho_s[ixyE]);  // USE THIS ALWAYS
+                    if (model.polar==0) rhoVz             = 0.5 * (mesh->rho_s[ixyW] + mesh->rho_s[ixyE]);  // USE THIS ALWAYS but not for polar!å
+                    if (model.polar==1) rhoVz             = 0.5 * (mesh->rho_n[iPrS] + mesh->rho_n[iPrN]);
+                    
                     mesh->roger_z[c]  = - gz * rhoVz;
 
+                    // Additional stabilisation term from surface processes
+                    if (model.surf_processes >= 1 && ( mesh->BCp.type[iPrS] == 30 || mesh->BCp.type[iPrS] == 31 || mesh->BCp.type[iPrN] == 30 || mesh->BCp.type[iPrN] == 31 ) ) {
+                        drhodz = ( mesh->rho_n[iPrN] - mesh->rho_n[iPrS] ) / dz;
+                        if ( fabs(mesh->xvz_coord[k]) <= 0.5*Wvalley ) {
+                            mesh->roger_z[c]  += -1.0*om*Vinc*model.dt*gz*drhodz;
+                        }
+                    }
+                    
+                    
                     // Elastic force
                     if  (model.iselastic == 1 ) {
 
@@ -1071,14 +1080,6 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                             if ( inE ) mesh->roger_z[c]  -= 1.0/dx * (  mesh->eta_s[ixyE] / (mesh->mu_s[ixyE] *model.dt ) *  mesh->sxz0[ixyE]) ;
                             if ( inW ) mesh->roger_z[c]  -= 1.0/dx * ( -mesh->eta_s[ixyW] / (mesh->mu_s[ixyW] *model.dt ) *  mesh->sxz0[ixyW]) ;
                         }
-
-//                        // Backward Euler
-//                        if ( l>0 && l<NZ-1 && k>0 && k<NXVZ-1 && model.subgrid_diff!=4  ) {
-//                            // Elasticity
-//                            mesh->roger_z[c]  -= 1.0/dz * ( mesh->VE_n[c2+(NCX)] * -(mesh->sxxd0[c2+(NCX)]) - mesh->VE_n[c2] * -(mesh->sxxd0[c2]) );
-//                            mesh->roger_z[c]  -= 1.0/dx * ( mesh->VE_s[c1+1]     *   mesh->sxz0[c1+1]      - mesh->VE_s[c1] *   mesh->sxz0[c1]  );
-//
-//                        }
 
                     }
                 }

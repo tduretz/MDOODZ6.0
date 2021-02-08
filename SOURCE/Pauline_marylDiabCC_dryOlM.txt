@@ -4,7 +4,7 @@ irestart = 0
 
 /**** OUTPUT FILES ****/
 writer = 1
-writer_step = 10
+writer_step = 1
 writer_markers = 0
 writer_debug   = 0 
 
@@ -18,8 +18,8 @@ V   = 1.5e-8     /velocity
 T   = 1.e+02      /temperature
  
 /**** SPACE-TIME ****/
-Nx      = 300 // 300/600 = 0.5 km horizontal resolution 
-Nz      = 200 // 200/800 = 0.25 km vertical resolution
+Nx      = 150 // 300/600 = 0.5 km horizontal resolution 
+Nz      = 100 // 200/800 = 0.25 km vertical resolution
 Nt      = 100
 xmin    = -150.000000e3
 zmin    = -200.000000e3
@@ -257,7 +257,7 @@ min_part_cell = 16
 
 /**** PICARD ITERATIONS ****/
 Newton  = 0
-nit_max = 2 // for high resolution use from 10 to 20
+nit_max = 1 // for high resolution use from 10 to 20
 tol_u   = 5.0e-8
 tol_p   = 5.0e-8
 mineta  = 5.0e18

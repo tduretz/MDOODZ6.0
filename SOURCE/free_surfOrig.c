@@ -517,7 +517,7 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
 //    if (fabs(sym_check*scaling.L)>1e-3) exit(19);
     
     // Free memory
-//    DoodzFree(Xc_virtual);
+    DoodzFree(Xc_virtual);
     DoodzFree(Wm);
     DoodzFree(BmWm);
 //    DoodzFree(npn);
@@ -1075,8 +1075,6 @@ void SurfaceDensityCorrection( grid *mesh, params model, surface topo, scale sca
     int i, j, c1;
     double h0, h, dz = fabs(mesh->zg_coord[1]-mesh->zg_coord[0]);
     
-//    printf("\n%2.6e\n", scaling.rho);
-    
     // Density on cell centers
     for( j=0; j<ncz; j++ ) {
         for( i=0; i<ncx; i++ ) {
@@ -1169,7 +1167,7 @@ void SurfaceDensityCorrection( grid *mesh, params model, surface topo, scale sca
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void DiffuseAlongTopography( grid *mesh, params model, scale scaling, double *array_ini, double *array, int size, double dummy,  double diff_time ) {
+void DiffuseAlongTopography( grid *mesh, params model, scale scaling, double *array, int size, double dummy,  double diff_time ) {
     
     // Explicit diffusion solver;
     int i, it;
@@ -1177,20 +1175,12 @@ void DiffuseAlongTopography( grid *mesh, params model, scale scaling, double *ar
     double diff = model.surf_diff;
     double dt   = 0.4*dx*dx/diff, time=0.0, dtr;
     int nstep   = (int)(diff_time/dt + 1);
-    double correct[size], s, e;
+    double correct[size], s;
+    
     double base_level = model.surf_baselev;//0*array[0]; // left side
     double sedi_rate  = model.surf_sedirate;
-    double Wvalley = model.surf_Winc;
-    double Vinc    = -model.surf_Vinc;
-    
-//    nstep = 100;
-    printf("****** Surface processes ******", nstep);
-    printf("Going to make %03d substeps for surface processes\n", nstep);
-    printf("W valley   = %2.2e m\n", Wvalley*scaling.L);
-    printf("Vincision  = %2.2e m.s-1\n", Vinc*scaling.V);
-    printf("Kero       = %2.2e m2.s-1\n", diff*(pow(scaling.L,2.0)/scaling.t));
     printf("Sedimentation rate: %2.2e m/y with base level: %2.2e m\n", model.surf_sedirate*scaling.V*3600.0*365.0*24.0, base_level*scaling.L);
-
+    
     if ( model.surf_processes == 1 || model.surf_processes == 3 ) {
         
         // Calculate timestep for diffusion sub-steps
@@ -1199,14 +1189,6 @@ void DiffuseAlongTopography( grid *mesh, params model, scale scaling, double *ar
         
         // Sub-time loop
         for (it=0; it<nstep; it++) {
-            
-//            for (i=1; i<size-1; i++) {
-//                // Activate the incision
-//                if (fabs(mesh->xg_coord[i]) <= 0.5*Wvalley){
-//                    array[i] -= dtr*Vinc;
-//                }
-//
-//            }
             for (i=1; i<size-1; i++) {
                 correct[i]  = 0.5*dtr/dx/dx*diff*(array[i-1]+array[i+1]-2.0*array[i]);
             }
@@ -1216,16 +1198,8 @@ void DiffuseAlongTopography( grid *mesh, params model, scale scaling, double *ar
             for (i=1; i<size-1; i++) {
                 // Activate source term (sedimentation) only below base level
                 s = 0.0;
-                e = 0.0;
-                
-                if (fabs(mesh->xg_coord[i]) <= 0.5*Wvalley){
-//                    printf("EROSION");
-                    e = dtr*Vinc;
-                }
-                
-                if (array[i]<base_level) s = sedi_rate*dtr;
-                array[i] = array_ini[i] + correct[i] + s + e ;
-                
+                if (array[i]<base_level) s = sedi_rate;
+                array[i] += correct[i] + dtr*s;
             }
             time += dtr;
         }
@@ -1239,7 +1213,7 @@ void DiffuseAlongTopography( grid *mesh, params model, scale scaling, double *ar
         for (i=0; i<size; i++) {
             if (array[i]<base_level)
                 //                array[i]  = base_level;
-                array[i]  = array_ini[i] + sedi_rate*model.dt;
+                array[i]  = array[i] + sedi_rate*model.dt;
         }
     }
     

@@ -12,6 +12,7 @@
 #define zeroC 273.15
 #define Rg    8.314510
 #define PI    3.14159265359
+#define Rad_Earth 6370000
 
 //---------------------------------------------------------------------------------------------------------------------------//
 //----------------------------------------------- STRUCTURE DEFINITIONS -----------------------------------------------------//
@@ -99,7 +100,7 @@ struct _SparseMat {
 // params contains the model parameters
 typedef struct _params params;
 struct _params {
-	double  xmin, zmin, xmax, zmax, time, dx, dz, dt, dt0, dt_start, dt_max, L0;
+	double  xmin, zmin, xmax, zmax, time, dx, dz, dt, dt0, dt_start, dt_max, L0, dt_min;
     double  xmin0, zmin0, xmax0, zmax0;
 	double gx, gz;
 	int Nx, Nz, Nt, step, nit, Newton, noisy;
@@ -126,7 +127,7 @@ struct _params {
     int nT, nE, nd, def_maps;
     double Pn, Tmin, Tmax, Emin, Emax, dmin, dmax, PrBG;
     // Surface processes
-    double surf_diff, surf_sedirate, surf_baselev;
+    double surf_diff, surf_sedirate, surf_baselev, surf_Winc, surf_Vinc;
     // Initial thermal perturbation
     double therm_pert_x0, therm_pert_z0, therm_pert_dT, therm_pert_rad, cooling_time;
     // For rheological database...
@@ -456,7 +457,7 @@ void RemeshMarkerChain( markers*, surface*, params, scale, grid*, int );
 void SurfaceDensityCorrection( grid*, params, surface, scale);
 void SurfaceVelocity( grid*, params, surface*, markers*, scale );
 void UpdateDensity( grid*, markers*, mat_prop*, params*, scale* );
-void DiffuseAlongTopography( grid*, params, scale, double*, int, double, double );
+void DiffuseAlongTopography( grid*, params, scale, double*, double*, int, double, double );
 void AddPartSed( markers *, mat_prop , markers *, surface *, params , scale , grid *);
 void CorrectTopoIni( markers *, mat_prop , markers *, surface *, params , scale , grid *);
 

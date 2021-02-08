@@ -765,6 +765,7 @@ int main( int nargs, char *args[] ) {
             ArrayEqualArray( mesh.p_start,    mesh.p_in,      (mesh.Nx-1)*(mesh.Nz-1) );
             ArrayEqualArray( mesh.u_start,    mesh.u_in,      (mesh.Nx)  *(mesh.Nz+1) );
             ArrayEqualArray( mesh.v_start,    mesh.v_in,      (mesh.Nx+1)*(mesh.Nz)   );
+//            ArrayEqualArray( topo_ini.height0, topo_ini.height, mesh.Nx );
             
             // Set up solver context
             if ( model.decoupled_solve == 1 ) {
@@ -796,6 +797,30 @@ int main( int nargs, char *args[] ) {
                 if ( model.Newton == 0 ) { printf("*** Picard it. %02d of %02d (step = %05d) ***\n", Nmodel.nit, Nmodel.nit_max, model.step); Newt_on[Nmodel.nit] = 0;}
                 if ( model.Newton == 1 ) { printf("*** Newton it. %02d of %02d (step = %05d) ***\n", Nmodel.nit, Nmodel.nit_max, model.step); Newt_on[Nmodel.nit] = 1;}
                 printf("**********************************************\n");
+                
+
+                
+//                // Diffuse topography
+//                if ( model.surf_processes >= 1 )  DiffuseAlongTopography( &mesh, model, scaling,  topo.height0, topo.height, mesh.Nx, 0.0, model.dt );
+//
+//                // Marker chain polynomial fit
+//                MarkerChainPolyFit( &topo,     &topo_chain,     model, mesh );
+//
+//                // Get physical properties that are constant throughout each timestep
+//                if ( model.eqn_state  > 0 ) {
+//                    UpdateDensity( &mesh, &particles, &materials, &model, &scaling );
+//                }
+//                else {
+//                    Interp_P2N ( particles, materials.rho,  &mesh, mesh.rho_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
+//                    Interp_P2C ( particles, materials.rho,  &mesh, mesh.rho_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
+//                }
+//
+//                // Free surface - subgrid density correction
+//                if ( model.free_surf == 1 ) {
+//                    SurfaceDensityCorrection( &mesh, model, topo, scaling  );
+//                }
+                
+                
                 
                 UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
                 RheologicalOperators( &mesh, &model, &scaling, 0 );                               // ??????????? déjà fait dans UpdateNonLinearity
@@ -1073,14 +1098,15 @@ int main( int nargs, char *args[] ) {
         
         //------------------------------------------------------------------------------------------------------------------------------//
         
-//        // Free surface - interpolate velocity components on the free surface
-//        if ( model.free_surf == 1 ) {
-//            SurfaceVelocity( &mesh, model, &topo, &topo_chain, scaling );
-//            MinMaxArray( topo_chain.Vx,      scaling.V, topo_chain.Nb_part,       "Vx surf." );
-//            MinMaxArray( topo_chain.Vz,      scaling.V, topo_chain.Nb_part,       "Vz surf." );
-//            MinMaxArray( topo_chain_ini.Vx,  scaling.V, topo_chain_ini.Nb_part,   "Vx surf. ini." );
-//            MinMaxArray( topo_chain_ini.Vz,  scaling.V, topo_chain_ini.Nb_part,   "Vz surf. ini." );
-//        }
+        // THIS IS ACTIVATED JUST FOR TOPO.VX IN OUTPUT FILE --- Free surface - interpolate velocity components on the free surface
+        if ( model.free_surf == 1 ) {
+            SurfaceVelocity( &mesh, model, &topo, &topo_chain, scaling );
+            MinMaxArray( topo_chain.Vx,      scaling.V, topo_chain.Nb_part,       "Vx surf." );
+            MinMaxArray( topo_chain.Vz,      scaling.V, topo_chain.Nb_part,       "Vz surf." );
+            MinMaxArray( topo_chain_ini.Vx,  scaling.V, topo_chain_ini.Nb_part,   "Vx surf. ini." );
+            MinMaxArray( topo_chain_ini.Vz,  scaling.V, topo_chain_ini.Nb_part,   "Vz surf. ini." );
+        }
+        // THIS IS ACTIVATED JUST FOR TOPO.VX IN OUTPUT FILE
         
         if (model.StressUpdate==1) TotalStresses( &mesh, &particles, scaling, &model );
         
@@ -1161,23 +1187,23 @@ int main( int nargs, char *args[] ) {
             t_omp = (double)omp_get_wtime();
             
             double dt_solve = model.dt;
-//            EvaluateCourantCriterion( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
+            EvaluateCourantCriterion( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
             
             int    nsub=1.0, isub;
             double dt_sub;
             
-//            if ( model.dt<dt_solve ) {
-//                nsub   = ceil(dt_solve/model.dt);
-//                dt_sub = dt_solve / nsub;
-//                printf("dt advection = %2.2e --- dt_solve = %2.2e\n", model.dt*scaling.t, dt_solve*scaling.t );
-//                printf("dt is %lf larger than dt_solve: need sub %d substeps of %2.2e s\n", dt_solve/model.dt, nsub , dt_sub*scaling.t );
-//                printf("So: nsub*dt_sub = %2.2e for dt_solve = %2.2e\n", nsub*dt_sub*scaling.t, dt_solve*scaling.t);
-//                model.dt = dt_sub;
-//            }
-//            else {
-//                nsub     = 1;
-//                model.dt = dt_solve;
-//            }
+            if ( model.dt<dt_solve ) {
+                nsub   = ceil(dt_solve/model.dt);
+                dt_sub = dt_solve / nsub;
+                printf("dt advection = %2.2e --- dt_solve = %2.2e\n", model.dt*scaling.t, dt_solve*scaling.t );
+                printf("dt is %lf larger than dt_solve: need sub %d substeps of %2.2e s\n", dt_solve/model.dt, nsub , dt_sub*scaling.t );
+                printf("So: nsub*dt_sub = %2.2e for dt_solve = %2.2e\n", nsub*dt_sub*scaling.t, dt_solve*scaling.t);
+                model.dt = dt_sub;
+            }
+            else {
+                nsub     = 1;
+                model.dt = dt_solve;
+            }
             
             
             //            Check_dt_for_advection( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
@@ -1203,19 +1229,20 @@ int main( int nargs, char *args[] ) {
                     // Save old topo
                     ArrayEqualArray( topo_chain.z0, topo_chain.z, topo_chain.Nb_part ); // save old z
                     ArrayEqualArray( topo_chain_ini.z0, topo_chain_ini.z, topo_chain.Nb_part ); // save old z
+    
+                
+                    // Advect free surface with RK4
+                    RogerGuntherII( &topo_chain,     model, mesh, 1, scaling );
+                    RogerGuntherII( &topo_chain_ini, model, mesh, 1, scaling );
                 }
                 
-                // Advect free surface with RK4
-                RogerGuntherII( &topo_chain,     model, mesh, 1, scaling );
-                RogerGuntherII( &topo_chain_ini, model, mesh, 1, scaling );
-                
-                // Advect free surface
-                if ( model.free_surf == 1 ) {
-                    AdvectFreeSurf( &topo_chain,     model, scaling );
-                    AdvectFreeSurf( &topo_chain_ini, model, scaling );
-                    MinMaxArray( topo_chain.z,      scaling.L, topo_chain.Nb_part,       "z surf.     " );
-                    MinMaxArray( topo_chain_ini.z,  scaling.L, topo_chain_ini.Nb_part,   "z surf. ini." );
-                }
+//                // Advect free surface
+//                if ( model.free_surf == 1 ) {
+//                    AdvectFreeSurf( &topo_chain,     model, scaling );
+//                    AdvectFreeSurf( &topo_chain_ini, model, scaling );
+//                    MinMaxArray( topo_chain.z,      scaling.L, topo_chain.Nb_part,       "z surf.     " );
+//                    MinMaxArray( topo_chain_ini.z,  scaling.L, topo_chain_ini.Nb_part,   "z surf. ini." );
+//                }
                 
                 // Correction for particle inflow 0
                 if (model.ispureshear_ale == -1 && model.isperiodic_x == 0) ParticleInflowCheck( &particles, &mesh, model, topo, 0 );
@@ -1239,18 +1266,26 @@ int main( int nargs, char *args[] ) {
                 
                 if ( model.free_surf == 1 ) {
                     
+//                    for (int k=0;k<topo_chain.Nb_part;k++) {
+//
+//                        if (fabs(topo_chain.x[k]) < 0.5*model.surf_Winc ) {
+//                            topo_chain.z[k] -= model.dt*model.surf_Vinc;
+//                        }
+//                    }
+//
+
                     if ( model.surf_remesh == 1 ) {
                         // Get current topography
                         ProjectTopography( &topo,     &topo_chain,     model, mesh, scaling, mesh.xg_coord, 0 );
                         ProjectTopography( &topo_ini, &topo_chain_ini, model, mesh, scaling, mesh.xg_coord, 0 );
                         MarkerChainPolyFit( &topo,     &topo_chain,     model, mesh );
                         MarkerChainPolyFit( &topo_ini, &topo_chain_ini, model, mesh );
-                        
+
                         // Remesh free surface I
                         RemeshMarkerChain( &topo_chain,     &topo,     model, scaling, &mesh, 1 );
                         RemeshMarkerChain( &topo_chain_ini, &topo_ini, model, scaling, &mesh, 1 );
                     }
-                    
+
 
                     // Project topography on vertices
                     ProjectTopography( &topo,     &topo_chain,     model, mesh, scaling, mesh.xg_coord, 0 );
@@ -1264,7 +1299,7 @@ int main( int nargs, char *args[] ) {
                     }
 
                     // Diffuse topography
-                    if ( model.surf_processes >= 1 )  DiffuseAlongTopography( &mesh, model, scaling, topo.height, mesh.Nx, 0.0, model.dt );
+                    if ( model.surf_processes >= 1 )  DiffuseAlongTopography( &mesh, model, scaling, topo.height, topo.height, mesh.Nx, 0.0, model.dt );
 
                     // Marker chain polynomial fit
                     MarkerChainPolyFit( &topo,     &topo_chain,     model, mesh );

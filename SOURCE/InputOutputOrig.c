@@ -1131,8 +1131,6 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->surf_ised2      = ReadInt2( fin, "surf_ised2",      0.0 );
     model->surf_sedirate   = ReadDou2( fin, "surf_sedirate",   0.0 ) / scaling->V;
     model->surf_baselev    = ReadDou2( fin, "surf_baselev",    0.0 ) / scaling->L;
-    model->surf_Winc       = ReadDou2( fin, "surf_Winc",       0.0 ) / scaling->L;
-    model->surf_Vinc       = ReadDou2( fin, "surf_Vinc",       0.0 ) / scaling->V;
     // Initial thermal perturbation
     model->therm_pert_x0   = ReadDou2( fin, "therm_pert_x0",   0.0 ) / scaling->L;
     model->therm_pert_z0   = ReadDou2( fin, "therm_pert_z0",   0.0 ) / scaling->L;
@@ -1165,7 +1163,6 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->dt0               = model->dt;
     model->dt_start          = model->dt;
     model->dt_max            = ReadDou2( fin, "dt_max",     1e20 ) / scaling->t; // maximum allowed time step
-    model->dt_min            = ReadDou2( fin, "dt_min",      1e8 ) / scaling->t; // maximum allowed time step
     model->eta_avg           = ReadInt2( fin, "eta_avg",       0 );              // 0 : arithmetic mean
     model->nexp_radial_basis = ReadDou2( fin, "nexp_radial_basis", 1.0 ); // exponent for radial basis function interp.
 
