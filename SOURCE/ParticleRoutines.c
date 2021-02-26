@@ -1137,6 +1137,65 @@ void AddPartVert( markers *particles, grid mesh, int ic, int jc, int* ind_list, 
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+// // MD4.5
+//void PutPartInBox( markers *particles, grid *mesh, params model, surface topo, scale scaling ) {
+//    int i, j, ki, kj, np;
+//    double dx_particles, dz_particles;
+//
+//    //int add_noise, double noise, double* random_x, double* random_z
+//
+//    // Compute the spacing between particles:
+//    dx_particles = mesh->dx/(double)(particles->Nx_part+1);
+//    dz_particles = mesh->dz/(double)(particles->Nz_part+1);
+//
+//    printf("Initial particle spacing : dxm = %lf dzm = %lf m\n", dx_particles*scaling.L, dz_particles*scaling.L);
+//
+//    // Loop over loop over loop over loop (on s'en branle, c'est du C)
+//    np = 0;
+//    double h, a, b, coord_x, coord_z;
+//
+//    for (j=0; j<mesh->Nx-1; j++) {
+//        for (i=0; i<mesh->Nz-1; i++) {
+//
+//            if (model.free_surf == 1) {
+//                a = topo.a[j];
+//                b = topo.b[j];
+//            }
+//            for (kj=0; kj<particles->Nx_part; kj++) {
+//                for (ki=0; ki<particles->Nz_part; ki++) {
+//
+//                    if (model.free_surf == 1) {
+//
+//                        coord_x = mesh->xg_coord[j] + dx_particles*kj + dx_particles;
+//                        coord_z = mesh->zg_coord[i] + dz_particles*ki + dz_particles;
+//
+//                        h = b + a*coord_x;
+//
+//                        if ( coord_z < h ) {
+//                            particles->x[np]  = coord_x;
+//                            particles->z[np]  = coord_z;
+//                            np++;
+//                        }
+//                    }
+//
+//                    if (model.free_surf == 0) {
+//                        coord_x = mesh->xg_coord[j] + dx_particles*kj + dx_particles;
+//                        coord_z = mesh->zg_coord[i] + dz_particles*ki + dz_particles;
+//                        particles->x[np]  = coord_x;
+//                        particles->z[np]  = coord_z;
+//                        np++;
+//                    }
+//                }
+//            }
+//        }
+//    }
+//    particles->Nb_part = np;
+//    printf("Initial number of particles = %d\n", particles->Nb_part);
+//
+//}
+
+
+// MD6
 void PutPartInBox( markers *particles, grid *mesh, params model, surface topo, scale scaling ) {
 
     // Set the original particle layout throughout the mesh.
@@ -1145,82 +1204,94 @@ void PutPartInBox( markers *particles, grid *mesh, params model, surface topo, s
     double dx_particles, dz_particles;
     int add_noise=model.initial_noise;
     double noise=0.1, random_x, random_z;
-    
+
     // Compute the spacing between particles:
-    dx_particles = mesh->dx/(double)(particles->Nx_part); // new
-    dz_particles = mesh->dz/(double)(particles->Nz_part); // new
+    if (model.initial_part == 0 ) {
+        printf("Initial marker locations following MDoodz4.5 style\n");
+        dx_particles = mesh->dx/(double)(particles->Nx_part + 1); // old
+        dz_particles = mesh->dz/(double)(particles->Nz_part + 1); // old
+    }
+    else {
+        printf("Initial marker locations following MDoodz6.0 style\n");
+        dx_particles = mesh->dx/(double)(particles->Nx_part + 0); // new
+        dz_particles = mesh->dz/(double)(particles->Nz_part + 0); // new
+    }
     printf("Initial particle spacing : dxm = %lf dzm = %lf m\n", dx_particles*scaling.L, dz_particles*scaling.L);
-    
+
     // Loop over loop over loop over loop (on s'en branle, c'est du C)
     np = 0;
     double h, a, b, coord_x, coord_z;
-    
+
     for (j=0; j<mesh->Nx-1; j++) {
         for (i=0; i<mesh->Nz-1; i++) {
-            
+
             if (model.free_surf == 1) {
                 a = topo.a[j];
                 b = topo.b[j];
             }
             for (kj=0; kj<particles->Nx_part; kj++) {
                 for (ki=0; ki<particles->Nz_part; ki++) {
-                    
+
                     if (model.free_surf == 1) {
-                        
-//                        coord_x = mesh->xg_coord[j] + dx_particles*kj + dx_particles;
-//                        coord_z = mesh->zg_coord[i] + dz_particles*ki + dz_particles;
-                        
-                        coord_x = mesh->xg_coord[j] + dx_particles*(kj+0.5);
-                        coord_z = mesh->zg_coord[i] + dz_particles*(ki+0.5);
-                        
+
+                        if (model.initial_part == 0 ) {
+                            coord_x = mesh->xg_coord[j] + dx_particles*kj + dx_particles;
+                            coord_z = mesh->zg_coord[i] + dz_particles*ki + dz_particles;
+                            
+                        }
+                        else {
+                            coord_x = mesh->xg_coord[j] + dx_particles*(kj+0.5);
+                            coord_z = mesh->zg_coord[i] + dz_particles*(ki+0.5);
+                        }
+
                         h = b + a*coord_x;
-                        
+
                         if ( coord_z < h ) {
                             particles->x[np]  = coord_x;
                             particles->z[np]  = coord_z;
-                            
+
                             if ( add_noise == 1 ) {
-                                
+
                                 random_x = (double)rand()/(double)RAND_MAX;
                                 random_z = (double)rand()/(double)RAND_MAX;
                                 random_x = ((2*random_x)-1)*dx_particles*noise;
                                 random_z = ((2*random_z)-1)*dz_particles*noise;
-                                
+
                                 particles->x[np]+= random_x;
                                 particles->z[np]+= random_z;
-                                
+
                                 isoutPart( particles, &model, np );
                             }
-            
+
                             np++;
                         }
                     }
-                    
+
                     if (model.free_surf == 0) {
 //                        coord_x = mesh->xg_coord[j] + dx_particles*kj + dx_particles;
 //                        coord_z = mesh->zg_coord[i] + dz_particles*ki + dz_particles;
-                        
+
                         coord_x = mesh->xg_coord[j] + dx_particles*(kj+0.5);
                         coord_z = mesh->zg_coord[i] + dz_particles*(ki+0.5);
                         particles->x[np]  = coord_x;
                         particles->z[np]  = coord_z;
-                        
+
                         if ( add_noise == 1 ) {
-                            
+
                             random_x = (double)rand()/(double)RAND_MAX;
                             random_z = (double)rand()/(double)RAND_MAX;
                             random_x = ((2*random_x)-1)*dx_particles*noise;
                             random_z = ((2*random_z)-1)*dz_particles*noise;
-                            
+
                             particles->x[np]+= random_x;
                             particles->z[np]+= random_z;
-                            
+
                             isoutPart( particles, &model, np );
 
 
-                            
+
                         }
-                        
+
                         np++;
                     }
                 }

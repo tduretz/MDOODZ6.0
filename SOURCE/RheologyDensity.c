@@ -41,6 +41,22 @@
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+void InitialiseGrainSizeParticles( markers* particles, mat_prop *materials ){
+    
+    int phase;
+#pragma omp parallel for shared( particles, materials ) private(phase)
+    for( int k=0; k<particles->Nb_part; k++ ) {
+        
+        phase           = particles->phase[k];
+        if ( phase != -1) particles->d[k] = materials->gs_ref[phase];
+    }
+    
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 // Old deviatoric stress field and pressure
 void  OldDeviatoricStressesPressure( grid* mesh, markers* particles, scale scaling, params* model ) {
 
@@ -1692,624 +1708,7 @@ firstprivate( model, dt )
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-#if 0
-double Viscosity( int phase, double G, double T, double P, double d, double phi, double X0, double exx, double ezz, double exz, double Txx0, double Tzz0, double Txz0, mat_prop* materials, params *model, scale *scaling, double *txxn, double *tzzn, double *txzn, double* etaVE, double* VEcoeff, double* Eii_el, double* Eii_pl, double* Eii_pwl, double* Eii_exp , double* Eii_lin, double* Eii_gbs, double* Eii_cst, double* Exx_el, double* Ezz_el, double* Exz_el, double* Exx_diss, double* Ezz_diss, double* Exz_diss, double *d1, double strain_acc, double dil, double fric, double C, double *detadexx, double *detadezz, double *detadexz, double *detadp, double P0,  double *X1, double *OverS, double *ddivpdexx, double *ddivpdezz, double *ddivpdexz, double *ddivpdp, double *Pcorr, double *drhodp, double *rho, double beta, double div, double *div_el, double *div_pl, double *div_r, double *Wtot, double *Wdiss, double* Wel ) {
-    
 
-
-    // General paramaters
-    double eta=0.0, R=materials->R, dt=model->dt;
-    double minEta=model->mineta, maxEta=model->maxeta;
-    double TmaxPeierls = (1200.0+zeroC)/scaling->T;      // max. T for Peierls
-
-    // Parameters for deformation map calculations
-    int    local_iter = model->loc_iter, it, nitmax = 20, noisy = 0;
-    int    constant=0, dislocation=0, peierls=0, diffusion=0, gbs=0, elastic = model->iselastic, comp = model->compressible, VolChangeReac = model->VolChangeReac;
-    double tol = 1.0e-11, res=0.0, res0=0.0, dfdeta=0.0, Txx=0.0, Tzz=0.0, Txz=0.0, Tii=0.0, ieta_sum=0.0, Tii0 = sqrt(Txx0*Txx0 + Txz0*Txz0);
-    double eta_up=0.0, eta_lo=0.0, eta_ve=0.0, eta_p=0.0, r_eta_pl=0.0, r_eta_ve=0.0, r_eta_p=0.0;
-    double eta_pwl=0.0, eta_exp=0.0, eta_vep=0.0, eta_lin=0.0, eta_el=0.0, eta_gbs=0.0, eta_cst=0.0, eta_step=0.0;
-    double Exx=0.0, Ezz=0.0, Exz=0.0, Eii_vis=0.0, Eii= 0.0, eII=0.0;
-    double f1=0.0, f2=0.0, X = X0;
-
-    // Flow law parameters from input file
-    double Tyield=0.0, F_trial = 0.0, F_corr = 0.0, gdot = 0.0, dQdtxx = 0.0, dQdtyy = 0.0, dQdtzz= 0.0, dQdtxz= 0.0;
-    int    is_pl = 0;
-    double Ea_pwl = materials->Qpwl[phase], Va_pwl = materials->Vpwl[phase], n_pwl  = materials->npwl[phase], m_pwl  = materials->mpwl[phase], r_pwl  = materials->rpwl[phase], A_pwl  = materials->Apwl[phase], f_pwl = materials->fpwl[phase], a_pwl = materials->apwl[phase], F_pwl  = materials->Fpwl[phase], pre_factor = materials->pref_pwl[phase], t_pwl  = materials->tpwl[phase];
-    double Ea_lin = materials->Qlin[phase], Va_lin = materials->Vlin[phase], n_lin  = materials->nlin[phase], m_lin  = materials->mlin[phase], r_lin  = materials->rlin[phase], A_lin  = materials->Alin[phase], f_lin = materials->flin[phase], a_lin = materials->alin[phase], F_lin  = materials->Flin[phase];
-    double Ea_gbs = materials->Qgbs[phase], Va_gbs = materials->Vgbs[phase], n_gbs  = materials->ngbs[phase], m_gbs  = materials->mgbs[phase], r_gbs  = materials->rgbs[phase], A_gbs  = materials->Agbs[phase], f_gbs = materials->fgbs[phase], a_gbs = materials->agbs[phase], F_gbs  = materials->Fgbs[phase];
-    double B_pwl=0.0, B_lin=0.0, B_exp=0.0, B_gbs=0.0, C_pwl=0.0,  C_lin=0.0, C_exp=0.0, C_gbs=0.0;
-    double Ea_exp = materials->Qexp[phase], S_exp  = materials->Sexp[phase], E_exp  = materials->Eexp[phase] , t_exp  = materials->texp[phase], F_exp=0.0;
-    double gamma=materials->Gexp[phase], ST, q=materials->qexp[phase],  n_exp=materials->nexp[phase];
-    double Exx_lin=0.0, Ezz_lin=0.0, Exz_lin=0.0, Exx_exp=0.0, Ezz_exp=0.0, Exz_exp=0.0, Exx_gbs=0.0, Ezz_gbs=0.0, Exz_gbs=0.0, Exx_cst=0.0, Ezz_cst=0.0, Exz_cst=0.0;
-    double Exx_pl=0.0, Exx_pwl=0.0, Ezz_pl=0.0, Ezz_pwl=0.0, Exz_pl=0.0, Exz_pwl=0.0;
-    int gs = materials->gs[phase];
-    double pg = materials->ppzm[phase], Kg = materials->Kpzm[phase], Qg = materials->Qpzm[phase], gam = materials->Gpzm[phase], cg = materials->cpzm[phase], lambda = materials->Lpzm[phase];
-    double eta_vp0 = materials->eta_vp[phase], n_vp = materials->n_vp[phase], eta_vp;
-    double  detadTxx=0.0, detadTzz=0.0, detadTxz=0.0, deta_ve_dExx=0.0, deta_ve_dEzz=0.0, deta_ve_dExz=0.0, deta_ve_dP=0.0;
-    double  dFdExx=0.0, dFdEzz=0.0, dFdExz=0.0, dFdP=0.0, K = 1.0/beta, dQdP=0.0, g=0.0, dlamdExx=0.0, dlamdEzz=0.0, dlamdExz=0.0, dlamdP=0.0, a=0.0, deta_vep_dExx=0.0, deta_vep_dEzz=0.0, deta_vep_dExz=0.0, deta_vep_dP=0.0, deta_vp_dExx, deta_vp_dEzz, deta_vp_dExz, deta_vp_dP, deta;
-
-    double F_trial0 = F_trial;
-    double dFdgdot, divp=0.0, Pc = P;
-
-    // Mix of constant viscosity
-    int phase_two    = materials->phase_two[phase];
-    int constant_mix = materials->phase_mix[phase];
-    int mix_avg      = model->diffuse_avg;
-    double ndis1, Adis1, Qdis1, rho1;
-    double ndis2, Adis2, Qdis2, rho2;
-    int ProgressiveReaction = materials->reac_soft[phase], NoReturn = model->NoReturn;
-    int StaticReaction = model->diffuse_X==1;
-    double tau_kin = materials->tau_kin[phase], Pr = materials->Pr[phase], dPr = materials->dPr[phase];
-    double dXdP=0.0, d2XdP2=0.0, dEadP=0.0, dfdn=0.0, dndP=0.0, dfdP=0.0, dAdP=0.0, d2rhodP2=0.0, retro = 1.0;
-    double ddivrdpc = 0.0, divr = 0.0, drhodX = 0.0;
-
-    if (model->diffuse_X==0) constant_mix  = 0;
-
-    //------------------------------------------------------------------------//
-
-    // Initialise strain rate invariants to 0
-    *Eii_exp = 0.0; *Eii_lin = 0.0; *Eii_pl = 0.0; *Eii_pwl = 0.0; *Eii_el = 0.0, *Eii_gbs=0, *Eii_cst=0.0;
-    *txxn=0.0; *tzzn=0.0; *txzn=0.0; *etaVE=0.0; *VEcoeff=0.0, *Exx_el=0.0, *Ezz_el=0.0, *Exz_el=0.0, *Exx_diss=0.0, *Ezz_diss=0.0, *Exz_diss=0.0, *d1=0.0;
-    *detadexx=0.0;  *detadezz=0.0;  *detadexz=0.0;  *detadp=0.0;
-    *ddivpdexx=0.0; *ddivpdezz=0.0; *ddivpdexz=0.0; *ddivpdp=0.0;
-    *X1=0.0;
-    *OverS = 0.0; *Pcorr = 0.0; *div_el = 0.0; *div_pl = 0.0; *div_r = 0.0; *Wtot = 0.0; *Wdiss = 0.0; *Wel = 0.0;
-
-    // P corr will be corrected if plasticity feedbacks on pressure (dilation)
-    *Pcorr = P;
-
-    // Activate deformation mechanisms
-    if ( materials->cstv[phase] !=0                  ) constant    = 1;
-    if ( materials->pwlv[phase] !=0                  ) dislocation = 1;
-    if ( materials->expv[phase] !=0 && T<TmaxPeierls ) peierls     = 1;
-    if ( materials->linv[phase] !=0                  ) diffusion   = 1;
-    if ( materials->gbsv[phase] !=0                  ) gbs         = 1;
-    if ( materials->gs[phase]   !=0                  ) gs          = 1;
-
-    // Turn of elasticity for the initialisation step  (viscous flow stress)
-    if ( model->step    == 0                         ) elastic     = 0;
-
-    // Constant grain size initially
-    *d1 = materials->gs_ref[phase];
-
-    // Tensional cut-off
-    if ( model->gz>0.0 && P<0.0     ) { P = 0.0; printf("Aie aie aie P < 0 !!!\n"); exit(122);}
-
-    // Visco-plastic limit
-    if ( elastic==0                 ) { G = 10.0; K = 10.0;};
-
-    // Zero C limit
-    if ( T< zeroC/scaling->T        ) T = zeroC/scaling->T;
-
-    //------------------------------------------------------------------------//
-
-    // Precomputations
-    if ( dislocation == 1 ) {
-        B_pwl = pre_factor * F_pwl * pow(A_pwl,-1.0/n_pwl) * exp( (Ea_pwl + P*Va_pwl)/R/n_pwl/T ) * pow(d, m_pwl/n_pwl) * pow(f_pwl, -r_pwl/n_pwl) * exp(-a_pwl*phi/n_pwl);
-        C_pwl = pow(2.0*B_pwl, -n_pwl);
-        //        printf("%2.2e %2.6e %2.6e\n",  exp( (Ea_pwl + P*Va_pwl)/R/n_pwl/T ), Ea_pwl*scaling->J,  R*n_pwl*T *scaling->J);
-    }
-    if ( diffusion == 1 ) {
-        if (m_lin>0.0 && d<1e-13/scaling->L){
-            printf("Cannot run with grain size dependent viscosity if grain size is set to 0 --> d = %2.2e!!!\n", d*scaling->L);
-            exit(1);
-        };
-        B_lin = F_lin * pow(A_lin,-1.0/n_lin) * exp( (Ea_lin + P*Va_lin)/R/n_lin/T ) * pow(f_lin, -r_lin/n_lin) * exp(-a_lin*phi/n_lin); // * pow(d, m_lin/n_lin) !!!!!!!!!!!!!!!!!!!!!!!!
-        C_lin = pow(2.0*B_lin, -n_lin);
-    }
-    if ( gbs == 1 ) {
-        B_gbs = F_gbs * pow(A_gbs,-1.0/n_gbs) * exp( (Ea_gbs + P*Va_gbs)/R/n_gbs/T ) * pow(d, m_gbs/n_gbs) * pow(f_gbs, -r_gbs/n_gbs) * exp(-a_gbs*phi/n_gbs);
-        C_gbs = pow(2.0*B_gbs, -n_gbs);
-    }
-    if ( peierls   == 1 ) {
-        ST                    = Ea_exp/R/T * pow((1.0-gamma),(q-1.0)) * q*gamma;
-        if ( (int)t_exp == 0) F_exp  = 1.0;
-        if ( (int)t_exp == 1) F_exp  = 1.0/6.0*pow(2.0,1.0/(ST+n_exp)) * pow(3.0,(ST+n_exp-1.0)/2.0/(ST+n_exp));
-        if ( (int)t_exp == 2) F_exp  = 1.0/4.0*pow(2,1.0/(ST+n_exp));
-        //        B_exp                   = F_exp * pow(E_exp*exp(-Ea_exp/R/T*pow(1.0-gamma,2.0)), -1.0/(ST+n_exp)) * pow(gamma*S_exp, ST/(ST+n_exp));
-        //        C_exp                   = pow(2.0*B_exp, -(ST+n_exp));
-        C_exp = E_exp *exp(-Ea_exp/R/T * pow(1.0-gamma,2.0)) * pow(gamma*S_exp,-ST);  // ajouter Fexp
-        B_exp = 0.5*pow(C_exp, -1./(n_exp+ST) );
-    }
-
-    Tyield     = C*cos(fric) + P*sin(fric);
-
-    // Von-Mises cut-off
-    if (materials->Slim[phase] < Tyield) {
-        fric   = 0.0;
-        C      = materials->Slim[phase];
-        Tyield = materials->Slim[phase];
-    }
-
-    //------------------------------------------------------------------------//
-    // Reaction stuff: 1. Update reaction progress
-    X = X0;
-
-    // Reaction stuff: 2. Mixture rheology (Huet et al., 2014)
-    if (  ProgressiveReaction == 1 ) {
-
-        X     = (X0*tau_kin - 0.5*dt*erfc((P - Pr)/dPr) + dt)/(dt + tau_kin);
-
-        if ( X<X0 && NoReturn == 1 ) {
-            retro = 0.0;
-            X = X0;
-        }
-        
-        dXdP   = retro*dt*exp(-pow(P - Pr, 2.0)/pow(dPr, 2.0))/(sqrt(M_PI)*dPr*(dt + tau_kin));
-        d2XdP2 = -retro*dt*(2.0*P - 2.0*Pr)*exp(-pow(P - Pr, 2.0)/pow(dPr, 2.0))/(sqrt(M_PI)*pow(dPr, 3.0)*(dt + tau_kin));
-
-        ndis1  = materials->npwl[phase];
-        Adis1  = materials->Apwl[phase];
-        Qdis1  = materials->Qpwl[phase];
-
-        ndis2  = materials->npwl[materials->reac_phase[phase]];
-        Adis2  = materials->Apwl[materials->reac_phase[phase]];
-        Qdis2  = materials->Qpwl[materials->reac_phase[phase]];
-
-        rho1   = materials->rho[phase];
-        rho2   = materials->rho[materials->reac_phase[phase]];
-
-        // Huet et al 2014 ---------------
-        f1 = 1.0-X;
-        f2 = X;
-
-        // (1) Calcul des ai
-        double a1 = ndis2 + 1.0;
-        double a2 = ndis1 + 1.0;
-
-        // (2) Calcul de n bulk:
-        double sum_up   = f1*a1*ndis1 + f2*a2*ndis2;
-        double sum_down = f1*a1+f2*a2;
-        n_pwl     = sum_up/sum_down;
-
-        // (3) Calcul de Q bulk:
-        sum_up    = f1*a1*Qdis1 + f2*a2*Qdis2;
-        sum_down  = f1*a1+f2*a2;
-        Ea_pwl    = sum_up/sum_down;
-
-        // (4) Calcul de A bulk:
-        sum_down     = f1*a1 + f2*a2;
-        double Prod1 = pow(Adis1,(f1*a1/sum_down)) * pow(Adis2,(f2*a2/sum_down));
-        double sum_n = f1*ndis1/(ndis1 + 1.0) + f2*ndis2/(ndis2 + 1.0);
-        double Prod2 = pow(ndis1/(ndis1 + 1.0),f1*a1*ndis1/sum_down) * pow(ndis2/(ndis2+1.0),f2*a2*ndis2/sum_down);
-        A_pwl        = Prod1 * pow(sum_n,-n_pwl) * Prod2;
-
-        // Partial derivatives of mixing power law parameters w.r.t. pressure
-        dndP = n_pwl*(a1*dXdP - a2*dXdP)/sum_down + (-a1*dXdP*ndis1 + a2*dXdP*ndis2)/sum_down;
-        dAdP = A_pwl*(((a1*dXdP*ndis1 - a2*dXdP*ndis2)/sum_down - (a1*dXdP - a2*dXdP)*(X*a2*ndis2 + a1*ndis1*(1.0 - X))/pow(sum_down, 2))*log(X*ndis2/a1 + ndis1*(1.0 - X)/a2) - (X*a2*ndis2 + a1*ndis1*(1.0 - X))*(-dXdP*ndis1/a2 + dXdP*ndis2/a1)/(sum_down*(X*ndis2/a1 + ndis1*(1.0 - X)/a2))) + A_pwl*(-a1*dXdP/sum_down + a1*(1.0 - X)*(a1*dXdP - a2*dXdP)/pow(sum_down, 2))*log(Adis1) + A_pwl*(X*a2*(a1*dXdP - a2*dXdP)/pow(sum_down, 2) + a2*dXdP/sum_down)*log(Adis2) + A_pwl*(-a1*dXdP*ndis1/sum_down + a1*ndis1*(1.0 - X)*(a1*dXdP - a2*dXdP)/pow(sum_down, 2))*log(ndis1/a2) + A_pwl*(X*a2*ndis2*(a1*dXdP - a2*dXdP)/pow(sum_down, 2) + a2*dXdP*ndis2/sum_down)*log(ndis2/a1);
-        dQdP = Ea_pwl*(a1*dXdP - a2*dXdP)/sum_down + (-Qdis1*a1*dXdP + Qdis2*a2*dXdP)/sum_down;
-
-        // Proper choices of corrections factors
-        if ( (int)t_pwl == 0 ) {
-            F_pwl = 1.0;
-            dfdn = 0.0;
-        }
-        if ( (int)t_pwl == 1 ) {
-            F_pwl = 1.0/6.0*pow(2.0,1.0/n_pwl) * pow(3.0,(n_pwl-1.0)/2.0/n_pwl);
-            dfdn = -1.0/6.0*pow(2, 1.0/n_pwl)*pow(3, ((1.0/2.0)*n_pwl - 1.0/2.0)/n_pwl)*M_LN2/pow(n_pwl, 2) + F_pwl*((1.0/2.0)/n_pwl + (1.0/2.0 - 1.0/2.0*n_pwl)/pow(n_pwl, 2))*log(3);
-        }
-        if ( (int)t_exp == 2 ) {
-            F_pwl = 1.0/4.0*pow(2,1.0/n_pwl);
-            dfdn = -0.25*pow(2, 1.0/n_pwl)*M_LN2/pow(n_pwl, 2);
-
-        }
-        dfdP    = dfdn*dndP;
-
-        // Override power-law flow law parameters
-        B_pwl  = pre_factor * F_pwl * pow(A_pwl,-1.0/n_pwl) * exp( (Ea_pwl)/R/n_pwl/T );
-        C_pwl  = pow(2.0*B_pwl, -n_pwl);
-
-    }
-
-    // set pointer value
-    *X1 = X;
-    //------------------------------------------------------------------------//
-
-    // Out-of-plane components
-    double Eyy, Tyy;
-    double eyy  = -(  exx +  ezz ); // definition of deviatoric tensor
-    double Tyy0 = -( Txx0 + Tzz0 ); // definition of deviatoric tensor
-
-    // Isolated viscosities
-    Exx  = exx;
-    Ezz  = ezz;
-    Exz  = exz;
-    Eyy  = eyy;
-    if ( elastic == 0 || local_iter == 0 || local_iter == 2 ) {
-        Exx  = exx;
-        Ezz  = ezz;
-        Exz  = exz;
-        Eyy  = eyy;
-    }
-    else {
-        Exx  = exx + Txx0/(2.0*G*dt);
-        Ezz  = ezz + Tzz0/(2.0*G*dt);
-        Exz  = exz + Txz0/(2.0*G*dt);
-        Eyy  = eyy + Tyy0/(2.0*G*dt);
-    }
-    Eii  = sqrt(1.0/2.0*(Exx*Exx + Ezz*Ezz + Eyy*Eyy) + Exz*Exz);
-    eII  = sqrt(1.0/2.0*(exx*exx + ezz*ezz + eyy*eyy) + exz*exz);
-    if (Eii*scaling->E<1e-30) Eii=1e-30/scaling->E;
-
-    //------------------------------------------------------------------------//
-
-    // Isolated viscosities
-    eta_el                           = G*dt;
-    if ( constant    == 1 ) eta_cst  = materials->eta0[phase];
-    if ( constant_mix== 1 && mix_avg==0) eta_cst  =     X0*materials->eta0[phase] + (1-X0)*materials->eta0[phase_two];
-    if ( constant_mix== 1 && mix_avg==1) eta_cst  = pow(X0/materials->eta0[phase] + (1-X0)/materials->eta0[phase_two], -1.0);
-    if ( constant_mix== 1 && mix_avg==2) eta_cst  = exp(X0*log(materials->eta0[phase]) + (1-X0)*log(materials->eta0[phase_two]));
-    if ( dislocation == 1 ) eta_pwl  = B_pwl * pow( Eii, 1.0/n_pwl - 1.0 );
-    if ( diffusion   == 1 ) eta_lin  = B_lin * pow( Eii, 1.0/n_lin - 1.0 ) * pow(d, m_lin/n_lin); // !!! gs - dependence !!!
-    if ( gbs         == 1 ) eta_gbs  = B_gbs * pow( Eii, 1.0/n_gbs - 1.0 );
-    if ( peierls     == 1 ) eta_exp  = B_exp * pow( Eii, 1.0/(ST+n_exp) - 1.0 );
-
-    //------------------------------------------------------------------------//
-
-    // Viscoelasticity
-    *Eii_pl = 0.0;
-
-    // Define viscosity bounds
-    eta_up   = 1.0e100/scaling->S;
-    ieta_sum = 0.0;
-
-    if ( constant == 1 ) {
-        eta_up   = MINV(eta_up, eta_cst);
-        ieta_sum += 1.0/eta_cst;
-    }
-
-    if ( dislocation == 1 ) {
-        eta_up   = MINV(eta_up, eta_pwl);
-        ieta_sum += 1.0/eta_pwl;
-    }
-
-    if ( elastic == 1 ) {
-        eta_up   = MINV(eta_up, eta_el);
-        ieta_sum += 1.0/eta_el;
-    }
-
-    if ( peierls == 1 ) {
-        eta_up = MINV(eta_up, eta_exp);
-        ieta_sum += 1.0/eta_exp;
-    }
-    if ( diffusion == 1 ) {
-        eta_up = MINV(eta_up, eta_lin);
-        ieta_sum += 1.0/eta_lin;
-    }
-    if ( gbs       == 1 ) {
-        eta_up = MINV(eta_up, eta_gbs);
-        ieta_sum += 1.0/eta_gbs;
-    }
-    eta_lo = 1.0/(ieta_sum);
-
-
-    //------------------------------------------------------------------------//
-
-    // Initial guess
-    eta_ve                  = 0.5*(eta_up+eta_lo);
-
-    // Local iterations
-    for (it=0; it<nitmax; it++) {
-
-        // Function evaluation at current effective viscosity
-        Tii = 2.0 * eta_ve * Eii;
-        if ( constant    == 1 ) *Eii_cst = Tii/2.0/eta_cst;
-        if ( dislocation == 1 ) *Eii_pwl = C_pwl * pow(Tii, n_pwl    );
-        if ( gbs         == 1 ) *Eii_gbs = C_gbs * pow(Tii, n_gbs    );
-        if ( peierls     == 1 ) *Eii_exp = C_exp * pow(Tii, ST+n_exp ); // Peierls - power law
-        if ( gs          == 1 ) *d1      = exp(log( Kg*exp(-Qg/R/T) *gam/(lambda*(1.0/cg)* Tii *(*Eii_pwl + *Eii_exp + *Eii_gbs + *Eii_pl)*pg))/(1.0+pg));
-        if ( diffusion   == 1 ) *Eii_lin = C_lin * pow(Tii, n_lin) * pow(*d1,-m_lin); // !!! gs - dependence !!!
-        Eii_vis                          = *Eii_pwl + *Eii_exp + *Eii_lin + *Eii_gbs + *Eii_cst;
-        r_eta_ve                         = Eii - elastic*Tii/(2.0*eta_el) - Eii_vis;
-
-        // Residual check
-        res = fabs(r_eta_ve/Eii);
-        if (it==0) res0 = res;
-        if (noisy>=1) printf("Visco-Elastic iterations It. %02d, r abs. = %2.2e r rel. = %2.2e tol = %2.2e eta_ve = %2.2e eta_lo = %2.2e eta_up = %2.2e eta_lin = %2.2e eta_pwl = %2.2e eta_exp = %2.2e %d\n", it, res, res/res0, tol, eta_ve, eta_lo, eta_up, eta_lin, eta_pwl, eta_exp, nitmax);
-//        printf("Visco-Elastic iterations It. %02d, r abs. = %2.2e r rel. = %2.2e tol = %2.2e eta_ve = %2.2e eta_lo = %2.2e eta_up = %2.2e eta_lin = %2.2e eta_pwl = %2.2e eta_exp = %2.2e, exz=%2.2e\n", it, res, res/res0, tol, eta_ve, eta_lo, eta_up, eta_lin, eta_pwl, eta_exp, exz*scaling->E);
-        if (res < tol/100) break;
-
-        // Analytical derivative of function
-        dfdeta  = 0.0;
-        if ( elastic     == 1 ) dfdeta += -Eii/eta_el;
-        if ( peierls     == 1 ) dfdeta += -(*Eii_exp)*(ST+n_exp)/eta_ve;
-        if ( diffusion   == 1 ) dfdeta += -(*Eii_lin)*n_lin/eta_ve;
-        if ( dislocation == 1 ) dfdeta += -(*Eii_pwl)*n_pwl/eta_ve;
-        if ( constant    == 1 ) dfdeta += -Eii/eta_cst;
-
-        // Update viscosity
-        eta_ve -= r_eta_ve / dfdeta;
-    }
-
-    if ( it==nitmax-1 && res > tol ) { printf("Visco-Elastic iterations failed!\n"); exit(0);}
-
-    // Recalculate stress components
-    Txx                  = 2.0*eta_ve*Exx;
-    Tyy                  = 2.0*eta_ve*Eyy;  // out-of-plane
-    Tzz                  = 2.0*eta_ve*Ezz;
-    Txz                  = 2.0*eta_ve*Exz;
-    Tii                  = 2.0*eta_ve*Eii;
-
-    /*-----------------------------------------------*/
-
-    if ( dislocation == 1 ) eta_pwl  = pow(2.0*C_pwl,-1.0) * pow(Tii, 1.0-n_pwl);
-    if ( diffusion   == 1 ) eta_lin  = B_lin * pow( *Eii_lin, 1.0/n_lin - 1.0 ) * pow(*d1, m_lin/n_lin);
-    if ( peierls     == 1 ) eta_exp  = B_exp * pow( *Eii_exp, 1.0/(ST+n_exp) - 1.0 );
-    if ( elastic     == 1 ) *Exx_el =  (double)elastic*(Txx-Txx0)/2.0/eta_el;
-    if ( elastic     == 1 ) *Ezz_el =  (double)elastic*(Tzz-Tzz0)/2.0/eta_el;
-    if ( elastic     == 1 ) *Exz_el =  (double)elastic*(Txz-Txz0)/2.0/eta_el;
-    Exx_pl = 0.0;
-    Ezz_pl = 0.0;
-    Exz_pl = 0.0;
-    if ( dislocation == 1 ) Exx_pwl = Txx/2.0/eta_pwl;
-    if ( dislocation == 1 ) Ezz_pwl = Tzz/2.0/eta_pwl;
-    if ( dislocation == 1 ) Exz_pwl = Txz/2.0/eta_pwl;
-    if ( diffusion   == 1 ) Exx_lin = Txx/2.0/eta_lin;
-    if ( diffusion   == 1 ) Ezz_lin = Tzz/2.0/eta_lin;
-    if ( diffusion   == 1 ) Exz_lin = Txz/2.0/eta_lin;
-    if ( peierls     == 1 ) Exx_exp = Txx/2.0/eta_exp;
-    if ( peierls     == 1 ) Ezz_exp = Tzz/2.0/eta_exp;
-    if ( peierls     == 1 ) Exz_exp = Txz/2.0/eta_exp;
-    if ( constant    == 1 ) Exx_cst = Txx/2.0/eta_cst;
-    if ( constant    == 1 ) Ezz_cst = Tzz/2.0/eta_cst;
-    if ( constant    == 1 ) Exz_cst = Txz/2.0/eta_cst;
-
-
-//    printf("exx_tot = %2.2e exx_el = %2.2e exx_pwl = %2.2e exx_exp = %2.2e exx_cst = %2.2e exx_exp = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", exx*scaling->E, *Exx_el*scaling->E, Exx_pwl*scaling->E, Exx_lin*scaling->E, Exx_cst*scaling->E, Exx_exp*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
-//    printf("ezz_tot = %2.2e ezz_el = %2.2e exx_pwl = %2.2e exx_exp = %2.2e exx_cst = %2.2e exx_exp = %2.2e ezz_pl = %2.2e, ezz_net = %2.2e\n", ezz*scaling->E, *Ezz_el*scaling->E, Ezz_pwl*scaling->E, Ezz_lin*scaling->E, Ezz_cst*scaling->E, Ezz_exp*scaling->E, Ezz_pl*scaling->E, (ezz - (*Ezz_el+Ezz_pwl+Ezz_lin+Ezz_cst+Ezz_exp+Ezz_pl))*scaling->E);
-//      //       printf("exx_el = %2.2e exx_vis = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", *Exx_el*scaling->E, (Exx_pwl+Exx_lin+Exx_cst+Exx_exp)*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
-//    printf("exz_tot = %2.2e exz_el = %2.2e exz_pwl = %2.2e exz_exp = %2.2e exz_cst = %2.2e exz_exp = %2.2e exz_pl = %2.2e, exz_net = %2.2e\n", exz*scaling->E, *Exz_el*scaling->E, Exz_pwl*scaling->E, Exz_lin*scaling->E, Exz_cst*scaling->E, Exz_exp*scaling->E, Exz_pl*scaling->E, (exz - (*Exz_el+Exz_pwl+Exz_lin+Exz_cst+Exz_exp+Exz_pl))*scaling->E);
-//    exit(1);
-
-    //    printf("%2.10e %2.10e\n", Tii, sqrt(0.5*(Txx*Txx + Tyy*Tyy + Tzz*Tzz) +Txz*Txz) );
-
-    // Partial derivatives VE --> GLOBAL NEWTON ITERATION
-    deta     = 0.0;
-    if (dislocation == 1) deta += -C_pwl * pow(Tii, n_pwl    - 3.0)*(n_pwl    - 1.0);
-    if (peierls     == 1) deta += -C_exp * pow(Tii, n_exp+ST - 3.0)*(n_exp+ST - 1.0);
-    if (diffusion   == 1) deta += -C_lin * pow(Tii, n_lin    - 3.0)*(n_lin    - 1.0) * pow(*d1,-m_lin);
-    detadTxx     =     deta*(2.0*Txx + Tzz)*pow(eta_ve,2.0); // Out-of-plane deviatoric stress was substituted here
-    detadTzz     =     deta*(2.0*Tzz + Txx)*pow(eta_ve,2.0); // ... and there
-    detadTxz     = 2.0*deta*Txz*pow(eta_ve,2.0);
-    deta_ve_dExx = detadTxx * 2.0*eta_ve / (1.0 - 2.0*(detadTxx*Exx + detadTzz*Ezz + detadTxz*Exz));
-    deta_ve_dEzz = detadTzz * 2.0*eta_ve / (1.0 - 2.0*(detadTxx*Exx + detadTzz*Ezz + detadTxz*Exz));
-    deta_ve_dExz = detadTxz * 2.0*eta_ve / (1.0 - 2.0*(detadTxx*Exx + detadTzz*Ezz + detadTxz*Exz));
-    deta_ve_dP   = 0.0;
-
-    if (  ProgressiveReaction == 1 ) {
-        deta_ve_dP   = pow(B_pwl, n_pwl)*Eii*eta_ve*pow(eta_el, 2)*pow(Eii*eta_ve, n_pwl)*(-A_pwl*F_pwl*Ea_pwl*dndP + A_pwl*F_pwl*R*T*dndP*n_pwl*log(B_pwl) - A_pwl*F_pwl*R*T*dndP*n_pwl*log(Eii*eta_ve) + A_pwl*F_pwl*R*T*dndP*log(A_pwl) + A_pwl*F_pwl*dQdP*n_pwl + A_pwl*R*T*dfdP*pow(n_pwl, 2) - F_pwl*R*T*dAdP*n_pwl)/(A_pwl*F_pwl*R*T*n_pwl*(pow(B_pwl, 2*n_pwl)*pow(Eii, 2)*pow(eta_ve, 2) + 2*pow(B_pwl, n_pwl)*Eii*eta_ve*eta_el*pow(Eii*eta_ve, n_pwl) + pow(B_pwl, n_pwl)*Eii*pow(eta_el, 2)*n_pwl*pow(Eii*eta_ve, n_pwl) - pow(B_pwl, n_pwl)*Eii*pow(eta_el, 2)*pow(Eii*eta_ve, n_pwl) + pow(eta_el, 2)*pow(Eii*eta_ve, 2*n_pwl)));
-    }
-
-
-    //------------------------------------------------------------------------//
-
-    // Check yield stress
-    F_trial = Tii - Tyield;
-
-    double Tyield_trial = Tyield;
-    double F_trial_trial = F_trial;
-
-    if (F_trial > 1e-17) {
-
-        // Initial guess - eta_vp = 0
-        is_pl   = 1;
-        eta_vp  = eta_vp0 * pow(eII, 1.0/n_vp - 1);
-        gdot    = F_trial / ( eta_ve + eta_vp + K*dt*sin(fric)*sin(dil));
-        gdot    = F_trial / ( eta_ve + K*dt*sin(fric)*sin(dil) ); // neglect visco-plastic viscosity for initial guess
-        gdot    = eII;
-        dQdtxx  = Txx/2.0/Tii;
-        dQdtyy  = Tyy/2.0/Tii;
-        dQdtzz  = Tzz/2.0/Tii;
-        dQdtxz  = Txz/1.0/Tii;
-        dQdP    = -sin(dil); //printf("%2.2e %2.2e\n", dQdP, K*scaling->S);
-        res0    = F_trial;
-
-        // Return mapping --> find plastic multiplier rate (gdot)
-        for (it=0; it<nitmax; it++) {
-
-            divp    = -gdot*dQdP;
-            Pc      = P + K*dt*divp; // P0 - k*dt*(div-divp) = P + k*dt*divp
-            eta_vp  = eta_vp0 * pow(fabs(gdot), 1.0/n_vp - 1);
-            Tyield  = C*cos(fric) + Pc*sin(fric) +  gdot*eta_vp;
-            F_trial = Tii - eta_ve*gdot - Tyield;
-
-            // Residual check
-            res = fabs(F_trial);
-            //            if (it==0) res0 = res;
-            if (noisy>1) printf("Visco-Plastic iterations It. %02d, F = %2.2e Frel = %2.2e --- n_vp = %2.2e, eta_vp = %2.2e\n", it, res, res/F_trial0, n_vp, eta_vp);
-            if ( res < tol || res/F_trial0 < tol ) break;
-            dFdgdot  = - eta_ve - eta_vp/n_vp - K*dt*sin(fric)*sin(dil);
-            gdot    -= F_trial / dFdgdot;
-        }
-        if ( it==nitmax-1 && (res > tol || res/F_trial0 > tol)  ) { printf("Visco-Plastic iterations failed!\n"); exit(0);}
-
-        Txx     = 2.0*eta_ve*(Exx - gdot*dQdtxx    );
-        Tyy     = 2.0*eta_ve*(Eyy - gdot*dQdtyy    ); // Tyy     = -(Txx+Tzz);
-        Tzz     = 2.0*eta_ve*(Ezz - gdot*dQdtzz    );
-        //        printf("%2.6e %2.6e\n", Tyy,  2.0*eta_ve*(Eyy - gdot*dQdtyy    ) );
-        Txz     = 2.0*eta_ve*(Exz - gdot*dQdtxz/2.0);
-        Tii     = sqrt( 0.5*( pow(Txx,2.0) + pow(Tzz,2.0) + pow(Tyy,2.0) ) + pow(Txz,2.0)  );
-        eta_vep = Tii / (2.0*Eii);
-        F_corr  = Tii - Tyield;
-        *Eii_pl = gdot/2.0;
-        Tii     = 2.0*eta_vep*Eii;
-        F_corr  = Tii - Tyield;
-        // Compute over stress
-        *OverS = eta_vp*gdot;
-        *Pcorr = Pc;
-    }
-
-    //------------------------------------------------------------------------//
-
-    // Partial derivatives VEP
-    if ( is_pl == 1 ) {
-        dFdExx        =     (2.0*Exx + Ezz)*eta_ve/Eii + 2.0*Eii*deta_ve_dExx;
-        dFdEzz        =     (2.0*Ezz + Exx)*eta_ve/Eii + 2.0*Eii*deta_ve_dEzz;
-        dFdExz        =             2.0*Exz*eta_ve/Eii + 2.0*Eii*deta_ve_dExz;
-        dFdP          =                     -sin(fric) + 2.0*Eii*deta_ve_dP;
-        g             = 1.0 / ( eta_ve + eta_vp/n_vp + K*dt*sin(fric)*sin(dil) );
-        dlamdExx      = g * (dFdExx - gdot *deta_ve_dExx);
-        dlamdEzz      = g * (dFdEzz - gdot *deta_ve_dEzz);
-        dlamdExz      = g * (dFdExz - gdot *deta_ve_dExz);
-        dlamdP        = g * (dFdP   - gdot *deta_ve_dP  );
-        deta_vp_dExx  = eta_vp/gdot*dlamdExx*(1.0/n_vp - 1.0);
-        deta_vp_dEzz  = eta_vp/gdot*dlamdEzz*(1.0/n_vp - 1.0);
-        deta_vp_dExz  = eta_vp/gdot*dlamdExz*(1.0/n_vp - 1.0);
-        deta_vp_dP    = eta_vp/gdot*dlamdP  *(1.0/n_vp - 1.0);
-        a             =  eta_vp +  K*dt*sin(fric)*sin(dil);
-        deta_vep_dExx = -0.5*(2.0*Exx + Ezz)*Tyield/(2.0*pow(Eii,3.0)) + (a*dlamdExx + gdot*deta_vp_dExx)/(2.0*Eii);
-        deta_vep_dEzz = -0.5*(2.0*Ezz + Exx)*Tyield/(2.0*pow(Eii,3.0)) + (a*dlamdEzz + gdot*deta_vp_dEzz)/(2.0*Eii);
-        deta_vep_dExz =                -Exz *Tyield/(2.0*pow(Eii,3.0)) + (a*dlamdExz + gdot*deta_vp_dExz)/(2.0*Eii);
-        deta_vep_dP   =                                     (sin(fric) +  a*dlamdP   + gdot*deta_vp_dP  )/(2.0*Eii);
-    }
-
-    // ----------------- Reaction volume changes
-
-    // Activate volume changes only if reaction is taking place
-    if ( VolChangeReac == 1 && fabs(X-X0)>0.0 ) {
-//        rho       = rho1 * (1-X) + rho2 * X;
-//        drhodX    = rho2 - rho1;
-//        drhodP    = drhodX * dXdP;
-//        d2rhodP2  = drhodX * d2XdP2;
-//        divr      = -1.0/rho * drhodP;
-//        printf("%2.2lf %2.2lf divr=%2.2e, rho=%2.2lf x-x0=%2.2lf drhodP = %2.2e dXdP = %2.2e \n", rho1*scaling->rho, rho2*scaling->rho, divr*scaling->E, rho*scaling->rho, X-X0, drhodP*scaling->rho/scaling->S, dXdP/scaling->S);
-//
-//        ddivrdpc  = -d2rhodP2/rho + pow(drhodP/rho, 2.0);
-//        Pc        = Pc + K*dt*divr;
-//        *Pcorr    = Pc;
-    }
-
-    // ----------------- Reaction volume changes
-
-    double inv_eta_diss = 0.0;
-    if (dislocation== 1)  inv_eta_diss += (1.0/eta_pwl);
-    if (constant   == 1)  inv_eta_diss += (1.0/eta_cst);
-    if (is_pl == 0) {
-        (*detadexx) = deta_ve_dExx;
-        (*detadezz) = deta_ve_dEzz;
-        (*detadexz) = deta_ve_dExz;
-        (*detadp)   = deta_ve_dP;
-        (*etaVE)    = eta_ve;
-        (*ddivpdexx)  = 0.0;
-        (*ddivpdezz)  = 0.0;
-        (*ddivpdexz)  = 0.0;
-        (*ddivpdp)    = ddivrdpc;
-    }
-    else {
-        (*detadexx)   = deta_vep_dExx;
-        (*detadezz)   = deta_vep_dEzz;
-        (*detadexz)   = deta_vep_dExz;
-        (*detadp)     = deta_vep_dP;
-        (*etaVE)      = eta_vep;
-        (*ddivpdexx)  = -dQdP*dlamdExx;
-        (*ddivpdezz)  = -dQdP*dlamdEzz;
-        (*ddivpdexz)  = -dQdP*dlamdExz;
-        (*ddivpdp)    = -dQdP*dlamdP + ddivrdpc;
-        inv_eta_diss += 1.0/eta_vep;
-    }
-
-    //    if ( fabs(*detadexx) >1e10 ) {
-    //        printf("Viscosity: deta_ve_dExx %2.2e deta_vep_dExx %2.2e\n", deta_ve_dExx, deta_vep_dExx);
-    //        printf("exx = %2.2e Exx = %2.2e Tyield = %2.2e, ccos = %2.2e, psin=%2.2e, overS = %2.2e, fric = %2.2e, C = %2.2e\n", exx, Exx, Tyield, C*cos(fric)*scaling->S, Pc*sin(fric)*scaling->S, gdot*eta_vp*scaling->S, fric, C*scaling->S);
-    //        printf("Ft =%2.2e Tyt = %2.2e\n", F_trial_trial*scaling->S, Tyield_trial*scaling->S);
-    //        exit(1);
-    //    }
-
-    /*----------------------------------------------------*/
-    /*----------------------------------------------------*/
-    /*----------------------------------------------------*/
-
-    eta_pwl  = pow(2.0*C_pwl,-1.0) * pow(Tii, 1.0-n_pwl);
-    *Exx_el =  (double)elastic*(Txx-Txx0)/2.0/eta_el;
-    *Ezz_el =  (double)elastic*(Tzz-Tzz0)/2.0/eta_el;
-    *Exz_el =  (double)elastic*(Txz-Txz0)/2.0/eta_el;
-    Exx_pl = gdot*dQdtxx;
-    Ezz_pl = gdot*dQdtzz;
-    Exz_pl = gdot*dQdtxz/2.0;
-    Exx_pwl = Txx/2.0/eta_pwl;
-    Ezz_pwl = Tzz/2.0/eta_pwl;
-    Exz_pwl = Txz/2.0/eta_pwl;
-    
-//    printf("%2.8e %2.8e\n", Txz/2.0/eta_pwl, *Eii_pwl * Txz/Tii);
-
-    // Compute dissipative strain rate components
-    *Exx_diss =  Exx_pl + Exx_lin +  Exx_pwl + Exx_exp + Exx_gbs + Exx_cst;
-    *Ezz_diss =  Ezz_pl + Ezz_lin +  Ezz_pwl + Exx_exp + Exx_gbs + Exx_cst;
-    *Exz_diss =  Exz_pl + Exz_lin +  Exz_pwl + Exz_exp + Exz_gbs + Exz_cst;
-    
-    *Wdiss = Txx*(*Exx_diss) + Tzz*(*Ezz_diss) + Tyy*(-(*Exx_diss + *Ezz_diss)) + 2.0*Txz*(*Exz_diss);
-    *Wel   = Txx*(*Exx_el)   + Tzz*(*Ezz_el)   + Tyy*(-(*Exx_el   + *Ezz_el))   + 2.0*Txz*(*Exz_el);
-    *Wtot  = Txx*exx         + Tzz*ezz         + Tyy*eyy                        + 2.0*Txz*exz;
-
-    *Eii_el  = (double)elastic*fabs(Tii-Tii0)/2.0/eta_el;
-    *Eii_pwl =  Tii/2.0/eta_pwl;
-
-    // Partitioning of volumetric strain
-    *div_pl  = divp;
-    *div_el  = - (Pc - P0) / (K*dt);
-    *div_r   = divr;
-
-    // Viscosity for dissipative processes (no elasticity)
-    eta        = 1.0/(inv_eta_diss);//Tii/2.0/Eii_vis;
-    *VEcoeff   = eta_ve/eta_el;
-    if (elastic==0) *VEcoeff = 0.0;
-
-    // Override viscosity at step 0 (100% visco-plastic)
-    if ( model->step == 0 ) *etaVE = eta;
-    *txxn = Txx;
-    *tzzn = Tzz;
-    *txzn = Txz;
-
-//    printf("exx_tot = %2.2e exx_el = %2.2e exx_vis = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", exx*scaling->E, *Exx_el*scaling->E, (Exx_pwl+Exx_lin+Exx_cst+Exx_exp)*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
-//            printf("ezz_tot = %2.2e ezz_el = %2.2e ezz_vis = %2.2e ezz_pl = %2.2e, ezz_net = %2.2e\n", ezz*scaling->E, *Ezz_el*scaling->E, (Ezz_pwl+Ezz_lin+Ezz_cst+Ezz_exp)*scaling->E, Ezz_pl*scaling->E, (ezz - (*Ezz_el+Ezz_pwl+Ezz_lin+Ezz_cst+Ezz_exp+Ezz_pl))*scaling->E);
-//    //       printf("exx_el = %2.2e exx_vis = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", *Exx_el*scaling->E, (Exx_pwl+Exx_lin+Exx_cst+Exx_exp)*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
-//            printf("exz_tot = %2.2e exz_el = %2.2e exz_vis = %2.2e exz_pl = %2.2e, exz_net = %2.2e\n", exz*scaling->E, *Exz_el*scaling->E, (Exz_pwl+Exz_lin+Exz_cst+Exz_exp)*scaling->E, Exz_pl*scaling->E, (exz - (*Exz_el+Exz_pwl+Exz_lin+Exz_cst+Exz_exp+Exz_pl))*scaling->E);
-
-//    if (Txx<0.0 && *Exx_diss>0.0) {
-//        printf("Error 11\n");
-//    }
-//    if (Txx>0.0 && *Exx_diss<0.0) {
-//        printf("Error 11\n");
-//    }
-//
-//    if (Txz<0.0 && *Exz_diss>0.0) {
-//        printf("Error 1\n");
-//        printf("Txz = %2.2e, exz = %2.2e exz_diss = %2.2e\n",   Txz*scaling->S, exz*scaling->E, (Exz_pwl+Exz_lin+Exz_cst+Exz_exp)*scaling->E);
-//             printf("exx_tot = %2.2e exx_el = %2.2e exx_pwl = %2.2e exx_exp = %2.2e exx_cst = %2.2e exx_exp = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", exx*scaling->E, *Exx_el*scaling->E, Exx_pwl*scaling->E, Exx_lin*scaling->E, Exx_cst*scaling->E, Exx_exp*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
-//         printf("ezz_tot = %2.2e ezz_el = %2.2e exx_pwl = %2.2e exx_exp = %2.2e exx_cst = %2.2e exx_exp = %2.2e ezz_pl = %2.2e, ezz_net = %2.2e\n", ezz*scaling->E, *Ezz_el*scaling->E, Ezz_pwl*scaling->E, Ezz_lin*scaling->E, Ezz_cst*scaling->E, Ezz_exp*scaling->E, Ezz_pl*scaling->E, (ezz - (*Ezz_el+Ezz_pwl+Ezz_lin+Ezz_cst+Ezz_exp+Ezz_pl))*scaling->E);
-//           //       printf("exx_el = %2.2e exx_vis = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", *Exx_el*scaling->E, (Exx_pwl+Exx_lin+Exx_cst+Exx_exp)*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
-//         printf("exz_tot = %2.2e exz_el = %2.2e exz_pwl = %2.2e exz_exp = %2.2e exz_cst = %2.2e exz_exp = %2.2e exz_pl = %2.2e, exz_net = %2.2e\n", exz*scaling->E, *Exz_el*scaling->E, Exz_pwl*scaling->E, Exz_lin*scaling->E, Exz_cst*scaling->E, Exz_exp*scaling->E, Exz_pl*scaling->E, (exz - (*Exz_el+Exz_pwl+Exz_lin+Exz_cst+Exz_exp+Exz_pl))*scaling->E);
-//
-//        exit(1); }
-//    if (Txz>0.0 && *Exz_diss<0.0) {
-//         printf("Error 2\n");
-//             printf("exx_tot = %2.2e exx_el = %2.2e exx_pwl = %2.2e exx_exp = %2.2e exx_cst = %2.2e exx_exp = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", exx*scaling->E, *Exx_el*scaling->E, Exx_pwl*scaling->E, Exx_lin*scaling->E, Exx_cst*scaling->E, Exx_exp*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
-//         printf("ezz_tot = %2.2e ezz_el = %2.2e exx_pwl = %2.2e exx_exp = %2.2e exx_cst = %2.2e exx_exp = %2.2e ezz_pl = %2.2e, ezz_net = %2.2e\n", ezz*scaling->E, *Ezz_el*scaling->E, Ezz_pwl*scaling->E, Ezz_lin*scaling->E, Ezz_cst*scaling->E, Ezz_exp*scaling->E, Ezz_pl*scaling->E, (ezz - (*Ezz_el+Ezz_pwl+Ezz_lin+Ezz_cst+Ezz_exp+Ezz_pl))*scaling->E);
-//           //       printf("exx_el = %2.2e exx_vis = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", *Exx_el*scaling->E, (Exx_pwl+Exx_lin+Exx_cst+Exx_exp)*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
-//         printf("exz_tot = %2.2e exz_el = %2.2e exz_pwl = %2.2e exz_exp = %2.2e exz_cst = %2.2e exz_exp = %2.2e exz_pl = %2.2e, exz_net = %2.2e\n", exz*scaling->E, *Exz_el*scaling->E, Exz_pwl*scaling->E, Exz_lin*scaling->E, Exz_cst*scaling->E, Exz_exp*scaling->E, Exz_pl*scaling->E, (exz - (*Exz_el+Exz_pwl+Exz_lin+Exz_cst+Exz_exp+Exz_pl))*scaling->E);
-//    }//exit(1); }
-
-    // Viscosity limiter
-    if( eta > maxEta ) {
-        eta = maxEta;
-    }
-
-    if( eta < minEta ) {
-        eta = minEta;
-    }
-
-    // Viscosity limiter
-    if( *etaVE > maxEta ) {
-        *etaVE = maxEta;
-    }
-
-    if( *etaVE < minEta ) {
-        *etaVE = minEta;
-    }
-
-    return eta;
-}
-#endif
 
 
 double Viscosity( int phase, double G, double T, double P, double d, double phi, double X0, double exx, double ezz, double exz, double Txx0, double Tzz0, double Txz0, mat_prop* materials, params *model, scale *scaling, double *txxn, double *tzzn, double *txzn, double* etaVE, double* VEcoeff, double* Eii_el, double* Eii_pl, double* Eii_pwl, double* Eii_exp , double* Eii_lin, double* Eii_gbs, double* Eii_cst, double* Exx_el, double* Ezz_el, double* Exz_el, double* Exx_diss, double* Ezz_diss, double* Exz_diss, double *d1, double strain_acc, double dil, double fric, double C, double *detadexx, double *detadezz, double *detadexz, double *detadp, double P0,  double *X1, double *OverS, double *ddivpdexx, double *ddivpdezz, double *ddivpdexz, double *ddivpdp, double *Pcorr, double *drhodp, double *rho, double beta, double div, double *div_el, double *div_pl, double *div_r, double *Wtot, double *Wdiss, double* Wel ) {
@@ -2586,7 +1985,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     if ( diffusion   == 1 ) eta_lin  = B_lin * pow( Eii, 1.0/n_lin - 1.0 ) * pow(d, m_lin/n_lin); // !!! gs - dependence !!!
     if ( gbs         == 1 ) eta_gbs  = B_gbs * pow( Eii, 1.0/n_gbs - 1.0 );
     if ( peierls     == 1 ) eta_exp  = B_exp * pow( Eii, 1.0/(ST+n_exp) - 1.0 );
-
+    
     //------------------------------------------------------------------------//
 
     // Viscoelasticity
@@ -2663,7 +2062,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         // Update viscosity
         eta_ve -= r_eta_ve / dfdeta;
     }
-
+    
     if ( it==nitmax-1 && res > tol ) { printf("Visco-Elastic iterations failed!\n"); exit(0);}
 
     // Recalculate stress components
@@ -2815,7 +2214,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         printf("WARNING: Non linear convergence is expected to be poor\n");
     }
     }
-
+    
     //------------------------------------------------------------------------//
     double dsin_dildExx = 0.0, dsin_dildEzz = 0.0, dsin_dildExz = 0.0, dsin_dildP = 0.0;
 
@@ -2893,9 +2292,15 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
 //    }
 
     // ----------------- Reaction volume changes
+    
+//    if (P>4.6e9/scaling->S && P<4.7e9/scaling->S) {
+//        printf("%2.2e %2.2e\n", eta_ve*scaling->eta, eta_lin*scaling->eta);
+//    }
 
     double inv_eta_diss = 0.0;
+    if (peierls    == 1)  inv_eta_diss += (1.0/eta_exp);
     if (dislocation== 1)  inv_eta_diss += (1.0/eta_pwl);
+    if (diffusion  == 1)  inv_eta_diss += (1.0/eta_lin);
     if (constant   == 1)  inv_eta_diss += (1.0/eta_cst);
     if (is_pl == 0) {
         (*detadexx) = deta_ve_dExx;
@@ -2920,6 +2325,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         (*ddivpdp)    = -dQdP*dlamdP   + gdot*dsin_dildP    + ddivrdpc;
         inv_eta_diss += 1.0/eta_vep;
     }
+    
 
     //    if ( fabs(*detadexx) >1e10 ) {
     //        printf("Viscosity: deta_ve_dExx %2.2e deta_vep_dExx %2.2e\n", deta_ve_dExx, deta_vep_dExx);
@@ -2998,7 +2404,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     *txxn = Txx;
     *tzzn = Tzz;
     *txzn = Txz;
-
+    
 //    printf("exx_tot = %2.2e exx_el = %2.2e exx_vis = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", exx*scaling->E, *Exx_el*scaling->E, (Exx_pwl+Exx_lin+Exx_cst+Exx_exp)*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
 //            printf("ezz_tot = %2.2e ezz_el = %2.2e ezz_vis = %2.2e ezz_pl = %2.2e, ezz_net = %2.2e\n", ezz*scaling->E, *Ezz_el*scaling->E, (Ezz_pwl+Ezz_lin+Ezz_cst+Ezz_exp)*scaling->E, Ezz_pl*scaling->E, (ezz - (*Ezz_el+Ezz_pwl+Ezz_lin+Ezz_cst+Ezz_exp+Ezz_pl))*scaling->E);
 //    //       printf("exx_el = %2.2e exx_vis = %2.2e exx_pl = %2.2e, exx_net = %2.2e\n", *Exx_el*scaling->E, (Exx_pwl+Exx_lin+Exx_cst+Exx_exp)*scaling->E, Exx_pl*scaling->E, (exx - (*Exx_el+Exx_pwl+Exx_lin+Exx_cst+Exx_exp+Exx_pl))*scaling->E);
@@ -3045,6 +2451,11 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     if( *etaVE < minEta ) {
         *etaVE = minEta;
     }
+    
+//    if (P>4.6e9/scaling->S && P<4.7e9/scaling->S) {
+//        printf("%2.2e %2.2e\n", eta_ve*scaling->eta, eta_lin*scaling->eta);
+//        printf("%2.2e %2.2e\n", *etaVE*scaling->eta, eta_lin*scaling->eta);
+//    }
 
     return eta;
 }
@@ -3759,6 +3170,107 @@ void ShearModCompExpGrid( grid* mesh, mat_prop materials, params model, scale sc
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+//// MD4.5
+//void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params *model, scale *scaling ) {
+//
+//    int k, p, c0, Nx, Nz, Ncx, Ncz;
+//    double rho0, T0, alpha, P0, beta, drho;
+//    double rhonew, rhop;
+//    Nx = mesh->Nx; Ncx = Nx-1;
+//    Nz = mesh->Nz; Ncz = Nz-1;
+//    //    double *dTm, *dPm, *dTg, *dPg;
+//    //        double *drhong, *drhom,
+//
+//    //    drhong = DoodzCalloc(sizeof(DoodzFP), Ncx*Ncz           );
+//    //    drhom  = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
+//    //
+//    //    dTg  = DoodzCalloc(sizeof(DoodzFP), Ncx*Ncz           );
+//    //    dPg  = DoodzCalloc(sizeof(DoodzFP), Ncx*Ncz           );
+//    //    dTm  = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
+//    //    dPm  = DoodzCalloc(sizeof(DoodzFP), particles->Nb_part);
+//
+//    // Get X on the cell centers
+//    Interp_P2C ( *particles, particles->X, mesh, mesh->X_n, mesh->xg_coord, mesh->zg_coord, 1, 0 );
+////    Interp_P2G( *particles, particles->X, mesh, mesh->X, mesh->xg_coord[0], mesh->zg_coord[0], Ncx, Ncz, mesh->xc_coord[0][0], mesh->zc_coord[0][0], 1, 0, model, mesh->BCp.type[0] );
+//
+//
+//#pragma omp parallel for shared(mesh,materials) private(c0, p, rhonew, rho0, alpha, beta, T0, P0, rhop, drho) firstprivate(Ncx,Ncz, model)
+//    for ( c0=0; c0<Ncx*Ncz; c0++ ) {
+//        rhonew = 0.0;
+//        // Loop on phases
+//        for ( p=0; p<model->Nb_phases; p++) {
+//
+//            if ( fabs(mesh->phase_perc_n[p][c0])>1e-13) {
+//
+//                rho0   = materials->rho[p];
+//                drho   = materials->drho[p];
+//                T0     = materials->T0 [p];
+//                alpha  = materials->alp[p];
+//                P0     = materials->P0 [p];
+//                beta   = materials->bet[p];
+//                rhop   = (1 -  alpha * (mesh->T[c0] - T0) ) * (1 +  beta * (mesh->p_in[c0] - P0) );
+//                rhop   = rho0*rhop;
+////                rhop   = ((1-mesh->X_n[c0])*rho0 + mesh->X_n[c0]*(rho0+drho))*rhop; // Average density based on X
+//                if (mesh->BCp.type[c0]!=30) rhonew += mesh->phase_perc_n[p][c0] * rhop;
+//            }
+//        }
+//        //        drhong[c0]           = rhonew - mesh->rho_n[0][c0];
+//        mesh->rho_n[c0]   = rhonew;
+//    }
+//
+//    // Interpolate center values to vertices
+//    int l, c1;
+//#pragma omp parallel for shared( mesh ) private( c1, k, l, c0) firstprivate( Nx, Nz, Ncx, Ncz )
+//    for (c1=0; c1<Nx*Nz; c1++) {
+//
+//        k = mesh->kn[c1];
+//        l = mesh->ln[c1];
+//        c1 = k + l*Nx;
+//        c0 = k + l*(Ncx);
+//        mesh->rho_s[c1]   = 0.0;
+//
+//        if ( mesh->BCg.type[c1] != 30 ) {
+//
+//            // Inner grid
+//            if ( k>0 && l>0 && k<Ncx && l<Ncz ) {
+//                mesh->rho_s[c1] = 0.25*( mesh->rho_n[c0] + mesh->rho_n[c0-1] + mesh->rho_n[c0-Ncx] + mesh->rho_n[c0-Ncx-1]  );
+//            }
+//            // Sides
+//            if (k==0 && (l>0 && l<Ncz)) {
+//                mesh->rho_s[c1] = 0.5*( mesh->rho_n[c0] + mesh->rho_n[c0-Ncx] );
+//            }
+//            if (k==Ncx && (l>0 && l<Ncz)) {
+//                mesh->rho_s[c1] = 0.5*( mesh->rho_n[c0-1] + mesh->rho_n[c0-Ncx-1] );
+//            }
+//            if (l==0 && (k>0 && k<Ncx)) {
+//                mesh->rho_s[c1] = 0.5*( mesh->rho_n[c0] + mesh->rho_n[c0-1] );
+//            }
+//            if (l==Ncz && (k>0 && k<Ncx)) {
+//                mesh->rho_s[c1] = 0.5*( mesh->rho_n[c0-Ncx] + mesh->rho_n[c0-Ncx-1] );
+//            }
+//            // Corners
+//            if (l==0 && k==0) {
+//                mesh->rho_s[c1] = mesh->rho_n[c0];
+//            }
+//            if (l==Ncz && k==0) {
+//                mesh->rho_s[c1] = mesh->rho_n[c0-Ncx];
+//            }
+//            if (l==0 && k==Ncx) {
+//                mesh->rho_s[c1] = mesh->rho_n[c0-1];
+//            }
+//            if (l==Ncz && k==Ncx) {
+//                mesh->rho_s[c1] = mesh->rho_n[c0-Ncx-1];
+//            }
+//        }
+//    }
+//
+//    printf("Updated density fields:\n");
+////    MinMaxArrayTag(        mesh->X,            1, Ncx*Ncz,     "X", mesh->BCp.type );
+//    MinMaxArrayTag( mesh->rho_n, scaling->rho, Ncx*Ncz, "rho_n", mesh->BCp.type );
+//    MinMaxArrayTag( mesh->rho_s, scaling->rho, Nx*Nz,   "rho_s", mesh->BCg.type    );
+//}
+
+// MD6
 void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params *model, scale *scaling ) {
 
     int k, p, c0, Nx, Nz, Ncx, Ncz;
@@ -3782,7 +3294,7 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
         for ( p=0; p<model->Nb_phases; p++) {
 
             if ( fabs(mesh->phase_perc_n[p][c0])>epsi) {
-                
+
                 // T and P dependent density based on EOS
                 if ( materials->density_model[p] == 0 ) {
                     rho0   = materials->rho [p];
@@ -3842,7 +3354,7 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
                     rhop +=  (    percT)* (    percP) * model->PDMrho[phase_diag][iNE];
 
                 }
-                
+
                 // P-T dependent density
                 if ( materials->density_model[p] == 3 ) {
 
@@ -3851,7 +3363,7 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
                     alpha  = materials->alp[p];
                     rhop   = rho0*exp(beta * mesh->p_in[c0] - alpha * mesh->T[c0]);
                 }
-                
+
                 // Average density base on phase density and phase volume fraction
                 if ( mesh->BCp.type[c0] != 30 ) rhonew += mesh->phase_perc_n[p][c0] * rhop;
             }

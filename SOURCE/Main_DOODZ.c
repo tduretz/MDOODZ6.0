@@ -191,7 +191,7 @@ int main( int nargs, char *args[] ) {
             
             // Set phases on particles
             SetParticles( &particles, scaling, model, &materials );
-            if ( model.free_surf == 1 ) CleanUpSurfaceParticles( &particles, &mesh, topo, scaling ); /////////!!!!!!!!!
+//            if ( model.free_surf == 1 ) CleanUpSurfaceParticles( &particles, &mesh, topo, scaling ); /////////!!!!!!!!!
             
 #endif
             if ( model.free_surf == 1 ) CleanUpSurfaceParticles( &particles, &mesh, topo, scaling ); /////////!!!!!!!!!
@@ -255,42 +255,50 @@ int main( int nargs, char *args[] ) {
             
             //--------------------------------------------------------------------------------------------------------
             
+//            // TO BE DELETED !!!!!!!!!!!!!!!!!!!!!!!!!!!
+//            // Lithostatic pressure for initial visco-plastic viscosity field
+//            ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 0 ); // set last argument to 0 - assumes reference density - wrong in md4.5
+//            MinMaxArrayTag( mesh.p_lith,       scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P initial ", mesh.BCp.type );
+//            MinMaxArrayTag( mesh.rho_n,       scaling.rho,   (mesh.Nx-1)*(mesh.Nz-1), "rho initial ", mesh.BCp.type );
+//
+//            // TO BE DELETED !!!!!!!!!!!!!!!!!!!!!!!!!!!
+            
             printf("*************************************\n");
             printf("******** Initialize pressure ********\n");
             printf("*************************************\n");
-            
+
             // Strain rate field
             if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
             if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling  );
             if (model.cpc== 1) CountPartCell    ( &particles, &mesh, model, topo, topo_ini, 0, scaling  );
             if (model.cpc== 2) CountPartCell2    ( &particles, &mesh, model, topo, topo_ini, 0, scaling  );
-            
+
             StrainRateComponents( &mesh, scaling, &model );
-            
+
             for (int iter=0; iter<10; iter++) {
-                
+
                 if ( model.eqn_state > 0 ) {
                     UpdateDensity( &mesh, &particles, &materials, &model, &scaling );
                 }
                 Interp_Grid2P_centroids( particles, particles.rho, &mesh, mesh.rho_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
                 ArrayEqualArray( mesh.rho0_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
-                
+
                 // Free surface - subgrid density correction
                 if ( model.free_surf == 1 ) {
                     SurfaceDensityCorrection( &mesh, model, topo, scaling  );
                 }
                 ArrayEqualArray( mesh.rho0_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
-                
+
                 // Lithostatic pressure for initial visco-plastic viscosity field
                 ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 1 );
                 Interp_Grid2P_centroids2( particles, particles.P,    &mesh, mesh.p_lith, mesh.xvz_coord,  mesh.zvx_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
                 Interp_P2C ( particles, particles.P, &mesh, mesh.p_in, mesh.xg_coord, mesh.zg_coord,  1, 0 );
                 ArrayEqualArray( mesh.p_in, mesh.p_lith,  (mesh.Nx-1)*(mesh.Nz-1) );
                 ArrayEqualArray( mesh.p0_n, mesh.p_lith,  (mesh.Nx-1)*(mesh.Nz-1) );
-                
+
                 MinMaxArrayTag( mesh.p_in,       scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P initial ", mesh.BCp.type );
             }
-            
+
             InterpCentroidsToVerticesDouble( mesh.p0_n, mesh.p0_s, &mesh, &model );
             //            InterpCentroidsToVerticesDouble( mesh.szzd0, mesh.szzd0_s, &mesh, &model );
             //            InterpVerticesToCentroidsDouble( mesh.sxz0_n,  mesh.sxz0,  &mesh, &model );
@@ -301,6 +309,7 @@ int main( int nargs, char *args[] ) {
             printf("*************************************\n");
             
             // Grain size
+            InitialiseGrainSizeParticles( &particles, &materials );
             Interp_P2C ( particles, particles.d,  &mesh, mesh.d_n, mesh.xg_coord,  mesh.zg_coord, 1, 0 );
             ArrayEqualArray( mesh.d0_n, mesh.d_n,  (mesh.Nx-1)*(mesh.Nz-1) );
             
@@ -340,7 +349,6 @@ int main( int nargs, char *args[] ) {
             // Compute cohesion and friction angle on the grid
             CohesionFrictionDilationGrid( &mesh, &particles, materials, model, scaling );
             ShearModCompExpGrid( &mesh, materials, model, scaling );
-            
             Interp_Grid2P_centroids2( particles, particles.P,    &mesh, mesh.p_in, mesh.xvz_coord,  mesh.zvx_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
             Interp_Grid2P_centroids2( particles, particles.T,    &mesh, mesh.T,    mesh.xvz_coord,  mesh.zvx_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type, &model );
             NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
@@ -489,6 +497,42 @@ int main( int nargs, char *args[] ) {
                 ArrayEqualArray( mesh.T, mesh.T0_n, (mesh.Nx-1)*(mesh.Nz-1) );
                 //                }
                 
+                
+//                printf("LOADING DATA FOR STOKES\n");
+//
+//                Initialise1DArrayDouble(mesh.T, (mesh.Nx-1)*(mesh.Nz-1), 0.0);
+//                Initialise1DArrayDouble(mesh.p_in, (mesh.Nx-1)*(mesh.Nz-1), 0.0);
+//
+//                FILE *file;
+//                file = fopen("data_T_n", "rb");
+//                fread( mesh.T, sizeof(DoodzFP), (mesh.Nx-1)*(mesh.Nz-1), file );
+//                fclose(file);
+//
+//                file = fopen("data_p_n", "rb");
+//                fread( mesh.p_in, sizeof(DoodzFP), (mesh.Nx-1)*(mesh.Nz-1), file );
+//                fclose(file);
+//
+//                file = fopen("data_BCptype", "rb");
+//                fread( mesh.BCp.type, sizeof(char), (mesh.Nx-1)*(mesh.Nz-1), file );
+//                fclose(file);
+//
+//                file = fopen("data_BCgtype", "rb");
+//                fread( mesh.BCg.type, sizeof(char), (mesh.Nx-0)*(mesh.Nz-0), file );
+//                fclose(file);
+                
+//                FILE *file;
+//                char* fname;
+//                int k;
+//                for ( k=0; k<model.Nb_phases; k++) {
+//
+//                        asprintf(&fname,"data_phaseperc_%02d", k);
+//                        file = fopen(fname, "rb");
+//                        fread( mesh.phase_perc_n[k], sizeof(double), (mesh.Nx-1)*(mesh.Nz-1), file );
+//                        fclose(file);
+//                        free(fname);
+//
+//               }
+
                 // Get physical properties that are constant throughout each timestep
                 if ( model.eqn_state  > 0 ) {
                     UpdateDensity( &mesh, &particles, &materials, &model, &scaling );
@@ -498,11 +542,38 @@ int main( int nargs, char *args[] ) {
                     Interp_P2C ( particles, materials.rho,  &mesh, mesh.rho_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
                 }
                 
+                MinMaxArrayTag( mesh.rho_s,      scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s     ", mesh.BCg.type );
+                MinMaxArrayTag( mesh.rho_n,      scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n     ", mesh.BCp.type );
+                MinMaxArrayTag( mesh.rho0_n,     scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho0_n    ", mesh.BCp.type );
                 
+
+                
+//                FILE *file;
+//                Initialise1DArrayDouble(mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1), 0.0);
+//                Initialise1DArrayDouble(mesh.rho_s, (mesh.Nx-0)*(mesh.Nz-0), 0.0);
+//
+//                file = fopen("data_rho_n", "rb");
+//                fread( mesh.rho_n, sizeof(DoodzFP), (mesh.Nx-1)*(mesh.Nz-1), file );
+//                fclose(file);
+//
+//                file = fopen("data_rho_s", "rb");
+//                fread( mesh.rho_s, sizeof(DoodzFP), (mesh.Nx-0)*(mesh.Nz-0), file );
+//                fclose(file);
+                               
+                
+
                 // Free surface - subgrid density correction
                 if ( model.free_surf == 1 ) {
                     SurfaceDensityCorrection( &mesh, model, topo, scaling  );
                 }
+                
+
+                
+               
+                
+                
+               
+                
                 
                 // Lithostatic pressure
                 ArrayEqualArray(  mesh.p_lith0,   mesh.p_lith, Ncx*Ncz );
@@ -684,6 +755,7 @@ int main( int nargs, char *args[] ) {
             if (model.compressible == 1) DetectCompressibleCells ( &mesh, &model );
         }
         
+        
         // Min/Max interpolated fields
         if ( model.noisy == 1 ) {
             MinMaxArray(particles.rho, scaling.rho, particles.Nb_part, "rho part  ");
@@ -820,9 +892,27 @@ int main( int nargs, char *args[] ) {
 //                    SurfaceDensityCorrection( &mesh, model, topo, scaling  );
 //                }
                 
+
+//                printf("LOADING DATA FOR STOKES\n");
+//
+//                Initialise1DArrayDouble(mesh.eta_n, (mesh.Nx-1)*(mesh.Nz-1), 0.0);
+//                Initialise1DArrayDouble(mesh.eta_s, (mesh.Nx-0)*(mesh.Nz-0), 0.0);
+
+//
                 
+//                file = fopen("data_eta_n", "rb");
+//                fread( mesh.eta_n, sizeof(DoodzFP), (mesh.Nx-1)*(mesh.Nz-1), file );
+//                fclose(file);
+//
+//                file = fopen("data_eta_s", "rb");
+//                fread( mesh.eta_s, sizeof(DoodzFP), (mesh.Nx-0)*(mesh.Nz-0), file );
+//                fclose(file);
+//
+
+
                 
                 UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
+
                 RheologicalOperators( &mesh, &model, &scaling, 0 );                               // ??????????? déjà fait dans UpdateNonLinearity
                 NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );    // ??????????? déjà fait dans UpdateNonLinearity
                 
@@ -840,6 +930,8 @@ int main( int nargs, char *args[] ) {
                     MinMaxArrayTag( mesh.rho_s,      scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s     ", mesh.BCg.type );
                     MinMaxArrayTag( mesh.rho_n,      scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n     ", mesh.BCp.type );
                     MinMaxArrayTag( mesh.rho0_n,     scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho0_n    ", mesh.BCp.type );
+                    MinMaxArrayTag( mesh.d_n,        scaling.L,   (mesh.Nx-1)*(mesh.Nz-1), "d         ", mesh.BCp.type );
+
                     
                     
 //                    for (int iphase=0; iphase<model.Nb_phases; iphase++) {

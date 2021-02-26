@@ -116,7 +116,7 @@ struct _params {
     int    ncont;
     double Courant, mineta, maxeta;
     // Particles
-    int initial_noise;
+    int initial_noise, initial_part;
     // Linear solver
     int decoupled_solve, lsolver, diag_scaling, pc_type;
     double penalty, abs_tol_div, rel_tol_div, auto_penalty, compressible, rel_tol_KSP;
@@ -594,3 +594,4 @@ void UpdateGridFields( grid*, markers*, params*, mat_prop*, scale* );
 void RogerGunther( markers *, params, grid, int, scale );
 void CheckSym( DoodzFP*, double, int, int, char*, int, int );
 void ChemicalDirectSolve( grid*, params, markers*, mat_prop*, double, scale );
+void InitialiseGrainSizeParticles( markers*initial_noise, mat_prop* );

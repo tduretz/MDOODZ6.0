@@ -411,7 +411,7 @@ void ComputeLithostaticPressure( grid *mesh, params *model, double RHO_REF, scal
     // Compute lithostatic pressure by cumulative sum of rho*g across model thickness
     
     int nx, nz, ncx, ncz;
-    int k, l, c;
+    int k, l, c, c1;
     double rho_eff;
     double eps = 1e-13; // perturbation to avoid zero pressure that results in Nan d(eta)dP in numerical differentiation
 
@@ -422,11 +422,11 @@ void ComputeLithostaticPressure( grid *mesh, params *model, double RHO_REF, scal
     ncz = nz-1;
         
     Initialise1DArrayDouble( mesh->p_lith,  (mesh->Nx-1)*(mesh->Nz-1), 0.0 );
-
+    
     // Cell center arrays
     for( l=ncz-2; l>=0; l--) {
         for( k=0; k<ncx; k++) {
-            
+
             // Initialise vertices variables
             c  = k + l*ncx;
 
@@ -439,11 +439,11 @@ void ComputeLithostaticPressure( grid *mesh, params *model, double RHO_REF, scal
             // Initialise pressure variables : Compute lithostatic pressure
             if ( mesh->BCp.type[c] != 30 && mesh->BCp.type[c] != 31 ) { // First row (surface)
                 mesh->p_lith[c]  = mesh->p_lith[c+ncx] -  model->gz * mesh->dz * rho_eff;
-  
+
             }
         }
     }
-    
+
     // Add confining pressure
     for( l=0; l<ncz; l++) {
         for( k=0; k<ncx; k++) {

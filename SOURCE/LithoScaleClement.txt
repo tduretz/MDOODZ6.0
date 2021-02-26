@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00005
+istep = 00050
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -18,7 +18,7 @@ T   = 100
 /**** SPACE-TIME ****/
 Nx      = 251
 Nz      = 101
-Nt      = 100
+Nt      = 50
 xmin    = -250.000000e3
 zmin    = -150.000000e3
 xmax    =  250.000000e3
@@ -37,7 +37,7 @@ iselastic       = 1
 isthermal       = 1
 line_search     = 1
 free_surf       = 1
-free_surf_stab  = 10
+free_surf_stab  = 2
 eqn_state       = 1
 thermal_eq      = 1
 shear_heat      = 1

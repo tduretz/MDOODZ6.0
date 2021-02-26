@@ -48,12 +48,12 @@ void AdvectFreeSurf( markers *topo_chain, params model, scale scaling ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 void SetTopoChainHorizontalCoords( surface *topo, markers *topo_chain, params model, grid Mmesh, scale scaling ) {
-    
+
     int Nb_part_per_cell = 23;
     int k, counter;
     double dxm = model.dx/Nb_part_per_cell;
     topo_chain->Nb_part = (model.Nx-1)*Nb_part_per_cell;
-    
+
 #pragma omp parallel for shared ( topo_chain ) firstprivate ( model, dxm, scaling ) private ( k )
     for ( k=0; k<topo_chain->Nb_part; k++ ) {
 
@@ -66,6 +66,25 @@ void SetTopoChainHorizontalCoords( surface *topo, markers *topo_chain, params mo
 //    printf("%2.6e %2.6e\n", topo_chain->x[0],topo_chain->x[topo_chain->Nb_part-1] );
 //    exit(1);
 }
+
+//// MD4.5
+//void SetTopoChainHorizontalCoords( surface *topo, markers *topo_chain, params model, grid mesh, scale scaling ) {
+//
+//    int k, Nx=model.Nx, count=0, ip, fact=4;
+//    double dxm=model.dx/(fact+1);
+//
+//    // For each cell
+//    for ( k=0; k<Nx-1; k++ ) {
+//        // Initialise marker x coordinate and topography
+//        for ( ip=0; ip<fact; ip++ ) {
+//            topo_chain->x[count]     = dxm + ip*dxm + mesh.xg_coord[k];
+//            topo_chain->z[count]     = 0.0/scaling.L;
+//            topo_chain->phase[count] = 0;
+//            count++;
+//        }
+//    }
+//    topo_chain->Nb_part = count;
+//}
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
@@ -375,14 +394,67 @@ void RemeshMarkerChain( markers *topo_chain, surface *topo, params model, scale 
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+//// That's from MD4.5
+//void ProjectTopography( surface *topo, markers *topo_chain, params model, grid mesh, scale scaling, double* X_vect, int itp_type ) {
+//
+//    int k, in, Nx=mesh.Nx;
+//    double dx=mesh.dx, distance, dxm, mark_val, *Xc_virtual, *Wm, *BmWm;
+//
+//    // Allocate memory
+//    Xc_virtual = DoodzMalloc ((Nx+1)*sizeof(double));
+//    Wm         = DoodzCalloc ( Nx, sizeof(double));
+//    BmWm       = DoodzCalloc ( Nx, sizeof(double));
+//
+//    // Create x cell center coordinate with additional boundary nodes
+//    Xc_virtual[0]  = X_vect[0]-0.5*dx;
+//    for (k=0;k<Nx-1;k++) {
+//        Xc_virtual[k+1]= 0.5*(X_vect[k+1]+X_vect[k]);
+//    }
+//    Xc_virtual[Nx] = X_vect[Nx-1]+0.5*dx;
+//
+//    // Find to which node each marker contribute
+//    for (k=0;k<topo_chain->Nb_part;k++) {
+//        distance        = (topo_chain->x[k]-X_vect[0]);
+//        in              = ceil((distance/dx)+0.5) - 1;
+//        if (in<0)    in = 0;
+//        if (in>Nx-1) in = Nx-1;
+//        dxm = fabs(0.5*(Xc_virtual[in]+Xc_virtual[in+1])-topo_chain->x[k]);
+//        mark_val = topo_chain->z[k];
+//        if (itp_type==1) mark_val =  1.0/mark_val;
+//        if (itp_type==2) mark_val =  log(mark_val);
+//        Wm[in]   += (1-(dxm/dx));
+//        BmWm[in] += mark_val*(1-(dxm/dx));
+//    }
+//
+//    // Recompute topography based on the sum of interpolation weights
+//    for (k=0;k<Nx;k++) {
+//        topo->height[k] = BmWm[k]/Wm[k];
+//        if (itp_type==1) topo->height[k] =  1.0 / topo->height[k];
+//        if (itp_type==2) topo->height[k] =  exp(topo->height[k]);
+//        topo->height0[k] = topo->height[k];
+//    }
+//
+//    // Correct for sides is the box in case of inflow conditions
+//    for (k=0;k<Nx;k++) {
+//        if (model.ispureshear_ale <= 0 && k==Nx-1 ) topo->height[k]=topo->height[k-1];
+//        if (model.ispureshear_ale <= 0 && k==0 ) topo->height[k]=topo->height[k+1];
+//    }
+//
+//    // Free memory
+//    DoodzFree(Xc_virtual);
+//    DoodzFree(Wm);
+//    DoodzFree(BmWm);
+//}
+
+// MD6
 void ProjectTopography( surface *topo, markers *topo_chain, params model, grid mesh, scale scaling, double* X_vect, int itp_type ) {
-    
+
     int k, in, Nx=mesh.Nx;
     double dx=mesh.dx, distance, dxm, mark_val, *Xc_virtual, *Wm, *BmWm;
-    
+
     printf("In project Topography:\n");
-        
-    
+
+
    Wm              = DoodzCalloc ( Nx-1, sizeof(double));
    BmWm            = DoodzCalloc ( Nx-1, sizeof(double));
    double *heightc = DoodzCalloc ( Nx-1, sizeof(double));
@@ -411,9 +483,9 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
     }
    topo->height[0]=topo->height[1];
    topo->height[Nx-1]=topo->height[Nx-2];
-    
+
     // Allocate memory
-    
+
 //     Xc_virtual = DoodzMalloc ((Nx+1)*sizeof(double));
 //     Wm         = DoodzCalloc ( Nx, sizeof(double));
 //     BmWm       = DoodzCalloc ( Nx, sizeof(double));
@@ -462,7 +534,7 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
 //     for (k=0;k<Nx;k++) {
 //         // topo->height[k] = topo->height0[k] + BmWm[k]/Wm[k];
 //         topo->height[k] =  BmWm[k]/Wm[k];
-        
+
 // //        printf("k=%d, W: %d E:%d\n", k, NumMarkCell[2*k-1], NumMarkCell[2*k]);
 
 //         if (isnan(topo->height[k])) {
@@ -474,13 +546,13 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
 // //        if (itp_type==2) topo->height[k] =  exp(topo->height[k]);
 // //        topo->height0[k] = topo->height[k];
 //     }
-    
+
     // Correct for sides is the box in case of inflow conditions
     for (k=0;k<Nx;k++) {
         if ( model.polar==0 && model.ispureshear_ale <= 0 && k==Nx-1 ) topo->height[k]=topo->height[k-1];
         if ( model.polar==0 && model.ispureshear_ale <= 0 && k==0    ) topo->height[k]=topo->height[k+1];
     }
-    
+
     // Correct for sides when working in polar mode
     double Rad=6370e3/scaling.L, zW, zE;
     if ( model.polar==1 ) {
@@ -489,12 +561,12 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
         topo->height[   0] = zW;
         topo->height[Nx-1] = zE;
     }
-    
+
 //    for (k=0;k<10;k++) printf(" %2.6e\n" , (topo->height[k] - topo->height[Nx-k-1])*scaling.L);
 //    for (k=0;k<10;k++) printf(" %2.6e\n" , (Wm[k] - Wm[Nx-k-1]));
 
-    
-    
+
+
 //    double sumh=0.0;
 //    if ( model.topografix == 1 ) {
 //        for (k=0;k<Nx;k++) {
@@ -506,7 +578,7 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
 //            topo->height[k] -= sumh;
 //        }
 //    }
-    
+
 //    double sym_check = fabs(topo->height[0]-topo->height[Nx-1-0]);
 //    for (k=0;k<Nx;k++) {
 //        if (fabs(topo->height[k]-topo->height[Nx-1-k]) >sym_check) sym_check = fabs(topo->height[k]-topo->height[Nx-1-k]);
@@ -515,7 +587,7 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
 //    }
 //    printf("%2.8e (sym check in ProjectTopography )\n", sym_check*scaling.L);
 //    if (fabs(sym_check*scaling.L)>1e-3) exit(19);
-    
+
     // Free memory
 //    DoodzFree(Xc_virtual);
     DoodzFree(Wm);
@@ -1028,30 +1100,31 @@ void CellFlagging( grid *mesh, params model, surface topo, scale scaling ) {
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+// MD6
 void CleanUpSurfaceParticles( markers* particles, grid *mesh, surface topo, scale scaling ) {
-    
+
     int k, ic, ncx=mesh->Nx-1;
     double h;
     double dx=mesh->dx, dz=mesh->dz;
     double xmin = mesh->xg_coord[0] + dx/2;
     double dst;
-    
+
     int count = 0;
-    
+
 #pragma omp parallel for shared ( particles, topo ) private ( k, h, ic, dst ) firstprivate( ncx, xmin, dx )
     for ( k=0; k<particles->Nb_part; k++ ) {
-        
+
         if ( particles->phase[k] != -1 ) {
-            
+
             // Get the column:
             dst = fabs(particles->x[k] - xmin);
             ic  = ceil((dst/dx)+0.5) - 1;
-            
+
             if (ic<0) ic = 0;
             if (ic>ncx-1) ic = ncx-1;
-            
+
             h = topo.b[ic] + topo.a[ic]*particles->x[k];
-            
+
             if ( particles->z[k]>h ) {
                 particles->phase[k] = -1;
 //                count++;
@@ -1060,6 +1133,67 @@ void CleanUpSurfaceParticles( markers* particles, grid *mesh, surface topo, scal
     }
 //printf("%d particle above surface, Nb_part: %d\n", count, particles->Nb_part);
 }
+
+//// MD4.5
+//void CleanUpSurfaceParticles( markers* particles, grid *mesh, surface topo, scale scaling ) {
+//
+//    int    k, ic, jc, ncx=mesh->Nx-1, ncz=mesh->Nz-1;
+//    double h;
+//    double dx=mesh->dx, dz=mesh->dz;
+//    double xmin = mesh->xg_coord[0] + dx/2;
+//    double zmin = mesh->zg_coord[0] + dz/2;
+//    double distance;
+//    int    iSW, iSE, iNW, iNE;
+//
+//#pragma omp parallel for shared ( particles, topo, mesh ) private ( k, h, ic, jc, distance, iSW, iSE, iNW, iNE ) firstprivate( xmin, zmin, dx, dz, ncx, ncz )
+//    for ( k=0; k<particles->Nb_part; k++ ) {
+//
+//        if ( particles->phase[k] != -1 ) {
+//
+//            // Get the column:
+//            distance         = (particles->x[k] - xmin);
+//            ic               = ceil((distance/dx)+0.5) - 1;
+//            if (ic<0)     ic = 0;
+//            if (ic>ncx-1) ic = ncx-1;
+//
+//            // Get the line:
+//            distance         = (particles->z[k] - zmin);
+//            jc               = ceil((distance/dz)+0.5) - 1;
+//            if (jc<0)     jc = 0;
+//            if (jc>ncz-1) jc = ncz-1;
+//
+//            // Compute topography
+//            h = topo.b[ic] + topo.a[ic]*particles->x[k];
+//
+//            // Delete particules above topography
+//            if ( particles->z[k]>h ) {
+//                particles->phase[k] = -1;
+//            }
+//
+//            // Indices of surrounding pressure nodes
+//            iSW = ic+jc*ncx;
+//            iSE = ic+jc*ncx+1;
+//            iNW = ic+(jc+1)*ncx;
+//            iNE = ic+(jc+1)*ncx+1;
+//
+//            // Delete particule trapped along the topography
+//            if ( (mesh->BCp.type[iSW]==30 || mesh->BCp.type[iSW]==31) && (mesh->BCp.type[iSE]==30 || mesh->BCp.type[iSE]==31) && (mesh->BCp.type[iNW]==30 || mesh->BCp.type[iNW]==31) && (mesh->BCp.type[iNE]==30 || mesh->BCp.type[iNE]==31) ) {
+//                particles->phase[k] = -1;
+//            }
+//
+//        }
+//    }
+//
+////        for ( k=0; k<ncx; k++ ) {
+////
+////        printf("a = %lf b =%lf\n", topo.a[k], topo.b[k]);
+////        }
+//
+//
+////    printf("%d particle above surface, Nb_part: %d\n", count, particles->Nb_part);
+//
+//
+//}
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
@@ -1075,8 +1209,59 @@ void SurfaceDensityCorrection( grid *mesh, params model, surface topo, scale sca
     int i, j, c1;
     double h0, h, dz = fabs(mesh->zg_coord[1]-mesh->zg_coord[0]);
     
-//    printf("\n%2.6e\n", scaling.rho);
     
+//    // this taken from 4.5 directly
+//    // Density on cell centers
+//    for( i=0; i<ncx; i++ ) {
+//        for( j=0; j<ncz-1; j++ ) {
+//
+//            c1 = i + j*(ncx);
+//
+//            if ( mesh->BCp.type[c1] == 30 || mesh->BCp.type[c1] == 31 ) {
+//                mesh->rho_n[c1]  = 1.0/scaling.rho;
+//            }
+//            else {
+//                mesh->rho_n[c1] = mesh->rho_n[c1];
+//
+//                if (mesh->BCp.type[c1] == -1 && mesh->BCp.type[c1+ncx] == 31 ) {
+//                    h  = topo.b[i] + topo.a[i]*mesh->xc_coord[i];//0.5topo.height[i] + 0.5*topo.height[i+1];
+//                    mesh->rho_n[c1] *= (h-mesh->zc_coord[j])/dz;
+//                    //                    mesh->eta_n[c1] *= (h-mesh->zc_coord[j])/dz;
+//                    //                    mesh->eta_phys_n[c1] *= (h-mesh->zc_coord[j])/dz;
+//                }
+//
+//                //                if (mesh->BCp.type[c1] == -1 && mesh->BCp.type[c1+ncx] == 31 ) {
+//                //                    h  = topo.b[i] + topo.a[i]*mesh->xc_coord[i];
+//                //                    h0 = (h - mesh->zc_coord[j]);
+//                //                    if (h0<0.0) exit(1);
+//                ////                    mesh->rho_app_n[c1] = h0/dz*mesh->rho_s[c1];
+//                //                }
+//            }
+//        }
+//    }
+//
+//    // Density on cell vertices
+//    for( i=0; i<nx; i++ ) {
+//        for( j=0; j<nz-1; j++ ) {
+//
+//            c1 = i + j*(nx);
+//
+//            if ( mesh->BCg.type[c1] == 30 ) {
+//                mesh->rho_s[c1]  = 1.0/scaling.rho;
+//            }
+//            else {
+//                mesh->rho_s[c1] = mesh->rho_s[c1];
+//
+//                if (mesh->BCg.type[c1] == -1 && mesh->BCg.type[c1+nx] == 30) {
+//
+//                    h = topo.height[i];
+//                    mesh->rho_s[c1] *= (h-mesh->zg_coord[j])/dz;
+//                }
+//            }
+//        }
+//    }
+    
+    // that's MD6 commented for testing
     // Density on cell centers
     for( j=0; j<ncz; j++ ) {
         for( i=0; i<ncx; i++ ) {

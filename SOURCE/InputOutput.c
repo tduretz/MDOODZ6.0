@@ -1065,14 +1065,16 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->safe_mode       = ReadInt2( fin, "safe_mode",     0 );
     model->safe_dt_div     = ReadDou2( fin, "safe_dt_div",  5.0 );
     model->nstagmax        = ReadInt2( fin, "nstagmax",      3 );
-    model->noisy           = ReadInt2( fin, "noisy",         1 );  // prints a lot of info to standard output
+    model->noisy           = ReadInt2( fin, "noisy",         1 );  // Prints a lot of info to standard output
 
     // Switches
-    model->initial_noise   = ReadInt2( fin, "initial_noise",   0 );
-    model->ismechanical    = ReadInt2( fin, "ismechanical",    1 );
-    model->dt_constant     = ReadInt2( fin, "dt_constant",     0 );
-    model->RK              = ReadInt2( fin, "RK",              4 );
-    model->isperiodic_x    = ReadInt2( fin, "isperiodic_x",    0 );
+    model->initial_part    = ReadInt2( fin, "initial_part",    0 ); // Initial particule distribution, 0: MD4.5 style, 1: MD6.0 style
+    model->initial_noise   = ReadInt2( fin, "initial_noise",   0 ); // Add noise on initial marker locations
+    model->ismechanical    = ReadInt2( fin, "ismechanical",    1 ); // Activates mechanical solver
+    model->advection       = ReadInt2( fin, "advection",       1 ); // Activates advection
+    model->dt_constant     = ReadInt2( fin, "dt_constant",     0 ); // Fixed time step
+    model->RK              = ReadInt2( fin, "RK",              4 ); // Order of Runge-Kutta advection solver
+    model->isperiodic_x    = ReadInt2( fin, "isperiodic_x",    0 ); // Activates periodicity in x
     model->ispureshear_ale = ReadInt2( fin, "ispureshear_ALE", 0 );
     model->isinertial      = ReadInt2( fin, "isinertial",      0 );
     model->iselastic       = ReadInt2( fin, "iselastic",       0 );
@@ -1090,7 +1092,6 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->surf_processes  = ReadInt2( fin, "surf_processes",  0 );
     model->surf_remesh     = ReadInt2( fin, "surf_remesh",     1 );
     model->cpc             = ReadInt2( fin, "cpc",             1 );
-    model->advection       = ReadInt2( fin, "advection",       1 );
     model->loc_iter        = ReadInt2( fin, "loc_iter",        1 );
     model->therm_pert      = ReadInt2( fin, "therm_pert",      0 );
     model->fstrain         = ReadInt2( fin, "fstrain",         0 );
@@ -1209,7 +1210,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         materials->Qpwl[k]  = ReadMatProps( fin, "Qpwl",k,    0.0  );//   / scaling->J;
         materials->pref_pwl[k] = ReadMatProps( fin, "pref_pwl",k,    1.0 );    // weakening prefactor for power law
         materials->gs[k]    = ReadMatProps( fin, "gs",    k,    0.0   );
-        materials->gs_ref[k]= ReadMatProps( fin, "gsref" ,k,  2.0e-3  ) /scaling->L;
+        materials->gs_ref[k]= ReadMatProps( fin, "gs_ref" ,k,  2.0e-3  ) /scaling->L;
         // Strain softening
         materials->coh_soft[k]   = (int)ReadMatProps( fin, "coh_soft",   k,    0.0   );
         materials->phi_soft[k]   = (int)ReadMatProps( fin, "phi_soft",   k,    0.0   );
