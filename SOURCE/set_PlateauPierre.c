@@ -104,13 +104,13 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
 
         }
         
-//        // Draw fake slab
-//        ztop = zW - dip*(particles->x[np] -model.xmin);
-//        zbot = zW-Hslab - dip*(particles->x[np] -model.xmin);
-////        if (particles->z[np] < ztop && particles->z[np] > zbot) {
+        // Draw fake slab
+        ztop = zW - dip*(particles->x[np] -model.xmin);
+        zbot = zW-Hslab - dip*(particles->x[np] -model.xmin);
+        if (particles->z[np] < ztop && particles->z[np] > zbot) {
 //        if (particles->z[np] < ztop ) {
-//            particles->phase[np] = 4;
-//        }
+            particles->phase[np] = 4;
+        }
         
         // Set Indian upper crust
         //if (particles->x[np] > x1 && particles->phase[np] == 0) particles->phase[np] = 4;
@@ -187,6 +187,11 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     double Hslab = 100e3/scaling.L;
     double ztop, zbot;
     
+    // super idée de Ben: utiliser des demi gaussiennes au nord/sud du slab sur une epaisseur donnée Hsig
+    double sigma   = 10e3/scaling.L;
+    double Hsigma  = 4.0*sigma;
+    
+    
     // Set unresaonable conductivity in the mantle to generate and adiabatic mantle as initial condition
     int    phase_ast1 = 2;                     // This has to be the ASTHENOSPHERE phase number
     int    phase_ast2 = 4;
@@ -262,22 +267,47 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                     if (k==0 ) {
                         mesh->BCu.type[c] = 0;
                         mesh->BCu.val[c]  = 0.0;
-                                                mesh->BCu.val[c]  = -mesh->xg_coord[k] * model->EpsBG;
+//                        mesh->BCu.val[c]  = -mesh->xg_coord[k] * model->EpsBG;
 //                        if (mesh->zvx_coord[l] < zlabW && mesh->zvx_coord[l] > zW  ) {
 //                            V                 = dVdzW * (mesh->zvx_coord[l] - zlabW);
 //                            mesh->BCu.val[c]  = V*cos(dip);
 //                        }
+                        
+                        // Dans la limite dessus
+                        if (mesh->zvx_coord[l] > zW && mesh->zvx_coord[l] < zW+Hsigma  ) {
+                            mesh->BCu.val[c]  = Vel*cos(dip) * exp(-pow( (mesh->zvx_coord[l] - zW), 2) / (2.0*sigma*sigma) );
+                        }
+                        
+                        // On est dans la steppe
+                        if (mesh->zvx_coord[l] < zW && mesh->zvx_coord[l] > zW-Hslab  ) {
+                            mesh->BCu.val[c]  = Vel*cos(dip);
+                        }
+                        
+                        // Dans la limite dessous
+                        if (mesh->zvx_coord[l] > zW-Hslab-Hsigma  && mesh->zvx_coord[l] < zW-Hslab  ) {
+                            mesh->BCu.val[c]  = Vel*cos(dip) * exp(-pow( (mesh->zvx_coord[l] - (zW-Hslab)), 2) / (2.0*sigma*sigma) );
+                        }
                     }
                     
                     // Matching BC nodes EAST
                     if (k==mesh->Nx-1 ) {
                         mesh->BCu.type[c] = 0;
                         mesh->BCu.val[c]  = 0.0;
-                                                mesh->BCu.val[c]  = -mesh->xg_coord[k] * model->EpsBG;
-//                        if (mesh->zvx_coord[l] < zlabE && mesh->zvx_coord[l] > zE  ) {
-//                            V                 = dVdzE * (mesh->zvx_coord[l] - zlabE);
-//                            mesh->BCu.val[c]  = V*cos(dip);
-//                        }
+                        
+                        // Dans la limite dessus
+                        if (mesh->zvx_coord[l] > zE && mesh->zvx_coord[l] < zE+Hsigma  ) {
+                            mesh->BCu.val[c]  = Vel*cos(dip) * exp(-pow( (mesh->zvx_coord[l] - zE), 2) / (2.0*sigma*sigma) );
+                        }
+                        
+                        // On est dans la steppe
+                        if (mesh->zvx_coord[l] < zE && mesh->zvx_coord[l] > zE-Hslab  ) {
+                            mesh->BCu.val[c]  = Vel*cos(dip);
+                        }
+                        
+                        // Dans la limite dessous
+                        if (mesh->zvx_coord[l] > zE-Hslab-Hsigma  && mesh->zvx_coord[l] < zE-Hslab  ) {
+                            mesh->BCu.val[c]  = Vel*cos(dip) * exp(-pow( (mesh->zvx_coord[l] - (zE-Hslab)), 2) / (2.0*sigma*sigma) );
+                        }
                     }
                     
                     // Free slip SOUTH
@@ -292,20 +322,29 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                         mesh->BCu.val[c]  =  0;
                     }
                     
-                    // Hand-of-god
-//                    if (mesh->xvz_coord[k]>xW && mesh->xvz_coord[k]<xE && mesh->zg_coord[l]>zS && mesh->zg_coord[l]<zN) {
-////                        printf("Apply the Hand of God!\n");
-//                        mesh->BCu.type[c] = 0;
-//                        mesh->BCu.val[c]  = VxBC;
-//                    }
-//                    // Draw fake slab
-//                    ztop =  zW        - dip*(mesh->xg_coord[k] - model->xmin);
-//                    zbot = (zW-Hslab) - dip*(mesh->xg_coord[k] - model->xmin);
-////                    if ( mesh->zg_coord[l] < ztop && mesh->zg_coord[l] > zbot ) {
-//                    if ( mesh->zg_coord[l] < ztop ) {
-//                        mesh->BCu.type[c] = 0;
-//                        mesh->BCu.val[c]  = Vel*cos(dip);
-//                    }
+                    // !!!!!! Hand-of-god !!!!!!
+
+                    // Draw fake slab
+                    ztop =  zW        - dip*(mesh->xg_coord[k] - model->xmin);
+                    zbot = (zW-Hslab) - dip*(mesh->xg_coord[k] - model->xmin);
+                    
+                    // Dans la limite dessus
+                    if (mesh->zvx_coord[l] > ztop && mesh->zvx_coord[l] < ztop+Hsigma  ) {
+                        mesh->BCu.type[c] = 0;
+                        mesh->BCu.val[c]  = Vel*cos(dip) * exp(-pow( (mesh->zvx_coord[l] - ztop), 2) / (2.0*sigma*sigma) );
+                    }
+                    
+                    // On est dans la steppe
+                    if ( mesh->zvx_coord[l] < ztop && mesh->zvx_coord[l] > ztop-Hslab ) {
+                        mesh->BCu.type[c] = 0;
+                        mesh->BCu.val[c]  = Vel*cos(dip);
+                    }
+                    
+                    // Dans la limite dessous
+                    if (mesh->zvx_coord[l] > ztop-Hslab-Hsigma  && mesh->zvx_coord[l] < ztop-Hslab  ) {
+                        mesh->BCu.type[c] = 0;
+                        mesh->BCu.val[c]  = Vel*cos(dip) * exp(-pow( (mesh->zvx_coord[l] - (ztop-Hslab)), 2) / (2.0*sigma*sigma) );
+                    }
                     
                 }
                 
@@ -368,6 +407,24 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
 //                            V                 = dVdzW * (mesh->zg_coord[l] - zlabW);
 //                            mesh->BCv.val[c]  = -V*sin(dip);
 //                        }
+                        
+                        // Dans la limite dessus
+                        if (mesh->zg_coord[l] > zW && mesh->zg_coord[l] < zW+Hsigma  ) {
+                            mesh->BCv.type[c] =   11;
+                            mesh->BCv.val[c]  = -Vel*sin(dip) * exp(-pow( (mesh->zg_coord[l] - zW), 2) / (2.0*sigma*sigma) );
+                        }
+                        
+                        // On est dans la steppe
+                        if (mesh->zg_coord[l] < zW && mesh->zg_coord[l] > zW-Hslab  ) {
+                            mesh->BCv.type[c] =   11;
+                            mesh->BCv.val[c]  = -Vel*sin(dip);
+                        }
+                        
+                        // Dans la limite dessous
+                        if (mesh->zg_coord[l] > zW-Hslab-Hsigma  && mesh->zg_coord[l] < zW-Hslab  ) {
+                            mesh->BCv.type[c] =   11;
+                            mesh->BCv.val[c]  = -Vel*sin(dip) * exp(-pow( (mesh->zg_coord[l] - (zW-Hslab)), 2) / (2.0*sigma*sigma) );
+                        }
                     }
                     
                     // Non-matching boundary EAST
@@ -379,21 +436,47 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
 //                            V                 = dVdzE * (mesh->zg_coord[l] - zlabE);
 //                            mesh->BCv.val[c]  = -V*sin(dip);
 //                        }
+                        // Dans la limite dessus
+                        if (mesh->zg_coord[l] > zE && mesh->zg_coord[l] < zE+Hsigma  ) {
+                            mesh->BCv.type[c] =   11;
+                            mesh->BCv.val[c]  = -Vel*sin(dip) * exp(-pow( (mesh->zg_coord[l] - zE), 2) / (2.0*sigma*sigma) );
+                        }
+                        
+                        // On est dans la steppe
+                        if (mesh->zg_coord[l] < zE && mesh->zg_coord[l] > zE-Hslab  ) {
+                            mesh->BCv.type[c] =   11;
+                            mesh->BCv.val[c]  = -Vel*sin(dip);
+                        }
+                        
+                        // Dans la limite dessous
+                        if (mesh->zg_coord[l] > zE-Hslab-Hsigma  && mesh->zg_coord[l] < zE-Hslab  ) {
+                            mesh->BCv.type[c] =   11;
+                            mesh->BCv.val[c]  = -Vel*sin(dip) * exp(-pow( (mesh->zg_coord[l] - (zE-Hslab)), 2) / (2.0*sigma*sigma) );
+                        }
                     }
                     
-//                    // Hand-of-god
-//                    if (mesh->xvz_coord[k]>xW && mesh->xvz_coord[k]<xE && mesh->zg_coord[l]>zS && mesh->zg_coord[l]<zN) {
-//                        mesh->BCv.type[c] = 0;
-//                        mesh->BCv.val[c]  = VzBC;
+                    // !!!!!! Hand-of-god !!!!!!
+                    
+                    // Draw fake slab
+                    ztop =  zW        - dip*(mesh->xvz_coord[k] - model->xmin);
+                    zbot = (zW-Hslab) - dip*(mesh->xvz_coord[k] - model->xmin);
+                    
+//                    // Dans la limite dessus
+//                    if (mesh->zg_coord[l] > ztop && mesh->zg_coord[l] < ztop+Hsigma  ) {
+//                        mesh->BCv.type[c] =   0;
+//                        mesh->BCv.val[c]  = -Vel*sin(dip) * exp(-pow( (mesh->zg_coord[l] - ztop), 2) / (2.0*sigma*sigma) );
 //                    }
                     
-//                    // Draw fake slab
-//                    ztop =  zW        - dip*(mesh->xvz_coord[k] - model->xmin);
-//                    zbot = (zW-Hslab) - dip*(mesh->xvz_coord[k] - model->xmin);
-////                    if ( mesh->zg_coord[l] < ztop && mesh->zg_coord[l] > zbot ) {
-//                    if ( mesh->zg_coord[l] < ztop ) {
-//                        mesh->BCv.type[c] = 0;
-//                        mesh->BCv.val[c]  = -Vel*sin(dip);
+                    // On est dans la steppe
+                    if ( mesh->zg_coord[l] < ztop && mesh->zg_coord[l] > ztop-Hslab ) {
+                        mesh->BCv.type[c] = 0;
+                        mesh->BCv.val[c]  = -Vel*sin(dip);
+                    }
+                    
+//                    // Dans la limite dessous
+//                    if (mesh->zg_coord[l] > ztop-Hslab-Hsigma  && mesh->zg_coord[l] < ztop-Hslab  ) {
+//                        mesh->BCv.type[c] =  0;
+//                        mesh->BCv.val[c]  = -Vel*sin(dip) * exp(-pow( (mesh->zg_coord[l] - (ztop-Hslab)), 2) / (2.0*sigma*sigma) );
 //                    }
                 }
                 

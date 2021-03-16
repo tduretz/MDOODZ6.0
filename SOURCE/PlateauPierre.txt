@@ -1,10 +1,10 @@
 /**** RESTART ****/
-istep = 000010
+istep = 000100
 irestart = 0
 
 /**** OUTPUT FILES ****/
 writer = 1
-writer_step = 1
+writer_step = 10
 writer_markers = 0
 writer_debug   = 0 
 
@@ -20,7 +20,7 @@ T   = 1e+02
 /**** SPACE-TIME ****/
 Nx      = 350
 Nz      = 250
-Nt      = 10
+Nt      = 100
 xmin    = -750.000000e3
 zmin    = -1000.000000e3
 xmax    =  750.000000e3
@@ -34,7 +34,7 @@ eta_avg = 2
 
 abs_tol_div     = 1e-9
 rel_tol_div     = 1e-9
-penalty         = 1e3
+penalty         = 4e4
 
 initial_part          = 0
 IncrementalUpdateGrid = 0
@@ -50,11 +50,11 @@ iselastic       = 1
 isthermal       = 1
 line_search     = 0
 free_surf       = 1
-free_surf_stab  = 0
+free_surf_stab  = 1
 eqn_state       = 1
 thermal_eq      = 1
 subgrid_diff    = 1
-shear_heat      = 1
+shear_heat      = 0
 adiab_heat      = 0
 compressible    = 0
 cpc             = 1
@@ -71,10 +71,10 @@ user5           = 1e-3  / grainsize background
 
 user6 = -300e3 / z west [m]
 user7 =  18    / dip angle [o]
-user8 = 0.0e-9 / velocity [m/s]
+user8 = 1.0e-9 / velocity [m/s]
 
 force_act_vol_ast = 1
-act_vol_dif_ast   = 9e-6
+act_vol_dif_ast   = 4e-6
 
 /**** GRAVITY ****/
 gx = 0.0000
@@ -167,15 +167,15 @@ Slim = 500e9
 alp  = 10.0e-6
 bet  = 1e-11
 drho = 0
-cstv = 0
+cstv = 1
 pwlv = 00
-linv = 40
+linv = 00
 gbsv = 0
 expv = 0
 gsel = 0
-eta0 = 5.5317e+04
-npwl = 3.5
-Qpwl = 532e3
+eta0 = 1e23
+npwl = 1.0
+Qpwl = 0.0
 
 ID   = 6
 density_model = 1
