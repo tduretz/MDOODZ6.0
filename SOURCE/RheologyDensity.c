@@ -2862,6 +2862,7 @@ void CohesionFrictionDilationGrid( grid* mesh, markers* particles, mat_prop mate
     int average = 0;
     double fric, dil, C, strain_acc, fric0, dil0, C0, mu_strain;
     double dstrain, dfric, dcoh, ddil, *strain_pl;
+    int SmoothSoftening = 1;
 
     Nx = mesh->Nx;
     Nz = mesh->Nz;
@@ -2896,31 +2897,55 @@ void CohesionFrictionDilationGrid( grid* mesh, markers* particles, mat_prop mate
 
                 // Apply strain softening
                 dstrain   = materials.pls_end[p] - materials.pls_start[p];
-                mu_strain = 0.5*(materials.pls_end[p] + materials.pls_start[p]);
+                
+                if ( SmoothSoftening == 1) {
+                
+                    mu_strain = 0.5*(materials.pls_end[p] + materials.pls_start[p]);
 
-                if (materials.phi_soft[p] == 1) {
-                    dfric     = materials.phi[p]     - materials.phi_end[p];
-                    fric      = materials.phi[p]     - dfric/2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.phi_end[p];
-                    fric0     = materials.phi[p]     - dfric/2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.phi_end[p];
-                    fric      = fric * dfric / fric0 + materials.phi_end[p];
+                    if (materials.phi_soft[p] == 1) {
+                        dfric     = materials.phi[p]     - materials.phi_end[p];
+                        fric      = materials.phi[p]     - dfric/2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.phi_end[p];
+                        fric0     = materials.phi[p]     - dfric/2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.phi_end[p];
+                        fric      = fric * dfric / fric0 + materials.phi_end[p];
+                    }
+
+                    if (materials.psi_soft[p] == 1) {
+                        ddil      = materials.psi[p]     - materials.psi_end[p];
+                        dil       = materials.psi[p]     - ddil /2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.psi_end[p];
+                        dil0      = materials.psi[p]     - ddil /2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.psi_end[p];
+                        dil       = dil * ddil  / dil0  + materials.psi_end[p];
+                    }
+
+                    if (materials.coh_soft[p] == 1) {
+                        dcoh      = materials.C[p]       - materials.C_end[p];
+                        C         = materials.C[p]       - dcoh /2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.C_end[p];
+                        C0        = materials.C[p]       - dcoh /2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.C_end[p];
+                        C         = C * dcoh / C0 + materials.C_end[p];
+                    }
                 }
-
-                if (materials.psi_soft[p] == 1) {
-                    ddil      = materials.psi[p]     - materials.psi_end[p];
-                    dil       = materials.psi[p]     - ddil /2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.psi_end[p];
-                    dil0      = materials.psi[p]     - ddil /2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.psi_end[p];
-                    dil       = dil * ddil  / dil0  + materials.psi_end[p];
+                // Pieciewise linear function
+                else {
+                    
+                    // If we are below the lower strain limit
+                    if (strain_acc < materials.pls_start[p]) {
+                        if (materials.phi_soft[p] == 1) fric = materials.phi[p];
+                        if (materials.psi_soft[p] == 1) dil  = materials.psi[p];
+                        if (materials.coh_soft[p] == 1) C    = materials.C[p];
+                    }
+                    // If we are above the upper strain limit
+                    if (strain_acc >= materials.pls_end[p]) {
+                        if (materials.phi_soft[p] == 1) fric = materials.phi_end[p];
+                        if (materials.psi_soft[p] == 1) dil  = materials.psi_end[p];
+                        if (materials.coh_soft[p] == 1) C    = materials.C_end[p];
+                    }
+                    // If we are in the softening strain range
+                    if (strain_acc >= materials.pls_start[p] && strain_acc < materials.pls_end[p] ) {
+                        if (materials.phi_soft[p] == 1) fric = materials.phi[p] + (materials.phi_end[p] - materials.phi[p]) / (materials.pls_end[p] - materials.pls_start[p]) *  strain_acc;
+                        if (materials.psi_soft[p] == 1) dil  = materials.psi[p] + (materials.psi_end[p] - materials.psi[p]) / (materials.pls_end[p] - materials.pls_start[p]) *  strain_acc;
+                        if (materials.coh_soft[p] == 1) C    = materials.C[p]   + (materials.C_end[p]   - materials.C[p]  ) / (materials.pls_end[p] - materials.pls_start[p]) *  strain_acc;
+                    }
+                    
                 }
-
-                if (materials.coh_soft[p] == 1) {
-                    dcoh      = materials.C[p]       - materials.C_end[p];
-                    C         = materials.C[p]       - dcoh /2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.C_end[p];
-                    C0        = materials.C[p]       - dcoh /2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.C_end[p];
-                    C         = C * dcoh /C0 + materials.C_end[p];
-                }
-
-                //                    printf("%d C = %2.2e Cs = %2.2e Ce = %2.2e mu_strain=%2.2e dstrain=%2.2e\n", p, C*scaling.S, materials.C[p]*scaling.S,  materials.C_end[p]*scaling.S, mu_strain, dstrain);
-
 
                 // Arithmetic
                 if (average ==0) {
@@ -2984,28 +3009,57 @@ void CohesionFrictionDilationGrid( grid* mesh, markers* particles, mat_prop mate
 
                 // Apply strain softening
                 dstrain   = materials.pls_end[p] - materials.pls_start[p];
-                mu_strain = 0.5*(materials.pls_end[p] + materials.pls_start[p]);
+                
+                // Smooth function
+                if ( SmoothSoftening == 1) {
+                    
+                    mu_strain = 0.5*(materials.pls_end[p] + materials.pls_start[p]);
 
-                if (materials.phi_soft[p] == 1) {
-                    dfric     = materials.phi[p]     - materials.phi_end[p];
-                    fric      = materials.phi[p]     - dfric/2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.phi_end[p];
-                    fric0     = materials.phi[p]     - dfric/2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.phi_end[p];
-                    fric      = fric * dfric / fric0 + materials.phi_end[p];
-                }
+                    if (materials.phi_soft[p] == 1) {
+                        dfric     = materials.phi[p]     - materials.phi_end[p];
+                        fric      = materials.phi[p]     - dfric/2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.phi_end[p];
+                        fric0     = materials.phi[p]     - dfric/2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.phi_end[p];
+                        fric      = fric * dfric / fric0 + materials.phi_end[p];
+                    }
 
-                if (materials.psi_soft[p] == 1) {
-                    ddil      = materials.psi[p]     - materials.psi_end[p];
-                    dil       = materials.psi[p]     - ddil /2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.psi_end[p];
-                    dil0      = materials.psi[p]     - ddil /2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.psi_end[p];
-                    dil       = dil * ddil  / dil0  + materials.psi_end[p];
-                }
+                    if (materials.psi_soft[p] == 1) {
+                        ddil      = materials.psi[p]     - materials.psi_end[p];
+                        dil       = materials.psi[p]     - ddil /2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.psi_end[p];
+                        dil0      = materials.psi[p]     - ddil /2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.psi_end[p];
+                        dil       = dil * ddil  / dil0  + materials.psi_end[p];
+                    }
 
-                if (materials.coh_soft[p] == 1) {
-                    dcoh      = materials.C[p]       - materials.C_end[p];
-                    C         = materials.C[p]       - dcoh /2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.C_end[p];
-                    C0        = materials.C[p]       - dcoh /2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.C_end[p];
-                    C         = C * dcoh /C0 + materials.C_end[p];
+                    if (materials.coh_soft[p] == 1) {
+                        dcoh      = materials.C[p]       - materials.C_end[p];
+                        C         = materials.C[p]       - dcoh /2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.C_end[p];
+                        C0        = materials.C[p]       - dcoh /2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.C_end[p];
+                        C         = C * dcoh / C0 + materials.C_end[p];
+                    }
                 }
+                // Pieciewise linear function
+                else {
+                    
+                    // If we are below the lower strain limit
+                    if (strain_acc < materials.pls_start[p]) {
+                        if (materials.phi_soft[p] == 1) fric = materials.phi[p];
+                        if (materials.psi_soft[p] == 1) dil  = materials.psi[p];
+                        if (materials.coh_soft[p] == 1) C    = materials.C[p];
+                    }
+                    // If we are above the upper strain limit
+                    if (strain_acc >= materials.pls_end[p]) {
+                        if (materials.phi_soft[p] == 1) fric = materials.phi_end[p];
+                        if (materials.psi_soft[p] == 1) dil  = materials.psi_end[p];
+                        if (materials.coh_soft[p] == 1) C    = materials.C_end[p];
+                    }
+                    // If we are in the softening strain range
+                    if (strain_acc >= materials.pls_start[p] && strain_acc < materials.pls_end[p] ) {
+                        if (materials.phi_soft[p] == 1) fric = materials.phi[p] + (materials.phi_end[p] - materials.phi[p]) / (materials.pls_end[p] - materials.pls_start[p]) *  strain_acc;
+                        if (materials.psi_soft[p] == 1) dil  = materials.psi[p] + (materials.psi_end[p] - materials.psi[p]) / (materials.pls_end[p] - materials.pls_start[p]) *  strain_acc;
+                        if (materials.coh_soft[p] == 1) C    = materials.C[p]   + (materials.C_end[p]   - materials.C[p]  ) / (materials.pls_end[p] - materials.pls_start[p]) *  strain_acc;
+                    }
+                    
+                }
+            
 
                 // Arithmetic
                 if (average == 0) {

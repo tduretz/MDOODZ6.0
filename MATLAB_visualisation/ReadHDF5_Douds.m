@@ -13,26 +13,38 @@ MarkSize=1e0 ;
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Compression/'
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Shear_periodic_VEVP/'
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
-path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/'
+path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/Huismans_NoReg5its_noise/'%/Pierre00/'
+path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/Huismans_Reg1e20_noise/'%/Pierre00/'
+% path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE//'%/Pierre00/'
+
+mdoodz6       = 1;
 % path = '/Volumes/Seagate4TB/Wedge_MD6/LR/'
-% path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/RUN_MetamSoleLitho_26/'
-% path = '/Volumes/Seagate4TB/LithoScale/Ext_HR2_5e20/'
-% path = '/Users/imac/REPO_GIT/MDOODZ6.0_beauty/SOURCE/'
+% path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/RUN_Ridge_40/'
+% % path = '/Volumes/Seagate4TB/LithoScale/Ext_HR2_5e20/'
+% % path = '/Users/imac/REPO_GIT/MDOODZ6.0_beauty/SOURCE/'
+% path = '/Volumes/Seagate4TB/LithoScale/N3/Comp_HHR_2e20_Courant0.25/'
+% path = '/Volumes/Seagate4TB/LithoScale/N3/Comp_HHR_2e20_Courant0.25/'
+% path = '/Volumes/Seagate4TB/LithoScale/N3/Comp_HR_4e20/'
+
+% path = '/Users/imac/Downloads/MDoodz4.5_Plateau/'
+% mdoodz6       = 0;
+
+% path = '/Volumes/Passport/test_AL/G_1e12/'
 
 cd(path)
 
-% File
-istart = 140;
-ijump  = 50;
-iend   = 140;
+% Files
+istart = 300;
+ijump  = 100;
+iend   = 300;
 
 %--------------------------------------------------
-% what do you want to plot:
+% what do you want to lot:
 %--------------------------------------------------
 eta_sym         = 0;
 eta_plot        = 0;
 rho_plot        = 0;
-phase_on_grid   = 1;
+phase_on_grid   = 0;
 phase_temp2     = 0;
 vel_plot        = 0;
 vel_vectors     = 0;
@@ -65,7 +77,7 @@ srate_add_perc  = 0;
 grain_size      = 0;
 grain_size_evol = 0;
 gs_stefan       = 0;
-x_plot          = 0;
+X_plot          = 0;
 srate_ratio     = 0;
 PTmax           = 0;
 TminusT0        = 0;
@@ -96,15 +108,17 @@ ColorFabio    = 1;
 y             = 365.25*24*3600;
 My            = 1e6*y;
 topo_ref      = 0; %6370
-mdoodz6       = 1;
 
 
 % Contour
 eps_val = 5e-14;
 % eps_val = 1e4;
 
-minRho = 3000;
-maxRho = 3600;
+% minRho = 3000;
+% maxRho = 3600;
+
+minX = 0;
+maxX = 1;
 
 % Colorbar limits
 minTxx = -11e0;
@@ -116,8 +130,8 @@ maxStr = 0.4;
 minPdyn = -1e8;
 maxPdyn =  5e8;
 
-% minEta = 19;
-% maxEta = 25;
+minEta = 19;
+maxEta = 25;
 
 mindiv  =-0.25e-14;
 maxdiv  = 0.25e-14;
@@ -339,6 +353,13 @@ if printfig == 1 || printfig == 2
         mkdir ./Fig_Phi
     end
     
+    if (exist('./Fig_X', 'dir') == 0)
+        mkdir ./Fig_X
+    end
+    
+    if (exist('./Fig_Topo', 'dir') == 0)
+        mkdir ./Fig_Topo
+    end
 end
 
 %% LOOP ON OUTPUT FILES
@@ -532,8 +553,10 @@ for istep=istart:ijump:iend
         z_tab       = zeros(length(x_air), 4);
         f           = zeros(length(x_air),1);
         id          = [ 1 2 4 3 ];
-        x_arr = [x_air(:) x_air(:) x_air(:)+dx/1e3 x_air(:)+dx/1e3];
-        z_arr = [z_air(:) z_air(:)+dz/1e3 z_air(:) z_air(:)+dz/1e3];
+        dxa         = dx/2/1e3;
+        dza         = dz/2/1e3;
+        x_arr = [x_air(:)-dxa x_air(:)-dxa x_air(:)+dxa x_air(:)+dxa];
+        z_arr = [z_air(:)-dza z_air(:)+dza z_air(:)-dza z_air(:)+dza];
         x_tab(:,:) = x_arr;
         z_tab(:,:) = z_arr;
         
@@ -1020,16 +1043,16 @@ for istep=istart:ijump:iend
             %         if ( H>L ) subplot(121); else subplot(211); end
             Vmag = sqrt(Vxc.^2 + Vzc.^2);
             
-%             p=imagesc( xc_plot, zc_plot, Vmag*(365.25*3600*24*100) );
-            p=imagesc( xc_plot, zc_plot, Vxc*(365.25*3600*24*100) );
+            p=imagesc( xc_plot, zc_plot, Vmag*(365.25*3600*24*100) );
+%             p=imagesc( xc_plot, zc_plot, Vxc*(365.25*3600*24*100) );
 %             p=imagesc( xc_plot, zc_plot, log10(eII) );
 
             alpha(p,0.7);
             hold on
             if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
-%             imagesc( xc_plot, zc_plot, Vmag*(365.25*3600*24*100), 'Visible', 'off' );
+            imagesc( xc_plot, zc_plot, Vmag*(365.25*3600*24*100), 'Visible', 'off' );
 %             imagesc( xc_plot, zc_plot, log10(eII), 'Visible', 'off' );
-            imagesc( xc_plot, zc_plot, Vxc, 'Visible', 'off' );
+%             imagesc( xc_plot, zc_plot, Vxc, 'Visible', 'off' );
 
             shading flat,axis xy image, colorbar('SouthOutside');
             
@@ -2025,6 +2048,10 @@ for istep=istart:ijump:iend
             title(['Power law strain rate at' TimeLabel])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             
+%             caxis([-34 -20])
+            
+            
+            
             subplot(324)
             imagesc( xc_plot, zc_plot, (log10(eII_exp)) )
             hold on
@@ -2049,6 +2076,9 @@ for istep=istart:ijump:iend
             xlabel(xLabel), ylabel(zLabel)
             title(['Linear strain rate at' TimeLabel])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            
+%             caxis([-26.5 -20])
+            
             
             subplot(326)
             imagesc( xc_plot, zc_plot, (log10(eII_gbs)) )
@@ -3189,11 +3219,15 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if ( topo == 1 )
             
-            xtopo = hdf5read(filename,'/Topo/x_mark');
-            ztopo = hdf5read(filename,'/Topo/z_mark');
-            xtopo = cast(xtopo, 'double');
-            ztopo = cast(ztopo, 'double');
-            height = hdf5read(filename,'/Topo/z_grid');
+            if mdoodz6==1
+                xtopo = hdf5read(filename,'/Topo/x_mark');
+                ztopo = hdf5read(filename,'/Topo/z_mark');
+                xtopo = cast(xtopo, 'double');
+                ztopo = cast(ztopo, 'double');
+                height = hdf5read(filename,'/Topo/z_grid');
+            else
+                height = hdf5read(filename,'/Topo/height');
+            end
             
             if print2screen == 1
                 figCount = figCount +1;
@@ -3201,9 +3235,10 @@ for istep=istart:ijump:iend
             else
                 figure('Visible', 'Off')
             end
-            title(['min = ', num2str(min(ztopo)), ' max = ', num2str(max(ztopo)), TimeLabel])
+            title(TimeLabel)
+%             title(['min = ', num2str(min(ztopo)), ' max = ', num2str(max(ztopo)), TimeLabel])
             hold on
-            plot( xtopo, ztopo-0*mean(ztopo), '.r' )
+%             plot( xtopo, ztopo-0*mean(ztopo), '.r' )
             plot( xg_coord, height-0*mean(height), '-o')
             hold off
             
@@ -3214,12 +3249,17 @@ for istep=istart:ijump:iend
             % ylabel('max. Topo [km]')
             % hold on
             
-            mxtopo(icount) = max(ztopo);
+%             mxtopo(icount) = max(ztopo);
             drawnow
             
             if istep == iend
                 save( [path,'TopoData'], 'mxtopo', 't_vec')
                 disp('file saved')
+            end
+            
+            if printfig == 1
+                print([path, './Fig_Topo/Fig_Topo', num2str(istep,'%05d'),file_suffix], format, res)
+                close all
             end
             
         end
@@ -3375,13 +3415,13 @@ for istep=istart:ijump:iend
                 
                 subplot(231)
                 pcolor(x2D/1e3,t2D/My,topo2D/1e3-topo_ref), colorbar, shading flat;
-                caxis([-3 2])
+%                 caxis([-3 2])
                 xlabel('x [km]'), ylabel('t [My]')
                 title('Topography [km]')
                 
                 subplot(232)
                 pcolor(x2D/1e3,t2D/My,vx2D*y*1e3), colorbar, shading flat;
-                caxis([-10 10])
+%                 caxis([-10 10])
                 xlabel('x [km]'), ylabel('t [My]')
                 title('Surface velocity x [mm/y]')
                 
@@ -3389,7 +3429,7 @@ for istep=istart:ijump:iend
                 pcolor(x2D/1e3,t2D/My,vz2D*y*1e3), colorbar, shading flat;
                 hold on 
 %                 contour(x2D/1e3,t2D/My,topo2D/1e3-topo_ref, [0 0], 'k')
-                caxis([-2.5 2.5])
+%                 caxis([-2.5 2.5])
                 xlabel('x [km]'), ylabel('t [My]')
                 title('Surface velocity z [mm/y]')
                 
@@ -3408,13 +3448,13 @@ for istep=istart:ijump:iend
                 
                 subplot(235)
                 pcolor(x2D(1:end-1,:)/1e3,t2D_av/My,Vz_wrong*y*1e3), colorbar, shading flat;
-                caxis([-2.5 2.5])
+%                 caxis([-2.5 2.5])
                 xlabel('x [km]'), ylabel('t [My]')
                 title('DH/Dt = dH/dt [mm/y]')
                 
                 subplot(236)
                 pcolor(x2D_av(1:end-1,:)/1e3,t2D_av(:,1:end-1)/My,Vz_corr*y*1e3), colorbar, shading flat;
-                caxis([-2.5 2.5])
+%                 caxis([-2.5 2.5])
                 xlabel('x [km]'), ylabel('t [My]')
                 title('DH/Dt = dH/dt + Vx*dHdx [mm/y]')
                 
@@ -4260,7 +4300,7 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         % x plot
         %--------------------------------------------------
-        if (x_plot==1)
+        if (X_plot==1)
             x = hdf5read(filename,'/Centers/X');  x = cast(x, 'double');
             
             % Nodes
@@ -4277,6 +4317,7 @@ for istep=istart:ijump:iend
             xlabel(xLabel), ylabel(zLabel);
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             if exist('minX', 'var') caxis([minX maxX]); end
+            drawnow
             
             if printfig == 1
                 print([path, './Fig_X/Fig_X', num2str(istep,'%05d'),file_suffix], format, res)

@@ -387,6 +387,20 @@ eta_vp = 1e-1
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Ideal elasticity-plasticity: Duretz et al., (2018) benchmark test 1}
+
+Setup file:
+\begin{verbatim} 
+VEP_Duretz18.txt
+\end{verbatim}
+
+\begin{figure}[ht!]
+\centerline{\includegraphics[height=3.0in]{./Figures/VEP_Duretz18_MDOODZ.png}}
+\caption{Colourmap: Pressure field after 30 time steps. Models were run with and without marker interpolations.}
+\label{VEP_Duretz18}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Visco-elasticity-viscoplasticity with power-law rheology: Crustal-scale model}
 
 Setup file:
@@ -409,18 +423,30 @@ and extension \begin{verbatim} EpsBG>0 \end{verbatim}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Ideal elasticity-plasticity: Duretz et al., (2018) benchmark test 1}
+\section{Visco-elasticity-viscoplasticity with power-law rheology: Lithosphere-scale model}
 
 Setup file:
 \begin{verbatim} 
-VEP_Duretz18.txt
+LithoScale.txt
 \end{verbatim}
 
+Adjust regularisation viscosity of each phase with
+\begin{verbatim} 
+eta_vp = 2e20
+\end{verbatim}
+
+From now on conservative velocity interpolation scheme can be activated.
+\begin{verbatim} 
+ConservInterp = 1
+\end{verbatim}
+
+
 \begin{figure}[ht!]
-\centerline{\includegraphics[height=3.0in]{./Figures/VEP_Duretz18_MDOODZ.png}}
-\caption{Colourmap: Pressure field after 30 time steps. Models were run with and without marker interpolations.}
-\label{VEP_Duretz18}
+\centerline{\includegraphics[height=3.0in]{./Figures/LithoScale_MDOODZ.png}}
+\caption{Strain rate and stress after 200 time steps with classical and conservative velocity interpolation schemes.}
+\label{LithoScale_MDOODZ.png}
 \end{figure}
+
 
 
 %---------------------------------------------------------------------------------------------------------------%
