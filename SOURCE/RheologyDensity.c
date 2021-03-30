@@ -1278,6 +1278,7 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
 
+
     // Compute increment
 #pragma omp parallel for shared(mesh) private(c0) firstprivate( ptrick )
     for ( c0=0; c0<Ncx*Ncz; c0++ ) {
@@ -3022,6 +3023,7 @@ void CohesionFrictionDilationGrid( grid* mesh, markers* particles, mat_prop mate
                         fric      = fric * dfric / fric0 + materials.phi_end[p];
                     }
 
+
                     if (materials.psi_soft[p] == 1) {
                         ddil      = materials.psi[p]     - materials.psi_end[p];
                         dil       = materials.psi[p]     - ddil /2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.psi_end[p];
@@ -3340,7 +3342,6 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
 
-
 #pragma omp parallel for shared(mesh,materials) private( NT, NP, iT, iP, TW, PW, iSW, iSE, iNW, iNE, phase_diag, dT, dP, Tgrid, Pgrid, c0, p, rhonew, rho0, alpha, beta, T0, P0, rhop, drho, percT, percP) firstprivate(Ncx, Ncz, model, epsi)
     for ( c0=0; c0<Ncx*Ncz; c0++ ) {
         rhonew = 0.0;
@@ -3366,6 +3367,7 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
                     beta   = materials->bet[p];
                     rhop   = (1.0 -  alpha * (mesh->T[c0] - T0) ) * (1.0 +  beta * (mesh->p_in[c0] - P0) ); // EOS general
                     rhop   = ((1.0-mesh->X_n[c0])*rho0 + mesh->X_n[c0]*(rho0+drho))*rhop; // Average density based on X
+
                 }
 
                 // T and P dependent density based on phase diagrams
