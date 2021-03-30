@@ -1115,6 +1115,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->IncrementalUpdateGrid     = ReadInt2( fin, "IncrementalUpdateGrid", 1);
     model->DirectNeighbour           = ReadInt2( fin, "DirectNeighbour", 0);
     model->Reseed          = ReadInt2( fin, "Reseed", 1);
+    model->ConservInterp   = ReadInt2( fin, "ConservInterp", 0); // Activates Taras conservative interpolation
 
     if ( model->shear_style == 1 ) model->isperiodic_x  = 1;
     if ( model->shear_style == 0 ) model->isperiodic_x  = 0;
