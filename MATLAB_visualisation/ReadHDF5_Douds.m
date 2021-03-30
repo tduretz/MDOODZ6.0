@@ -3,7 +3,7 @@ function Main
 
 clear
 clear all
-close all
+% close all
 clc
 
 DEBUG = 0;
@@ -11,25 +11,36 @@ DEBUG = 0;
 MarkSize=1e0 ;
 
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Compression/'
-% path = '/Users/tduretz/REPO_GIT/TEST/SOURCE/'
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Shear_periodic_VEVP/'
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
-% path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/RUNS/SubInit_Cart_MR/'
-% path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/RUNS/Pauline_600x800_6its/'
-path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/RUNS/Pauline_200x300_Eulerian_markers/'
-% path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/RUNS/SubInit_Cart_MR_InflowCheck0/'
+path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/Huismans_NoReg5its_noise/'%/Pierre00/'
+path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/Huismans_Reg1e20_noise/'%/Pierre00/'
+% path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE//'%/Pierre00/'
+
+mdoodz6       = 1;
+% path = '/Volumes/Seagate4TB/Wedge_MD6/LR/'
+% path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/RUN_Ridge_40/'
+% % path = '/Volumes/Seagate4TB/LithoScale/Ext_HR2_5e20/'
+% % path = '/Users/imac/REPO_GIT/MDOODZ6.0_beauty/SOURCE/'
+% path = '/Volumes/Seagate4TB/LithoScale/N3/Comp_HHR_2e20_Courant0.25/'
+% path = '/Volumes/Seagate4TB/LithoScale/N3/Comp_HHR_2e20_Courant0.25/'
+% path = '/Volumes/Seagate4TB/LithoScale/N3/Comp_HR_4e20/'
+
+% path = '/Users/imac/Downloads/MDoodz4.5_Plateau/'
+% mdoodz6       = 0;
+
+% path = '/Volumes/Passport/test_AL/G_1e12/'
 
 cd(path)
 
-% File
-istart = 0;
-ijump  = 10;
-iend   = 110;
+% Files
+istart = 300;
+ijump  = 100;
+iend   = 300;
 
 %--------------------------------------------------
-% what do you want to plot:
+% what do you want to lot:
 %--------------------------------------------------
-X_plot          = 0;
 eta_sym         = 0;
 eta_plot        = 0;
 rho_plot        = 0;
@@ -40,7 +51,7 @@ vel_vectors     = 0;
 vel_divergence  = 0;
 pre_plot        = 0;
 dyna_pre        = 0;
-stress_inv      = 0;
+stress_inv      = 1;
 stress_evol     = 0;
 stress_plot     = 0;
 srate_plot      = 0;
@@ -56,7 +67,7 @@ Christmas_Tree  = 0;
 topo            = 0;
 topo_eta_plot   = 0;
 topo_SR_plot    = 0;
-topo_maps       = 1;
+topo_maps       = 0;
 phases_uplift   = 0;
 dt_time         = 0;
 srate_add       = 0;
@@ -66,7 +77,7 @@ srate_add_perc  = 0;
 grain_size      = 0;
 grain_size_evol = 0;
 gs_stefan       = 0;
-x_plot          = 0;
+X_plot          = 0;
 srate_ratio     = 0;
 PTmax           = 0;
 TminusT0        = 0;
@@ -74,6 +85,9 @@ emergency_benoit = 0;
 fstrain          = 0;
 shear_heating    = 0;
 princi_stress    = 0;
+director_vector  = 0;
+Pl_soft          = 1;
+Sole             = 0;
 
 % Visualisation options
 printfig      = 0;
@@ -94,28 +108,36 @@ ColorFabio    = 1;
 y             = 365.25*24*3600;
 My            = 1e6*y;
 topo_ref      = 0; %6370
-mdoodz6       = 1;
 
 
 % Contour
 eps_val = 5e-14;
 % eps_val = 1e4;
 
-minRho = 3000;
-maxRho = 3600;
+% minRho = 3000;
+% maxRho = 3600;
+
+minX = 0;
+maxX = 1;
 
 % Colorbar limits
 minTxx = -11e0;
 maxTxx =  0.642;
 
-% minPdyn = -1e9;
-% maxPdyn =  1e9;
+minStr = 0.01;
+maxStr = 0.4;
 
-% minEta = 19;
-% maxEta = 25;
+minPdyn = -1e8;
+maxPdyn =  5e8;
 
-% minEii = -16;
-% maxEii = -13.5;
+minEta = 19;
+maxEta = 25;
+
+mindiv  =-0.25e-14;
+maxdiv  = 0.25e-14;
+
+minEii = -17;
+maxEii = -13;
 
 minSii = 1e6;
 maxSii = 400e6;
@@ -327,6 +349,17 @@ if printfig == 1 || printfig == 2
         mkdir ./Fig_GS
     end
     
+    if (exist('./Fig_Phi', 'dir') == 0)
+        mkdir ./Fig_Phi
+    end
+    
+    if (exist('./Fig_X', 'dir') == 0)
+        mkdir ./Fig_X
+    end
+    
+    if (exist('./Fig_Topo', 'dir') == 0)
+        mkdir ./Fig_Topo
+    end
 end
 
 %% LOOP ON OUTPUT FILES
@@ -520,45 +553,20 @@ for istep=istart:ijump:iend
         z_tab       = zeros(length(x_air), 4);
         f           = zeros(length(x_air),1);
         id          = [ 1 2 4 3 ];
-        x_arr = [x_air(:) x_air(:) x_air(:)+dx/1e3 x_air(:)+dx/1e3];
-        z_arr = [z_air(:) z_air(:)+dz/1e3 z_air(:) z_air(:)+dz/1e3];
+        dxa         = dx/2/1e3;
+        dza         = dz/2/1e3;
+        x_arr = [x_air(:)-dxa x_air(:)-dxa x_air(:)+dxa x_air(:)+dxa];
+        z_arr = [z_air(:)-dza z_air(:)+dza z_air(:)-dza z_air(:)+dza];
         x_tab(:,:) = x_arr;
         z_tab(:,:) = z_arr;
         
         %--------------------------------------------------
-        % X plot
-        %--------------------------------------------------
-         if (X_plot==1)
-            X = hdf5read(filename,'/Centers/Xreac');  X = cast(X, 'double');
-            X = reshape(X,params(4)-1,params(5)-1)';
-            
-            % Nodes
-            if print2screen == 1
-                figCount = figCount +1;
-                figure(figCount); clf;
-            else
-                figure('Visible', 'Off');
-            end
-            
-            imagesc(xc_plot, zc_plot, (X));
-            shading flat, axis xy image, colorbar;
-            hold on
-            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
-            if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
-            hold off
-            title(['X at' TimeLabel, ' min = ', num2str(min(X(X>0)), '%2.4e'), ' max = ', num2str(max(X(X>0)), '%2.4e')])
-            xlabel(xLabel), ylabel(zLabel);
-            if crop == 1, xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-            if exist('minX', 'var') caxis([minX maxX]); end
-            
-        end
-        %--------------------------------------------------
         % viscosity symmetry plot
         %--------------------------------------------------
         if (eta_sym==1)
-            Vert.eta_s = hdf5read(filename,'/Vertices/eta_s'); Vert.eta_s = cast(Vert.eta_s, 'double');
+            eta_s = hdf5read(filename,'/Vertices/eta_s'); eta_s = cast(eta_s, 'double');
             eta_n = hdf5read(filename,'/Centers/eta_n');  eta_n = cast(eta_n, 'double');
-            eta_s  = reshape(Vert.eta_s,params(4),params(5))';
+            eta_s  = reshape(eta_s,params(4),params(5))';
             eta_n = reshape(eta_n,params(4)-1,params(5)-1)';
             nx         = size(eta_s,2);
             
@@ -646,9 +654,9 @@ for istep=istart:ijump:iend
         % viscosity plot
         %--------------------------------------------------
         if (eta_plot==1)
-            Vert.eta_s = hdf5read(filename,'/Vertices/eta_s'); Vert.eta_s = cast(Vert.eta_s, 'double');
+            eta_s = hdf5read(filename,'/Vertices/eta_s'); eta_s = cast(eta_s, 'double');
             eta_n = hdf5read(filename,'/Centers/eta_n');  eta_n = cast(eta_n, 'double');
-            eta   = reshape(Vert.eta_s,params(4),params(5))';
+            eta   = reshape(eta_s,params(4),params(5))';
             eta_n = reshape(eta_n,params(4)-1,params(5)-1)';
             
             % Nodes
@@ -700,11 +708,11 @@ for istep=istart:ijump:iend
         if (rho_plot==1)
             rho_s = hdf5read(filename,'/Vertices/rho_s');  rho_s = cast(rho_s, 'double');
             rho_n = hdf5read(filename,'/Centers/rho_n');  rho_n = cast(rho_n, 'double');
-            Vert.rho_n = hdf5read(filename,'/Centers/rho_n');
-            Vert.rho_n = cast(Vert.rho_n, 'double');
+            rho_n = hdf5read(filename,'/Centers/rho_n');
+            rho_n = cast(rho_n, 'double');
             
-            min(Vert.rho_n(:))
-            max(Vert.rho_n(:))
+            min(rho_n(:))
+            max(rho_n(:))
             
             min(rho_s(:))
             max(rho_s(:))
@@ -778,13 +786,14 @@ for istep=istart:ijump:iend
             %         colormap('gray')
             
             Vx = VxA(2:end-1,:);
-            imagesc(xg_plot, zvx_plot(2:end-1), Vx*1000*3600*24*365);
+%             imagesc(xg_plot, zvx_plot(2:end-1), Vx*1000*3600*24*365);
+            imagesc(xg_plot, zvx_plot(2:end-1), Vx);
             shading flat,axis xy image, colorbar;
             xlabel(xLabel), ylabel(zLabel);
             title(['Vx at' TimeLabel, ' min = ', num2str(min(Vx(:))), ' max = ', num2str(max(Vx(:)))])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             if exist('minVx', 'var') caxis([minVx maxVx]); end
-            caxis([-10 10])
+%             caxis([-10 10])
 
             
             if ( H>L )
@@ -793,13 +802,15 @@ for istep=istart:ijump:iend
                 subplot(2,1,2)
             end
             Vz = VzA(:,2:end-1);
-            imagesc(xvz_plot(2:end-1),zg_plot,Vz*1000*3600*24*365);
+%             imagesc(xvz_plot(2:end-1),zg_plot,Vz*1000*3600*24*365);
+            imagesc(xvz_plot(2:end-1),zg_plot,Vz);
+
             shading flat,axis xy image, colorbar;
             xlabel(xLabel), ylabel(zLabel);
             title(['Vz at' TimeLabel, ' min = ', num2str(min(Vz(:))), ' max = ', num2str(max(Vz(:)))])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             if exist('minVz', 'var') caxis([minVz maxVz]); end
-            caxis([-2.5 2.5])
+%             caxis([-2.5 2.5])
             
             if printfig == 1
                 print([path, './Fig_Velocity/Fig_Velocity', num2str(istep,'%05d'),file_suffix], format, res)
@@ -997,23 +1008,23 @@ for istep=istart:ijump:iend
 %                 [ VizGrid.ph, VizGrid.x_plot, VizGrid.z_plot ] = CropCellArray( VizGrid.ph, VizGrid.x_plot, VizGrid.z_plot, lim );
 %             end
 
-            Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
-            Vert.eta_s = hdf5read(filename,'/Vertices/eta_s'); Vert.eta_s = cast(Vert.eta_s, 'double');
-            eta = reshape(Vert.eta_s,params(4),params(5))';
+            sxxd  = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
+            eta_s = hdf5read(filename,'/Vertices/eta_s'); eta_s = cast(eta_s, 'double');
+            eta = reshape(eta_s,params(4),params(5))';
             eta = 0.25*(eta(1:end-1,1:end-1) + eta(2:end,1:end-1) + eta(1:end-1,2:end) + eta(2:end,2:end));
             
-            exx = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
+            exx = (reshape(exxd,params(4)-1,params(5)-1)');
             ezz = -exx;
-            exz = (reshape(Vert.exz, params(4)  ,params(5)  )');
+            exz = (reshape(exz, params(4)  ,params(5)  )');
             eII = sqrt( 0.5*( 2*exx.^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ) );
             %         sII = 2*eII.*eta;
             
-            sxxd = (reshape(Cent.sxxd,params(4)-1,params(5)-1)');
+            sxxd = (reshape(sxxd,params(4)-1,params(5)-1)');
             szzd = -sxxd;
-            sxz  = (reshape(Vert.sxz, params(4)  ,params(5)  )');
+            sxz  = (reshape(sxz, params(4)  ,params(5)  )');
             sII  = sqrt( 0.5*(2*sxxd.^2 + 0.5*(sxz(1:end-1,1:end-1).^2 + sxz(2:end,1:end-1).^2 + sxz(1:end-1,2:end).^2 + sxz(2:end,2:end).^2 ) ) );
             
             exzc = 0.25*(exz(1:end-1,1:end-1) + exz(2:end,1:end-1) + exz(1:end-1,2:end) + exz(2:end,2:end));
@@ -1032,16 +1043,16 @@ for istep=istart:ijump:iend
             %         if ( H>L ) subplot(121); else subplot(211); end
             Vmag = sqrt(Vxc.^2 + Vzc.^2);
             
-%             p=imagesc( xc_plot, zc_plot, Vmag*(365.25*3600*24*100) );
-            p=imagesc( xc_plot, zc_plot, Vxc*(365.25*3600*24*100) );
+            p=imagesc( xc_plot, zc_plot, Vmag*(365.25*3600*24*100) );
+%             p=imagesc( xc_plot, zc_plot, Vxc*(365.25*3600*24*100) );
 %             p=imagesc( xc_plot, zc_plot, log10(eII) );
 
             alpha(p,0.7);
             hold on
             if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
-%             imagesc( xc_plot, zc_plot, Vmag*(365.25*3600*24*100), 'Visible', 'off' );
+            imagesc( xc_plot, zc_plot, Vmag*(365.25*3600*24*100), 'Visible', 'off' );
 %             imagesc( xc_plot, zc_plot, log10(eII), 'Visible', 'off' );
-            imagesc( xc_plot, zc_plot, Vxc, 'Visible', 'off' );
+%             imagesc( xc_plot, zc_plot, Vxc, 'Visible', 'off' );
 
             shading flat,axis xy image, colorbar('SouthOutside');
             
@@ -1049,7 +1060,7 @@ for istep=istart:ijump:iend
             hv=quiver(xc_plot(1:step:end), zc_plot(1:step:end), Vxc(1:step:end,1:step:end), Vzc(1:step:end,1:step:end));
             set(hv, 'Color', 'k', 'LineWidth', 0.5);
             set(hv, 'MaxHeadSize',2.0, 'AutoScaleFactor', 2);
-            caxis([-.5 .75])
+%             caxis([-.5 .75])
                         hold off
 
 
@@ -1143,16 +1154,13 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if ( vel_divergence == 1 )
             
-            VxNodes.Vx = hdf5read(filename,'/VxNodes/Vx'); VxNodes.Vx = cast(VxNodes.Vx, 'double');
-            VzNodes.Vz = hdf5read(filename,'/VzNodes/Vz'); VzNodes.Vz = cast(VzNodes.Vz, 'double');
-            Vx = reshape(VxNodes.Vx,nx,nz+1)';
-            Vz = reshape(VzNodes.Vz,nx+1,nz)';
-            
-            % Velocity divergence
-            dVxdx = (Vx(:,2:end) - Vx(:,1:end-1)) ./ (xc_coord(2)-xc_coord(1));
-            dVzdz = (Vz(2:end,:) - Vz(1:end-1,:)) ./ (zc_coord(2)-zc_coord(1));
-            divV  = abs(dVxdx(2:end-1,:) + dVzdz(:,2:end-1));
-            
+            divV     = hdf5read(filename,'/Centers/divu');     divV    = cast(divV,    'double'); divV    = reshape(divV   , params(4)-1,params(5)-1)';
+            divV_el  = hdf5read(filename,'/Centers/divu_el');  divV_el = cast(divV_el, 'double'); divV_el = reshape(divV_el, params(4)-1,params(5)-1)';
+            divV_pl  = hdf5read(filename,'/Centers/divu_pl');  divV_pl = cast(divV_pl, 'double'); divV_pl = reshape(divV_pl, params(4)-1,params(5)-1)';
+            divV_r   = hdf5read(filename,'/Centers/divu_r');   divV_r  = cast(divV_r,  'double'); divV_r  = reshape(divV_r , params(4)-1,params(5)-1)';
+            divV_th  = hdf5read(filename,'/Centers/divu_th');  divV_th = cast(divV_th, 'double'); divV_th = reshape(divV_th, params(4)-1,params(5)-1)';
+            divV_net = divV - divV_el - divV_pl - divV_r - divV_th;
+             
             if crop == 1
                 [divV, xc_plot, zc_plot] = CropCellArray( divV, xc_plot, zc_plot, lim );
             end
@@ -1163,11 +1171,56 @@ for istep=istart:ijump:iend
             else
                 figure('Visible', 'Off')
             end
-            imagesc( xc_plot, zc_plot, log10(divV) )
+            
+            
+            subplot(3,2,1)
+            imagesc( xc_plot, zc_plot, divV_el )
+            shading flat,axis xy image, colorbar;
+            xlabel('X'), ylabel('Z')
+            title(['Elastic divergence at' TimeLabel])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            if exist('mindiv', 'var'), caxis([mindiv maxdiv]); end
+            
+            subplot(3,2,2)
+            imagesc( xc_plot, zc_plot, divV_pl )
+            shading flat,axis xy image, colorbar;
+            xlabel('X'), ylabel('Z')
+            title(['Plastic divergence at' TimeLabel])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            if exist('mindiv', 'var'), caxis([mindiv maxdiv]); end
+            
+                        
+            subplot(3,2,3)
+            imagesc( xc_plot, zc_plot, divV_th )
+            shading flat,axis xy image, colorbar;
+            xlabel('X'), ylabel('Z')
+            title(['Thermal divergence at' TimeLabel])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            if exist('mindiv', 'var'), caxis([mindiv maxdiv]); end
+            
+            subplot(3,2,4)
+            imagesc( xc_plot, zc_plot, divV_r )
+            shading flat,axis xy image, colorbar;
+            xlabel('X'), ylabel('Z')
+            title(['Reaction divergence at' TimeLabel])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            if exist('mindiv', 'var'), caxis([mindiv maxdiv]); end
+            
+            subplot(3,2,5)
+            imagesc( xc_plot, zc_plot, divV )
             shading flat,axis xy image, colorbar;
             xlabel('X'), ylabel('Z')
             title(['Velocity divergence at' TimeLabel])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            if exist('mindiv', 'var'), caxis([mindiv maxdiv]); end
+            
+            subplot(3,2,6)
+            imagesc( xc_plot, zc_plot, divV_net )
+            shading flat,axis xy image, colorbar;
+            xlabel('X'), ylabel('Z')
+            title(['Net divergence at' TimeLabel])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            if exist('mindiv', 'var'), caxis([mindiv maxdiv]); end
             
             if printfig == 1
                 print([path, './Fig_VelocityDivergence/Fig_VelocityDivergence', num2str(istep,'%05d'),file_suffix], format, res)
@@ -1180,13 +1233,13 @@ for istep=istart:ijump:iend
         % plot pressure
         %--------------------------------------------------
         if (pre_plot==1)
-            Cent.P  = hdf5read(filename,'/Centers/P');
-            Cent.P  = cast(Cent.P , 'double');
-            P = reshape(Cent.P,params(4)-1,params(5)-1)';
+            P  = hdf5read(filename,'/Centers/P');
+            P  = cast(P , 'double');
+            P = reshape(P,params(4)-1,params(5)-1)';
             
-            %         Cent.dP  = hdf5read(filename,'/Centers/dP');
-            %         Cent.dP  = cast(Cent.dP , 'double');
-            %         dP = reshape(Cent.dP,params(4)-1,params(5)-1)';
+            %         dP  = hdf5read(filename,'/Centers/dP');
+            %         dP  = cast(dP , 'double');
+            %         dP = reshape(dP,params(4)-1,params(5)-1)';
             
             if print2screen == 1
                 figCount = figCount +1;
@@ -1270,23 +1323,25 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if ( stress_inv == 1 )
             
-            Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
-            Vert.eta_s = hdf5read(filename,'/Vertices/eta_s'); Vert.eta_s = cast(Vert.eta_s, 'double');
-            eta = reshape(Vert.eta_s,params(4),params(5))';
+            sxxd  = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            ezzd  = hdf5read(filename,'/Centers/ezzd'); ezzd = cast(ezzd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
+            eta_s = hdf5read(filename,'/Vertices/eta_s'); eta_s = cast(eta_s, 'double');
+            eta = reshape(eta_s,params(4),params(5))';
             eta = 0.25*(eta(1:end-1,1:end-1) + eta(2:end,1:end-1) + eta(1:end-1,2:end) + eta(2:end,2:end));
             
-            exx = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
-            ezz = -exx;
-            exz = (reshape(Vert.exz, params(4)  ,params(5)  )');
+            exx = (reshape(exxd,params(4)-1,params(5)-1)');
+            ezz = (reshape(ezzd,params(4)-1,params(5)-1)');
+            
+            exz = (reshape(exz, params(4)  ,params(5)  )');
             eII = sqrt( 0.5*( 2*exx.^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ) );
             %         sII = 2*eII.*eta;
             
-            sxxd = (reshape(Cent.sxxd,params(4)-1,params(5)-1)');
+            sxxd = (reshape(sxxd,params(4)-1,params(5)-1)');
             szzd = -sxxd;
-            sxz  = (reshape(Vert.sxz, params(4)  ,params(5)  )');
+            sxz  = (reshape(sxz, params(4)  ,params(5)  )');
             sII  = sqrt( 0.5*(2*sxxd.^2 + 0.5*(sxz(1:end-1,1:end-1).^2 + sxz(2:end,1:end-1).^2 + sxz(1:end-1,2:end).^2 + sxz(2:end,2:end).^2 ) ) );
             
             exzc = 0.25*(exz(1:end-1,1:end-1) + exz(2:end,1:end-1) + exz(1:end-1,2:end) + exz(2:end,2:end));
@@ -1321,7 +1376,6 @@ for istep=istart:ijump:iend
             title(['eII at' TimeLabel, ' min = ', num2str((min(eII(:))), '%2.2e'  ), ' s^{-1}', ' max = ', num2str((max(eII(:))), '%2.2e'  ), ' s^{-1}' ])
             if exist('minEii', 'var') caxis([minEii maxEii]); end
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-            if exist('minEii', 'var') caxis([(minEii) (maxEii)]); end
             if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
             axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
             
@@ -1359,41 +1413,50 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if ( stress_evol == 1 )
             
-            Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
-            Vert.eta_s = hdf5read(filename,'/Vertices/eta_s'); Vert.eta_s = cast(Vert.eta_s, 'double');
-            eta = reshape(Vert.eta_s,params(4),params(5))';
+            sxxd  = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            szzd  = hdf5read(filename,'/Centers/szzd'); szzd = cast(szzd, 'double');
+            P     = hdf5read(filename,'/Centers/P');    P    = cast(P, 'double');
+            sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            ezzd  = hdf5read(filename,'/Centers/ezzd'); ezzd = cast(ezzd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
+            eta_s = hdf5read(filename,'/Vertices/eta_s'); eta_s = cast(eta_s, 'double');
+            eta = reshape(eta_s,params(4),params(5))';
             eta = 0.25*(eta(1:end-1,1:end-1) + eta(2:end,1:end-1) + eta(1:end-1,2:end) + eta(2:end,2:end));
             
-            exx = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
-            ezz = -exx;
-            exz = (reshape(Vert.exz, params(4)  ,params(5)  )');
-            eII = sqrt( 0.5*( 2*exx.^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ) );
-            %         sII = 2*eII.*eta;
+            exxd = reshape(exxd,params(4)-1,params(5)-1)';
+            ezzd = reshape(ezzd,params(4)-1,params(5)-1)';
+            exz  = reshape(exz, params(4)  ,params(5)  )';
             
-            sxxd = (reshape(Cent.sxxd,params(4)-1,params(5)-1)');
-            szzd = -sxxd;
-            sxz  = (reshape(Vert.sxz, params(4)  ,params(5)  )');
-            sII  = sqrt( 0.5*(2*sxxd.^2 + 0.5*(sxz(1:end-1,1:end-1).^2 + sxz(2:end,1:end-1).^2 + sxz(1:end-1,2:end).^2 + sxz(2:end,2:end).^2 ) ) );
+            sxxd = reshape(sxxd,params(4)-1,params(5)-1)';
+            P    = reshape(P,params(4)-1,params(5)-1)';
+            szzd = reshape(szzd,params(4)-1,params(5)-1)';
+            sxz  = reshape(sxz, params(4)  ,params(5)  )';
+            
+            syyd = -(sxxd + szzd);
+            eyyd = -(exxd + ezzd);
             
             exzc = 0.25*(exz(1:end-1,1:end-1) + exz(2:end,1:end-1) + exz(1:end-1,2:end) + exz(2:end,2:end));
             sxzc = 0.25*(sxz(1:end-1,1:end-1) + sxz(2:end,1:end-1) + sxz(1:end-1,2:end) + sxz(2:end,2:end));
-            HSc = 2*sxzc.*exzc + sxxd.*exx + szzd.*ezz;
+            HSc = 2*sxzc.*exzc + sxxd.*exxd + szzd.*ezzd;
+            
+            sII  = sqrt(1/2*(sxxd.^2 + szzd.^2 + syyd.^2) + sxzc.^2);
+            eII  = sqrt(1/2*(exxd.^2 + ezzd.^2 + eyyd.^2) + exzc.^2);
             
             sII = sII(sII>1e-8);
             vol = length(sII)*dx*dz;
             stress = sum(sII(:).*(dx*dz))/vol;
+            press  = sum(P(:).*(dx*dz))/vol;
+
             if istep == 0
                 stress = 0;
             end
-            figure(90)
-            hold on
-            %         plot(strain, (stress), '.')
-%             s_anal = 2*1e-14*1e21*(1-exp(-time*1e10/1e21));
-            %         plot(time/1e3/3600/365/24, (stress), '.', time/1e3/3600/365/24, (s_anal), 'or')
-            plot(time/1e3/3600/365/24, (stress), '.')
+            figure(90), 
+            if istep==0, clf; end
+            subplot(211), hold on
+            plot(time/1e3/3600/365/24, (stress), 'k.'), ylabel('Tii')
+            subplot(212), hold on
+            plot(time/1e3/3600/365/24, (press), 'k.'), ylabel('P')
             
             short(icount)  =  strain;
             siivec(icount) = sum(sII(:).*(dx*dz))/vol;
@@ -1417,11 +1480,11 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if ( temp_evol == 1 )
             
-            Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
-            Vert.eta_s = hdf5read(filename,'/Vertices/eta_s'); Vert.eta_s = cast(Vert.eta_s, 'double');
+            sxxd  = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
+            eta_s = hdf5read(filename,'/Vertices/eta_s'); eta_s = cast(eta_s, 'double');
             
             T  = hdf5read(filename,'/Centers/T'); T = cast(T, 'double');
             T = (reshape(T,params(4)-1,params(5)-1)');
@@ -1467,15 +1530,15 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if ( stress_plot == 1 )
             
-            Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
-            %         Cent.syyd  = hdf5read(filename,'/Centers/syyd'); Cent.syyd = cast(Cent.syyd, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
+            sxxd  = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            %         syyd  = hdf5read(filename,'/Centers/syyd'); syyd = cast(syyd, 'double');
+            sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
             
-            sxxd = (reshape(Cent.sxxd,params(4)-1,params(5)-1)');
-            sxz  = (reshape(Vert.sxz, params(4)  ,params(5)  )');
-            Cent.P  = hdf5read(filename,'/Centers/P');
-            Cent.P  = cast(Cent.P , 'double');
-            P = reshape(Cent.P,params(4)-1,params(5)-1)';
+            sxxd = (reshape(sxxd,params(4)-1,params(5)-1)');
+            sxz  = (reshape(sxz, params(4)  ,params(5)  )');
+            P  = hdf5read(filename,'/Centers/P');
+            P  = cast(P , 'double');
+            P = reshape(P,params(4)-1,params(5)-1)';
             mean(P(:))
             %         P = P-mean(P(:));
             %         Sxx = sxxd - P;
@@ -1633,14 +1696,14 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if ( srate_plot == 1 )
             
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Cent.ezzd  = -Cent.exxd;
-            %         Cent.ezzd  = hdf5read(filename,'/Centers/ezzd'); Cent.ezzd = cast(Cent.ezzd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            ezzd  = hdf5read(filename,'/Centers/ezzd'); ezzd = cast(ezzd, 'double');
+            %         ezzd  = hdf5read(filename,'/Centers/ezzd'); ezzd = cast(ezzd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
             
-            exxd = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
-            ezzd = (reshape(Cent.ezzd,params(4)-1,params(5)-1)');
-            exz  = (reshape(Vert.exz, params(4)  ,params(5)  )');
+            exxd = (reshape(exxd,params(4)-1,params(5)-1)');
+            ezzd = (reshape(ezzd,params(4)-1,params(5)-1)');
+            exz  = (reshape(exz, params(4)  ,params(5)  )');
             
             if print2screen == 1
                 figCount = figCount +1;
@@ -1768,9 +1831,9 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if (dyna_pre==1)
             
-            Cent.P  = hdf5read(filename,'/Centers/P');
-            Cent.P  = cast(Cent.P , 'double');
-            P = reshape(Cent.P,params(4)-1,params(5)-1)';
+            P  = hdf5read(filename,'/Centers/P');
+            P  = cast(P , 'double');
+            P = reshape(P,params(4)-1,params(5)-1)';
             %         P = P - mean(P(:));
             
             rho_n = hdf5read(filename,'/Centers/rho_n');
@@ -1805,49 +1868,51 @@ for istep=istart:ijump:iend
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             if exist('minPdyn', 'var') caxis([minPdyn maxPdyn]); end
             
-            if print2screen == 1
-                figCount = figCount +1;
-                figure(figCount), clf
-            else
-                figure('Visible', 'Off')
-            end
-            
-            imagesc( xc_plot, zc_plot, Plith )
-            shading flat,axis xy image, colorbar;
-            hold on
-            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
-            imagesc( xc_plot, zc_plot, Pdyn, 'Visible', 'off' )
-            hold off
-            xlabel(xLabel), ylabel(zLabel)
-            title(['Lithostatic pressure at' TimeLabel])
-            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-            
             if printfig == 1
                 print([path,'./Fig_DynamicPressure/Fig_DynamicPressure',num2str(istep,'%05d'),file_suffix], format, res)
                 close all
             end
+
             
-            if print2screen == 1
-                figCount = figCount +1;
-                figure(figCount), clf
-            else
-                figure('Visible', 'Off')
-            end
+%             if print2screen == 1
+%                 figCount = figCount +1;
+%                 figure(figCount), clf
+%             else
+%                 figure('Visible', 'Off')
+%             end
+%             
+%             imagesc( xc_plot, zc_plot, Plith )
+%             shading flat,axis xy image, colorbar;
+%             hold on
+%             if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+%             imagesc( xc_plot, zc_plot, Pdyn, 'Visible', 'off' )
+%             hold off
+%             xlabel(xLabel), ylabel(zLabel)
+%             title(['Lithostatic pressure at' TimeLabel])
+%             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+%             
             
-            imagesc( xc_plot, 0.5*(zc_plot(2:end)+zc_plot(1:end-1)), diff(Plith,1,1)/dz*1e-5/1000*1000 )
-            
-            hold on
-            %         if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
-            imagesc( xc_plot, 0.5*(zc_plot(2:end)+zc_plot(1:end-1)), diff(Plith,1,1)/dz*1e-5/1000*1000, 'Visible', 'off' )
-            hold off
-            xlabel(xLabel), ylabel(zLabel)
-            title(['dPlith/dz [Pa/m] at' TimeLabel])
-            shading flat,axis xy image, colorbar; caxis([[-0.2757 -0.2747]])
-            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
-            if printfig == 1
-                print([path,'./Fig_DynamicPressure/Fig_LithPressure',num2str(istep,'%05d'),file_suffix], format, res)
-                close all
-            end
+%             if print2screen == 1
+%                 figCount = figCount +1;
+%                 figure(figCount), clf
+%             else
+%                 figure('Visible', 'Off')
+%             end
+% 
+%             imagesc( xc_plot, 0.5*(zc_plot(2:end)+zc_plot(1:end-1)), diff(Plith,1,1)/dz*1e-5/1000*1000 )
+% 
+%             hold on
+%             %         if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+%             imagesc( xc_plot, 0.5*(zc_plot(2:end)+zc_plot(1:end-1)), diff(Plith,1,1)/dz*1e-5/1000*1000, 'Visible', 'off' )
+%             hold off
+%             xlabel(xLabel), ylabel(zLabel)
+%             title(['dPlith/dz [Pa/m] at' TimeLabel])
+%             shading flat,axis xy image, colorbar; caxis([[-0.2757 -0.2747]])
+%             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+%             if printfig == 1
+%                 print([path,'./Fig_DynamicPressure/Fig_LithPressure',num2str(istep,'%05d'),file_suffix], format, res)
+%                 close all
+%             end
             
             
         end
@@ -1857,39 +1922,39 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if (srate_add==1)
            
-            Cent.eII_el  = hdf5read(filename,'/Centers/eII_el');
-            Cent.eII_el  = cast(Cent.eII_el , 'double');
-            eII_el = reshape(Cent.eII_el,params(4)-1,params(5)-1)';
+            eII_el  = hdf5read(filename,'/Centers/eII_el');
+            eII_el  = cast(eII_el , 'double');
+            eII_el = reshape(eII_el,params(4)-1,params(5)-1)';
             
-            Cent.eII_pl  = hdf5read(filename,'/Centers/eII_pl');
-            Cent.eII_pl  = cast(Cent.eII_pl , 'double');
-            eII_pl = reshape(Cent.eII_pl,params(4)-1,params(5)-1)';
+            eII_pl  = hdf5read(filename,'/Centers/eII_pl');
+            eII_pl  = cast(eII_pl , 'double');
+            eII_pl = reshape(eII_pl,params(4)-1,params(5)-1)';
             
-            Cent.eII_pwl  = hdf5read(filename,'/Centers/eII_pwl');
-            Cent.eII_pwl  = cast(Cent.eII_pwl , 'double');
-            eII_pwl = reshape(Cent.eII_pwl,params(4)-1,params(5)-1)';
+            eII_pwl  = hdf5read(filename,'/Centers/eII_pwl');
+            eII_pwl  = cast(eII_pwl , 'double');
+            eII_pwl = reshape(eII_pwl,params(4)-1,params(5)-1)';
             
-            Cent.eII_exp  = hdf5read(filename,'/Centers/eII_exp');
-            Cent.eII_exp  = cast(Cent.eII_exp , 'double');
-            eII_exp = reshape(Cent.eII_exp,params(4)-1,params(5)-1)';
+            eII_exp  = hdf5read(filename,'/Centers/eII_exp');
+            eII_exp  = cast(eII_exp , 'double');
+            eII_exp = reshape(eII_exp,params(4)-1,params(5)-1)';
             
-            Cent.eII_lin  = hdf5read(filename,'/Centers/eII_lin');
-            Cent.eII_lin  = cast(Cent.eII_lin , 'double');
-            eII_lin = reshape(Cent.eII_lin,params(4)-1,params(5)-1)';
+            eII_lin  = hdf5read(filename,'/Centers/eII_lin');
+            eII_lin  = cast(eII_lin , 'double');
+            eII_lin = reshape(eII_lin,params(4)-1,params(5)-1)';
             
-            Cent.eII_gbs  = hdf5read(filename,'/Centers/eII_gbs');
-            Cent.eII_gbs  = cast(Cent.eII_gbs , 'double');
-            eII_gbs = reshape(Cent.eII_gbs,params(4)-1,params(5)-1)';
+            eII_gbs  = hdf5read(filename,'/Centers/eII_gbs');
+            eII_gbs  = cast(eII_gbs , 'double');
+            eII_gbs = reshape(eII_gbs,params(4)-1,params(5)-1)';
             
-            Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
-            Vert.eta_s = hdf5read(filename,'/Vertices/eta_s'); Vert.eta_s = cast(Vert.eta_s, 'double');
-            eta = reshape(Vert.eta_s,params(4),params(5))';
+            sxxd  = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
+            eta_s = hdf5read(filename,'/Vertices/eta_s'); eta_s = cast(eta_s, 'double');
+            eta = reshape(eta_s,params(4),params(5))';
             
-            exx = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
-            exz = (reshape(Vert.exz, params(4)  ,params(5)  )');
+            exx = (reshape(exxd,params(4)-1,params(5)-1)');
+            exz = (reshape(exz, params(4)  ,params(5)  )');
             eII = sqrt( 0.5*( 2*exx.^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ) );
             
             if print2screen == 1
@@ -1983,6 +2048,10 @@ for istep=istart:ijump:iend
             title(['Power law strain rate at' TimeLabel])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             
+%             caxis([-34 -20])
+            
+            
+            
             subplot(324)
             imagesc( xc_plot, zc_plot, (log10(eII_exp)) )
             hold on
@@ -2008,6 +2077,9 @@ for istep=istart:ijump:iend
             title(['Linear strain rate at' TimeLabel])
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             
+%             caxis([-26.5 -20])
+            
+            
             subplot(326)
             imagesc( xc_plot, zc_plot, (log10(eII_gbs)) )
             hold on
@@ -2032,30 +2104,30 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if (acc_strain_add==1)
             
-            Cent.eII_el  = hdf5read(filename,'/Centers/strain_el');
-            Cent.eII_el  = cast(Cent.eII_el , 'double');
-            eII_el = reshape(Cent.eII_el,params(4)-1,params(5)-1)';
+            eII_el  = hdf5read(filename,'/Centers/strain_el');
+            eII_el  = cast(eII_el , 'double');
+            eII_el = reshape(eII_el,params(4)-1,params(5)-1)';
             
-            Cent.eII_pl  = hdf5read(filename,'/Centers/strain_pl');
-            Cent.eII_pl  = cast(Cent.eII_pl , 'double');
-            eII_pl = reshape(Cent.eII_pl,params(4)-1,params(5)-1)';
+            eII_pl  = hdf5read(filename,'/Centers/strain_pl');
+            eII_pl  = cast(eII_pl , 'double');
+            eII_pl = reshape(eII_pl,params(4)-1,params(5)-1)';
             
-            Cent.eII_pwl  = hdf5read(filename,'/Centers/strain_pwl');
-            Cent.eII_pwl  = cast(Cent.eII_pwl , 'double');
-            eII_pwl = reshape(Cent.eII_pwl,params(4)-1,params(5)-1)';
+            eII_pwl  = hdf5read(filename,'/Centers/strain_pwl');
+            eII_pwl  = cast(eII_pwl , 'double');
+            eII_pwl = reshape(eII_pwl,params(4)-1,params(5)-1)';
             
-            Cent.eII_lin = zeros(size(eII_pwl));
-            Cent.eII_lin  = hdf5read(filename,'/Centers/strain_lin');
-            Cent.eII_lin  = cast(Cent.eII_lin , 'double');
-            eII_lin = reshape(Cent.eII_lin,params(4)-1,params(5)-1)';
+            eII_lin = zeros(size(eII_pwl));
+            eII_lin  = hdf5read(filename,'/Centers/strain_lin');
+            eII_lin  = cast(eII_lin , 'double');
+            eII_lin = reshape(eII_lin,params(4)-1,params(5)-1)';
             
-            Cent.eII_exp  = hdf5read(filename,'/Centers/strain_exp');
-            Cent.eII_exp  = cast(Cent.eII_exp , 'double');
-            eII_exp = reshape(Cent.eII_exp,params(4)-1,params(5)-1)';
+            eII_exp  = hdf5read(filename,'/Centers/strain_exp');
+            eII_exp  = cast(eII_exp , 'double');
+            eII_exp = reshape(eII_exp,params(4)-1,params(5)-1)';
             
-            Cent.eII  = hdf5read(filename,'/Centers/strain');
-            Cent.eII  = cast(Cent.eII , 'double');
-            eII = reshape(Cent.eII,params(4)-1,params(5)-1)';
+            eII  = hdf5read(filename,'/Centers/strain');
+            eII  = cast(eII , 'double');
+            eII = reshape(eII,params(4)-1,params(5)-1)';
             strmin = min(eII(:));
             strmax = max(eII(:))/4;
             
@@ -2199,8 +2271,8 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if (acc_strain==1)
             
-            Cent.strain = hdf5read(filename,'/Centers/strain'); Cent.strain = cast(Cent.strain, 'double');
-            strain = reshape(Cent.strain,params(4)-1,params(5)-1)';
+            strain = hdf5read(filename,'/Centers/strain'); strain = cast(strain, 'double');
+            strain = reshape(strain,params(4)-1,params(5)-1)';
             
             if print2screen == 1
                 figCount = figCount +1;
@@ -2226,7 +2298,7 @@ for istep=istart:ijump:iend
             imagesc( xc_plot, zc_plot, (log10(strain)), 'Visible', 'off' );
             shading flat,axis xy image, colorbar;
             hold off
-            caxis([-3 2])
+            if exist('minStr', 'var') caxis([minStr maxStr]); end
             if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
 
             xlabel(xLabel, 'FontSize', 15), ylabel(zLabel, 'FontSize', 15)
@@ -2246,8 +2318,8 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if (temperature==1)
             
-            Cent.T = hdf5read(filename,'/Centers/T'); Cent.T = cast(Cent.T, 'double');
-            T = reshape(Cent.T,params(4)-1,params(5)-1)' - 273.15;
+            T = hdf5read(filename,'/Centers/T'); T = cast(T, 'double');
+            T = reshape(T,params(4)-1,params(5)-1)' - 273.15;
             
             if print2screen == 1
                 figCount = figCount +1;
@@ -2293,40 +2365,40 @@ for istep=istart:ijump:iend
             %         end
             
             % Temperature
-            Cent.T = hdf5read(filename,'/Centers/T'); Cent.T = cast(Cent.T, 'double');
-            T = reshape(Cent.T,params(4)-1,params(5)-1)';
+            T = hdf5read(filename,'/Centers/T'); T = cast(T, 'double');
+            T = reshape(T,params(4)-1,params(5)-1)';
             
             % Viscosity
-            Vert.eta_s = hdf5read(filename,'/Vertices/eta_s'); Vert.eta_s = cast(Vert.eta_s, 'double');
-            eta = reshape(Vert.eta_s,params(4),params(5))';
+            eta_s = hdf5read(filename,'/Vertices/eta_s'); eta_s = cast(eta_s, 'double');
+            eta = reshape(eta_s,params(4),params(5))';
             
             % Strain rate ariant II
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
-            exx = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
-            exz = (reshape(Vert.exz, params(4)  ,params(5)  )');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
+            exx = (reshape(exxd,params(4)-1,params(5)-1)');
+            exz = (reshape(exz, params(4)  ,params(5)  )');
             eII = sqrt( 0.5*(2*exx.^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ));
             
-            %         Cent.sII  = hdf5read(filename,'/Centers/sII'); Cent.sII = cast(Cent.sII, 'double');
-            %         Cent.eII  = hdf5read(filename,'/Centers/eII'); Cent.eII = cast(Cent.eII, 'double');
+            %         sII  = hdf5read(filename,'/Centers/sII'); sII = cast(sII, 'double');
+            %         eII  = hdf5read(filename,'/Centers/eII'); eII = cast(eII, 'double');
             
-            %         sII = (reshape(Cent.sII,params(4)-1,params(5)-1)');
-            %         eII = (reshape(Cent.eII,params(4)-1,params(5)-1)');
+            %         sII = (reshape(sII,params(4)-1,params(5)-1)');
+            %         eII = (reshape(eII,params(4)-1,params(5)-1)');
             
             % Total stress
-            Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
-            Cent.P     = hdf5read(filename,'/Centers/P');    Cent.P    = cast(Cent.P, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
-            sxz = (reshape(Vert.sxz, params(4)  ,params(5)  )');
+            sxxd  = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
+            P     = hdf5read(filename,'/Centers/P');    P    = cast(P, 'double');
+            sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
+            sxz = (reshape(sxz, params(4)  ,params(5)  )');
             
-            sxxd = (reshape(Cent.sxxd,params(4)-1,params(5)-1)');
-            P    = (reshape(   Cent.P,params(4)-1,params(5)-1)');
+            sxxd = (reshape(sxxd,params(4)-1,params(5)-1)');
+            P    = (reshape(   P,params(4)-1,params(5)-1)');
             sII = sqrt( 0.5*(2*sxxd.^2 + 0.5*(sxz(1:end-1,1:end-1).^2 + sxz(2:end,1:end-1).^2 + sxz(1:end-1,2:end).^2 + sxz(2:end,2:end).^2 ) ));
             
             sxx   =  sxxd - P;
             szz   = -sxxd - P;
-            sxz  = (reshape(Vert.sxz, params(4)  ,params(5)  )');
+            sxz  = (reshape(sxz, params(4)  ,params(5)  )');
             sII  = sqrt( 0.5*(2*sxxd.^2 + 0.5*(sxz(1:end-1,1:end-1).^2 + sxz(2:end,1:end-1).^2 + sxz(1:end-1,2:end).^2 + sxz(2:end,2:end).^2 ) ) );
             
             % Velocities (cell centers)
@@ -2556,19 +2628,19 @@ for istep=istart:ijump:iend
             lim.xmax = lim.xmax - eps_val * (lim.xmax-lim.xmin) *dt;
             lim.zmax = lim.zmax + eps_val * (lim.zmax-lim.zmin) *dt;
             
-            Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
-            Cent.szzd  = hdf5read(filename,'/Centers/sxxd'); Cent.szzd = cast(Cent.szzd, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
+            sxxd  = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            szzd  = hdf5read(filename,'/Centers/sxxd'); szzd = cast(szzd, 'double');
+            sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
             
-            exx = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
-            exz = (reshape(Vert.exz, params(4)  ,params(5)  )');
+            exx = (reshape(exxd,params(4)-1,params(5)-1)');
+            exz = (reshape(exz, params(4)  ,params(5)  )');
             eII = sqrt( 0.5*( 2*exx.^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ) );
             
             
-            Cent.T = hdf5read(filename,'/Centers/T'); Cent.T = cast(Cent.T, 'double');
-            T      = reshape(Cent.T,params(4)-1,params(5)-1)'- 273;
+            T = hdf5read(filename,'/Centers/T'); T = cast(T, 'double');
+            T      = reshape(T,params(4)-1,params(5)-1)'- 273;
             
             
             VizGrid = PhaseMap( filename, VizGrid  );
@@ -2860,18 +2932,18 @@ for istep=istart:ijump:iend
             
             FTSZ = 18;
             
-            Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
-            Cent.szzd  = hdf5read(filename,'/Centers/sxxd'); Cent.szzd = cast(Cent.szzd, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
+            sxxd  = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            szzd  = hdf5read(filename,'/Centers/sxxd'); szzd = cast(szzd, 'double');
+            sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
             
-            exx = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
-            exz = (reshape(Vert.exz, params(4)  ,params(5)  )');
+            exx = (reshape(exxd,params(4)-1,params(5)-1)');
+            exz = (reshape(exz, params(4)  ,params(5)  )');
             eII = sqrt( 0.5*( 2*exx.^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ) );
             
-            Cent.T = hdf5read(filename,'/Centers/T'); Cent.T = cast(Cent.T, 'double');
-            T      = reshape(Cent.T,params(4)-1,params(5)-1)'- 273;
+            T = hdf5read(filename,'/Centers/T'); T = cast(T, 'double');
+            T      = reshape(T,params(4)-1,params(5)-1)'- 273;
             
             p_vec_x1 = zeros(size(eII));
             p_vec_y1 = zeros(size(eII));
@@ -2965,11 +3037,11 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if ( kinetic_e == 1 )
             
-            Vert.rho_s = hdf5read(filename,'/Vertices/rho_s');
-            Vert.rho_s = cast(Vert.rho_s, 'double');
+            rho_s = hdf5read(filename,'/Vertices/rho_s');
+            rho_s = cast(rho_s, 'double');
             VxNodes.Vx = hdf5read(filename,'/VxNodes/Vx'); VxNodes.Vx = cast(VxNodes.Vx, 'double');
             VzNodes.Vz = hdf5read(filename,'/VzNodes/Vz'); VzNodes.Vz = cast(VzNodes.Vz, 'double');
-            rho = reshape(Vert.rho_s,nx,nz)';
+            rho = reshape(rho_s,nx,nz)';
             Vx  = reshape(VxNodes.Vx,nx,nz+1)';
             Vz  = reshape(VzNodes.Vz,nx+1,nz)';
             
@@ -2998,12 +3070,12 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if ( strainR_div == 1 )
             
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
             
-            exx = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
+            exx = (reshape(exxd,params(4)-1,params(5)-1)');
             ezz = -exx;
-            exz = (reshape(Vert.exz, params(4)  ,params(5)  )');
+            exz = (reshape(exz, params(4)  ,params(5)  )');
             eII = sqrt( 0.5*( 2*exx.^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ) );
             
             eII_Vx = 0.5*(eII(:,1:end-1) + eII(:,2:end)); eII_Vx = eII_Vx(2:end-1,:);
@@ -3046,26 +3118,26 @@ for istep=istart:ijump:iend
             [aa,b1] = min(abs(xc_coord-x1));
             [aa,b2] = min(abs(xc_coord-x2));
             
-            Cent.T = hdf5read(filename,'/Centers/T'); Cent.T = cast(Cent.T, 'double');
-            T = reshape(Cent.T,params(4)-1,params(5)-1)'-273;
-            Cent.P = hdf5read(filename,'/Centers/P'); Cent.P = cast(Cent.P, 'double');
-            P = reshape(Cent.P,params(4)-1,params(5)-1)';
-            Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
-            Vert.eta_s = hdf5read(filename,'/Vertices/eta_s'); Vert.eta_s = cast(Vert.eta_s, 'double');
-            eta = reshape(Vert.eta_s,params(4),params(5))';
+            T = hdf5read(filename,'/Centers/T'); T = cast(T, 'double');
+            T = reshape(T,params(4)-1,params(5)-1)'-273;
+            P = hdf5read(filename,'/Centers/P'); P = cast(P, 'double');
+            P = reshape(P,params(4)-1,params(5)-1)';
+            sxxd  = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
+            eta_s = hdf5read(filename,'/Vertices/eta_s'); eta_s = cast(eta_s, 'double');
+            eta = reshape(eta_s,params(4),params(5))';
             eta = 0.25*(eta(1:end-1,1:end-1) + eta(2:end,1:end-1) + eta(1:end-1,2:end) + eta(2:end,2:end));
             
-            exx = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
+            exx = (reshape(exxd,params(4)-1,params(5)-1)');
             ezz = -exx;
-            exz = (reshape(Vert.exz, params(4)  ,params(5)  )');
+            exz = (reshape(exz, params(4)  ,params(5)  )');
             eII = sqrt( 0.5*( 2*exx.^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ) );
             
-            sxxd = (reshape(Cent.sxxd,params(4)-1,params(5)-1)');
+            sxxd = (reshape(sxxd,params(4)-1,params(5)-1)');
             szzd = -sxxd;
-            sxz  = (reshape(Vert.sxz, params(4)  ,params(5)  )');
+            sxz  = (reshape(sxz, params(4)  ,params(5)  )');
             sII  = sqrt( 0.5*(2*sxxd.^2 + 0.5*(sxz(1:end-1,1:end-1).^2 + sxz(2:end,1:end-1).^2 + sxz(1:end-1,2:end).^2 + sxz(2:end,2:end).^2 ) ) );
             
             exzc = 0.25*(exz(1:end-1,1:end-1) + exz(2:end,1:end-1) + exz(1:end-1,2:end) + exz(2:end,2:end));
@@ -3147,11 +3219,15 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if ( topo == 1 )
             
-            xtopo = hdf5read(filename,'/Topo/x_mark');
-            ztopo = hdf5read(filename,'/Topo/z_mark');
-            xtopo = cast(xtopo, 'double');
-            ztopo = cast(ztopo, 'double');
-            height = hdf5read(filename,'/Topo/z_grid');
+            if mdoodz6==1
+                xtopo = hdf5read(filename,'/Topo/x_mark');
+                ztopo = hdf5read(filename,'/Topo/z_mark');
+                xtopo = cast(xtopo, 'double');
+                ztopo = cast(ztopo, 'double');
+                height = hdf5read(filename,'/Topo/z_grid');
+            else
+                height = hdf5read(filename,'/Topo/height');
+            end
             
             if print2screen == 1
                 figCount = figCount +1;
@@ -3159,9 +3235,10 @@ for istep=istart:ijump:iend
             else
                 figure('Visible', 'Off')
             end
-            title(['min = ', num2str(min(ztopo)), ' max = ', num2str(max(ztopo)), TimeLabel])
+            title(TimeLabel)
+%             title(['min = ', num2str(min(ztopo)), ' max = ', num2str(max(ztopo)), TimeLabel])
             hold on
-            plot( xtopo, ztopo-0*mean(ztopo), '.r' )
+%             plot( xtopo, ztopo-0*mean(ztopo), '.r' )
             plot( xg_coord, height-0*mean(height), '-o')
             hold off
             
@@ -3172,12 +3249,17 @@ for istep=istart:ijump:iend
             % ylabel('max. Topo [km]')
             % hold on
             
-            mxtopo(icount) = max(ztopo);
+%             mxtopo(icount) = max(ztopo);
             drawnow
             
             if istep == iend
                 save( [path,'TopoData'], 'mxtopo', 't_vec')
                 disp('file saved')
+            end
+            
+            if printfig == 1
+                print([path, './Fig_Topo/Fig_Topo', num2str(istep,'%05d'),file_suffix], format, res)
+                close all
             end
             
         end
@@ -3186,10 +3268,10 @@ for istep=istart:ijump:iend
         % topography and viscosity plot
         %--------------------------------------------------
         if (topo_eta_plot==1)
-            Vert.eta_s = hdf5read(filename,'/Vertices/eta_s'); Vert.eta_s = cast(Vert.eta_s, 'double');
+            eta_s = hdf5read(filename,'/Vertices/eta_s'); eta_s = cast(eta_s, 'double');
             eta_n = hdf5read(filename,'/Centers/eta_n');  eta_n = cast(eta_n, 'double');
             
-            eta   = reshape(Vert.eta_s,params(4),params(5))';
+            eta   = reshape(eta_s,params(4),params(5))';
             eta_n = reshape(eta_n,params(4)-1,params(5)-1)';
             
             xtopo = hdf5read(filename,'/Topo/x_mark');
@@ -3246,10 +3328,10 @@ for istep=istart:ijump:iend
             ztopo = cast(ztopo, 'double');
             height = hdf5read(filename,'/Topo/z_grid');
             
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
-            exx = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
-            exz = (reshape(Vert.exz, params(4)  ,params(5)  )');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
+            exx = (reshape(exxd,params(4)-1,params(5)-1)');
+            exz = (reshape(exz, params(4)  ,params(5)  )');
             eII = sqrt( 0.5*( 2*exx.^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ) );
             
             % Nodes
@@ -3333,13 +3415,13 @@ for istep=istart:ijump:iend
                 
                 subplot(231)
                 pcolor(x2D/1e3,t2D/My,topo2D/1e3-topo_ref), colorbar, shading flat;
-                caxis([-3 2])
+%                 caxis([-3 2])
                 xlabel('x [km]'), ylabel('t [My]')
                 title('Topography [km]')
                 
                 subplot(232)
                 pcolor(x2D/1e3,t2D/My,vx2D*y*1e3), colorbar, shading flat;
-                caxis([-10 10])
+%                 caxis([-10 10])
                 xlabel('x [km]'), ylabel('t [My]')
                 title('Surface velocity x [mm/y]')
                 
@@ -3347,7 +3429,7 @@ for istep=istart:ijump:iend
                 pcolor(x2D/1e3,t2D/My,vz2D*y*1e3), colorbar, shading flat;
                 hold on 
 %                 contour(x2D/1e3,t2D/My,topo2D/1e3-topo_ref, [0 0], 'k')
-                caxis([-2.5 2.5])
+%                 caxis([-2.5 2.5])
                 xlabel('x [km]'), ylabel('t [My]')
                 title('Surface velocity z [mm/y]')
                 
@@ -3366,13 +3448,13 @@ for istep=istart:ijump:iend
                 
                 subplot(235)
                 pcolor(x2D(1:end-1,:)/1e3,t2D_av/My,Vz_wrong*y*1e3), colorbar, shading flat;
-                caxis([-2.5 2.5])
+%                 caxis([-2.5 2.5])
                 xlabel('x [km]'), ylabel('t [My]')
                 title('DH/Dt = dH/dt [mm/y]')
                 
                 subplot(236)
                 pcolor(x2D_av(1:end-1,:)/1e3,t2D_av(:,1:end-1)/My,Vz_corr*y*1e3), colorbar, shading flat;
-                caxis([-2.5 2.5])
+%                 caxis([-2.5 2.5])
                 xlabel('x [km]'), ylabel('t [My]')
                 title('DH/Dt = dH/dt + Vx*dHdx [mm/y]')
                 
@@ -3406,8 +3488,8 @@ for istep=istart:ijump:iend
             end
             
             VizGrid = PhaseMap_hr( filename, VizGrid );
-            Cent.T = hdf5read(filename,'/Centers/T'); Cent.T = cast(Cent.T, 'double');
-            T = reshape(Cent.T,params(4)-1,params(5)-1)';
+            T = hdf5read(filename,'/Centers/T'); T = cast(T, 'double');
+            T = reshape(T,params(4)-1,params(5)-1)';
 
             if print2screen == 1
                 figCount = figCount +1;
@@ -3486,35 +3568,35 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if (srate_add_perc==1)
             
-            Cent.eII_el  = hdf5read(filename,'/Centers/eII_el');
-            Cent.eII_el  = cast(Cent.eII_el , 'double');
-            eII_el = reshape(Cent.eII_el,params(4)-1,params(5)-1)';
+            eII_el  = hdf5read(filename,'/Centers/eII_el');
+            eII_el  = cast(eII_el , 'double');
+            eII_el = reshape(eII_el,params(4)-1,params(5)-1)';
             
-            Cent.eII_pl  = hdf5read(filename,'/Centers/eII_pl');
-            Cent.eII_pl  = cast(Cent.eII_pl , 'double');
-            eII_pl = reshape(Cent.eII_pl,params(4)-1,params(5)-1)';
+            eII_pl  = hdf5read(filename,'/Centers/eII_pl');
+            eII_pl  = cast(eII_pl , 'double');
+            eII_pl = reshape(eII_pl,params(4)-1,params(5)-1)';
             
-            Cent.eII_pwl  = hdf5read(filename,'/Centers/eII_pwl');
-            Cent.eII_pwl  = cast(Cent.eII_pwl , 'double');
-            eII_pwl = reshape(Cent.eII_pwl,params(4)-1,params(5)-1)';
+            eII_pwl  = hdf5read(filename,'/Centers/eII_pwl');
+            eII_pwl  = cast(eII_pwl , 'double');
+            eII_pwl = reshape(eII_pwl,params(4)-1,params(5)-1)';
             
-            Cent.eII_exp  = hdf5read(filename,'/Centers/eII_exp');
-            Cent.eII_exp  = cast(Cent.eII_exp , 'double');
-            eII_exp = reshape(Cent.eII_exp,params(4)-1,params(5)-1)';
+            eII_exp  = hdf5read(filename,'/Centers/eII_exp');
+            eII_exp  = cast(eII_exp , 'double');
+            eII_exp = reshape(eII_exp,params(4)-1,params(5)-1)';
             
-            Cent.eII_lin  = hdf5read(filename,'/Centers/eII_lin');
-            Cent.eII_lin  = cast(Cent.eII_lin , 'double');
-            eII_lin = reshape(Cent.eII_lin,params(4)-1,params(5)-1)';
+            eII_lin  = hdf5read(filename,'/Centers/eII_lin');
+            eII_lin  = cast(eII_lin , 'double');
+            eII_lin = reshape(eII_lin,params(4)-1,params(5)-1)';
             
-            Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
-            Vert.eta_s = hdf5read(filename,'/Vertices/eta_s'); Vert.eta_s = cast(Vert.eta_s, 'double');
-            eta = reshape(Vert.eta_s,params(4),params(5))';
+            sxxd  = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
+            eta_s = hdf5read(filename,'/Vertices/eta_s'); eta_s = cast(eta_s, 'double');
+            eta = reshape(eta_s,params(4),params(5))';
             
-            exx = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
-            exz = (reshape(Vert.exz, params(4)  ,params(5)  )');
+            exx = (reshape(exxd,params(4)-1,params(5)-1)');
+            exz = (reshape(exz, params(4)  ,params(5)  )');
             eII = sqrt( 0.5*( 2*exx.^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ) );
             
             if print2screen == 1
@@ -3611,8 +3693,8 @@ for istep=istart:ijump:iend
         if(phase_temp==1)
             
             VizGrid = PhaseMap( filename, VizGrid );
-            Cent.T = hdf5read(filename,'/Centers/T'); Cent.T = cast(Cent.T, 'double');
-            T = reshape(Cent.T,params(4)-1,params(5)-1)';
+            T = hdf5read(filename,'/Centers/T'); T = cast(T, 'double');
+            T = reshape(T,params(4)-1,params(5)-1)';
 
 %             if print2screen == 1
 %                 figCount = figCount +1;
@@ -3692,8 +3774,8 @@ for istep=istart:ijump:iend
         if(phase_temp2==1)
             
             VizGrid = PhaseMap_hr( filename, VizGrid );
-            Cent.T = hdf5read(filename,'/Centers/T'); Cent.T = cast(Cent.T, 'double');
-            T = reshape(Cent.T,params(4)-1,params(5)-1)';
+            T = hdf5read(filename,'/Centers/T'); T = cast(T, 'double');
+            T = reshape(T,params(4)-1,params(5)-1)';
 
             if print2screen == 1
                 figCount = figCount +1;
@@ -3765,44 +3847,44 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if(grain_size==1)
             
-            Cent.T = hdf5read(filename,'/Centers/T');    Cent.T = cast(Cent.T, 'double');
-            T = reshape(Cent.T,params(4)-1,params(5)-1)';
-            Cent.d = hdf5read(filename,'/Centers/d');    Cent.d = cast(Cent.d, 'double');
-            d = reshape(Cent.d,params(4)-1,params(5)-1)';
-            eta_n = hdf5read(filename,'/Centers/eta_n'); Vert.eta_n = cast(eta_n, 'double');
-            eta_n = reshape(Vert.eta_n,params(4)-1,params(5)-1)';
+            T = hdf5read(filename,'/Centers/T');    T = cast(T, 'double');
+            T = reshape(T,params(4)-1,params(5)-1)';
+            d = hdf5read(filename,'/Centers/d');    d = cast(d, 'double');
+            d = reshape(d,params(4)-1,params(5)-1)';
+            eta_n = hdf5read(filename,'/Centers/eta_n'); eta_n = cast(eta_n, 'double');
+            eta_n = reshape(eta_n,params(4)-1,params(5)-1)';
             
-            Cent.eII_el  = hdf5read(filename,'/Centers/eII_el');
-            Cent.eII_el  = cast(Cent.eII_el , 'double');
-            eII_el = reshape(Cent.eII_el,params(4)-1,params(5)-1)';
+            eII_el  = hdf5read(filename,'/Centers/eII_el');
+            eII_el  = cast(eII_el , 'double');
+            eII_el = reshape(eII_el,params(4)-1,params(5)-1)';
             
-            Cent.eII_pl  = hdf5read(filename,'/Centers/eII_pl');
-            Cent.eII_pl  = cast(Cent.eII_pl , 'double');
-            eII_pl = reshape(Cent.eII_pl,params(4)-1,params(5)-1)';
+            eII_pl  = hdf5read(filename,'/Centers/eII_pl');
+            eII_pl  = cast(eII_pl , 'double');
+            eII_pl = reshape(eII_pl,params(4)-1,params(5)-1)';
             
-            Cent.eII_pwl  = hdf5read(filename,'/Centers/eII_pwl');
-            Cent.eII_pwl  = cast(Cent.eII_pwl , 'double');
-            eII_pwl = reshape(Cent.eII_pwl,params(4)-1,params(5)-1)';
+            eII_pwl  = hdf5read(filename,'/Centers/eII_pwl');
+            eII_pwl  = cast(eII_pwl , 'double');
+            eII_pwl = reshape(eII_pwl,params(4)-1,params(5)-1)';
             
-            Cent.eII_exp  = hdf5read(filename,'/Centers/eII_exp');
-            Cent.eII_exp  = cast(Cent.eII_exp , 'double');
-            eII_exp = reshape(Cent.eII_exp,params(4)-1,params(5)-1)';
+            eII_exp  = hdf5read(filename,'/Centers/eII_exp');
+            eII_exp  = cast(eII_exp , 'double');
+            eII_exp = reshape(eII_exp,params(4)-1,params(5)-1)';
             
-            Cent.eII_lin  = hdf5read(filename,'/Centers/eII_lin');
-            Cent.eII_lin  = cast(Cent.eII_lin , 'double');
-            eII_lin = reshape(Cent.eII_lin,params(4)-1,params(5)-1)';
+            eII_lin  = hdf5read(filename,'/Centers/eII_lin');
+            eII_lin  = cast(eII_lin , 'double');
+            eII_lin = reshape(eII_lin,params(4)-1,params(5)-1)';
             
-            Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
-            Vert.eta_s = hdf5read(filename,'/Vertices/eta_s'); Vert.eta_s = cast(Vert.eta_s, 'double');
-            eta = reshape(Vert.eta_s,params(4),params(5))';
+            sxxd  = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
+            eta_s = hdf5read(filename,'/Vertices/eta_s'); eta_s = cast(eta_s, 'double');
+            eta = reshape(eta_s,params(4),params(5))';
             
-            exx  = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
-            exz  = (reshape(Vert.exz, params(4)  ,params(5)  )');
-            txx  = (reshape(Cent.sxxd,params(4)-1,params(5)-1)');
-            txz  = (reshape(Vert.sxz, params(4)  ,params(5)  )');
+            exx  = (reshape(exxd,params(4)-1,params(5)-1)');
+            exz  = (reshape(exz, params(4)  ,params(5)  )');
+            txx  = (reshape(sxxd,params(4)-1,params(5)-1)');
+            txz  = (reshape(sxz, params(4)  ,params(5)  )');
             exzn = 0.25*(exz(1:end-1,1:end-1) + exz(2:end,1:end-1) + exz(1:end-1,2:end) + exz(2:end,2:end));
             txzn = 0.25*(txz(1:end-1,1:end-1) + txz(2:end,1:end-1) + txz(1:end-1,2:end) + txz(2:end,2:end));
             %         eII  = sqrt( exx.^2 + exzn.^2);
@@ -3958,44 +4040,44 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if(grain_size_evol==1)
             
-            Cent.T = hdf5read(filename,'/Centers/T');    Cent.T = cast(Cent.T, 'double');
-            T = reshape(Cent.T,params(4)-1,params(5)-1)';
-            Cent.d = hdf5read(filename,'/Centers/d');    Cent.d = cast(Cent.d, 'double');
-            d = reshape(Cent.d,params(4)-1,params(5)-1)';
-            eta_n = hdf5read(filename,'/Centers/eta_n'); Vert.eta_n = cast(eta_n, 'double');
-            eta_n = reshape(Vert.eta_n,params(4)-1,params(5)-1)';
+            T = hdf5read(filename,'/Centers/T');    T = cast(T, 'double');
+            T = reshape(T,params(4)-1,params(5)-1)';
+            d = hdf5read(filename,'/Centers/d');    d = cast(d, 'double');
+            d = reshape(d,params(4)-1,params(5)-1)';
+            eta_n = hdf5read(filename,'/Centers/eta_n'); eta_n = cast(eta_n, 'double');
+            eta_n = reshape(eta_n,params(4)-1,params(5)-1)';
             
-            Cent.eII_el  = hdf5read(filename,'/Centers/eII_el');
-            Cent.eII_el  = cast(Cent.eII_el , 'double');
-            eII_el = reshape(Cent.eII_el,params(4)-1,params(5)-1)';
+            eII_el  = hdf5read(filename,'/Centers/eII_el');
+            eII_el  = cast(eII_el , 'double');
+            eII_el = reshape(eII_el,params(4)-1,params(5)-1)';
             
-            Cent.eII_pl  = hdf5read(filename,'/Centers/eII_pl');
-            Cent.eII_pl  = cast(Cent.eII_pl , 'double');
-            eII_pl = reshape(Cent.eII_pl,params(4)-1,params(5)-1)';
+            eII_pl  = hdf5read(filename,'/Centers/eII_pl');
+            eII_pl  = cast(eII_pl , 'double');
+            eII_pl = reshape(eII_pl,params(4)-1,params(5)-1)';
             
-            Cent.eII_pwl  = hdf5read(filename,'/Centers/eII_pwl');
-            Cent.eII_pwl  = cast(Cent.eII_pwl , 'double');
-            eII_pwl = reshape(Cent.eII_pwl,params(4)-1,params(5)-1)';
+            eII_pwl  = hdf5read(filename,'/Centers/eII_pwl');
+            eII_pwl  = cast(eII_pwl , 'double');
+            eII_pwl = reshape(eII_pwl,params(4)-1,params(5)-1)';
             
-            Cent.eII_exp  = hdf5read(filename,'/Centers/eII_exp');
-            Cent.eII_exp  = cast(Cent.eII_exp , 'double');
-            eII_exp = reshape(Cent.eII_exp,params(4)-1,params(5)-1)';
+            eII_exp  = hdf5read(filename,'/Centers/eII_exp');
+            eII_exp  = cast(eII_exp , 'double');
+            eII_exp = reshape(eII_exp,params(4)-1,params(5)-1)';
             
-            Cent.eII_lin  = hdf5read(filename,'/Centers/eII_lin');
-            Cent.eII_lin  = cast(Cent.eII_lin , 'double');
-            eII_lin = reshape(Cent.eII_lin,params(4)-1,params(5)-1)';
+            eII_lin  = hdf5read(filename,'/Centers/eII_lin');
+            eII_lin  = cast(eII_lin , 'double');
+            eII_lin = reshape(eII_lin,params(4)-1,params(5)-1)';
             
-            Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
-            Vert.eta_s = hdf5read(filename,'/Vertices/eta_s'); Vert.eta_s = cast(Vert.eta_s, 'double');
-            eta = reshape(Vert.eta_s,params(4),params(5))';
+            sxxd  = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
+            eta_s = hdf5read(filename,'/Vertices/eta_s'); eta_s = cast(eta_s, 'double');
+            eta = reshape(eta_s,params(4),params(5))';
             
-            exx  = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
-            exz  = (reshape(Vert.exz, params(4)  ,params(5)  )');
-            txx  = (reshape(Cent.sxxd,params(4)-1,params(5)-1)');
-            txz  = (reshape(Vert.sxz, params(4)  ,params(5)  )');
+            exx  = (reshape(exxd,params(4)-1,params(5)-1)');
+            exz  = (reshape(exz, params(4)  ,params(5)  )');
+            txx  = (reshape(sxxd,params(4)-1,params(5)-1)');
+            txz  = (reshape(sxz, params(4)  ,params(5)  )');
             exzn = 0.25*(exz(1:end-1,1:end-1) + exz(2:end,1:end-1) + exz(1:end-1,2:end) + exz(2:end,2:end));
             txzn = 0.25*(txz(1:end-1,1:end-1) + txz(2:end,1:end-1) + txz(1:end-1,2:end) + txz(2:end,2:end));
             %         eII  = sqrt( exx.^2 + exzn.^2);
@@ -4126,27 +4208,27 @@ for istep=istart:ijump:iend
         
         if(gs_stefan==1)
             
-            Cent.T = hdf5read(filename,'/Centers/T'); Cent.T = cast(Cent.T, 'double');
-            T = reshape(Cent.T,params(4)-1,params(5)-1)'-273;
-            Cent.d     = hdf5read(filename,'/Centers/d');    Cent.d = cast(Cent.d, 'double');
-            Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
-            Vert.eta_s = hdf5read(filename,'/Vertices/eta_s'); Vert.eta_s = cast(Vert.eta_s, 'double');
-            eta = reshape(Vert.eta_s,params(4),params(5))';
+            T = hdf5read(filename,'/Centers/T'); T = cast(T, 'double');
+            T = reshape(T,params(4)-1,params(5)-1)'-273;
+            d     = hdf5read(filename,'/Centers/d');    d = cast(d, 'double');
+            sxxd  = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
+            eta_s = hdf5read(filename,'/Vertices/eta_s'); eta_s = cast(eta_s, 'double');
+            eta = reshape(eta_s,params(4),params(5))';
             eta = 0.25*(eta(1:end-1,1:end-1) + eta(2:end,1:end-1) + eta(1:end-1,2:end) + eta(2:end,2:end));
             
-            d   = (reshape(Cent.d   ,params(4)-1,params(5)-1)');
-            exx = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
+            d   = (reshape(d   ,params(4)-1,params(5)-1)');
+            exx = (reshape(exxd,params(4)-1,params(5)-1)');
             ezz = -exx;
-            exz = (reshape(Vert.exz, params(4)  ,params(5)  )');
+            exz = (reshape(exz, params(4)  ,params(5)  )');
             eII = sqrt( 0.5*( 2*exx.^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ) );
             %         sII = 2*eII.*eta;
             
-            sxxd = (reshape(Cent.sxxd,params(4)-1,params(5)-1)');
+            sxxd = (reshape(sxxd,params(4)-1,params(5)-1)');
             szzd = -sxxd;
-            sxz  = (reshape(Vert.sxz, params(4)  ,params(5)  )');
+            sxz  = (reshape(sxz, params(4)  ,params(5)  )');
             sII  = sqrt( 0.5*(2*sxxd.^2 + 0.5*(sxz(1:end-1,1:end-1).^2 + sxz(2:end,1:end-1).^2 + sxz(1:end-1,2:end).^2 + sxz(2:end,2:end).^2 ) ) );
             
             exzc = 0.25*(exz(1:end-1,1:end-1) + exz(2:end,1:end-1) + exz(1:end-1,2:end) + exz(2:end,2:end));
@@ -4218,7 +4300,7 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         % x plot
         %--------------------------------------------------
-        if (x_plot==1)
+        if (X_plot==1)
             x = hdf5read(filename,'/Centers/X');  x = cast(x, 'double');
             
             % Nodes
@@ -4235,6 +4317,7 @@ for istep=istart:ijump:iend
             xlabel(xLabel), ylabel(zLabel);
             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
             if exist('minX', 'var') caxis([minX maxX]); end
+            drawnow
             
             if printfig == 1
                 print([path, './Fig_X/Fig_X', num2str(istep,'%05d'),file_suffix], format, res)
@@ -4248,14 +4331,14 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if ( srate_ratio == 1 )
             
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Cent.ezzd  = -Cent.exxd;
-            %         Cent.ezzd  = hdf5read(filename,'/Centers/ezzd'); Cent.ezzd = cast(Cent.ezzd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            ezzd  = -exxd;
+            %         ezzd  = hdf5read(filename,'/Centers/ezzd'); ezzd = cast(ezzd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
             
-            exxd = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
-            ezzd = (reshape(Cent.ezzd,params(4)-1,params(5)-1)');
-            exz  = (reshape(Vert.exz, params(4)  ,params(5)  )');
+            exxd = (reshape(exxd,params(4)-1,params(5)-1)');
+            ezzd = (reshape(ezzd,params(4)-1,params(5)-1)');
+            exz  = (reshape(exz, params(4)  ,params(5)  )');
             exzn = 0.25*(exz(1:end-1,1:end-1) + exz(1:end-1,2:end) + exz(2:end,1:end-1) + exz(2:end,2:end));
             eiin = sqrt(exxd.^2 + exzn.^2);
             gam  = 1*exzn;
@@ -4316,18 +4399,18 @@ for istep=istart:ijump:iend
             [aa,b1] = min(abs(xc_coord-x1));
             [aa,b2] = min(abs(xc_coord-x2));
             
-            Cent.Pmax  = hdf5read(filename,'/Centers/Pmax'); Cent.Pmax = cast(Cent.Pmax, 'double');
-            Cent.Tmax  = hdf5read(filename,'/Centers/Tmax'); Cent.Tmax = cast(Cent.Tmax, 'double');
-            Cent.x0    = hdf5read(filename,'/Centers/xi'); Cent.x0   = cast(Cent.x0  , 'double');
-            Cent.z0    = hdf5read(filename,'/Centers/zi'); Cent.z0   = cast(Cent.z0  , 'double');
+            Pmax  = hdf5read(filename,'/Centers/Pmax'); Pmax = cast(Pmax, 'double');
+            Tmax  = hdf5read(filename,'/Centers/Tmax'); Tmax = cast(Tmax, 'double');
+            x0    = hdf5read(filename,'/Centers/xi'); x0   = cast(x0  , 'double');
+            z0    = hdf5read(filename,'/Centers/zi'); z0   = cast(z0  , 'double');
             
-            Cent.P  = hdf5read(filename,'/Centers/P'); Cent.Pmax = cast(Cent.P, 'double');
+            P  = hdf5read(filename,'/Centers/P'); Pmax = cast(P, 'double');
             
-            P    = (reshape(Cent.P   ,params(4)-1,params(5)-1)');
-            Pmax = (reshape(Cent.Pmax,params(4)-1,params(5)-1)');
-            Tmax = (reshape(Cent.Tmax,params(4)-1,params(5)-1)');
-            x0   = (reshape(Cent.x0  ,params(4)-1,params(5)-1)');
-            z0   = (reshape(Cent.z0  ,params(4)-1,params(5)-1)');
+            P    = (reshape(P   ,params(4)-1,params(5)-1)');
+            Pmax = (reshape(Pmax,params(4)-1,params(5)-1)');
+            Tmax = (reshape(Tmax,params(4)-1,params(5)-1)');
+            x0   = (reshape(x0  ,params(4)-1,params(5)-1)');
+            z0   = (reshape(z0  ,params(4)-1,params(5)-1)');
             
             %         if print2screen == 1
             %             figCount = figCount +1;
@@ -4438,8 +4521,8 @@ for istep=istart:ijump:iend
             
             VizGrid = PhaseMap( filename, VizGrid );
             
-            Cent.T = hdf5read(filename,'/Centers/T'); Cent.T = cast(Cent.T, 'double');
-            T = reshape(Cent.T,params(4)-1,params(5)-1)';
+            T = hdf5read(filename,'/Centers/T'); T = cast(T, 'double');
+            T = reshape(T,params(4)-1,params(5)-1)';
             
             %         if crop == 1
             %             [ VizGrid.ph, VizGrid.x_plot, VizGrid.z_plot ] = CropCellArray( VizGrid.ph, VizGrid.x_plot, VizGrid.z_plot, lim );
@@ -4501,10 +4584,10 @@ for istep=istart:ijump:iend
             
             VizGrid = PhaseMap( filename, VizGrid );
             
-            Cent.T = hdf5read(filename,'/Centers/T'); Cent.T = cast(Cent.T, 'double');
-            T = reshape(Cent.T,params(4)-1,params(5)-1)'-273;
-            Cent.z0    = hdf5read(filename,'/Centers/zi'); Cent.z0   = cast(Cent.z0  , 'double');
-            z0   = (reshape(Cent.z0  ,params(4)-1,params(5)-1)');
+            T = hdf5read(filename,'/Centers/T'); T = cast(T, 'double');
+            T = reshape(T,params(4)-1,params(5)-1)'-273;
+            z0    = hdf5read(filename,'/Centers/zi'); z0   = cast(z0  , 'double');
+            z0   = (reshape(z0  ,params(4)-1,params(5)-1)');
             
             if istep == 0
                 
@@ -4563,31 +4646,31 @@ for istep=istart:ijump:iend
         
         if shear_heating==1
             
-            Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
-            Vert.eta_s = hdf5read(filename,'/Vertices/eta_s'); Vert.eta_s = cast(Vert.eta_s, 'double');
-            eta = reshape(Vert.eta_s,params(4),params(5))';
+            sxxd  = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
+            eta_s = hdf5read(filename,'/Vertices/eta_s'); eta_s = cast(eta_s, 'double');
+            eta = reshape(eta_s,params(4),params(5))';
             eta = 0.25*(eta(1:end-1,1:end-1) + eta(2:end,1:end-1) + eta(1:end-1,2:end) + eta(2:end,2:end));
             
-            exx = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
+            exx = (reshape(exxd,params(4)-1,params(5)-1)');
             ezz = -exx;
-            exz = (reshape(Vert.exz, params(4)  ,params(5)  )');
+            exz = (reshape(exz, params(4)  ,params(5)  )');
             eII = sqrt( 0.5*( 2*exx.^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ) );
             %         sII = 2*eII.*eta;
             
-            sxxd = (reshape(Cent.sxxd,params(4)-1,params(5)-1)');
+            sxxd = (reshape(sxxd,params(4)-1,params(5)-1)');
             szzd = -sxxd;
-            sxz  = (reshape(Vert.sxz, params(4)  ,params(5)  )');
+            sxz  = (reshape(sxz, params(4)  ,params(5)  )');
             sII  = sqrt( 0.5*(2*sxxd.^2 + 0.5*(sxz(1:end-1,1:end-1).^2 + sxz(2:end,1:end-1).^2 + sxz(1:end-1,2:end).^2 + sxz(2:end,2:end).^2 ) ) );
             
             exzc = 0.25*(exz(1:end-1,1:end-1) + exz(2:end,1:end-1) + exz(1:end-1,2:end) + exz(2:end,2:end));
             sxzc = 0.25*(sxz(1:end-1,1:end-1) + sxz(2:end,1:end-1) + sxz(1:end-1,2:end) + sxz(2:end,2:end));
             HSc = 2*sxzc.*exzc + sxxd.*exx + szzd.*ezz;
-            Cent.eII_el  = hdf5read(filename,'/Centers/eII_el');
-            Cent.eII_el  = cast(Cent.eII_el , 'double');
-            eII_el = reshape(Cent.eII_el,params(4)-1,params(5)-1)';
+            eII_el  = hdf5read(filename,'/Centers/eII_el');
+            eII_el  = cast(eII_el , 'double');
+            eII_el = reshape(eII_el,params(4)-1,params(5)-1)';
             HSc(eII_el>0.8*eII) = 1e-18;
             minHS=min(HSc(:))
             maxHS=max(HSc(:))
@@ -4636,30 +4719,30 @@ for istep=istart:ijump:iend
         
         if princi_stress==1
             
-            Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
-            Cent.P     = hdf5read(filename,'/Centers/P');    Cent.P  = cast(Cent.P , 'double');
-            P = reshape(Cent.P,params(4)-1,params(5)-1)';
+            sxxd  = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
+            P     = hdf5read(filename,'/Centers/P');    P  = cast(P , 'double');
+            P = reshape(P,params(4)-1,params(5)-1)';
             
-            exx = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
+            exx = (reshape(exxd,params(4)-1,params(5)-1)');
             ezz = -exx;
-            exz = (reshape(Vert.exz, params(4)  ,params(5)  )');
+            exz = (reshape(exz, params(4)  ,params(5)  )');
             eII = sqrt( 0.5*( 2*exx.^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ) );
             %         sII = 2*eII.*eta;
             
-            sxxd = (reshape(Cent.sxxd,params(4)-1,params(5)-1)');
+            sxxd = (reshape(sxxd,params(4)-1,params(5)-1)');
             szzd = -sxxd;
-            sxz  = (reshape(Vert.sxz, params(4)  ,params(5)  )');
+            sxz  = (reshape(sxz, params(4)  ,params(5)  )');
             sII  = sqrt( 0.5*(2*sxxd.^2 + 0.5*(sxz(1:end-1,1:end-1).^2 + sxz(2:end,1:end-1).^2 + sxz(1:end-1,2:end).^2 + sxz(2:end,2:end).^2 ) ) );
             
             exzc = 0.25*(exz(1:end-1,1:end-1) + exz(2:end,1:end-1) + exz(1:end-1,2:end) + exz(2:end,2:end));
             sxzc = 0.25*(sxz(1:end-1,1:end-1) + sxz(2:end,1:end-1) + sxz(1:end-1,2:end) + sxz(2:end,2:end));
             HSc = 2*sxzc.*exzc + sxxd.*exx + szzd.*ezz;
-            Cent.eII_el  = hdf5read(filename,'/Centers/eII_el');
-            Cent.eII_el  = cast(Cent.eII_el , 'double');
-            eII_el = reshape(Cent.eII_el,params(4)-1,params(5)-1)';
+            eII_el  = hdf5read(filename,'/Centers/eII_el');
+            eII_el  = cast(eII_el , 'double');
+            eII_el = reshape(eII_el,params(4)-1,params(5)-1)';
             HSc(eII_el>0.8*eII) = 1e-18;
             minHS=min(HSc(:))
             maxHS=max(HSc(:))
@@ -4699,7 +4782,7 @@ for istep=istart:ijump:iend
                 ii = ii +1;
                 jj = 0;
                 for j=1:step:size(eII,2)
-                    jj = jj +1;
+                    jj  = jj + 1;
                     tau = [sxx(i,j) sxzc(i,j); sxzc(i,j) szz(i,j)];
                     [V,Q]   = eig(tau);
                     p_vec_x3(ii,jj) = V(1,2);
@@ -4715,7 +4798,7 @@ for istep=istart:ijump:iend
             xcq = xc_plot(1:step:end);
             zcq = zc_plot(1:step:end);
 %             q=quiver(xcq, zcq,   p_vec_x1,  p_vec_y1, 0.25,'k','Autoscale','on',  'LineWidth', 2, 'ShowArrowHead','off');
-            q=quiver(xcq, zcq,  -p_vec_x1, -p_vec_y1, 'k','ShowArrowHead','off')
+            q=quiver(xcq, zcq,  -p_vec_x1, -p_vec_y1, 'w','ShowArrowHead','off',  'LineWidth', 2)
 %             q=quiver(xcq, zcq,  -p_vec_x1, -p_vec_y1, 0.25,'k','Autoscale','on', 'LineWidth', 2, 'ShowArrowHead','off');
             if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
 
@@ -4740,22 +4823,22 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if (emergency_benoit==1)
             
-            Cent.eII_pl  = hdf5read(filename,'/Centers/eII_pl');
-            Cent.eII_pl  = cast(Cent.eII_pl , 'double');
-            eII_pl = reshape(Cent.eII_pl,params(4)-1,params(5)-1)';
+            eII_pl  = hdf5read(filename,'/Centers/eII_pl');
+            eII_pl  = cast(eII_pl , 'double');
+            eII_pl = reshape(eII_pl,params(4)-1,params(5)-1)';
             
-            Cent.eII_pwl  = hdf5read(filename,'/Centers/eII_pwl');
-            Cent.eII_pwl  = cast(Cent.eII_pwl , 'double');
-            eII_pwl = reshape(Cent.eII_pwl,params(4)-1,params(5)-1)';
+            eII_pwl  = hdf5read(filename,'/Centers/eII_pwl');
+            eII_pwl  = cast(eII_pwl , 'double');
+            eII_pwl = reshape(eII_pwl,params(4)-1,params(5)-1)';
             
-            Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
-            Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
-            Cent.exxd  = hdf5read(filename,'/Centers/exxd'); Cent.exxd = cast(Cent.exxd, 'double');
-            Vert.exz   = hdf5read(filename,'/Vertices/exz'); Vert.exz  = cast(Vert.exz, 'double');
-            Vert.eta_s = hdf5read(filename,'/Vertices/eta_s'); Vert.eta_s = cast(Vert.eta_s, 'double');
+            sxxd  = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
+            exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
+            exz   = hdf5read(filename,'/Vertices/exz'); exz  = cast(exz, 'double');
+            eta_s = hdf5read(filename,'/Vertices/eta_s'); eta_s = cast(eta_s, 'double');
             
-            exx = (reshape(Cent.exxd,params(4)-1,params(5)-1)');
-            exz = (reshape(Vert.exz, params(4)  ,params(5)  )');
+            exx = (reshape(exxd,params(4)-1,params(5)-1)');
+            exz = (reshape(exz, params(4)  ,params(5)  )');
             eII = sqrt( 0.5*( 2*exx.^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ) );
             
             if print2screen == 1
@@ -4821,14 +4904,14 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if ( fstrain == 1 )
             
-            Cent.Fxx  = hdf5read(filename,'/Centers/Fxx'); Cent.Fxx = cast(Cent.Fxx, 'double');
-            Fxx = (reshape(Cent.Fxx,params(4)-1,params(5)-1)');
-            Cent.Fxz  = hdf5read(filename,'/Centers/Fxz'); Cent.Fxz = cast(Cent.Fxz, 'double');
-            Fxz = (reshape(Cent.Fxz,params(4)-1,params(5)-1)');
-            Cent.Fzx  = hdf5read(filename,'/Centers/Fzx'); Cent.Fzx = cast(Cent.Fzx, 'double');
-            Fzx = (reshape(Cent.Fzx,params(4)-1,params(5)-1)');
-            Cent.Fzz  = hdf5read(filename,'/Centers/Fzz'); Cent.Fzz = cast(Cent.Fzz, 'double');
-            Fzz = (reshape(Cent.Fzz,params(4)-1,params(5)-1)');
+            Fxx  = hdf5read(filename,'/Centers/Fxx'); Fxx = cast(Fxx, 'double');
+            Fxx = (reshape(Fxx,params(4)-1,params(5)-1)');
+            Fxz  = hdf5read(filename,'/Centers/Fxz'); Fxz = cast(Fxz, 'double');
+            Fxz = (reshape(Fxz,params(4)-1,params(5)-1)');
+            Fzx  = hdf5read(filename,'/Centers/Fzx'); Fzx = cast(Fzx, 'double');
+            Fzx = (reshape(Fzx,params(4)-1,params(5)-1)');
+            Fzz  = hdf5read(filename,'/Centers/Fzz'); Fzz = cast(Fzz, 'double');
+            Fzz = (reshape(Fzz,params(4)-1,params(5)-1)');
             
             CGxx = zeros(size(Fxx));
             CGxz = zeros(size(Fxx));
@@ -4845,6 +4928,251 @@ for istep=istart:ijump:iend
                     a=1
                     
                 end
+            end
+            
+        end
+        
+        
+        
+        
+        %--------------------------------------------------
+        % plot director vectors
+        %--------------------------------------------------
+        if(director_vector==1)
+            
+            VizGrid = PhaseMap_hr( filename, VizGrid );
+            T = hdf5read(filename,'/Centers/T'); T = cast(T, 'double');
+            T = reshape(T,params(4)-1,params(5)-1)';
+            
+            ndx = hdf5read(filename,'/Centers/nx'); ndx = cast(ndx, 'double'); ndx = reshape(ndx,params(4)-1,params(5)-1)';
+            ndz = hdf5read(filename,'/Centers/nz'); ndz = cast(ndz, 'double'); ndz = reshape(ndz,params(4)-1,params(5)-1)';
+
+            if print2screen == 1
+                figCount = figCount +1;
+                figure(figCount), clf
+            else
+                figure('Visible', 'Off')
+            end
+
+            hold on
+            
+            clf
+            colormap(map);
+            imagesc(VizGrid.x_plot_hr, VizGrid.z_plot_hr, VizGrid.ph_hr);
+            set(gca,'Ydir','Normal')
+            shading interp, caxis ([-1 size(map,1)-2])%, axis ij
+            axis image
+            title(['Time = ', num2str(time/1e6),' Myrs'], 'FontSize', 15, 'FontName', 'Myriad pro');
+            
+            
+            % Isotherms
+            hold on
+            v = 200:200:2000;
+            [c, h] = contour(VizGrid.x_plot, VizGrid.z_plot, T-273, v);
+            set(h, 'Color', 'w', 'LineWidth', 1.0);
+          
+            
+            % Director
+            hv=quiver(xc_plot(1:step:end), zc_plot(1:step:end), ndx(1:step:end,1:step:end), ndz(1:step:end,1:step:end));
+%                         hv=quiver(xc_plot(100), zc_plot(100), ndx(100,100), ndz(100,100));
+            set(hv, 'Color', 'k', 'LineWidth', 0.5);
+            set(hv, 'MaxHeadSize',2.0, 'AutoScaleFactor', 2);
+           
+            hv=quiver(xc_plot(1:step:end), zc_plot(1:step:end), ndz(1:step:end,1:step:end), -ndx(1:step:end,1:step:end));
+            set(hv, 'Color', 'w', 'LineWidth', 0.5);
+            set(hv, 'MaxHeadSize',2.0, 'AutoScaleFactor', 2, 'ShowArrowHead', 'off');
+              hold off
+            
+            colorbar('Location', 'SouthOutside')
+            xlabel(xLabel, 'FontSize', Ftsz), ylabel(zLabel, 'FontSize', Ftsz)
+            title(['Phases at' TimeLabel], 'FontSize', Ftsz);
+            % %         hold off
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            %         if exist('minPhase', 'var') caxis([minPhase maxPhase]); end
+            set(gca, 'FontSize', Ftsz);%, 'FontName', 'Myriad pro')
+            set(gcf,'Color','white')
+            
+            if printfig == 1
+                if crop == 1
+                    print([path, './Fig_Phases/Crop_PhasesGrid', num2str(istep,'%05d'),file_suffix], format, res)
+                else
+                    print([path, './Fig_Phases/Fig_PhasesGrid', num2str(istep,'%05d'),file_suffix], format, res)
+                end
+                close all
+            end
+            
+            if printfig==2
+                
+                gifname = [path, './Fig_Phases/Crop_PhasesGrid.gif'];
+                axis tight manual % this ensures that getframe() returns a consistent size
+                % Capture the plot as an image
+                frame = getframe(fh);
+                im = frame2im(frame);
+                [imind,cm] = rgb2ind(im,256);
+                % Write to the GIF File
+                
+                %             [imind(:,:,1,icount),cm]=rgb2ind(im,256);
+                if icount == 1
+                    imwrite(imind,cm,gifname,'gif', 'Loopcount',inf);
+                else
+                    imwrite(imind,cm,gifname,'gif','WriteMode','append');
+                end
+            end
+
+            clear VizGrid.ph VizGrid.x VizGrid.z
+            
+        end
+        
+        %--------------------------------------------------
+        % plot plastic moduli
+        %--------------------------------------------------
+        if (Pl_soft==1)
+            
+            Phi = hdf5read(filename,'/Centers/friction'); Phi = cast(Phi, 'double');
+            Phi      = reshape(Phi,params(4)-1,params(5)-1)';
+            
+            Coh = hdf5read(filename,'/Centers/cohesion'); Coh = cast(Coh, 'double');
+            Coh      = reshape(Coh,params(4)-1,params(5)-1)';
+            
+            if print2screen == 1
+                figCount = figCount +1;
+                figure(figCount), clf
+            else
+                figure('Visible', 'Off')
+            end
+            
+            subplot(211)
+            Phi = Phi*180/pi;
+            imagesc( xc_plot, zc_plot, Phi )
+            shading flat,axis xy image, colorbar;
+            colormap('jet')
+            hold on
+            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+            imagesc( xc_plot, zc_plot, Phi, 'Visible', 'off' )
+            hold off
+            xlabel(xLabel), ylabel(zLabel)
+            title(['Phi at' TimeLabel ' min = ' num2str(min(Phi(:))) ' deg max = ' num2str(max(Phi(:))) ' deg'])
+            caxis([15 30])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            
+            subplot(212)
+            imagesc( xc_plot, zc_plot, Coh )
+            shading flat,axis xy image, colorbar;
+            colormap('jet')
+            hold on
+            if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+            imagesc( xc_plot, zc_plot, Coh, 'Visible', 'off' )
+            hold off
+            xlabel(xLabel), ylabel(zLabel)
+            title(['Coh at' TimeLabel ' min = ' num2str(min(Coh(:))) ' MPa max = ' num2str(max(Coh(:))) ' MPa'])
+            caxis([25e6 50e6])
+            if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+            
+            
+            if printfig == 1
+                print([path, './Fig_Phi/Fig_Phi', num2str(istep,'%05d'),file_suffix], format, res)
+                close all
+            end
+            
+        end
+        
+        
+        
+        %--------------------------------------------------
+        % plot Sole
+        %--------------------------------------------------
+        if (Sole==1)
+            
+            %%%%%%%% PHASE
+            VizGrid = PhaseMap_hr( filename, VizGrid );
+
+            T = hdf5read(filename,'/Centers/T'); T = cast(T, 'double');
+            T = reshape(T,params(4)-1,params(5)-1)' - 273.15;
+            
+            P  = hdf5read(filename,'/Centers/P');
+            P  = cast(P , 'double');
+            P = reshape(P,params(4)-1,params(5)-1)';
+            
+            rho_n = hdf5read(filename,'/Centers/rho_n');
+            rho_n = cast(rho_n, 'double');
+            rhoc = reshape(rho_n,params(4)-1,params(5)-1)';
+            
+            % Build lithostatic pressure
+            dz = abs(zc_coord(2)-zc_coord(1));
+            Plith = P;
+            Plith(ncz, :) = rhoc(ncz,:)*gz*dz;
+            for o=ncz-1:-1:1
+                Plith(o, :) = Plith(o+1, :) - rhoc(o,:)*gz*dz;
+            end
+            Pdyn = P-Plith;
+            
+%             if print2screen == 1
+%                 figCount = figCount +1;
+%                 figure(figCount), clf
+%             else
+%                 figure('Visible', 'Off')
+%             end
+%             
+%             imagesc( xc_plot, zc_plot, Pdyn )
+%             shading flat,axis xy image, colorbar;
+%             hold on
+%             if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+%             imagesc( xc_plot, zc_plot, Pdyn, 'Visible', 'off' )
+%             hold off
+%             xlabel(xLabel), ylabel(zLabel)
+%             title(['Dynamic pressure at' TimeLabel])
+%             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+%             if exist('minPdyn', 'var') caxis([minPdyn maxPdyn]); end
+            
+            SoleCheck = zeros(size(P));
+            SoleCheck( P>0.6e9 & P<1.25e9 & T>700 & T<900) = 1;
+            
+            if print2screen == 1
+                figCount = figCount +1;
+                figure(figCount), clf
+            else
+                figure('Visible', 'Off')
+            end
+
+        
+            clf
+            colormap(map);
+            imagesc(VizGrid.x_plot_hr, VizGrid.z_plot_hr, VizGrid.ph_hr);
+            set(gca,'Ydir','Normal')
+            shading interp, caxis ([-1 size(map,1)-2])%, axis ij
+            axis image
+            title(['Sole ' TimeLabel], 'FontSize', 15, 'FontName', 'Myriad pro');
+            hold on    
+            [c, h] = contour(VizGrid.x_plot, VizGrid.z_plot, SoleCheck, [0 1]);
+            set(h, 'Color', 'w', 'LineWidth', 1.0);
+            hold off
+            
+%             if print2screen == 1
+%                 figCount = figCount +1;
+%                 figure(figCount), clf
+%             else
+%                 figure('Visible', 'Off')
+%             end
+%             
+%             imagesc( xc_plot, zc_plot, SoleCheck )
+%             shading flat,axis xy image, colorbar;
+%             colormap('jet')
+%             hold on
+%             if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+%             %         imagesc( xc_plot, zc_plot, T, 'Visible', 'off' )
+%             
+%             imagesc( xc_plot, zc_plot, T, 'Visible', 'off' )
+%             hold off
+%             
+%             xlabel(xLabel), ylabel(zLabel)
+%             title(['T at' TimeLabel ' min = ' num2str(min(T(:))) ' C max = ' num2str(max(T(:))) ' C'])
+%             if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+%             %         if exist('minT', 'var') caxis([minT maxT]); end
+%             %         caxis([273 1000])
+
+            if printfig == 1
+                print([path, './Fig_Sole', num2str(istep,'%05d'),file_suffix], format, res)
+                close all
             end
             
         end

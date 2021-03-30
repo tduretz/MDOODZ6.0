@@ -27,6 +27,7 @@ Courant = 0.25
 penalty = 10e0
 eta_avg = 0
 rel_tol_div = 1e-10
+abs_tol_div = 1e-10
 
 /**** SWITCHES ****/
 ismechanical    = 1
@@ -42,10 +43,12 @@ free_surf       = 0
 free_surf_stab  = 0
 eqn_state       = 0
 thermal_eq      = 0
-subgrid_diff    = 2
 shear_heat      = 0
 adiab_heat      = 0
 StressRotation  = 2
+subgrid_diff    = 2
+StressUpdate    = 0
+IncrementalUpdateGrid = 1
 
 /**** SETUP DEPENDANT ****/
 EpsBG           =-5e-140

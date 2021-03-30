@@ -182,9 +182,8 @@ Results after 50 time steps
 Need to use the following options:
 \begin{verbatim} 
 compressible = 1
-lsolver           = -1 (modified Powell and Hestenes) or 1 (Preconditionned KSP solver)
-\end{verbatim}
-
+\end{verbatim} %lsolver           = -1 (modified Powell and Hestenes) or 1 (Preconditionned KSP solver)
+ 
 The results of the simulation can be visualised with the file:
 \begin{verbatim} 
 ReadHDF5_VangelisTest.m
@@ -206,8 +205,7 @@ M2Di_CompressibleViscoElasticVangelis2_Beta.m
 Need to use the following options:
 \begin{verbatim} 
 compressible = 1
-lsolver      = -1 (modified Powell-Hestenes) or 1 (Preconditionned KSP solver)
-\end{verbatim}
+\end{verbatim} %lsolver      = -1 (modified Powell-Hestenes) or 1 (Preconditionned KSP solver)
 
 The results can also be reproduced using the M2Di example:
 \begin{verbatim} 
@@ -306,8 +304,8 @@ The results can also be reproduced using the M2Di example:
 M2Di2_PowerLaw_Newton_PureShear_MDOODZ.m
 \end{verbatim}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Visco-elasticity with power-law rheology: Pure and simple shear}
-
 
 setup file:
 \begin{verbatim} 
@@ -353,6 +351,7 @@ Pure shear model results can also be reproduced using the M2Di example:
 M2Di2_PowerLawVE_Newton_PureShear_LocIt_MDOODZ.m
 \end{verbatim}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Visco-elasticity-viscoplasticity with power-law rheology: Pure and simple shear}
 
 setup file:
@@ -387,6 +386,21 @@ eta_vp = 1e-1
 \label{PeriodicSimpleShearVEVP_MDOODZ}
 \end{figure}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Ideal elasticity-plasticity: Duretz et al., (2018) benchmark test 1}
+
+Setup file:
+\begin{verbatim} 
+VEP_Duretz18.txt
+\end{verbatim}
+
+\begin{figure}[ht!]
+\centerline{\includegraphics[height=3.0in]{./Figures/VEP_Duretz18_MDOODZ.png}}
+\caption{Colourmap: Pressure field after 30 time steps. Models were run with and without marker interpolations.}
+\label{VEP_Duretz18}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Visco-elasticity-viscoplasticity with power-law rheology: Crustal-scale model}
 
 Setup file:
@@ -406,6 +420,31 @@ and extension \begin{verbatim} EpsBG>0 \end{verbatim}
 \centerline{\includegraphics[height=3.0in]{./Figures/Extension_Compression_MDOODZ.png}}
 \caption{Strain rate and stress after 100 time steps in extension and compression.}
 \label{Extension_Compression_MDOODZ}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Visco-elasticity-viscoplasticity with power-law rheology: Lithosphere-scale model}
+
+Setup file:
+\begin{verbatim} 
+LithoScale.txt
+\end{verbatim}
+
+Adjust regularisation viscosity of each phase with
+\begin{verbatim} 
+eta_vp = 2e20
+\end{verbatim}
+
+From now on conservative velocity interpolation scheme can be activated.
+\begin{verbatim} 
+ConservInterp = 1
+\end{verbatim}
+
+
+\begin{figure}[ht!]
+\centerline{\includegraphics[height=3.0in]{./Figures/LithoScale_MDOODZ.png}}
+\caption{Strain rate and stress after 200 time steps with classical and conservative velocity interpolation schemes.}
+\label{LithoScale_MDOODZ.png}
 \end{figure}
 
 

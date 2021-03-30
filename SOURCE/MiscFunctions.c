@@ -41,6 +41,38 @@
 #define printf(...) printf("")
 #endif
 
+
+void CheckSym( DoodzFP* array, double scale, int nx, int nz, char* text, int mode, int show ) {
+    
+
+    int i, j, c1;
+    double sump[nx];
+    double err = 0.0;
+    for ( i=0; i<nx; i++ ) {
+        sump[i] = 0.0;
+        for ( j=0; j<nz; j++ ) {
+            c1 = i + j*nx;
+            sump[i] += array[c1];
+        }
+    }
+    
+    
+    for ( i=0; i<nx; i++ ) {
+        if (mode ==0) {
+        if (fabs(sump[i] - sump[nx-1-i])>err) err = fabs(sump[i] - sump[nx-1-i]);
+        if (show==1)  printf("%s %2.6e %2.6e %2.6e\n", text, sump[i]*scale, sump[nx-1-i]*scale, (sump[i] - sump[nx-1-i])*scale);
+        }
+        else {
+            if (fabs(sump[i] + sump[nx-1-i])>err) err = fabs(sump[i] + sump[nx-1-i]);
+            if (show==1)  printf("%s %2.6e %2.6e %2.6e\n", text, sump[i]*scale, sump[nx-1-i]*scale, (sump[i] + sump[nx-1-i])*scale);
+        }
+                               
+    }
+    if (err>1e-10) {printf(text); exit(1);}
+    
+}
+
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -65,7 +97,7 @@ void  ArrayPlusArray( DoodzFP* arr1, DoodzFP* arr2, int size ) {
     int k;
 #pragma omp parallel for shared( arr1, arr2) private(k) schedule( static )
     for(k=0;k<size;k++) {
-        arr1[k] += arr2[k];
+        arr1[k] = arr1[k] + arr2[k];
     }
 }
 
@@ -228,6 +260,45 @@ void MinMaxArrayTag( DoodzFP* array, double scale, int size, char* text, char* t
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+void MinMaxArrayTagInt( int* array, double scale, int size, char* text, char* tag ) {
+
+    // Search min/max values of an array and prints it to standard out
+    int min=array[0], max=array[0];
+    int k;
+
+#pragma omp parallel
+    {
+        double pmin=array[0], pmax=array[0];
+#pragma omp for
+        for (k=0; k<size; k++) {
+            if (tag[k] < 30) {
+                if (array[k]>pmax) pmax = array[k];
+                if (array[k]<pmin) pmin = array[k];
+            }
+        }
+#pragma omp flush (max)
+        if (pmax>max) {
+#pragma omp critical
+            {
+                if (pmax>max) max = pmax;
+            }
+        }
+
+#pragma omp flush (min)
+        if (pmin<min) {
+#pragma omp critical
+            {
+                if (pmin<min) min = pmin;
+            }
+        }
+    }
+    printf( "min(%s) = %03d max(%s) = %03d\n", text, min, text, max);
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 void MinMaxArrayVal( DoodzFP* array, int size, double* min, double* max ) {
 
     // Search min/max values of an array and prints it to standard out
@@ -318,7 +389,7 @@ void ArrayPlusScalarArray( double* arr1, double scalar, double* arr2, int size )
     int k;
 #pragma omp parallel for shared( arr1, arr2, scalar) private(k) schedule( static )
     for(k=0;k<size;k++) {
-        arr1[k] += scalar*arr2[k];
+        arr1[k] = arr1[k] + scalar*arr2[k];
         //        printf("%2.2e %2.2e %2.2e\n", scalar*arr2[k], scalar, arr2[k]);
     }
 }
@@ -416,7 +487,26 @@ void MinMaxArrayPart( DoodzFP* array, double scale, int size, char* text, int* p
     }
     printf( "min(%s) = %2.12e max(%s) = %2.12e\n", text, min*scale, text, max*scale);
 }
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+void  Print2DArrayDouble( DoodzFP* arr, int nx, int nz, double scale ) {
+    int cx,cz,k;
+    printf("\n");
+    for(cz=0;cz<nz;cz++) {
+        //    for(cx=0;cx<nx;cx+=nx-1) {
+        for(cx=0;cx<nx;cx++) {
+            
+            k = cx + cz*nx;
+            //        printf("%.2lf ", arr[k]*scale);
+            printf("%.2e ", arr[k]*scale);
+        }
+        printf("\n");
+    }
+}
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
+

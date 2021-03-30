@@ -240,7 +240,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     double A[8], E[5];
     int k;
     double *strain, *strain_el, *strain_pl, *strain_pwl, *strain_exp, *strain_lin, *strain_gbs, *X;
-    float *Crho_s, *Crho_n, *Ceta_s, *Ceta_n, *CVx, *CVz, *CP, *Csxxd, *Csxz, *Cexxd, *Cexz, *Cstrain, *Cstrain_el, *Cstrain_pl, *Cstrain_pwl, *Cstrain_exp, *Cstrain_lin, *Cstrain_gbs, *CT, *Cd;
+    float *Crho_s, *Crho_n, *Ceta_s, *Ceta_n, *CVx, *CVz, *CP, *Csxxd, *Cszzd, *Csxz, *Cexxd, *Cezzd, *Cexz, *Cstrain, *Cstrain_el, *Cstrain_pl, *Cstrain_pwl, *Cstrain_exp, *Cstrain_lin, *Cstrain_gbs, *CT, *Cd;
     float *Cxg_coord, *Czg_coord, *Cxc_coord, *Czc_coord, *Czvx_coord, *Cxvz_coord;
     float *CeII_el, *CeII_pl, *CeII_pwl, *CeII_exp, *CeII_lin, *CeII_gbs, *CX;
     double *Fxx, *Fxz, *Fzx, *Fzz, *nx, *nz;
@@ -248,7 +248,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     double *T0, *P0, *x0, *z0, *Tmax, *Pmax;
     float *CT0, *CP0, *Cx0, *Cz0, *CTmax, *CPmax;
     float *CXreac;
-    float *COverS;
+    float *COverS, *Cdivu, *Cdivu_el, *Cdivu_pl, *Cdivu_th, *Cdivu_r;
 
     int    res_fact = 1;
     int    nxviz, nzviz, nxviz_hr, nzviz_hr;
@@ -261,7 +261,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
 
     // Build total pressure
     for (k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
-        P_total[k] = mesh->p_in[k];
+        P_total[k] = mesh->p_in[k];//(mesh->p_in[k] -  mesh->p0_n[k]);
     }
 
     // ---------------------------------------------------------
@@ -296,15 +296,15 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     Interp_Phase2VizGrid ( *particles, particles->phase, mesh, compo_hr, xviz_hr, zviz_hr, nxviz_hr, nzviz_hr, model, *topo );
     // ---------------------------------------------------------
     // Smooth rheological contrasts
-    if (model.diffuse_X) Interp_P2C ( *particles, particles->X, mesh, mesh->Xreac_n, mesh->xg_coord, mesh->zg_coord, 1, 0 );
+    if (model.diffuse_X) Interp_P2C ( *particles, particles->X, mesh, mesh->X_n, mesh->xg_coord, mesh->zg_coord, 1, 0 );
     // ---------------------------------------------------------
     // Cast grid arrays
     Crho_s  = DoodzMalloc( sizeof(float)*model.Nx*model.Nz);
-    DoubleToFloat( mesh->rho_app_s, Crho_s, model.Nx*model.Nz);
+    DoubleToFloat( mesh->rho_s, Crho_s, model.Nx*model.Nz);
     ScaleBack( Crho_s, scaling.rho, model.Nx*model.Nz );
 
     Crho_n  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
-    DoubleToFloat( mesh->rho_app_n, Crho_n, (model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->rho_n, Crho_n, (model.Nx-1)*(model.Nz-1));
     ScaleBack( Crho_n, scaling.rho, (model.Nx-1)*(model.Nz-1));
 
     Ceta_s  = DoodzMalloc( sizeof(float)*model.Nx*model.Nz);
@@ -330,6 +330,10 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     Csxxd  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( mesh->sxxd, Csxxd, (model.Nx-1)*(model.Nz-1) );
     ScaleBack( Csxxd, scaling.S, (model.Nx-1)*(model.Nz-1) );
+    
+    Cszzd  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->szzd, Cszzd, (model.Nx-1)*(model.Nz-1) );
+    ScaleBack( Cszzd, scaling.S, (model.Nx-1)*(model.Nz-1) );
 
     Csxz  = DoodzMalloc( sizeof(float)*model.Nx*model.Nz);
     DoubleToFloat( mesh->sxz, Csxz, model.Nx*model.Nz );
@@ -338,6 +342,10 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     Cexxd  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( mesh->exxd, Cexxd, (model.Nx-1)*(model.Nz-1) );
     ScaleBack( Cexxd, scaling.E, (model.Nx-1)*(model.Nz-1) );
+    
+    Cezzd  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->ezzd, Cezzd, (model.Nx-1)*(model.Nz-1) );
+    ScaleBack( Cezzd, scaling.E, (model.Nx-1)*(model.Nz-1) );
 
     Cexz  = DoodzMalloc( sizeof(float)*model.Nx*model.Nz);
     DoubleToFloat( mesh->exz, Cexz, model.Nx*model.Nz );
@@ -368,15 +376,35 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     ScaleBack( CeII_gbs, scaling.E, (model.Nx-1)*(model.Nz-1) );
 
     Cd        = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
-    DoubleToFloat( mesh->d, Cd, (model.Nx-1)*(model.Nz-1) );
+    DoubleToFloat( mesh->d_n, Cd, (model.Nx-1)*(model.Nz-1) );
     ScaleBack( Cd, scaling.L, (model.Nx-1)*(model.Nz-1) );
 
-    CXreac        = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
-    DoubleToFloat( mesh->Xreac_n, CXreac, (model.Nx-1)*(model.Nz-1) );
+    CX        = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->X_n, CX, (model.Nx-1)*(model.Nz-1) );
 
-    COverS        = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    COverS    = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( mesh->OverS_n, COverS, (model.Nx-1)*(model.Nz-1) );
     ScaleBack( COverS, scaling.S, (model.Nx-1)*(model.Nz-1) );
+    
+    Cdivu        = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->div_u, Cdivu, (model.Nx-1)*(model.Nz-1) );
+    ScaleBack( Cdivu, scaling.E, (model.Nx-1)*(model.Nz-1) );
+    
+    Cdivu_el     = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->div_u_el, Cdivu_el, (model.Nx-1)*(model.Nz-1) );
+    ScaleBack( Cdivu_el, scaling.E, (model.Nx-1)*(model.Nz-1) );
+    
+    Cdivu_pl     = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->div_u_pl, Cdivu_pl, (model.Nx-1)*(model.Nz-1) );
+    ScaleBack( Cdivu_pl, scaling.E, (model.Nx-1)*(model.Nz-1) );
+    
+    Cdivu_th     = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->divth0_n, Cdivu_th, (model.Nx-1)*(model.Nz-1) );
+    ScaleBack( Cdivu_th, scaling.E, (model.Nx-1)*(model.Nz-1) );
+    
+    Cdivu_r      = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->div_u_r , Cdivu_r , (model.Nx-1)*(model.Nz-1) );
+    ScaleBack( Cdivu_r , scaling.E, (model.Nx-1)*(model.Nz-1) );
 
     //---------------------------------------------------
     CT  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
@@ -494,7 +522,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
 
     if ( model.aniso == 1 ) {
 
-        // nx
+       // nx
         nx  = DoodzCalloc((model.Nx-1)*(model.Nz-1),sizeof(double));
         Interp_P2C ( *particles,  particles->nx, mesh, nx, mesh->xg_coord, mesh->zg_coord, 1, 0 );
         Cnx = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
@@ -568,19 +596,17 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
 
     }
 
-    if (model.isPl_soft == 1) {
-        Cfriction  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
-        DoubleToFloat( mesh->fric_n, Cfriction, (model.Nx-1)*(model.Nz-1) );
-        Ccohesion  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
-        DoubleToFloat( mesh->C_n, Ccohesion, (model.Nx-1)*(model.Nz-1) );
-        ScaleBack( Ccohesion, scaling.S, (model.Nx-1)*(model.Nz-1) );
-    }
-
-    // Get X from particles
-    X  = DoodzCalloc((model.Nx-1)*(model.Nz-1),sizeof(double));
-    Interp_P2C ( *particles,  particles->X, mesh, X, mesh->xg_coord, mesh->zg_coord, 1, 0 );
-    CX  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
-    DoubleToFloat( X, CX, (model.Nx-1)*(model.Nz-1) );
+    Cfriction  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->fric_n, Cfriction, (model.Nx-1)*(model.Nz-1) );
+    Ccohesion  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+    DoubleToFloat( mesh->C_n, Ccohesion, (model.Nx-1)*(model.Nz-1) );
+    ScaleBack( Ccohesion, scaling.S, (model.Nx-1)*(model.Nz-1) );
+    
+//    // Get X from particles
+//    X  = DoodzCalloc((model.Nx-1)*(model.Nz-1),sizeof(double));
+//    Interp_P2C ( *particles,  particles->X, mesh, X, mesh->xg_coord, mesh->zg_coord, 1, 0 );
+//    CX  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
+//    DoubleToFloat( X, CX, (model.Nx-1)*(model.Nz-1) );
 
 
     //---------------------------------------------------
@@ -679,6 +705,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     AddFieldToGroup_generic( _TRUE_, name, "VzNodes" , "Vz"   , 'f', (model.Nx+1)*model.Nz,     CVz, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "P"    , 'f', (model.Nx-1)*(model.Nz-1), CP, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "sxxd" , 'f', (model.Nx-1)*(model.Nz-1), Csxxd, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "szzd" , 'f', (model.Nx-1)*(model.Nz-1), Cszzd, 1 );
 
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "strain",    'f', (model.Nx-1)*(model.Nz-1), Cstrain, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "strain_el", 'f', (model.Nx-1)*(model.Nz-1), Cstrain_el, 1 );
@@ -690,6 +717,12 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "T",     'f', (model.Nx-1)*(model.Nz-1), CT, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Vertices", "sxz"  , 'f', model.Nx*model.Nz,         Csxz, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "exxd" , 'f', (model.Nx-1)*(model.Nz-1), Cexxd, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "ezzd" , 'f', (model.Nx-1)*(model.Nz-1), Cezzd, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "divu" , 'f', (model.Nx-1)*(model.Nz-1), Cdivu, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "divu_el" , 'f', (model.Nx-1)*(model.Nz-1), Cdivu_el, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "divu_pl" , 'f', (model.Nx-1)*(model.Nz-1), Cdivu_pl, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "divu_th" , 'f', (model.Nx-1)*(model.Nz-1), Cdivu_th, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "divu_r"  , 'f', (model.Nx-1)*(model.Nz-1), Cdivu_r , 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Vertices", "exz"  , 'f', model.Nx*model.Nz,         Cexz, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "eII_el" , 'f', (model.Nx-1)*(model.Nz-1), CeII_el, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "eII_pl" , 'f', (model.Nx-1)*(model.Nz-1), CeII_pl, 1 );
@@ -699,11 +732,11 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "eII_gbs" , 'f', (model.Nx-1)*(model.Nz-1), CeII_gbs, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "d" , 'f', (model.Nx-1)*(model.Nz-1), Cd, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "X" , 'f', (model.Nx-1)*(model.Nz-1), CX, 1 );
-    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "Xreac",'f', (model.Nx-1)*(model.Nz-1), CXreac, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "OverS",'f', (model.Nx-1)*(model.Nz-1), COverS, 1 );
 
     if ( model.free_surf == 1 ) {
         AddFieldToGroup_generic( _TRUE_, name, "Topo", "z_grid" , 'f', (model.Nx), Cheight, 1 );
+//        AddFieldToGroup_generic( _TRUE_, name, "Topo", "z_grid" , 'd', (model.Nx), topo->height, 1 );
         AddFieldToGroup_generic( _TRUE_, name, "Topo", "Vx_grid" , 'f', (model.Nx), Ctopovx, 1 );
         AddFieldToGroup_generic( _TRUE_, name, "Topo", "Vz_grid" , 'f', (model.Nx+1), Ctopovz, 1 );
         AddFieldToGroup_generic( _TRUE_, name, "Topo", "x_mark" , 'f', topo_chain->Nb_part, Cxtopo, 1 );
@@ -713,10 +746,8 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
         AddFieldToGroup_generic( _TRUE_, name, "Topo", "phase_mark" , 'i', topo_chain->Nb_part, topo_chain->phase, 1 );
     }
 
-    if (model.isPl_soft == 1) {
-        AddFieldToGroup_generic( _TRUE_, name, "Centers" , "friction", 'f', (model.Nx-1)*(model.Nz-1), Cfriction, 1 );
-        AddFieldToGroup_generic( _TRUE_, name, "Centers" , "cohesion", 'f', (model.Nx-1)*(model.Nz-1), Ccohesion, 1 );
-    }
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "friction", 'f', (model.Nx-1)*(model.Nz-1), Cfriction, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "cohesion", 'f', (model.Nx-1)*(model.Nz-1), Ccohesion, 1 );
 
     if (model.fstrain == 1) {
         AddFieldToGroup_generic( _TRUE_, name, "Centers" , "Fxx", 'f', (model.Nx-1)*(model.Nz-1), CFxx, 1 );
@@ -759,8 +790,10 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     DoodzFree( CVz );
     DoodzFree( CP );
     DoodzFree( Csxxd );
+    DoodzFree( Cszzd );
     DoodzFree( Csxz );
     DoodzFree( Cexxd );
+    DoodzFree( Cezzd );
     DoodzFree( Cexz );
     DoodzFree( CeII_el  );
     DoodzFree( CeII_pl  );
@@ -787,7 +820,6 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     DoodzFree( strain_exp );
     DoodzFree( strain_lin );
     DoodzFree( strain_gbs );
-    DoodzFree( X );
     DoodzFree( Cstrain     );
     DoodzFree( Cstrain_el  );
     DoodzFree( Cstrain_pl  );
@@ -798,9 +830,12 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     DoodzFree( CX );
     DoodzFree( CT );
     DoodzFree( Cd );
-    DoodzFree( CXreac );
     DoodzFree( COverS );
-
+    DoodzFree( Cdivu  );
+    DoodzFree( Cdivu_el );
+    DoodzFree( Cdivu_pl );
+    DoodzFree( Cdivu_th );
+    DoodzFree( Cdivu_r );
 
     if ( model.free_surf == 1 ) {
         DoodzFree( Cxtopo );
@@ -812,10 +847,8 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
         DoodzFree( Ctopovz_mark );
     }
 
-    if (model.isPl_soft == 1) {
-        DoodzFree( Cfriction );
-        DoodzFree( Ccohesion );
-    }
+    DoodzFree( Cfriction );
+    DoodzFree( Ccohesion );
 
     DoodzFree( compo    );
     DoodzFree( compo_hr );
@@ -866,25 +899,25 @@ void WriteOutputHDF5Particles( grid *mesh, markers *particles, surface *topo, ma
     double A[8];
     char  *part_ph, *part_gen;
     float *part_x, *part_z, *part_Vx, *part_Vz, *part_T, *part_P, *part_sxxd, *part_sxz;
-    int d_part, ind=0, Nb_part_viz=particles->Nb_part, *part_index;
+    int d_part=1, ind=0, Nb_part_viz=particles->Nb_part, *part_index;
     float *Cxtopo, *Cztopo, *Cvxtopo, *Cvztopo, *Cheight, *Cvxsurf, *Cvzsurf;
     float *Cxtopo_ini, *Cztopo_ini, *Cvxtopo_ini, *Cvztopo_ini, *Cheight_ini, *Cvxsurf_ini, *Cvzsurf_ini;
     int k;
 
 //    // Only save a give number of particles
 //    if(particles->Nb_part<Nb_part_viz) {
-//        Nb_part_viz = particles->Nb_part;
+        Nb_part_viz = particles->Nb_part;
 //    }
     
-    // Tracer: find number of particles after filtering
-    Nb_part_viz = 0;
-    for (k=0; k<particles->Nb_part; k++) {
-        if (particles->phase[k]==1) { // filter the mantle - VALID FOR MY MODEL ONLY
-            Nb_part_viz++;
-        }
-    }
-    
-    printf("Saving %d particles of crust\n",  Nb_part_viz);
+//    // Tracer: find number of particles after filtering
+//    Nb_part_viz = 0;
+//    for (k=0; k<particles->Nb_part; k++) {
+//        if (particles->phase[k]==1) { // filter the mantle - VALID FOR MY MODEL ONLY
+//            Nb_part_viz++;
+//        }
+//    }
+//
+//    printf("Saving %d particles of crust\n",  Nb_part_viz);
     
 //    d_part      = particles->Nb_part / (Nb_part_viz);
 //    d_part      = particles->Nb_part / (Nb_part_viz);
@@ -900,38 +933,38 @@ void WriteOutputHDF5Particles( grid *mesh, markers *particles, surface *topo, ma
     part_sxz    = DoodzMalloc( sizeof(float) *Nb_part_viz );
     part_index  = DoodzMalloc( sizeof(int) *Nb_part_viz );  // Tracer: allocate
     
-    // Tracer: store selected particle
-    for (k=0; k<particles->Nb_part; k++) {
-        if (particles->phase[k]==1) {
-        part_x[ind]     = (float)particles->x[k];
-        part_z[ind]     = (float)particles->z[k];
-        part_Vx[ind]    = (float)particles->Vx[k];
-        part_Vz[ind]    = (float)particles->Vz[k];
-        part_P[ind]     = (float)particles->P[k];
-        part_T[ind]     = (float)particles->T[k];
-        part_sxxd[ind]  = (float)particles->sxxd[k];
-        part_sxz[ind]   = (float)particles->sxz[k];
-        part_ph[ind]    = (char)particles->phase[k];
-        part_gen[ind]   = (char)particles->generation[k];
-        part_index[ind] = k;
-        ind ++;
-        }
-    }
-
-//    for (k=0; k<Nb_part_viz; k++) {
-//        part_x[k]     = (float)particles->x[ind];
-//        part_z[k]     = (float)particles->z[ind];
-//        part_Vx[k]    = (float)particles->Vx[ind];
-//        part_Vz[k]    = (float)particles->Vz[ind];
-//        part_P[k]     = (float)particles->P[ind];
-//        part_T[k]     = (float)particles->T[ind];
-//        part_sxxd[k]  = (float)particles->sxxd[ind];
-//        part_sxz[k]   = (float)particles->sxz[ind];
-//        part_ph[k]    = (char)particles->phase[ind];
-//        part_gen[k]   = (char)particles->generation[ind];
-//        part_index[k] = k;
-//        ind += d_part;
+//    // Tracer: store selected particle
+//    for (k=0; k<particles->Nb_part; k++) {
+//        if (particles->phase[k]==1) {
+//        part_x[ind]     = (float)particles->x[k];
+//        part_z[ind]     = (float)particles->z[k];
+//        part_Vx[ind]    = (float)particles->Vx[k];
+//        part_Vz[ind]    = (float)particles->Vz[k];
+//        part_P[ind]     = (float)particles->P[k];
+//        part_T[ind]     = (float)particles->T[k];
+//        part_sxxd[ind]  = (float)particles->sxxd[k];
+//        part_sxz[ind]   = (float)particles->sxz[k];
+//        part_ph[ind]    = (char)particles->phase[k];
+//        part_gen[ind]   = (char)particles->generation[k];
+//        part_index[ind] = k;
+//        ind ++;
+//        }
 //    }
+
+    for (k=0; k<Nb_part_viz; k++) {
+        part_x[k]     = (float)particles->x[ind];
+        part_z[k]     = (float)particles->z[ind];
+        part_Vx[k]    = (float)particles->Vx[ind];
+        part_Vz[k]    = (float)particles->Vz[ind];
+        part_P[k]     = (float)particles->P[ind];
+        part_T[k]     = (float)particles->T[ind];
+        part_sxxd[k]  = (float)particles->sxxd[ind];
+        part_sxz[k]   = (float)particles->sxz[ind];
+        part_ph[k]    = (char)particles->phase[ind];
+        part_gen[k]   = (char)particles->generation[ind];
+        part_index[k] = k;
+        ind += d_part;
+    }
 
     ScaleBack( part_x,     scaling.L, Nb_part_viz );
     ScaleBack( part_z,     scaling.L, Nb_part_viz );
@@ -1143,9 +1176,9 @@ void WriteResiduals( grid Mmesh, params model, Nparams Nmodel, scale scaling ) {
 
     // Scaling
     ArrayTimesScalar( Mmesh.eta_phys_n, scaling.eta, (model.Nx-1)*(model.Nz-1) );
-    ArrayTimesScalar( Mmesh.rho_app_n,  scaling.rho, (model.Nx-1)*(model.Nz-1) );
+    ArrayTimesScalar( Mmesh.rho_n,  scaling.rho, (model.Nx-1)*(model.Nz-1) );
     ArrayTimesScalar( Mmesh.eta_phys_s, scaling.eta, (model.Nx)*(model.Nz) );
-    ArrayTimesScalar( Mmesh.rho_app_s,  scaling.rho, (model.Nx)*(model.Nz) );
+    ArrayTimesScalar( Mmesh.rho_s,  scaling.rho, (model.Nx)*(model.Nz) );
     ArrayTimesScalar( Mmesh.rp,      scaling.E,   (model.Nx-1)*(model.Nz-1) );
     ArrayTimesScalar( Mmesh.ru,      scaling.F,   (model.Nx)*(model.Nz+1) );
     ArrayTimesScalar( Mmesh.rv,      scaling.F,   (model.Nx+1)*(model.Nz) );
@@ -1156,16 +1189,16 @@ void WriteResiduals( grid Mmesh, params model, Nparams Nmodel, scale scaling ) {
     AddFieldToGroup_generic( _TRUE_, name, "VxNodes" , "ru"  , 'd', model.Nx*(model.Nz+1),     Mmesh.ru, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "VzNodes" , "rv"  , 'd', (model.Nx+1)*model.Nz,     Mmesh.rv, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "rp"  , 'd', (model.Nx-1)*(model.Nz-1), Mmesh.rp, 1 );
-    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "rho"  , 'd', (model.Nx-1)*(model.Nz-1), Mmesh.rho_app_n, 1 );
-    AddFieldToGroup_generic( _TRUE_, name, "Vertices" , "rho"  , 'd', (model.Nx)*(model.Nz), Mmesh.rho_app_s, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Centers" , "rho"  , 'd', (model.Nx-1)*(model.Nz-1), Mmesh.rho_n, 1 );
+    AddFieldToGroup_generic( _TRUE_, name, "Vertices" , "rho"  , 'd', (model.Nx)*(model.Nz), Mmesh.rho_s, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Centers" , "eta"  , 'd', (model.Nx-1)*(model.Nz-1), Mmesh.eta_phys_n, 1 );
     AddFieldToGroup_generic( _TRUE_, name, "Vertices" , "eta"  , 'd', (model.Nx)*(model.Nz), Mmesh.eta_phys_s, 1 );
 
     // Scaling
     ArrayTimesScalar( Mmesh.eta_phys_n, 1.0/scaling.eta, (model.Nx-1)*(model.Nz-1) );
-    ArrayTimesScalar( Mmesh.rho_app_n,  1.0/scaling.rho, (model.Nx-1)*(model.Nz-1) );
+    ArrayTimesScalar( Mmesh.rho_n,  1.0/scaling.rho, (model.Nx-1)*(model.Nz-1) );
     ArrayTimesScalar( Mmesh.eta_phys_s, 1.0/scaling.eta, (model.Nx)*(model.Nz) );
-    ArrayTimesScalar( Mmesh.rho_app_s,  1.0/scaling.rho, (model.Nx)*(model.Nz) );
+    ArrayTimesScalar( Mmesh.rho_s,  1.0/scaling.rho, (model.Nx)*(model.Nz) );
     ArrayTimesScalar( Mmesh.rp,      1.0/scaling.E,   (model.Nx-1)*(model.Nz-1) );
     ArrayTimesScalar( Mmesh.ru,      1.0/scaling.F,   (model.Nx)*(model.Nz+1) );
     ArrayTimesScalar( Mmesh.rv,      1.0/scaling.F,   (model.Nx+1)*(model.Nz) );

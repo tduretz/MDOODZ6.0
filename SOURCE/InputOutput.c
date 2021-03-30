@@ -167,7 +167,6 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
     FILE *file;
 
     // Filename
-//    asprintf(&name, "Breakpoint%05d.dat", model->step);
     if( model->delete_breakpoints == -1 ) asprintf(&name, "BreakpointXXXXX.dat");
     else asprintf(&name, "Breakpoint%05d.dat", model->step);
     file = fopen(name, "rb");
@@ -214,15 +213,13 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
     fread( particles->X  ,  s3, particles->Nb_part, file);
     fread( particles->phase, s1, particles->Nb_part, file);
 
-    //        if  (model->moving_front == 1 ) {
-    //            fread( particles->generation, s1, particles->Nb_part, file);
-    //            fread( particles->progress, s1, particles->Nb_part, file);
-    //        }
-
     if (model->iselastic == 1) {
         fread( particles->sxxd,   s3, particles->Nb_part, file );
         fread( particles->szzd,   s3, particles->Nb_part, file );
         fread( particles->sxz,    s3, particles->Nb_part, file );
+        fread( particles->dsxxd,   s3, particles->Nb_part, file );
+        fread( particles->dszzd,   s3, particles->Nb_part, file );
+        fread( particles->dsxz,    s3, particles->Nb_part, file );
 
         fread( mesh->eta_n, s3, (Nx-1)*(Nz-1), file );
         fread( mesh->VE_n, s3, (Nx-1)*(Nz-1), file );
@@ -239,13 +236,18 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
     fread( particles->strain_gbs, s3, particles->Nb_part, file);
     fread( particles->d         , s3, particles->Nb_part, file);
 
-    fread( particles->ttrans    , s3, particles->Nb_part, file);
-
     if (model->fstrain == 1) {
         fread( particles->Fxx         , s3, particles->Nb_part, file);
         fread( particles->Fxz         , s3, particles->Nb_part, file);
         fread( particles->Fzx         , s3, particles->Nb_part, file);
         fread( particles->Fzz         , s3, particles->Nb_part, file);
+    }
+
+    if (model->aniso == 1) {
+        fread( particles->dnx        , s3, particles->Nb_part, file);
+        fread( particles->dnz        , s3, particles->Nb_part, file);
+        fread( particles->nx         , s3, particles->Nb_part, file);
+        fread( particles->nz         , s3, particles->Nb_part, file);
     }
 
     if (model->rec_T_P_x_z == 1) {
@@ -257,26 +259,46 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
         fread( particles->Pmax       , s3, particles->Nb_part, file);
     }
 
-    if (model->isthermal == 1) {
-        fread( particles->T, s3, particles->Nb_part, file);
-    }
 
-    if (model->eqn_state > 0) {
-        fread( particles->rho, s3, particles->Nb_part, file);
-    }
+    fread( particles->divth, s3, particles->Nb_part, file);
+    fread( particles->T,     s3, particles->Nb_part, file);
 
+
+    fread( particles->rho, s3, particles->Nb_part, file);
+
+    fread( particles->ddivth, s3, particles->Nb_part, file);
+    fread( particles->drho,   s3, particles->Nb_part, file);
+    fread( particles->dX,     s3, particles->Nb_part, file);
+    fread( particles->dphi,   s3, particles->Nb_part, file);
+    fread( particles->dd,     s3, particles->Nb_part, file);
+    fread( particles->dP,     s3, particles->Nb_part, file);
+    fread( particles->dT,     s3, particles->Nb_part, file);
+    
+    fread( mesh->p0_n, s3, (Nx-1)*(Nz-1), file );
+    fread( mesh->T0_n, s3, (Nx-1)*(Nz-1), file );
+    fread( mesh->divth0_n, s3, (Nx-1)*(Nz-1), file );
+    fread( mesh->X0_n, s3, (Nx-1)*(Nz-1), file );
+    fread( mesh->d0_n, s3, (Nx-1)*(Nz-1), file );
+    fread( mesh->phi0_n, s3, (Nx-1)*(Nz-1), file );
+    fread( mesh->rho0_n, s3, (Nx-1)*(Nz-1), file );
+    fread( mesh->sxxd0, s3, (Nx-1)*(Nz-1), file );
+    fread( mesh->szzd0, s3, (Nx-1)*(Nz-1), file );
+    if (model->aniso == 1) fread( mesh->nx0_n, s3, (Nx-1)*(Nz-1), file );
+    if (model->aniso == 1) fread( mesh->nz0_n, s3, (Nx-1)*(Nz-1), file );
+
+    fread( mesh->X0_s, s3, (Nx)*(Nz),     file );
+    fread( mesh->sxz0, s3, (Nx)*(Nz),     file );
+    if (model->aniso == 1) fread( mesh->nx0_s, s3, (Nx)*(Nz),     file );
+    if (model->aniso == 1) fread( mesh->nz0_s, s3, (Nx)*(Nz),     file );
 
     fread( mesh->eta_phys_n, s3, (Nx-1)*(Nz-1), file );
-    fread( mesh->eta_phys_s, s3, (Nx)*(Nz), file );
-
-    //        if (model->isinertial == 2) {
-    //            fread( mesh->u_adv, s3, (Nx*(Nz+1)), file );
-    //            fread( mesh->v_adv, s3, (Nz*(Nx+1)), file );
-    //        }
+    fread( mesh->eta_phys_s, s3, (Nx)*(Nz),     file );
 
     fread( mesh->u_in, s3, (Nx*(Nz+1)), file );
     fread( mesh->v_in, s3, (Nz*(Nx+1)), file );
     fread( mesh->p_in, s3, ((Nz-1)*(Nx-1)), file );
+    fread( mesh->p_lith,  s3, ((Nz-1)*(Nx-1)), file );
+    fread( mesh->p_lith0, s3, ((Nz-1)*(Nx-1)), file );
 
     fread( &mesh->Ut,  s3, 1, file );
     fread( &mesh->W,   s3, 1, file );
@@ -357,14 +379,14 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
             particles->sxxd[k]    /= scaling.S;
             particles->szzd[k]    /= scaling.S;
             particles->sxz[k]     /= scaling.S;
+            particles->dsxxd[k]    /= scaling.S;
+            particles->dszzd[k]    /= scaling.S;
+            particles->dsxz[k]     /= scaling.S;
         }
-        if ( model->isthermal == 1 ) {
-            particles->T[k]  /= scaling.T;
-        }
-
-        if ( model->eqn_state > 0 ) {
-            particles->rho[k]  /=scaling.rho;
-        }
+   
+        particles->divth[k]  /= scaling.E;
+        particles->T[k]      /= scaling.T;
+        particles->rho[k]  /=scaling.rho;
 
         if ( model->rec_T_P_x_z == 1) {
             particles->T0[k]  /= scaling.T;
@@ -374,8 +396,12 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
             particles->Tmax[k]/= scaling.T;
             particles->Pmax[k]/= scaling.S;
         }
-        particles->d[k]  /=scaling.L;
-        particles->ttrans[k] /=scaling.t;
+        particles->d[k]      /= scaling.L;
+        particles->ddivth[k] /= scaling.E;
+        particles->drho[k]   /= scaling.rho;
+        particles->dd[k]     /= scaling.L;
+        particles->dP[k]     /= scaling.S;
+        particles->dT[k]     /= scaling.T;
     }
 
     // Grid data
@@ -401,7 +427,21 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
             mesh->eta_n[c] /= scaling.eta;
             mesh->VE_n[c] /= 1.0;
             mesh->eta_phys_n[c] /= scaling.eta;
-            mesh->p_in[c] /= scaling.S;
+            mesh->p_in[c]    /= scaling.S;
+            mesh->p_lith[c]  /= scaling.S;
+            mesh->p_lith0[c] /= scaling.S;
+            
+            mesh->p0_n[c]      /= scaling.S;
+            mesh->T0_n[c]      /= scaling.T;
+            mesh->divth0_n[c]  /= scaling.E;
+            mesh->X0_n[c]      /= 1.0;
+            mesh->d0_n[c]      /= scaling.L;
+            mesh->phi0_n[c]    /= 1.0;
+            mesh->rho0_n[c]    /= scaling.rho;
+            mesh->sxxd0[c]     /= scaling.S;
+            mesh->szzd0[c]     /= scaling.S;
+            if (model->aniso == 1) mesh->nx0_n[c]     /= 1.0;
+            if (model->aniso == 1) mesh->nz0_n[c]     /= 1.0;
         }
     }
 
@@ -411,6 +451,11 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
             mesh->eta_phys_s[c] /= scaling.eta;
             mesh->eta_s[c] /= scaling.eta;
             mesh->VE_s[c] /= 1.0;
+            
+            mesh->X0_s[c]      /= 1.0;
+            mesh->sxz0[c]      /= scaling.S;
+            if (model->aniso == 1) mesh->nx0_s[c]     /= 1.0;
+            if (model->aniso == 1) mesh->nz0_s[c]     /= 1.0;
         }
     }
 
@@ -452,8 +497,8 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
         }
     }
 
-    mesh->Ut /= (scaling.rhoE*scaling.L*scaling.L);
-    mesh->W  /= (scaling.rhoE*scaling.L*scaling.L);
+    mesh->Ut   /= (scaling.rhoE*scaling.L*scaling.L);
+    mesh->W    /= (scaling.rhoE*scaling.L*scaling.L);
     model->L0  /= (scaling.L);
 
 //    MinMaxArray(particles->T, scaling.T, particles->Nb_part, "T part");
@@ -494,15 +539,15 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             particles->sxxd[k] *= scaling.S;
             particles->szzd[k] *= scaling.S;
             particles->sxz[k]  *= scaling.S;
+            particles->dsxxd[k] *= scaling.S;
+            particles->dszzd[k] *= scaling.S;
+            particles->dsxz[k]  *= scaling.S;
         }
-        if (model.isthermal == 1) {
-            particles->T[k]    *= scaling.T;
-        }
-        if (model.eqn_state > 0) {
-            particles->rho[k]  *= scaling.rho;
-        }
+        particles->divth[k]  *= scaling.E;
+        particles->T[k]         *= scaling.T;
+        
+        particles->rho[k]  *= scaling.rho;
         particles->d[k]        *= scaling.L;
-        particles->ttrans[k]   *= scaling.t;
 
         if ( model.rec_T_P_x_z == 1) {
             particles->T0[k]  *= scaling.T;
@@ -512,6 +557,11 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             particles->Tmax[k]*= scaling.T;
             particles->Pmax[k]*= scaling.S;
         }
+        particles->ddivth[k] *= scaling.E;
+        particles->drho[k]   *= scaling.rho;
+        particles->dd[k]     *= scaling.L;
+        particles->dP[k]     *= scaling.S;
+        particles->dT[k]     *= scaling.T;
     }
 
     // grid data
@@ -537,7 +587,21 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             mesh->eta_n[c] *= scaling.eta;
             mesh->VE_n[c] *= 1.0;
             mesh->eta_phys_n[c] *= scaling.eta;
-            mesh->p_in[c] *= scaling.S;
+            mesh->p_in[c]    *= scaling.S;
+            mesh->p_lith[c]  *= scaling.S;
+            mesh->p_lith0[c] *= scaling.S;
+            
+            mesh->p0_n[c]      *= scaling.S;
+            mesh->T0_n[c]      *= scaling.T;
+            mesh->divth0_n[c]  *= scaling.E;
+            mesh->X0_n[c]      *= 1.0;
+            mesh->d0_n[c]      *= scaling.L;
+            mesh->phi0_n[c]    *= 1.0;
+            mesh->rho0_n[c]    *= scaling.rho;
+            mesh->sxxd0[c]     *= scaling.S;
+            mesh->szzd0[c]     *= scaling.S;
+            if (model.aniso == 1) mesh->nx0_n[c]     *= 1.0;
+            if (model.aniso == 1) mesh->nz0_n[c]     *= 1.0;
         }
     }
 
@@ -547,6 +611,11 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             mesh->eta_phys_s[c] *= scaling.eta;
             mesh->eta_s[c] *= scaling.eta;
             mesh->VE_s[c] *= 1.0;
+            
+            mesh->X0_s[c]      *= 1.0;
+            mesh->sxz0[c]      *= scaling.S;
+            if (model.aniso == 1) mesh->nx0_s[c]     *= 1.0;
+            if (model.aniso == 1) mesh->nz0_s[c]     *= 1.0;
         }
     }
 
@@ -648,6 +717,9 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
         fwrite( particles->sxxd,   s3, particles->Nb_part, file );
         fwrite( particles->szzd,   s3, particles->Nb_part, file );
         fwrite( particles->sxz,    s3, particles->Nb_part, file );
+        fwrite( particles->dsxxd,   s3, particles->Nb_part, file );
+        fwrite( particles->dszzd,   s3, particles->Nb_part, file );
+        fwrite( particles->dsxz,    s3, particles->Nb_part, file );
 
         fwrite( mesh->eta_n, s3, (Nx-1)*(Nz-1), file );
         fwrite( mesh->VE_n, s3, (Nx-1)*(Nz-1), file );
@@ -663,13 +735,19 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     fwrite( particles->strain_lin, s3, particles->Nb_part, file);
     fwrite( particles->strain_gbs, s3, particles->Nb_part, file);
     fwrite( particles->d         , s3, particles->Nb_part, file);
-    fwrite( particles->ttrans    , s3, particles->Nb_part, file);
 
     if (model.fstrain == 1) {
         fwrite( particles->Fxx         , s3, particles->Nb_part, file);
         fwrite( particles->Fxz         , s3, particles->Nb_part, file);
         fwrite( particles->Fzx         , s3, particles->Nb_part, file);
         fwrite( particles->Fzz         , s3, particles->Nb_part, file);
+    }
+
+    if (model.aniso == 1) {
+        fwrite( particles->dnx        , s3, particles->Nb_part, file);
+        fwrite( particles->dnz        , s3, particles->Nb_part, file);
+        fwrite( particles->nx         , s3, particles->Nb_part, file);
+        fwrite( particles->nz         , s3, particles->Nb_part, file);
     }
 
     if (model.rec_T_P_x_z == 1) {
@@ -681,12 +759,35 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
         fwrite( particles->Pmax       , s3, particles->Nb_part, file);
     }
 
-    if (model.isthermal == 1) {
-        fwrite( particles->T, s3, particles->Nb_part, file);
-    }
-    if (model.eqn_state > 0) {
-        fwrite( particles->rho, s3, particles->Nb_part, file);
-    }
+    fwrite( particles->divth, s3, particles->Nb_part, file);
+    fwrite( particles->T,     s3, particles->Nb_part, file);
+    
+    fwrite( particles->rho, s3, particles->Nb_part, file);
+
+    fwrite( particles->ddivth, s3, particles->Nb_part, file);
+    fwrite( particles->drho,   s3, particles->Nb_part, file);
+    fwrite( particles->dX,     s3, particles->Nb_part, file);
+    fwrite( particles->dphi,   s3, particles->Nb_part, file);
+    fwrite( particles->dd,     s3, particles->Nb_part, file);
+    fwrite( particles->dP,     s3, particles->Nb_part, file);
+    fwrite( particles->dT,     s3, particles->Nb_part, file);
+    
+    fwrite( mesh->p0_n, s3, (Nx-1)*(Nz-1), file );
+    fwrite( mesh->T0_n, s3, (Nx-1)*(Nz-1), file );
+    fwrite( mesh->divth0_n, s3, (Nx-1)*(Nz-1), file );
+    fwrite( mesh->X0_n, s3, (Nx-1)*(Nz-1), file );
+    fwrite( mesh->d0_n, s3, (Nx-1)*(Nz-1), file );
+    fwrite( mesh->phi0_n, s3, (Nx-1)*(Nz-1), file );
+    fwrite( mesh->rho0_n, s3, (Nx-1)*(Nz-1), file );
+    fwrite( mesh->sxxd0, s3, (Nx-1)*(Nz-1), file );
+    fwrite( mesh->szzd0, s3, (Nx-1)*(Nz-1), file );
+    if (model.aniso == 1) fwrite( mesh->nx0_n, s3, (Nx-1)*(Nz-1), file );
+    if (model.aniso == 1) fwrite( mesh->nz0_n, s3, (Nx-1)*(Nz-1), file );
+
+    fwrite( mesh->X0_s, s3, (Nx)*(Nz),     file );
+    fwrite( mesh->sxz0, s3, (Nx)*(Nz),     file );
+    if (model.aniso == 1) fwrite( mesh->nx0_s, s3, (Nx)*(Nz),     file );
+    if (model.aniso == 1) fwrite( mesh->nz0_s, s3, (Nx)*(Nz),     file );
 
     fwrite( mesh->eta_phys_n, s3, (Nx-1)*(Nz-1), file );
     fwrite( mesh->eta_phys_s, s3, (Nx)*(Nz), file );
@@ -694,6 +795,8 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     fwrite( mesh->u_in, s3, (Nx*(Nz+1)), file );
     fwrite( mesh->v_in, s3, (Nz*(Nx+1)), file );
     fwrite( mesh->p_in, s3, ((Nx-1)*(Nz-1)), file );
+    fwrite( mesh->p_lith,  s3, ((Nx-1)*(Nz-1)), file );
+    fwrite( mesh->p_lith0, s3, ((Nx-1)*(Nz-1)), file );
 
     fwrite( &mesh->Ut, s3, 1, file );
     fwrite( &mesh->W,  s3, 1, file );
@@ -774,15 +877,14 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             particles->sxxd[k]   /= scaling.S;
             particles->szzd[k]   /= scaling.S;
             particles->sxz[k]    /= scaling.S;
+            particles->dsxxd[k]   /= scaling.S;
+            particles->dszzd[k]   /= scaling.S;
+            particles->dsxz[k]    /= scaling.S;
         }
-        if (model.isthermal == 1) {
-            particles->T[k]  /= scaling.T;
-        }
-        if (model.eqn_state > 0) {
-            particles->rho[k]  /= scaling.rho;
-        }
+        particles->divth[k]  /= scaling.E;
+        particles->T[k]      /= scaling.T;
+        particles->rho[k]  /= scaling.rho;
         particles->d[k]  /= scaling.L;
-        particles->ttrans[k] /= scaling.t;
 
         if (model.rec_T_P_x_z == 1) {
             particles->T0[k]  /= scaling.T;
@@ -792,6 +894,11 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             particles->Tmax[k]/= scaling.T;
             particles->Pmax[k]/= scaling.S;
         }
+        particles->ddivth[k] /= scaling.E;
+        particles->drho[k]   /= scaling.rho;
+        particles->dd[k]     /= scaling.L;
+        particles->dP[k]     /= scaling.S;
+        particles->dT[k]     /= scaling.T;
     }
 
     for (k=0; k<Nx; k++) {
@@ -816,7 +923,21 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             mesh->eta_n[c] /= scaling.eta;
             mesh->VE_n[c] /= 1.0;
             mesh->eta_phys_n[c] /= scaling.eta;
-            mesh->p_in[c] /= scaling.S;
+            mesh->p_in[c]    /= scaling.S;
+            mesh->p_lith[c]  /= scaling.S;
+            mesh->p_lith0[c] /= scaling.S;
+            
+            mesh->p0_n[c]      /= scaling.S;
+            mesh->T0_n[c]      /= scaling.T;
+            mesh->divth0_n[c]  /= scaling.E;
+            mesh->X0_n[c]      /= 1.0;
+            mesh->d0_n[c]      /= scaling.L;
+            mesh->phi0_n[c]    /= 1.0;
+            mesh->rho0_n[c]    /= scaling.rho;
+            mesh->sxxd0[c]     /= scaling.S;
+            mesh->szzd0[c]     /= scaling.S;
+            if (model.aniso == 1) mesh->nx0_n[c]     /= 1.0;
+            if (model.aniso == 1) mesh->nz0_n[c]     /= 1.0;
         }
     }
 
@@ -824,8 +945,13 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
         for (l=0; l<Nz; l++) {
             c = k +l*(Nx);
             mesh->eta_phys_s[c] /= scaling.eta;
-            mesh->eta_s[c] /= scaling.eta;
-            mesh->VE_s[c] /= 1.0;
+            mesh->eta_s[c]      /= scaling.eta;
+            mesh->VE_s[c]       /= 1.0;
+            
+            mesh->X0_s[c]      /= 1.0;
+            mesh->sxz0[c]      /= scaling.S;
+            if (model.aniso == 1) mesh->nx0_s[c]     /= 1.0;
+            if (model.aniso == 1) mesh->nz0_s[c]     /= 1.0;
         }
     }
 
@@ -910,7 +1036,6 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
 
     // Input
     model->input_file      = ReadChar( fin, "input_file", "blah.bin");
-    printf("%s\n",     model->input_file );
 
     // Read scales for non-dimensionalisation
     scaling->eta           = ReadDou2( fin, "eta", 1.0  );
@@ -938,15 +1063,18 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->pc_type         = ReadInt2( fin, "pc_type",       0 );
     model->num_deriv       = ReadInt2( fin, "num_deriv",     0 );
     model->safe_mode       = ReadInt2( fin, "safe_mode",     0 );
+    model->safe_dt_div     = ReadDou2( fin, "safe_dt_div",  5.0 );
     model->nstagmax        = ReadInt2( fin, "nstagmax",      3 );
-    
+    model->noisy           = ReadInt2( fin, "noisy",         1 );  // Prints a lot of info to standard output
 
     // Switches
-    model->initial_noise   = ReadInt2( fin, "initial_noise",   0 );
-    model->ismechanical    = ReadInt2( fin, "ismechanical",    1 );
-    model->dt_constant     = ReadInt2( fin, "dt_constant",     0 );
-    model->RK              = ReadInt2( fin, "RK",              4 );
-    model->isperiodic_x    = ReadInt2( fin, "isperiodic_x",    0 );
+    model->initial_part    = ReadInt2( fin, "initial_part",    0 ); // Initial particule distribution, 0: MD4.5 style, 1: MD6.0 style
+    model->initial_noise   = ReadInt2( fin, "initial_noise",   0 ); // Add noise on initial marker locations
+    model->ismechanical    = ReadInt2( fin, "ismechanical",    1 ); // Activates mechanical solver
+    model->advection       = ReadInt2( fin, "advection",       1 ); // Activates advection
+    model->dt_constant     = ReadInt2( fin, "dt_constant",     0 ); // Fixed time step
+    model->RK              = ReadInt2( fin, "RK",              4 ); // Order of Runge-Kutta advection solver
+    model->isperiodic_x    = ReadInt2( fin, "isperiodic_x",    0 ); // Activates periodicity in x
     model->ispureshear_ale = ReadInt2( fin, "ispureshear_ALE", 0 );
     model->isinertial      = ReadInt2( fin, "isinertial",      0 );
     model->iselastic       = ReadInt2( fin, "iselastic",       0 );
@@ -961,36 +1089,53 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->subgrid_diff    = ReadInt2( fin, "subgrid_diff",    0 );
     model->shear_heat      = ReadInt2( fin, "shear_heat",      1 );
     model->adiab_heat      = ReadInt2( fin, "adiab_heat",      0 );
-    model->isPl_soft       = ReadInt2( fin, "isPl_soft",       0 );
     model->surf_processes  = ReadInt2( fin, "surf_processes",  0 );
     model->surf_remesh     = ReadInt2( fin, "surf_remesh",     1 );
     model->cpc             = ReadInt2( fin, "cpc",             1 );
-    model->advection       = ReadInt2( fin, "advection",       1 );
     model->loc_iter        = ReadInt2( fin, "loc_iter",        1 );
     model->therm_pert      = ReadInt2( fin, "therm_pert",      0 );
     model->fstrain         = ReadInt2( fin, "fstrain",         0 );
     model->rec_T_P_x_z     = ReadInt2( fin, "rec_T_P_x_z",     0 );
     model->delete_breakpoints = ReadInt2( fin, "delete_breakpoints",        1 );
     model->topografix      = ReadInt2( fin, "topografix",      0 );
-    model->aniso           = ReadInt2( fin, "aniso",           0 );
-    model->compressible    = ReadInt2( fin, "compressible",    0 );
-    model->GNUplot_residuals = ReadInt2( fin, "GNUplot_residuals",    0 );
-    model->no_markers      = ReadInt2( fin, "no_markers",    0 );
-    model->shear_style     = ReadInt2( fin, "shear_style",    0 );
-    model->StressRotation  = ReadInt2( fin, "StressRotation", 1 );
-    model->polar           = ReadInt2( fin, "polar",          0 );
-    model->ProgReac        = ReadInt2( fin, "ProgReac",       0 );
-    if (model->shear_style==1) model->isperiodic_x  = 1;
+    model->aniso           = ReadInt2( fin, "aniso",           0 ); // Turns on anisotropy
+    model->aniso_fstrain   = ReadInt2( fin, "aniso_fstrain",   0 ); // Make anisotropy factor dependent on finite strain aspect ratio
+    model->compressible    = ReadInt2( fin, "compressible",    0 ); // Turns on compressibility
+    model->GNUplot_residuals = ReadInt2( fin, "GNUplot_residuals",    0 ); // Activate GNU plot residuals visualisation
+    model->no_markers      = ReadInt2( fin, "no_markers",     0 );
+    model->shear_style     = ReadInt2( fin, "shear_style",    0 ); // 0: pure shear, 2: periodic simple shear
+    model->StressRotation  = ReadInt2( fin, "StressRotation", 1 ); // 0: no stress rotation, 1: analytic rotation, 2: upper convected rate
+    model->StressUpdate    = ReadInt2( fin, "StressUpdate",   0 );
+    model->polar           = ReadInt2( fin, "polar",          0 ); // Activate polar-Cartesian coordinates
+    model->ProgReac        = ReadInt2( fin, "ProgReac",       0 ); // Activate progressive reactions
+    model->NoReturn        = ReadInt2( fin, "NoReturn",       0 ); // Turns off retrogression if 1.0
+    model->UnsplitDiffReac = ReadInt2( fin, "UnsplitDiffReac",0 ); // Unsplit diffusion reaction
+    model->VolChangeReac   = ReadInt2( fin, "VolChangeReac",  0 ); // Turns on volume change due to reaction if 1
+    model->Plith_trick     = ReadInt2( fin, "Plith_trick", 0 );
+    model->IncrementalUpdateGrid     = ReadInt2( fin, "IncrementalUpdateGrid", 1);
+    model->DirectNeighbour           = ReadInt2( fin, "DirectNeighbour", 0);
+    model->Reseed          = ReadInt2( fin, "Reseed", 1);
+    model->ConservInterp   = ReadInt2( fin, "ConservInterp",   0); // Activates Taras conservative interpolation
+    model->SmoothSoftening = ReadInt2( fin, "SmoothSoftening", 1); // Activates smooth explicit kinematic softening function
+
+    if ( model->shear_style == 1 ) model->isperiodic_x  = 1;
+    if ( model->shear_style == 0 ) model->isperiodic_x  = 0;
+    if ( model->aniso       == 1 ) model->fstrain       = 1;
 
     // Setup dependant
     model->EpsBG           = ReadDou2( fin, "EpsBG",           0.0 ) / scaling->E;
     model->PrBG            = ReadDou2( fin, "PrBG",            0.0 ) / scaling->S;
-    // Surface processes
+    // Anisotropy
+//    model->director_angle  = ReadDou2( fin, "director_angle",  0.0 )  * M_PI/ 180.0;
+//    model->aniso_factor    = ReadDou2( fin, "aniso_factor",    1.0 );
+        // Surface processes
     model->surf_diff       = ReadDou2( fin, "surf_diff",       0.0 ) / (pow(scaling->L,2.0)/scaling->t);
     model->surf_ised1      = ReadInt2( fin, "surf_ised1",      0.0 );
     model->surf_ised2      = ReadInt2( fin, "surf_ised2",      0.0 );
     model->surf_sedirate   = ReadDou2( fin, "surf_sedirate",   0.0 ) / scaling->V;
     model->surf_baselev    = ReadDou2( fin, "surf_baselev",    0.0 ) / scaling->L;
+    model->surf_Winc       = ReadDou2( fin, "surf_Winc",       0.0 ) / scaling->L;
+    model->surf_Vinc       = ReadDou2( fin, "surf_Vinc",       0.0 ) / scaling->V;
     // Initial thermal perturbation
     model->therm_pert_x0   = ReadDou2( fin, "therm_pert_x0",   0.0 ) / scaling->L;
     model->therm_pert_z0   = ReadDou2( fin, "therm_pert_z0",   0.0 ) / scaling->L;
@@ -1000,6 +1145,11 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->force_act_vol_ast = ReadInt2( fin, "force_act_vol_ast",   0 );
     model->act_vol_dis_ast   = ReadDou2( fin, "act_vol_dis_ast" ,  0.0 );
     model->act_vol_dif_ast   = ReadDou2( fin, "act_vol_dif_ast" ,  0.0 );
+    // Reaction
+//    model->Pr              = ReadDou2( fin, "Pr",          0.0  ) / scaling->S;
+//    model->dPr             = ReadDou2( fin, "dPr",         0.0  ) / scaling->S;
+//    model->tau_kin         = ReadDou2( fin, "tau_kin",     0.0  ) / scaling->t;
+//    model->k_chem          = ReadDou2( fin, "k_chem",      0.0  ) / (scaling->L*scaling->L/scaling->t);
 
     // Model user's delights
     model->user0           = ReadDou2( fin, "user0",           0.0 );
@@ -1013,13 +1163,18 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->user8           = ReadDou2( fin, "user8",           0.0 );
 
     // Derived quantities
-    model->dx              = (model->xmax - model->xmin) / (model->Nx - 1); printf("dx = %2.6e\n", model->dx );
-    model->dz              = (model->zmax - model->zmin) / (model->Nz - 1);
-    model->dt0             = model->dt;
-    model->dt_start        = model->dt;
-    model->eta_avg         = ReadInt2( fin, "eta_avg",       0 ); // 0 : arithmetic mean
-    model->diffuse_X       = ReadInt2( fin, "diffuse_X",     0 ); // 0 or 1
-    model->diffuse_avg     = ReadInt2( fin, "diffuse_avg",   0 ); // 0 : arithmetic mean
+    model->dx                = (model->xmax - model->xmin) / (model->Nx - 1);
+    model->dz                = (model->zmax - model->zmin) / (model->Nz - 1);
+    model->dt0               = model->dt;
+    model->dt_start          = model->dt;
+    model->dt_max            = ReadDou2( fin, "dt_max",     1e20 ) / scaling->t; // maximum allowed time step
+    model->dt_min            = ReadDou2( fin, "dt_min",      1e8 ) / scaling->t; // maximum allowed time step
+    model->eta_avg           = ReadInt2( fin, "eta_avg",       0 );              // 0 : arithmetic mean
+    model->nexp_radial_basis = ReadDou2( fin, "nexp_radial_basis", 1.0 ); // exponent for radial basis function interp.
+
+       // For Cindy's setup
+    model->diffuse_X       = ReadInt2( fin, "diffuse_X",     0 );              // 0 or 1
+    model->diffuse_avg     = ReadInt2( fin, "diffuse_avg",   0 );              // 0 : arithmetic mean
     model->diffusion_length= ReadDou2( fin, "diffusion_length",  0.0 ) / scaling->L;
 
     // Gravity
@@ -1038,6 +1193,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         materials->Qr[k]   = ReadMatProps( fin, "Qr",  k,   1.0e-30)  / (scaling->W / pow(scaling->L,3.0));
         materials->C[k]    = ReadMatProps( fin, "C",   k,   1.0e7  )  / scaling->S;
         materials->phi[k]  = ReadMatProps( fin, "phi", k,    30.0  )  * M_PI/ 180.0;
+        materials->psi[k]  = ReadMatProps( fin, "psi", k,     0.0  )  * M_PI/ 180.0;
         materials->Slim[k] = ReadMatProps( fin, "Slim",k,   1.0e10 )  / scaling->S;
         materials->alp[k]  = ReadMatProps( fin, "alp", k,      0.0)  / (1.0/scaling->T);
         materials->bet[k]  = ReadMatProps( fin, "bet", k,  1.0e-40 )  / (1.0/scaling->S);
@@ -1056,25 +1212,46 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         materials->Qpwl[k]  = ReadMatProps( fin, "Qpwl",k,    0.0  );//   / scaling->J;
         materials->pref_pwl[k] = ReadMatProps( fin, "pref_pwl",k,    1.0 );    // weakening prefactor for power law
         materials->gs[k]    = ReadMatProps( fin, "gs",    k,    0.0   );
-        materials->gs_ref[k]= ReadMatProps( fin, "gsref" ,k,  2.0e-3  ) /scaling->L;
+        materials->gs_ref[k]= ReadMatProps( fin, "gs_ref" ,k,  2.0e-3  ) /scaling->L;
         // Strain softening
-        materials->C_end[k]     = ReadMatProps( fin, "Ce",     k,    1.0e7  )  / scaling->S;
-        materials->phi_end[k]   = ReadMatProps( fin, "phie",   k,     30.0  )  / 1.0 * M_PI / 180.0;
-        materials->pls_start[k] = ReadMatProps( fin, "plss",   k,    1.0e6  );
-        materials->pls_end[k]   = ReadMatProps( fin, "plse",   k,    1.0e6  );
+        materials->coh_soft[k]   = (int)ReadMatProps( fin, "coh_soft",   k,    0.0   );
+        materials->phi_soft[k]   = (int)ReadMatProps( fin, "phi_soft",   k,    0.0   );
+        materials->psi_soft[k]   = (int)ReadMatProps( fin, "psi_soft",   k,    0.0   );
+        materials->is_tensile[k] = (int)ReadMatProps( fin, "is_tensile", k,    0.0   );
+        materials->C_end[k]     = ReadMatProps( fin, "Ce",     k,    materials->C[k]*scaling->S    ) / scaling->S;
+        materials->phi_end[k]   = ReadMatProps( fin, "phie",   k,    materials->phi[k]*180.0/M_PI  ) * M_PI / 180.0;
+        materials->psi_end[k]   = ReadMatProps( fin, "psie",   k,    materials->psi[k]*180.0/M_PI  ) * M_PI / 180.0;
+        double eps_coh = 1.0 / scaling->S;
+        double eps_phi = 0.1  * M_PI / 180.0;
+        double eps_psi = 0.1  * M_PI / 180.0;
+        if ( materials->coh_soft[k] == 1 && fabs( materials->C_end[k]   - materials->C[k]  ) < eps_coh ) { printf("Please set a difference in cohesion, if not set coh_soft of phase %d to 0.0\n", k); exit(122); };
+        if ( materials->phi_soft[k] == 1 && fabs( materials->phi_end[k] - materials->phi[k]) < eps_phi ) { printf("Please set a difference in friction angle, if not set phi_soft of phase %d to 0.0\n", k); exit(122); };
+        if ( materials->psi_soft[k] == 1 && fabs( materials->psi_end[k] - materials->psi[k]) < eps_psi ) { printf("Please set a difference in dilation angle, if not set psi_soft of phase %d to 0.0\n", k); exit(122); };
+        materials->pls_start[k] = ReadMatProps( fin, "plss",   k,    1.0    );
+        materials->pls_end[k]   = ReadMatProps( fin, "plse",   k,    2.0    );
         // Reaction stuff
-        materials->Reac[k]      = ReadMatProps( fin, "Reac",   k,    0.0  );
-        materials->Preac[k]     = ReadMatProps( fin, "Preac",  k,    0.0  ) / scaling->S;
-        materials->treac[k]     = ReadMatProps( fin, "treac",  k,    0.0  ) / scaling->t;
+        materials->reac_soft[k]  = (int)ReadMatProps( fin, "reac_soft",   k,    0.0  );
+        materials->reac_phase[k] = (int)ReadMatProps( fin, "reac_phase",   k,    0.0  );
+        materials->Pr[k]         = ReadMatProps( fin, "Pr",      k,    0.0  ) / scaling->S;
+        materials->dPr[k]        = ReadMatProps( fin, "dPr",     k,    0.0  ) / scaling->S;
+        materials->tau_kin[k]    = ReadMatProps( fin, "tau_kin", k,    0.0  ) / scaling->t;
+        materials->k_chem[k]     = ReadMatProps( fin, "k_chem",  k,    0.0  ) / (scaling->L*scaling->L/scaling->t);
         // Density models
-        materials->density_model[k]     = (int)ReadMatProps( fin, "density_model",     k,    1  );
+        materials->density_model[k]     = (int)ReadMatProps( fin, "density_model",     k,    3  );
         materials->phase_diagram[k]     = (int)ReadMatProps( fin, "phase_diagram",     k,   -1  );
         // Viscoplasticity
         materials->n_vp[k]      = ReadMatProps( fin, "n_vp",   k,       1.0 ) ;
         materials->eta_vp[k]    = ReadMatProps( fin, "eta_vp", k,       0.0 ) / scaling->S / pow(scaling->t, 1.0/materials->n_vp[k]);
+        if ( materials->is_tensile[k]==1 && materials->n_vp[k]>1.0001 ) {
+            printf("Power-law visco-plasticity not yet compatible with tensile yielding\n");
+            exit(1);
+        }
         // Diffused rheological contrasts
         materials->phase_mix[k]  = (int)ReadMatProps( fin, "phase_mix",k,          0.0  );
         materials->phase_two[k]  = (int)ReadMatProps( fin, "phase_mix",k,    (double)k  );
+        // Anisotropy
+        materials->aniso_factor[k] =      ReadMatProps( fin, "aniso_factor", k,    1.0  );
+        materials->aniso_angle[k]  =      ReadMatProps( fin, "aniso_angle"  ,k,   90.0  )  * M_PI/ 180.0;
         // Check if any flow law is active
         int sum = abs(materials->cstv[k]) + abs(materials->pwlv[k]) + abs(materials->linv[k]) + abs(materials->gbsv[k]) + abs(materials->expv[k]);
         if ( sum == 0 ) {
@@ -1115,8 +1292,6 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         }
     }
 
-    for ( k=0; k<materials->Nb_phases; k++)  printf("%02d %2.2e %2.2e\n", materials->Reac[k], materials->Preac[k]*scaling->S, materials->treac[k]*scaling->t );
-
     materials->R = Rg / (scaling->J/scaling->T);
 
     //------------------------------------------------------------------------------------------------------------------------------//
@@ -1139,14 +1314,14 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
 
     // Phase diagrams
     if ( model->isPD == 1 ) {
-        
+
         printf("Loading phase_diagrams...\n");
         int pid;
         model->num_PD = 9;
-        
+
         // Allocate
         AllocatePhaseDiagrams( model );
-        
+
         /**** PHASE DIAGRAMS #00 - Mantle (Jenadi_stx.dat)  ****/
         pid                       = 0;         // Kaus & Connolly, 2005: Effect of mineral phase transitions on sedimentary basin subsidence and uplift
         if (pid > (model->num_PD-1) ) {
@@ -1160,7 +1335,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         model->PDMPmin[pid]       = 100e6/scaling->S;         // Minimum pressure           (MANTLE) [Pa]
         model->PDMPmax[pid]       = 15e9 /scaling->S;         // Maximum pressure           (MANTLE) [Pa]
         model->PDMrho[pid]        = ReadBin( "PHASE_DIAGRAMS/Hawaiian_Pyrolite_rho_bin.dat", model->PDMnT[pid], model->PDMnP[pid], scaling->rho);
-        
+
         /**** PHASE DIAGRAMS #00 - Mantle (Jenadi_stx_HR.dat)  ****/
         pid                       = 1;         // Kaus & Connolly, 2005: Effect of mineral phase transitions on sedimentary basin subsidence and uplift
         if (pid > (model->num_PD-1) ) {
@@ -1272,7 +1447,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         model->PDMPmin[pid]       = 10.13e6/scaling->S;         // Minimum pressure           (MANTLE) [Pa]
         model->PDMPmax[pid]       = 5.5816e9 /scaling->S;        // Maximum pressure           (MANTLE) [Pa]
         model->PDMrho[pid]        = ReadBin( "PHASE_DIAGRAMS/Serpentinite.dat", model->PDMnT[pid], model->PDMnP[pid], scaling->rho);
-        
+
     }
 
     //------------------------------------------------------------------------------------------------------------------------------//
@@ -1309,10 +1484,18 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
 
     // Nonlinear iteration parameters
     model->Newton           = ReadInt2( fin, "Newton", 0 );
+    Nmodel->Picard2Newton   = ReadInt2( fin, "Picard2Newton", 0 );
+    Nmodel->let_res_grow    = ReadInt2( fin, "let_res_grow",  0 );
+    Nmodel->Pic2NewtCond    = ReadDou2( fin, "Pic2NewtCond", 1e-1 );
+    Nmodel->nit_Pic_max     = ReadInt2( fin, "nit_Pic_max", 10 );
+    
+    
     model->rel_tol_KSP      = ReadDou2( fin, "rel_tol_KSP", 1e-4 );
     Nmodel->nit_max         = ReadInt2( fin, "nit_max", 1 );
-    Nmodel->tol_u           = ReadDou2( fin, "tol_u", 5.0e-6 );// / (scaling->F/pow(scaling->L,3.0));
-    Nmodel->tol_p           = ReadDou2( fin, "tol_p", 5.0e-6 );// / scaling->E;
+    Nmodel->abs_tol_u       = ReadDou2( fin, "abs_tol_u", 1.0e-6 );// / (scaling->S * scaling->L);                  // Fx * cel_vol
+    Nmodel->abs_tol_p       = ReadDou2( fin, "abs_tol_p", 1.0e-6 );// / (scaling->E * scaling->L * scaling->L );    // Fp * cel_vol
+    Nmodel->rel_tol_u       = ReadDou2( fin, "rel_tol_u", 1.0e-6 );
+    Nmodel->rel_tol_p       = ReadDou2( fin, "rel_tol_p", 1.0e-6 );
     model->mineta           = ReadDou2( fin, "mineta", 1.0e18 ) / scaling->eta;
     model->maxeta           = ReadDou2( fin, "maxeta", 1.0e24 ) / scaling->eta;
     Nmodel->stagnated       = 0;
@@ -1357,7 +1540,7 @@ void ScaleMe( scale* scale) {
 double* ReadBin( char A_name[], int nx, int ny, double scale ){
     double *A;
     char* bname; size_t nb_elems = nx*ny; FILE* fid; asprintf(&bname, "%s", A_name);
-    
+
     A = malloc((nb_elems)*sizeof(double));
     fid=fopen(bname, "rb"); // Open file
     if (!fid){
@@ -1407,6 +1590,9 @@ char* ReadChar( FILE *fin, char FieldName[], char Default[] ) {
             for (h1=0; h1<str_size; h1++) {
                 string2[h1] = Default[h1];
             }
+            free(string1);
+            free(param1);
+            free(param2);
             return string2;
         }
 

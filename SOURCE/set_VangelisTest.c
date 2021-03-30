@@ -54,12 +54,9 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double Lx = (double) (model.xmax - model.xmin) ;
     double Lz = (double) (model.zmax - model.zmin) ;
     double T_init = (model.user0 + zeroC)/scaling.T;
-    double radius = 0.1/scaling.L;
+    double radius = model.user1/scaling.L;
     double X, Z, xc = 0.0, zc = 0.0;
-    int pos = 1;
-    int il;
-    double spacing = 0.1/scaling.L;
-    
+
     // Loop on particles
     for( np=0; np<particles->Nb_part; np++ ) {
         
@@ -71,153 +68,22 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         particles->phi[np]   = 0.0;                                             // zero porosity everywhere
         particles->rho[np]   = 0;
         particles->T[np]     = T_init;
-
+        X = particles->x[np]-xc;
+        Z = particles->z[np]-zc;
     
         // ------------------------- //
-//        if (pos==0) {
-//        X = particles->x[np]-xc;
-//        Z = particles->z[np]-zc;
-//        // DRAW INCLUSION
-//        if (X*X + Z*Z < radius*radius) {
-//            particles->phase[np] = 1;
-//        }
-//        }
-//        else {
-//        X = particles->x[np]-model.xmax;
-//        Z = particles->z[np]-zc;
-//        // DRAW INCLUSION
-//        if (X*X + Z*Z < radius*radius) {
-//            particles->phase[np] = 1;
-//        }
-//
-//        // DRAW INCLUSION
-//        X = particles->x[np]-model.xmin;
-//        Z = particles->z[np]-zc;
-//        if (X*X + Z*Z < radius*radius) {
-//            particles->phase[np] = 1;
-//        }
-//        }
-        //=================================================================
-        // Layering (passive markers) - Matrice - phase 0 et 3 => Granulite
-        if (particles->phase[np] == 0) {
-            
-            for( il=0; il<= 100; il=il+2 ) {
-                if ((particles->z[np]-Lz/2.0-spacing/2.0)>=-((il+1)*spacing) && (particles->z[np]-Lz/2.0-spacing/2.0)<-(il*spacing)) particles->phase[np] = 4;
+        // DRAW INCLUSION
+        
+        if ( (int)model.user0 == 1 ) {
+            if (fabs(Z) < radius/2.0) {
+                particles->phase[np] = 1;
             }
-            for( il=0; il<= 100; il=il+2 ) {
-                if (particles->phase[np]==0 && (particles->x[np]-Lx/2.0-spacing/2.0)>=-((il+1)*spacing) && (particles->x[np]-Lx/2.0-spacing/2.0)<-(il*spacing)) particles->phase[np] = 5;
-                if (particles->phase[np]==4 && (particles->x[np]-Lx/2.0-spacing/2.0)>=-((il+1)*spacing) && (particles->x[np]-Lx/2.0-spacing/2.0)<-(il*spacing)) particles->phase[np] = 0;
-            }
-            if (particles->phase[np]==5 || particles->phase[np]==4) particles->phase[np] = 3;
         }
-        //==================================================================
-        
-        // ------------------------------------------------
-        // 1ere elliptical inclusion
-        double rad=0.25/scaling.L;
-        double X,Xn,Z,Zn, xc=-1.0/scaling.L, zc=-1.0/scaling.L, la= 1.00*rad, sa = 1.00*rad, theta=(90.0)*M_PI/180.0;
-        X = particles->x[np]-xc;
-        Z = particles->z[np]-zc;
-        // elliptical inclusion
-        Xn = X*cos(theta) - Z*sin(theta);
-        Zn = X*sin(theta) + Z*cos(theta);
-        if ( pow(Xn/la,2) + pow(Zn/sa,2) - 1 < 0 ) particles->phase[np] = 1;
-        
-        // 2eme elliptical inclusion
-        xc=+1.00/scaling.L;
-        zc=-1.00/scaling.L;
-        la= 1.0*rad;
-        sa = 1.0*rad;
-        //theta=(90.0)*M_PI/180.0;
-        
-        X = particles->x[np]-xc;
-        Z = particles->z[np]-zc;
-        
-        Xn = X*cos(theta) - Z*sin(theta);
-        Zn = X*sin(theta) + Z*cos(theta);
-        if ( pow(Xn/la,2) + pow(Zn/sa,2) - 1 < 0 ) particles->phase[np] = 1;
-//
-//        // 3eme elliptical inclusion
-//        xc=+0.4/scaling.L;
-//        zc=+0.2/scaling.L;
-//        la= 1.0*rad;
-//        sa = 9.0*rad;
-//        //theta=(0.0)*M_PI/180.0;
-//        
-//        X = particles->x[np]-xc;
-//        Z = particles->z[np]-zc;
-//        // elliptical inclusion
-//        Xn = X*cos(theta) - Z*sin(theta);
-//        Zn = X*sin(theta) + Z*cos(theta);
-//        if ( pow(Xn/la,2) + pow(Zn/sa,2) - 1 < 0 ) particles->phase[np] = 1;
-//        
-//        // 4eme elliptical inclusion
-//        xc=-0.4/scaling.L;
-//        zc=-0.2/scaling.L;
-//        la= 1.0*rad;
-//        sa = 9.0*rad;
-//        //theta=(0.0)*M_PI/180.0;
-//        //
-//        X = particles->x[np]-xc;
-//        Z = particles->z[np]-zc;
-//        // elliptical inclusion
-//        Xn = X*cos(theta) - Z*sin(theta);
-//        Zn = X*sin(theta) + Z*cos(theta);
-//        if ( pow(Xn/la,2) + pow(Zn/sa,2) - 1 < 0 ) particles->phase[np] = 1;
-//        //
-//        // 5eme elliptical inclusion
-//        xc=-0.01/scaling.L;
-//        zc=+0.35/scaling.L;
-//        la= 1.0*rad;
-//        sa = 15.0*rad;
-//        //theta=(0.0)*M_PI/180.0;
-//        
-//        X = particles->x[np]-xc;
-//        Z = particles->z[np]-zc;
-//        // elliptical inclusion
-//        Xn = X*cos(theta) - Z*sin(theta);
-//        Zn = X*sin(theta) + Z*cos(theta);
-//        if ( pow(Xn/la,2) + pow(Zn/sa,2) - 1 < 0 ) particles->phase[np] = 1;
-//        
-//        // 6eme elliptical inclusion
-//        xc=+0.01/scaling.L;
-//        zc=-0.35/scaling.L;
-//        la= 1.0*rad;
-//        sa = 15.0*rad;
-//        //theta=(0.0)*M_PI/180.0;
-//        
-//        X = particles->x[np]-xc;
-//        Z = particles->z[np]-zc;
-//        // elliptical inclusion
-//        Xn = X*cos(theta) - Z*sin(theta);
-//        Zn = X*sin(theta) + Z*cos(theta);
-//        if ( pow(Xn/la,2) + pow(Zn/sa,2) - 1 < 0 ) particles->phase[np] = 1;
-//        //--------------------------------------------------------------------------------
-        
-        
-//        if (pos==0) {
-//            X = particles->x[np]-xc;
-//            Z = particles->z[np]-zc;
-//            // DRAW INCLUSION
-//            if (X*X + Z*Z < radius*radius) {
-//                particles->phase[np] = 1;
-//            }
-//        }
-//        else {
-//            X = particles->x[np]-model.xmax;
-//            Z = particles->z[np]-zc;
-//            // DRAW INCLUSION
-//            if (X*X + Z*Z < radius*radius) {
-//                particles->phase[np] = 1;
-//            }
-//            
-//            // DRAW INCLUSION
-//            X = particles->x[np]-model.xmin;
-//            Z = particles->z[np]-zc;
-//            if (X*X + Z*Z < radius*radius) {
-//                particles->phase[np] = 1;
-//            }
-//        }
+        else {
+            if (X*X + Z*Z < radius*radius) {
+                particles->phase[np] = 1;
+            }
+        }
         
         // SANITY CHECK
         if (particles->phase[np] > model.Nb_phases) {
@@ -256,9 +122,11 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     double Lxinit = 1400e3/scaling.L, ShortSwitchV0 = 0.40;
     double Vfix = (50.0/(1000.0*365.25*24.0*3600.0))/(scaling.L/scaling.t); // [50.0 == 5 cm/yr]
     
-    // Define dimensions;
-    Lx = (double) (model->xmax - model->xmin) ;
-    Lz = (double) (model->zmax - model->zmin) ;
+    if (model->step >= 1){
+        materials->k[4] = materials->k[3];
+        printf("Running with normal conductivity in the asthenosphere!\n");
+    }
+    
     
     // ---- T-Dependent marker types
     // -------------------- SPECIFIC TO YOANN's SETUP -------------------- //
@@ -317,8 +185,6 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                     mesh->BCu.type[c] = -1;
                     mesh->BCu.val[c]  =  0;
                     
-                    if (model->shear_style== 0 ) {
-                    
                     // Matching BC nodes WEST
                     if (k==0 ) {
                         mesh->BCu.type[c] = 0;
@@ -341,35 +207,6 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                     if ( l==mesh->Nz ) {
                         mesh->BCu.type[c] = 13;
                         mesh->BCu.val[c]  =  0;
-                    }
-                        
-                    }
-                    if (model->shear_style== 1 ) {
-                        
-                        // Matching BC nodes WEST
-                        if (k==0 ) {
-                            mesh->BCu.type[c] = -2;
-                            mesh->BCu.val[c]  = 0.0*model->EpsBG*Lx;
-                        }
-                        
-                        // Matching BC nodes EAST
-                        if (k==mesh->Nx-1 ) {
-                            mesh->BCu.type[c] =  -12;
-                            mesh->BCu.val[c]  = -0.0*model->EpsBG*Lx;
-                        }
-                        
-                        // Free slip S
-                        if (l==0 ) { //&& (k>0 && k<NX-1) ) {
-                            mesh->BCu.type[c] =  11;
-                            mesh->BCu.val[c]  = -1*model->EpsBG*Lz;
-                        }
-                        
-                        // Free slip N
-                        if ( l==mesh->Nz) {// && (k>0 && k<NX-1)) {
-                            mesh->BCu.type[c] =  11;
-                            mesh->BCu.val[c]  =  1*model->EpsBG*Lz;
-                        }
-                        
                     }
                 }
                 
@@ -407,8 +244,6 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                     mesh->BCv.type[c] = -1;
                     mesh->BCv.val[c]  =  0;
                     
-                    if (model->shear_style== 0 ) {
-                    
                     // Matching BC nodes SOUTH
                     if (l==0 ) {
                         mesh->BCv.type[c] = 0;
@@ -422,45 +257,16 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                     }
                     
                     // Non-matching boundary WEST
-                    if ( k==0 ) {
+                    if ( (k==0) ) {
                         mesh->BCv.type[c] =   13;
                         mesh->BCv.val[c]  =   0;
                     }
                     
                     // Non-matching boundary EAST
-                    if ( k==mesh->Nx ) {
+                    if ( (k==mesh->Nx) ) {
                         mesh->BCv.type[c] =   13;
                         mesh->BCv.val[c]  =   0;
                     }
-                    }
-                    
-                    
-                    if (model->shear_style== 1 ) {
-                        // Matching BC nodes SOUTH
-                        if (l==0 ) {
-                            mesh->BCv.type[c] = 0;
-                            mesh->BCv.val[c]  = -0.0*model->EpsBG*Lz;
-                        }
-                        
-                        // Matching BC nodes NORTH
-                        if (l==mesh->Nz-1 ) {
-                            mesh->BCv.type[c] = 0;
-                            mesh->BCv.val[c]  = 0.0*model->EpsBG*Lz;
-                        }
-                        
-                        // Non-matching boundary points
-                        if ( k==0   ) {    //&& (l>0 && l<NZ-1)
-                            mesh->BCv.type[c] =  -12;
-                            mesh->BCv.val[c]  =   0;
-                        }
-                        
-                        // Non-matching boundary points
-                        if ( k==mesh->Nx  ) { // && (l>0 && l<NZ-1)
-                            mesh->BCv.type[c] =  -12;
-                            mesh->BCv.val[c]  =   0;
-                        }
-                    }
-                    
                 }
 				
 			}
@@ -506,95 +312,60 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     /* Type 30: not calculated (part of the "air")                                                            */
 	/* -------------------------------------------------------------------------------------------------------*/
     
-    double Temperature = (model->user0+zeroC)/scaling.T;
-    double scaled_Ma = 1e6*365.25*24*3600 / scaling.t;
-    double TN = Temperature, TS = Temperature;
-    double TW = Temperature, TE = Temperature;
+    double Ttop = 273.15/scaling.T;
     double Tbot, Tleft, Tright;
     
-    printf("****************************************************************\n");
-    printf("** Model time  = %2.10e Ma\n", model->time*scaling.t/(365.25*24.0*3600.0*1e6) );
-    printf("** Temperature = %2.10e K\n", (Temperature * scaling.T));
-    printf("****************************************************************\n");
-    
-    NX  = mesh->Nx;
-    NZ  = mesh->Nz;
-    NCX = NX-1;
-    NCZ = NZ-1;
-    NXVZ = NX+1;
-    NZVX = NZ+1;
-    
-    for (l=0; l<NZ-1; l++) {
-        for (k=0; k<NX-1; k++) {
-            
-            c = k + l*(NCX);
-            
-            //mesh->T[c] = Temperature ;
-            
-            if ( mesh->BCt.type[c] != 30 ) {
+	
+		NX  = mesh->Nx;
+		NZ  = mesh->Nz;
+		NCX = NX-1;
+		NCZ = NZ-1;
+		NXVZ = NX+1;
+		NZVX = NZ+1;
+		
+		for (l=0; l<mesh->Nz-1; l++) {
+			for (k=0; k<mesh->Nx-1; k++) {
+				
+				c = k + l*(NCX);
                 
-                if( model->isperiodic_x == 1 ){
+                if ( mesh->BCt.type[c] != 30 ) {
                     
-                    // WEST
-                    
-                    if ( k==0 ) {
-                        mesh->BCt.type[c] = -2;
-                        mesh->BCt.typW[l] = -2;
-                        mesh->BCt.valW[l] = TW;
-                    }
-                    
-                    // EAST
-                    if ( k==NCX-1 ) {
-                        mesh->BCt.type[c] = -2;
-                        mesh->BCt.typE[l] = -2;
-                        mesh->BCt.valE[l] = TE;
-                    }
-                }
-                else {
-                    // WEST
-                    
+                    // LEFT
                     if ( k==0 ) {
                         mesh->BCt.type[c] = 0;
-                        mesh->BCt.typW[l] = 0;
-                        mesh->BCt.valW[l] = TW;
+                        mesh->BCt.val[c]  = mesh->T[c];
                     }
                     
-                    // EAST
+                    // RIGHT
                     if ( k==NCX-1 ) {
                         mesh->BCt.type[c] = 0;
-                        mesh->BCt.typE[l] = 0;
-                        mesh->BCt.valE[l] = TE;
+                        mesh->BCt.val[c]  = mesh->T[c];
                     }
-                }
-                
-                // SOUTH
-                if ( l==0 ) {
-                    mesh->BCt.type[c] = 1;
-                    mesh->BCt.typS[k] = 1;
-                    mesh->BCt.valS[k] = TS;
-                }
-                
-                // NORTH
-                if ( l==NCZ-1 ) {
-                    mesh->BCt.type[c] = 1;
-                    mesh->BCt.typN[k] = 1;
-                    mesh->BCt.valN[k] = TN;
-                }
-                
-                // FREE SURFACE
-                else {
-                    if ((mesh->BCt.type[c] == -1 || mesh->BCt.type[c] == 1 || mesh->BCt.type[c] == 0) && mesh->BCt.type[c+NCX] == 30) {
-                        mesh->BCt.type[c] = 1;
-                        mesh->BCt.val[c]  = TN;
+                    
+                    // BOT
+                    if ( l==0 ) {
+                        mesh->BCt.type[c] = 0;
+                        mesh->BCt.val[c]  = mesh->T[c];
                     }
+                    
+                    // TOP
+                    if ( l==NCZ-1 ) {
+                        mesh->BCt.type[c] = 0;
+                        mesh->BCt.val[c]  = mesh->T[c];
+                    }
+                    // FREE SURFACE
+                    else {
+                        if ((mesh->BCt.type[c] == -1 || mesh->BCt.type[c] == 1 || mesh->BCt.type[c] == 0) && mesh->BCt.type[c+NCX] == 30) {
+                            mesh->BCt.type[c] = 1;
+                            mesh->BCt.val[c]  = Ttop;
+                        }
+                    }
+                    
+                    
                 }
                 
-                
-            }
-            
-        }
-    }
-
+			}
+		}
 		
     
 	free(X);

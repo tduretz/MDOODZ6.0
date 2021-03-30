@@ -5,9 +5,9 @@ init_printing()
 # %% ANALYTICAL STRESS ROTATION
 
 # Definitions
-angle, txx, txz, Nx, Nz = symbols( 'angle, txx, txz, Nx, Nz' )
+angle, txx, txz, tzz, Nx, Nz = symbols( 'angle, txx, txz, tzz, Nx, Nz' )
 R   = Matrix([[cos(angle), -sin(angle)], [sin(angle), cos(angle)]]);
-T   = Matrix([ [txx, txz], [txz, -txx] ])
+T   = Matrix([ [txx, txz], [txz, tzz] ])
 N   = Matrix([ [Nx], [Nz] ])
 
 N1  = R * N
@@ -19,13 +19,15 @@ print ('nx = ' + ccode(N1[0] ) + ';')
 print ('nz = ' + ccode(N1[1] ) + ';')
 for i in range(1):
     print ('particles->sxxd[k] = ' + ccode(T1[0,0] ) + ';')
+    print ('particles->szzd[k] = ' + ccode(T1[1,1] ) + ';')
     print ('particles->sxz[k]  = ' + ccode(T1[0,1] ) + ';')
 # %% UPPER CONVECTED STRESS DERIVATIVE
 dudx,dvdx,dudz,dvdz = symbols( 'dudx,dvdx,dudz,dvdz' )
 L   = Matrix([[dudx,dudz], [dvdx,dvdz]]); # (grad u) = du_i / dx_j
 duc = - L*T - T*L.transpose()
-print(duc[0,0])
-print(duc[1,0])
+print(duc[0,0].simplify())
+print(duc[1,0].simplify())
+print(duc[1,1].simplify())
 
 # %% UPPER CONVECTED STRESS DERIVATIVE
 d_dx,d_dz, u, v = symbols('d_dx,d_dz, u, v')
@@ -50,4 +52,10 @@ print( 'ndotz = ' + ccode(Director_dot[1]) + ';')
 
 # %%
 print(Director.transpose()*Director)
+# %%
+
+F, A, Q, n, m, T, P, R, V = symbols('F, A, Q, n, m, T, P, R, V')
+B = F * A**(-1/n) * exp((Q+P*V)/n/R/T)
+C = (2*B)**-n
+print(C.simplify())
 # %%

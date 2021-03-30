@@ -24,7 +24,7 @@ print2screen  = 1;
  
 format        = '-dpng';
 res           = '-r200';
-color_map     = 'piston0';
+color_map     = 'inc2boules';
 file_suffix   = '';
 mdoodz6       = 1;
 y             = 365.25*24*3600;
@@ -53,9 +53,9 @@ maxTopo = 3e3;
 % Size of the window
 crop   = 0;
 
-xmin   =  50;
-xmax   =  80;
-zmin   = -15;
+xmin   =  -100;
+xmax   =  100;
+zmin   = -45;
 zmax   =  5;
 
 % Arrays
@@ -144,7 +144,7 @@ for istep=istart:ijump:iend
         end
        
         %% Find reduced index corresponding to global index of tracer
-        ind = find(Part.ind == glob_ind);
+        ind = find(Part.ind == glob_ind)
 
         if topo
             xtopo = hdf5read(filename_p,'/Topo/x');
@@ -178,7 +178,7 @@ for istep=istart:ijump:iend
         end
 
         hold on
-        mesh(xg_coord./1e3, zg_coord./1e3,zeros(nz,nx))
+        mesh(xg_coord./1e3, zg_coord./1e3,zeros(nz,nx), 'edgecolor', 'k')
 
         Part.x = Part.x/1e3;
         Part.z = Part.z/1e3;
@@ -261,15 +261,18 @@ for istep=istart:ijump:iend
         vz_grid_av = 0.5*(vz_grid(1:end-1)+vz_grid(2:end));
 
         scatter(xg_coord/1e3, z_grid/1e3, 30, vz_grid_av*y*1e3, 'filled')
+        colorbar, caxis([-2.5 2.5])
+       
        
 %         set(gca,'position',[0 0 1 1],'units','normalized')
 %         axis off
            axis image
            title(['Phases at' TimeLabel]);
-             if crop == 1
+        if crop == 1
             xlim([xmin xmax])
             ylim([zmin zmax])
         end
+         axis([-100 100 -35 5])
            drawnow
 %            if topo
 %            subplot(211)

@@ -44,6 +44,55 @@
 #define printf(...) printf("")
 #endif
 
+void CheckArrays( cholmod_dense* fu, cholmod_dense* fp, cholmod_dense* bu, cholmod_dense* bp, grid* mesh, SparseMat* Stokes ) {
+    
+    int inc = 0, k, l, kk, inc_tot=0;
+    
+    // Get Vx
+    for( l=0; l<mesh->Nz+1; l++) {
+        for( k=0; k<mesh->Nx; k++) {
+            kk = k + l*mesh->Nx;
+            if ( mesh->BCu.type[kk] != 0 && mesh->BCu.type[kk] != 30 && mesh->BCu.type[kk] != 13 && mesh->BCu.type[kk] != 11 && mesh->BCu.type[kk] != -12) {
+                if ( fabs( ((double*)fu->x)[inc]) > 1e5 ) {
+                    printf("CHK X --- %2.2e --- %2.2e\n", ((double*)fu->x)[inc], ((double*)bu->x)[inc]);
+                }
+
+//                x[inc_tot] = ((double*)u->x)[inc];
+                inc++;
+                inc_tot++;
+            }
+        }
+    }
+    
+    // Get Vz
+    for( l=0; l<mesh->Nz; l++) {
+        for( k=0; k<mesh->Nx+1; k++) {
+            kk = k + l*(mesh->Nx+1);
+            if ( mesh->BCv.type[kk] != 0  && mesh->BCv.type[kk] != 30 && mesh->BCv.type[kk] != 13  && mesh->BCv.type[kk] != 11 && mesh->BCv.type[kk] != -12  ) {
+                if ( fabs( ((double*)fu->x)[inc]) > 1e5 ) {
+                    printf("CHK Y --- %2.2e --- %2.2e\n\n", ((double*)fu->x)[inc], ((double*)bu->x)[inc]);
+                }
+//                x[inc_tot] = ((double*)u->x)[inc];
+                inc++;
+                inc_tot++;
+            }
+        }
+    }
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+
+void ArrayTimesArray( double* arr1, int* scalar, double* arr2, int size ) {
+    int k;
+#pragma omp parallel for shared( arr1, arr2, scalar) private(k) schedule( static )
+    for(k=0;k<size;k++) {
+        arr1[k] *= (double)scalar[k]*arr2[k];
+    }
+}
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -735,11 +784,10 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
             i = Stokes->eqn_p[k] - matA->neq;
             // Here Dcm0 is the pressure block
             if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[i] *= 0.0;
-            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i]  = mesh->bet[k] / model.dt * celvol * matD->d[k]*matD->d[k];
+            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i]  = mesh->bet_n[k] / model.dt * celvol * matD->d[k]*matD->d[k];
             // Here Dcm0 is the inverse of the pressure block
             if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i] *= penalty; // Should be /celvol
             if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k]; // Should be /celvol
-            //          printf("%2.2e %2.2e %2.2e %2.2e\n", mesh->bet[k]/model.dt, penalty, mesh->bet[k]*(1/scaling.S), model.dt*scaling.t);
         }
     }
     
@@ -919,7 +967,6 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
         cholmod_sdmult ( Ccm, 0, mone, one, u, fp, &c);
         cholmod_sdmult ( D1cm0, 0, mone, one, p, fp, &c) ;
         
-        
         cholmod_sdmult ( Dcm, 0, one, zero, fp, pdum, &c) ;   // pdum <-- D * fp
         copy_cholmod_dense_to_cholmod_dense( udum, fu );      // udum <-- fu
         cholmod_sdmult ( Bcm, 0, mone, one, pdum, udum, &c) ; // udum <-- bu - B*(D*fp)
@@ -933,14 +980,14 @@ void DirectStokesDecoupledComp( SparseMat *matA,  SparseMat *matB,  SparseMat *m
         //        //        printf( "substitution: %lf s\n", (double)((double)omp_get_wtime() - t_omp));
         //
         copy_cholmod_dense_to_cholmod_dense( pdum, fp );      // pdum <-- bp
-        cholmod_sdmult ( Ccm, 0, mone, one, du, pdum, &c);    // pdum <-- bp - C*u
-        cholmod_sdmult ( Dcm, 0, one, zero, pdum, dp, &c) ;   // dp <-- D*(bp - C*u)
+        cholmod_sdmult ( Ccm, 0, mone,  one,   du, pdum, &c);    // pdum <-- bp - C*u
+        cholmod_sdmult ( Dcm, 0,  one, zero, pdum,   dp, &c) ;   // dp <-- D*(bp - C*u)
         
         cholmod_dense_plus_cholmod_dense( u, du );
         cholmod_dense_plus_cholmod_dense( p, dp );
         
         copy_cholmod_dense_to_cholmod_dense( fp, bp );
-        cholmod_sdmult ( Ccm, 0, mone, one, u, fp, &c) ;
+        cholmod_sdmult ( Ccm,   0, mone, one, u, fp, &c) ;
         cholmod_sdmult ( D1cm0, 0, mone, one, p, fp, &c) ;
         if (k>0) maxdivit = maxdiv;
         MinMaxArrayVal( fp->x, matC->neq, &mindiv, &maxdiv );
@@ -1115,6 +1162,8 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     // ************** D ************** //
     SuiteSparse_long rsize;
     double gamma  = model.penalty, penalty;//1e12;//1e10*model.Nx*model.Nz;
+    int vol_change = model.VolChangeReac;
+
     rsize = Stokes->neq_cont;
     Dcm0  = cholmod_speye (rsize, rsize, CHOLMOD_REAL, &c );
     D1cm0  = cholmod_speye (rsize, rsize, CHOLMOD_REAL, &c );
@@ -1125,13 +1174,19 @@ void KSPStokesDecoupled( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  S
     //    printf("-gamma*celvol = %2.2e %2.2e %2.2e %d %d\n", -gamma*celvol, model.dx*scaling.L, model.dz*scaling.L, model.Nx, model.Nz);
     
     
-#pragma omp parallel for shared(D1cm0, Dcm0, mesh, Stokes, matA, matD ) private( i ) firstprivate( model, celvol )
+#pragma omp parallel for shared(D1cm0, Dcm0, mesh, Stokes, matA, matD ) private( i ) firstprivate( model, celvol, vol_change )
     for( k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
         if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31 ) {
             i = Stokes->eqn_p[k] - matA->neq;
+            
+            //            cPC    = drhodPc ./ (rhoc.*dt); %% new diagonal coefficient (= 1/(K*dt) for standard EOS)
+            
+            
             // Here Dcm0 is the pressure block
             if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[i] *= 0.0;
-            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i]  = mesh->bet[k] / model.dt * celvol * matD->d[k]*matD->d[k];
+            if (mesh->comp_cells[k]==1 && vol_change == 0 ) ((double*)D1cm0->x)[i]  = mesh->bet_n[k] / model.dt * celvol * matD->d[i]*matD->d[i];
+            if (mesh->comp_cells[k]==1 && vol_change == 1 ) ((double*)D1cm0->x)[i]  = mesh->drhodp_n[k] / (mesh->rho_n[k]*model.dt) * celvol * matD->d[i]*matD->d[i];
+
             // Here Dcm0 is the inverse of the pressure block
             if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i] *= penalty; // Should be /celvol
             if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k]; // Should be /celvol
@@ -2174,18 +2229,17 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     cs_di  AJ, BJ, CJ, *AJc, *BJc, *CJc;
     cs_di  *PC, *Jt, *Jts, *Js;
     DoodzFP  *u0, *p0, *F;
-    int  noisy=1;
-    int nitmax=20, k, cc, i; //nitmax=5
+    int  noisy = 1;
+    int nitmax = 20, k, cc, i; //nitmax=5
     double celvol = model.dx*model.dz;
     double maxdiv0, mindiv, maxdiv, maxdivit=0, rel_tol_div=model.rel_tol_div;
 
     int pc_type = model.pc_type;
 
-
     cholmod_common c ;
     cholmod_sparse *Lcm, *Kcm, *Lcml, *Acm, *Bcm, *Ccm, *Dcm; //, *A1
     cholmod_sparse *AcmJ, *BcmJ, *CcmJ;
-    cholmod_sparse *Dcm0, *D1cm0; //, *BDC, *DC, *Lcm0, *Lcml0, *Acm0, *Bcm0, *Ccm0
+    cholmod_sparse *Dcm0, *D1cm0, *whos_incompressible; //, *BDC, *DC, *Lcm0, *Lcml0, *Acm0, *Bcm0, *Ccm0
     cholmod_factor *Lfact ;
     cholmod_sparse *M, *AB, *CD, *Iu, *Ip, *D_zero; // *bs, *bus, *bps, *M0
     cholmod_dense *b, *x, *f, *val, *s, *v;
@@ -2196,37 +2250,56 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     c     = pardi->c;
 
     // --------------- Pre-process--------------- //
+    
+//    printf("NEQ %d \n", matA->neq );
+//    for (i =0;i<matA->neq;i++) {
+//        if (fabs(rhs_mom[i])>1e5) printf("%2.2e \n", rhs_mom[i]);
+//    }
 
     printf("Killer solver...\n");
     printf("Preparing Matrices...\n");
 
     // ************** D ************** //
     SuiteSparse_long rsize;
-    double gamma  = model.penalty, penalty;//1e12;//1e10*model.Nx*model.Nz;
-    rsize = Stokes->neq_cont;
-    Dcm0  = cholmod_speye (rsize, rsize, CHOLMOD_REAL, &c );
-    D1cm0 = cholmod_speye (rsize, rsize, CHOLMOD_REAL, &c );
+    double gamma        = model.penalty, penalty;//1e12;//1e10*model.Nx*model.Nz;
+    int vol_change = model.VolChangeReac;
+
+    rsize               = Stokes->neq_cont;
+    Dcm0                = cholmod_speye( rsize, rsize, CHOLMOD_REAL, &c );
+    D1cm0               = cholmod_speye( rsize, rsize, CHOLMOD_REAL, &c );
+    whos_incompressible = cholmod_speye( rsize, rsize, CHOLMOD_REAL, &c );
 
     penalty = gamma / celvol;
     printf("Penalty factor = %2.2e\n", penalty);
     //    for (k=0;k<Dcm0->nzmax;k++) ((double*)Dcm0->x)[k] *= gamma*celvol;
 //    printf("-gamma*celvol = %2.2e %2.2e %2.2e %d %d\n", -gamma*celvol, model.dx*scaling.L, model.dz*scaling.L, model.Nx, model.Nz);
 
+//    MinMaxArray(matD->d, 1, matD->neq, "diag. D" );
+//    exit(1);
 
-#pragma omp parallel for shared(D1cm0, Dcm0, mesh, Stokes, matA, matD ) private( i ) firstprivate( model, celvol )
+#pragma omp parallel for shared( whos_incompressible, D1cm0, Dcm0, mesh, Stokes, matA, matD ) private( i ) firstprivate( model, celvol, vol_change )
     for( k=0; k<(mesh->Nx-1)*(mesh->Nz-1); k++) {
         if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31 ) {
             i = Stokes->eqn_p[k] - matA->neq;
             // Here Dcm0 is the pressure block - This relates to physics (0 is incompressible, Beta/dt is compressible)
             if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[i] *= 0.0;
-            if (mesh->comp_cells[k]==1) ((double*)D1cm0->x)[i]  = mesh->bet[k] / model.dt * celvol * matD->d[k]*matD->d[k];
-            // Here Dcm0 is the inverse of the pressure block - THis relates to numerics in this incompressible case (penalty) or physics in the compressible case (dt/Beta)
-            if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i] *= penalty;
-            if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k];
-//            if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i]  = 1.0 /  ((double*)D1cm0->x)[k];
+            if (mesh->comp_cells[k]==1 && vol_change == 0 ) ((double*)D1cm0->x)[i]  = mesh->bet_n[k] / model.dt * celvol * matD->d[i]*matD->d[i];
+            if (mesh->comp_cells[k]==1 && vol_change == 1 ) ((double*)D1cm0->x)[i]  = mesh->drhodp_n[k] / (mesh->rho_n[k]*model.dt) * celvol * matD->d[i]*matD->d[i];
+            // Here Dcm0 is the inverse of the pressure block - This relates to numerics in this incompressible case (penalty) or physics in the compressible case (dt/Beta)
+            if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i]  *= penalty;
+            if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]   = 1.0 /  ((double*)D1cm0->x)[i];
+//            if (mesh->comp_cells[k]==1)  printf("%2.2e %2.2e %2.2e %d\n",((double*)Dcm0->x)[i], mesh->bet_n[k], matD->d[i], mesh->BCp.type[k]);
+            // Detect cell which are compressible
+            if (mesh->comp_cells[k]==1) ((double*)whos_incompressible->x)[i] *= 0.0;
+//            ((double*)Dcm0->x)[i]  *= penalty*10000;
+//            ((double*)D1cm0->x)[i] *= 0*mesh->bet_n[k] / model.dt * celvol * matD->d[k]*matD->d[k];
         }
     }
 
+//    MinMaxArray( (double*)Dcm0->x, 1.0, (int)matC->neq, "PP");
+//    IsNanArray2DFP( (double*)Dcm0->x, (int)matC->neq );
+//    IsInfArray2DFP( (double*)Dcm0->x, (int)matC->neq );
+    
     clock_t t_omp;
     t_omp = (double)omp_get_wtime();
 
@@ -2234,7 +2307,7 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     F  = DoodzCalloc(matA->neq+matC->neq, sizeof(double));
     u0 = DoodzCalloc( matA->neq, sizeof(double) );
     p0 = DoodzCalloc( matC->neq, sizeof(double) );
-    //    BuildInitialSolutions( u0, p0, mesh );
+//        BuildInitialSolutions( u0, p0, mesh );
 
     //------------------------------------------------------------------------------------------------//
 
@@ -2243,7 +2316,6 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     A.nz    = matA->nnz;
     A.m     = matA->neq;
     A.n     = A.m;
-    //    printf( "A.nzmax = %d\n", matA->nnz );
     A.p     = DoodzCalloc( A.nzmax, sizeof(int) );
     A.i     = DoodzCalloc( A.nzmax, sizeof(int) );
     A.x     = DoodzCalloc( A.nzmax, sizeof(double) );
@@ -2289,7 +2361,6 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     D.x     = DoodzCalloc( D.nzmax, sizeof(double) );
     copy_cholmod_to_cs_matrix( Dcm0, &D );
     Dc  = cs_di_compress( &D );
-
 
     //------------------------------------------------------------------------------------------------//
 
@@ -2447,38 +2518,51 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     copy_vec_to_cholmod_dense( bu, rhs_mom );
     copy_vec_to_cholmod_dense( bp, rhs_cont );
 
-    printf("Initial residual:\n");
+    // ------- U, V ------- //
     copy_cholmod_dense_to_cholmod_dense( fu, bu );       // fu = bu
-    cholmod_sdmult ( AcmJ, 0, mone, one, du, fu, &c) ;   // fu -= A*u
-    cholmod_sdmult ( BcmJ, 0, mone, one, dp, fu, &c) ;   // fu -= B*p
+    cholmod_sdmult (  AcmJ, 0, mone, one, du, fu, &c) ;  // fu -= A*u
+    cholmod_sdmult (  BcmJ, 0, mone, one, dp, fu, &c) ;  // fu -= B*p
+    // ------- P ------- //
     copy_cholmod_dense_to_cholmod_dense( fp, bp );       // fp = bp
-    cholmod_sdmult ( CcmJ, 0, mone, one, du, fp, &c) ;   // fp -= C*u
+    cholmod_sdmult (  CcmJ, 0, mone, one, du, fp, &c) ;  // fp -= C*u
     cholmod_sdmult ( D1cm0, 0, mone, one, dp, fp, &c) ;  // fp -= D*p
 
+    printf("Initial residual:\n");
     MinMaxArrayVal( fu->x, matA->neq, &minru0, &maxru0 );
     NormResidualCholmod( &ru, &rp, fu, fp, matA->neq, matC->neq, model, scaling, 0 );
+    
+//    CheckArrays( fu, fp, bu, bp, mesh, Stokes );
 
     for ( k=0; k<nitmax; k++) {
 
-        cholmod_sdmult ( Dcm, 0, one, zero, bp, pdum, &c) ;    // pdum <-- D * fp
+        cholmod_sdmult ( Dcm, 0, one, zero, bp, pdum, &c);     // pdum <-- D * fp
         copy_cholmod_dense_to_cholmod_dense( udum, bu );       // udum <-- fu
-        cholmod_sdmult ( BcmJ, 0, mone, one, pdum, udum, &c) ; // udum <-- bu - B*(D*fp)
-        cholmod_sdmult ( BcmJ, 0, mone, one,   dp, udum, &c) ; // udum <-- bu - B*(D*fp) - B*dp
+        cholmod_sdmult ( BcmJ, 0, mone, one, pdum, udum, &c);  // udum <-- bu - B*(D*fp)
+        cholmod_sdmult ( whos_incompressible, 0, one, zero, dp, pdum, &c);     // pdum <-- whos_compressible * dp
+        
+//        copy_cholmod_dense_to_cholmod_dense( pdum, dp );
+//        ArrayTimesArray( pdum->x, mesh->comp_cells, pdum, int size )
+        
+        cholmod_sdmult ( BcmJ, 0, mone, one,   pdum, udum, &c); // udum <-- bu - B*(D*fp) - B*dp          !!!!!!! needed?
+        
+//        if ( model.compressible == 0 ) cholmod_sdmult ( BcmJ, 0, mone, one,   dp, udum, &c); // udum <-- bu - B*(D*fp) - B*dp          !!!!!!! needed?
 
         //        cholmod_free_dense( &du, &c );
         //        du = cholmod_solve (CHOLMOD_A, Lfact, udum, &c);
 
-
         kspgcr( Kcm, udum, du, Lfact, matA->neq, &c, model.rel_tol_KSP, noisy, &its_KSP);
         its_KSP_tot += its_KSP;
 
-        copy_cholmod_dense_to_cholmod_dense( pdum, bp );       // pdum <-- bp
-        cholmod_sdmult ( CcmJ, 0, mone, one, du, pdum, &c);    // pdum <-- bp - C*u
-        cholmod_sdmult ( Dcm , 0,  one, one, pdum, dp, &c) ;   // dp <-- dp + D*(bp - C*u)
+        copy_cholmod_dense_to_cholmod_dense( pdum, bp );         // pdum <-- bp
+        cholmod_sdmult ( CcmJ,  0, mone, one,   du, pdum, &c);   // pdum <-- bp - C*u
+        cholmod_sdmult ( D1cm0, 0, mone, one,   dp, pdum, &c) ;  // fp -= D*p
+        cholmod_sdmult ( Dcm ,  0,  one, one, pdum,   dp, &c) ;  // dp <-- dp + D*(bp - C*u)
 
+        // ------- U, V ------- //
         copy_cholmod_dense_to_cholmod_dense( fu, bu );       // fu = bu
-        cholmod_sdmult ( AcmJ, 0, mone, one, du, fu, &c) ;   // fu -= A*u
-        cholmod_sdmult ( BcmJ, 0, mone, one, dp, fu, &c) ;   // fu -= B*p
+        cholmod_sdmult (  AcmJ, 0, mone, one, du, fu, &c) ;  // fu -= A*u
+        cholmod_sdmult (  BcmJ, 0, mone, one, dp, fu, &c) ;  // fu -= B*p
+        // ------- P ------- //
         copy_cholmod_dense_to_cholmod_dense( fp, bp );       // fp = bp
         cholmod_sdmult (  CcmJ, 0, mone, one, du, fp, &c) ;  // fp -= C*u
         cholmod_sdmult ( D1cm0, 0, mone, one, dp, fp, &c) ;  // fp -= D*p
@@ -2614,6 +2698,7 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
     cholmod_free_sparse( &Dcm, &c );
     cholmod_free_sparse( &Dcm0, &c );
     cholmod_free_sparse( &D1cm0, &c );
+    cholmod_free_sparse( &whos_incompressible, &c );
 
     cholmod_free_sparse( &AcmJ, &c );
     cholmod_free_sparse( &BcmJ, &c );

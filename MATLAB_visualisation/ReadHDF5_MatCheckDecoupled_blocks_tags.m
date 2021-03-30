@@ -31,7 +31,7 @@ jac = 0;
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/';
 
 
-filename = [path 'MatrixDecoupled.gzip_1cpu.h5'];
+filename = [path 'Stokes_04cpu_step38_iter00.gzip.h5'];
 
 IcA  = hdf5read(filename,'/matrix/IA');
 JA   = hdf5read(filename,'/matrix/JA');
@@ -42,7 +42,7 @@ V1A  = hdf5read(filename,'/matrix/VA');
 IcB  = hdf5read(filename,'/matrix/IB');
 JB   = hdf5read(filename,'/matrix/JB');
 IcB  = IcB+1;
-JB   = JB+1;
+JB   = JB+1;5
 V1B  = hdf5read(filename,'/matrix/VB');
 
 
@@ -231,7 +231,7 @@ figure(2)
 subplot 221
 spy(MA-MA'), title('MA-MA''')
 subplot 222
-spy(MB-MC'), title('MB''-MC')
+spy(MB+MC'), title('MB''+MC')
 subplot 223
 Asc    = MA - MB*(MD*MC);
 spy(Asc-Asc'), title('Asc-Asc''')

@@ -49,7 +49,7 @@ CGzx = CG(2,1); CGzz = CG(2,2);
 
 % Stretch tensor = sqrt(CG)
 [ U0xx,U0xz,U0zx,U0zz]  = Sqrt_2x2( CGxx, CGxz, CGzx, CGzz );
-[e1,e2,Uxx,Uxz,Uzx,Uzz] = Eigs_2x2( U0xx, U0xz, U0zx, U0zz );
+[e1,e2,Uxx,Uxz,Uzx,Uzz] = Eigs_2x2( U0xx, U0xz, U0zx, U0zz ); % strecth
 [wxx,wxz,wzx,wzz]       =  Inv_2x2( U0xx, U0xz, U0zx, U0zz );
 [rxx,rxz,rzx,rzz]       =  AxB_2x2( Fxx, Fxz, Fzx, Fzz, wxx, wxz, wzx, wzz );
 [Uxx,Uxz,Uzx,Uzz]       =  AxB_2x2( rxx, rxz, rzx, rzz, Uxx, Uxz, Uzx, Uzz );
@@ -68,7 +68,7 @@ F       = [ Fxx(1),  Fxz(1);  Fzx(1),  Fzz(1) ];
 U0       = sqrtm(CG);
 [UV,UE] = eigs(U0);
 R       = F*inv(U0); % compute rotation
-Urot    = R*UV;       % rotate
+Urot    = R*UV;      % rotate
 rv1     = Urot(:,2); % no more minus / no more flipud
 rv2     = Urot(:,1);
 rv1     = rv1 / sqrt( rv1(1)^2 + rv1(2)^2 ) * e2; % Normalise and scale vectors of Spitz

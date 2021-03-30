@@ -35,110 +35,75 @@
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void ApplyBC( grid* mesh, params* model ) {
+void ExpandCentroidArray( double* CentroidArray, double* temp, grid* mesh, params *model ) {
     
-    int nx=model->Nx, nz=model->Nz, nzvx=nz+1, nxvz=nx+1;
-    int i, j;
+    int k, l, Nx, Nz, Ncx, Ncz, c0, c1;
+    int per = model->isperiodic_x;
     
-    // Vx Neumann
-    for( i=0; i<nx; i++) {
-        // South
-        if ( mesh->BCu.type[i] == 13 ) {
-            mesh->u_in[i] = mesh->u_in[i+nx];
-        }
-        // North
-        if ( mesh->BCu.type[i + (nzvx-1)*nx] == 13 ) {
-            mesh->u_in[i + (nzvx-1)*nx] = mesh->u_in[i + (nzvx-2)*nx];
+    Nx = mesh->Nx;
+    Nz = mesh->Nz;
+    Ncx = Nx-1;
+    Ncz = Nz-1;
+    
+    // Fill interior points
+    for (k=0; k<Ncx; k++) {
+        for (l=0; l<Ncz; l++) {
+            c0 = k + l*(Ncx);
+            c1 = k + (l+1)*(Ncx+2) + 1;
+//            temp[c1] = CentroidArray[c0];
+            if (mesh->BCp.type[c0] == -1) temp[c1] = CentroidArray[c0];
+            if (mesh->BCp.type[c0] == 31) temp[c1] = CentroidArray[c0-Ncx];
         }
     }
     
-    // Vx Dirichlet
-    for( i=0; i<nx; i++) {
-        // South
-        if ( mesh->BCu.type[i] == 11 ) {
-            mesh->u_in[i] = 2.0*mesh->BCu.val[i] - mesh->u_in[i+nx];
-        }
-        // North
-        if ( mesh->BCu.type[i + (nzvx-1)*nx] == 11 ) {
-            mesh->u_in[i + (nzvx-1)*nx] = 2.0*mesh->BCu.val[i + (nzvx-1)*nx] - mesh->u_in[i + (nzvx-2)*nx];
-        }
+    // Fill sides - avoid corners - assume zero flux
+    for (k=1; k<Ncx+1; k++) {
+        c0 = k + (0)*(Ncx+2);       // South
+        c1 = k + (1)*(Ncx+2);       // up neighbour
+        temp[c0] = temp[c1];
+    }
+    for (k=1; k<Ncx+1; k++) {
+        c0 = k + (Ncz+1)*(Ncx+2);   // North
+        c1 = k + (Ncz  )*(Ncx+2);   // down neighbour
+        temp[c0] = temp[c1];
+    }
+    for (l=1; l<Ncz+1; l++) {
+        c0 = 0 + (l)*(Ncx+2);       // West
+        if (per == 0) c1 = 1           + (l)*(Ncx+2);       // right neighbour
+        if (per == 1) c1 = (Ncx+2-1-1) + (l)*(Ncx+2);       // right neighbour
+        temp[c0] = temp[c1];
+    }
+    for (l=1; l<Ncz+1; l++) {
+        c0 = (Ncx+1) + (l)*(Ncx+2); // East
+        if (per==0) c1 = (Ncx  ) + (l)*(Ncx+2); // left neighbour
+        if (per==1) c1 = 1       + (l)*(Ncx+2); // left neighbour
+        temp[c0] = temp[c1];
     }
     
-    // Vz Neumann
-    for( j=0; j<nz; j++) {
-        // West
-        if ( mesh->BCv.type[j*nxvz] == 13 ) {
-            mesh->v_in[j*nxvz] = mesh->v_in[j*nxvz + 1];
-        }
-        // East
-        if ( mesh->BCv.type[j*nxvz+(nxvz-1)] == 13 ) {
-            mesh->v_in[j*nxvz+(nxvz-1)] = mesh->v_in[j*nxvz+(nxvz-1) -1];
-        }
-    }
-    
-    // Vz Dirichlet
-    for( j=0; j<nz; j++) {
-        // West
-        if ( mesh->BCv.type[j*nxvz] == 11 ) {
-            mesh->v_in[j*nxvz] = 2.0*mesh->BCv.val[j*nxvz] - mesh->v_in[j*nxvz + 1];
-        }
-        // East
-        if ( mesh->BCv.type[j*nxvz+(nxvz-1)] == 11 ) {
-            mesh->v_in[j*nxvz + (nxvz-1)] = 2.0*mesh->BCv.val[j*nxvz+(nxvz-1)] - mesh->v_in[j*nxvz + (nxvz-1) -1];
-        }
-    }
-    
-    // Vz Periodic
-    for( j=0; j<nz; j++) {
-        // West
-        if ( mesh->BCv.type[j*nxvz] == -12 ) {
-            mesh->v_in[j*nxvz] = mesh->v_in[j*nxvz + (nxvz-1) -1];
-        }
-        // East
-        if ( mesh->BCv.type[j*nxvz+(nxvz-1)] == -12 ) {
-            mesh->v_in[j*nxvz+(nxvz-1)] = mesh->v_in[j*nxvz+1];
-        }
-    }
-    
-    // Vx Periodic
-    for( j=0; j<nzvx; j++) {
-        if ( mesh->BCu.type[j*nx + nx-1] == -12 ) {
-            mesh->u_in[j*nx + nx-1] = mesh->u_in[j*nx];
-        }
-    }
+    // Corners - assume zero flux
+    c0 = (0) + (0)*(Ncx+2);         // South-West
+    if (per==0) c1 = (1) + (1)*(Ncx+2);         // up-right neighbour
+    if (per==1) c1 = (0) + (1)*(Ncx+2);         // up       neighbour
+    temp[c0] = temp[c1];
+    c0 = (Ncx+1) + (0)*(Ncx+2);     // South-East
+    if (per==0) c1 = (Ncx  ) + (1)*(Ncx+2);     // up-left neighbour
+    if (per==1) c1 = (Ncx+1) + (1)*(Ncx+2);     // up      neighbour
+    temp[c0] = temp[c1];
+    c0 = (0) + (Ncz+1)*(Ncx+2);     // North-West
+    if (per==0) c1 = (1) + (Ncz  )*(Ncx+2);     // down-right neighbour
+    if (per==1) c1 = (0) + (Ncz  )*(Ncx+2);     // down       neighbour
+    temp[c0] = temp[c1];
+    c0 = (Ncx+1) + (Ncz+1)*(Ncx+2); // North-West
+    if (per==0) c1 = (Ncx  ) + (Ncz  )*(Ncx+2); // down-left neighbour
+    if (per==1) c1 = (Ncx+1) + (Ncz  )*(Ncx+2); // down      neighbour
+    temp[c0] = temp[c1];
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void UpdateNonLinearity( grid* mesh, markers* particles, markers* topo_chain, surface *topo, mat_prop materials, params *model, Nparams *Nmodel, scale scaling, int mode, double h_contin ) {
-        
-    // Strain rate component evaluation
-    StrainRateComponents( mesh, scaling, model );
-//    MinMaxArrayTag( mesh->exxd,      scaling.E, (mesh->Nx-1)*(mesh->Nz-1),     "exx     ", mesh->BCp.type );
-
-    
-    //-----------------------------------------------//
-    
-    NonNewtonianViscosityGrid ( mesh, &materials, model, *Nmodel, &scaling );
-    
-    //-----------------------------------------------//
-    
-    // Evaluate right hand side
-    EvaluateRHS( mesh, *model, scaling, materials.rho[0] );
-    
-    //-----------------------------------------------//
-    
-    // Fill up the rheological matrices arrays
-    RheologicalOperators( mesh, model, &scaling, 0 );
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-void InterpCentroidsToVerticesDouble( double* CentroidArray, double* VertexArray, grid* mesh, params *model, scale *scaling ) {
+void InterpCentroidsToVerticesDouble( double* CentroidArray, double* VertexArray, grid* mesh, params *model ) {
     
     int k, l, Nx, Nz, Ncx, Ncz, c0, c1;
     double *temp;
@@ -231,7 +196,7 @@ void InterpCentroidsToVerticesDouble( double* CentroidArray, double* VertexArray
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void InterpVerticesToCentroidsDouble( double* CentroidArray, double* VertexArray, grid* mesh, params *model, scale *scaling ) {
+void InterpVerticesToCentroidsDouble( double* CentroidArray, double* VertexArray, grid* mesh, params *model ) {
     
     int k, l, Nx, Nz, Ncx, Ncz, c0, c1;
     double *temp;
@@ -248,8 +213,8 @@ void InterpVerticesToCentroidsDouble( double* CentroidArray, double* VertexArray
             c0 = k + l*(Ncx);
             c1 = k + l*(Nx);
             
-            if ( mesh->BCp.type[c1] != 30 &&  mesh->BCp.type[c1] != 31 ) {
-            CentroidArray[c0] = 0.25*( VertexArray[c1] + VertexArray[c1+1] + VertexArray[c1+Nx] + VertexArray[c1+1+Nx] );
+            if ( mesh->BCp.type[c0] != 30 &&  mesh->BCp.type[c0] != 31 ) {
+                CentroidArray[c0] = 0.25*( VertexArray[c1] + VertexArray[c1+1] + VertexArray[c1+Nx] + VertexArray[c1+1+Nx] );
             }
         }
     }
@@ -376,14 +341,15 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
             
             
             if ( mesh->BCu.type[c] != 30 ) {
-
+                
                 if (model->step==0) {
+                    
                     // Initial velocity field (zero or pure shear)
                     if (model->EpsBG == 0) mesh->u_in[c]  = 0.0;
                     // Pure shear
                     else mesh->u_in[c]  = -mesh->xg_coord[k]*model->EpsBG;
-                    // Simple shear
-                    if (model->isperiodic_x == 1) mesh->u_in[c] = 2.0*mesh->zvx_coord[l]*model->EpsBG;
+//                    if (model->isperiodic_x == 1) mesh->u_in[c] = 2.0*mesh->zvx_coord[l]*model->EpsBG; // Simple shear
+                    if (model->isperiodic_x == 1) mesh->u_in[c] = 2.0*(mesh->zvx_coord[l]-model->zmin)*model->EpsBG; // Simple shear
                 }
                 // Force Dirichlets
                 if (mesh->BCu.type[c] == 0) mesh->u_in[c]  = mesh->BCu.val[c];
@@ -396,9 +362,6 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
         for( k=0; k<nxvz; k++) {
             
             c = k + l*nxvz;
-            
-//            mesh->v_in[c]  = 0.0;
-//            if (mesh->BCv.type[c] == 0) mesh->v_in[c]  = mesh->BCv.val[c];
             
             if ( mesh->BCv.type[c] == 30 )  mesh->v_in[c]  = 0.0;
             
@@ -428,8 +391,8 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
             if ( mesh->BCp.type[c] != 30 ||  mesh->BCp.type[c] != 31) {
                 if (model->step==0) {
                     // Initial pressure field
-                    if (model->num_deriv==0) mesh->p_in[c]  = 0.0;//eps;
-                    if (model->num_deriv==1) mesh->p_in[c]  = eps;
+                    if (model->num_deriv==0) mesh->p_in[c]  = 0.0 + model->PrBG;
+                    if (model->num_deriv==1) mesh->p_in[c]  = eps + model->PrBG;
                 }
             }
             
@@ -448,7 +411,7 @@ void ComputeLithostaticPressure( grid *mesh, params *model, double RHO_REF, scal
     // Compute lithostatic pressure by cumulative sum of rho*g across model thickness
     
     int nx, nz, ncx, ncz;
-    int k, l, c;
+    int k, l, c, c1;
     double rho_eff;
     double eps = 1e-13; // perturbation to avoid zero pressure that results in Nan d(eta)dP in numerical differentiation
 
@@ -459,11 +422,11 @@ void ComputeLithostaticPressure( grid *mesh, params *model, double RHO_REF, scal
     ncz = nz-1;
         
     Initialise1DArrayDouble( mesh->p_lith,  (mesh->Nx-1)*(mesh->Nz-1), 0.0 );
-
+    
     // Cell center arrays
     for( l=ncz-2; l>=0; l--) {
         for( k=0; k<ncx; k++) {
-            
+
             // Initialise vertices variables
             c  = k + l*ncx;
 
@@ -471,25 +434,34 @@ void ComputeLithostaticPressure( grid *mesh, params *model, double RHO_REF, scal
 
             // density
             if ( mode == 0 ) rho_eff = RHO_REF;
-            if ( mode == 1 ) rho_eff = mesh->rho_app_n[c];
+            if ( mode == 1 ) rho_eff = mesh->rho_n[c];
 
             // Initialise pressure variables : Compute lithostatic pressure
             if ( mesh->BCp.type[c] != 30 && mesh->BCp.type[c] != 31 ) { // First row (surface)
                 mesh->p_lith[c]  = mesh->p_lith[c+ncx] -  model->gz * mesh->dz * rho_eff;
-  
+
             }
         }
     }
-    
-    // + eps
-    // Cell center arrays
+
+    // Add confining pressure
     for( l=0; l<ncz; l++) {
-        for( k=0; k<ncx; k++) {            
+        for( k=0; k<ncx; k++) {
             c  = k + l*ncx;
-            mesh->p_lith[c] += eps;
-            mesh->p[c]       = mesh->p_in[c];
+            if ( mesh->BCp.type[c] != 30 && mesh->BCp.type[c] != 31 ) mesh->p_lith[c] += model->PrBG;
         }
     }
+    
+    
+//    // + eps
+//    // Cell center arrays
+//    for( l=0; l<ncz; l++) {
+//        for( k=0; k<ncx; k++) {            
+//            c  = k + l*ncx;
+//            mesh->p_lith[c] += eps;
+//            mesh->p[c]       = mesh->p_in[c];
+//        }
+//    }
     
 
 }
@@ -547,162 +519,12 @@ void GridIndices( grid* mesh) {
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-//void Interp_TPdphi_centroid2vertices ( grid* mesh, params *model ) {
-//    
-//    int k, l, Nx, Nz, Ncx, Ncz, k1, c0, c1;
-//    
-//    Nx = mesh->Nx;
-//    Nz = mesh->Nz;
-//    Ncx = Nx-1;
-//    Ncz = Nz-1;
-//    
-//    
-//#pragma omp parallel for shared( mesh ) private( k, l, k1, c1, c0 )  firstprivate(  model, Ncx, Ncz, Nx, Nz )
-//    for ( k1=0; k1<Nx*Nz; k1++ ) {
-//        
-//        k  = mesh->kn[k1];
-//        l  = mesh->ln[k1];
-//        
-//        c0 = k + l*(Ncx);
-//        c1 = k + l*Nx;
-//        
-//        mesh->T_s[c1]   = 0.0;
-//        mesh->P_s[c1]   = 0.0;
-//        mesh->d0_s[c1]  = 0.0;
-//        mesh->phi1_s[c1] = 0.0;
-//        
-//        // INNER average T and P
-//        if (k>0 && k<Ncx && l>0 && l<Ncz) {
-//             mesh->T_s[c1]  = 0.25*( mesh->T[c0] +  mesh->T[c0-Ncx] +  mesh->T[c0-Ncx-1] +  mesh->T[c0-1] );
-//             mesh->P_s[c1]  = 0.25*( mesh->p_in[c0] +  mesh->p_in[c0-Ncx] +  mesh->p_in[c0-Ncx-1] +  mesh->p_in[c0-1]);
-//             mesh->d0_s[c1]  = 0.25*( mesh->d0[c0] +  mesh->d0[c0-Ncx] +  mesh->d0[c0-Ncx-1] +  mesh->d0[c0-1]);
-//             mesh->phi1_s[c1] = 0.25*( mesh->phi[c0] +  mesh->phi[c0-Ncx] +  mesh->phi[c0-Ncx-1] +  mesh->phi[c0-1]);
-//        }
-//
-//        // WEST
-//        if (k==0 && (l>0 && l<Ncz) && model->isperiodic_x==0) {
-//             mesh->T_s[c1]  = 0.5*( mesh->T[c0] + mesh->T[c0-Ncx] );
-//             mesh->P_s[c1]  = 0.5*( mesh->p_in[c0] + mesh->p_in[c0-Ncx] );
-//             mesh->d0_s[c1]  = 0.5*( mesh->d0[c0] + mesh->d0[c0-Ncx] );
-//             mesh->phi1_s[c1] = 0.5*( mesh->phi[c0] + mesh->phi[c0-Ncx] );
-//        }
-//
-//        // WEST - periodic
-//        if (k==0 && (l>0 && l<Ncz) && model->isperiodic_x==1) {
-//             mesh->T_s[c1]  = 0.25*( mesh->T[c0] + mesh->T[c0-Ncx] + mesh->T[c0+Ncx-1] + mesh->T[c0-1] );
-//             mesh->P_s[c1]  = 0.25*( mesh->p_in[c0] + mesh->p_in[c0-Ncx] + mesh->p_in[c0+Ncx-1] + mesh->p_in[c0-1] );
-//             mesh->d0_s[c1]  = 0.25*( mesh->d0[c0] + mesh->d0[c0-Ncx] + mesh->d0[c0+Ncx-1] + mesh->d0[c0-1] );
-//             mesh->phi1_s[c1] = 0.25*( mesh->phi[c0] + mesh->phi[c0-Ncx] + mesh->phi[c0+Ncx-1] + mesh->phi[c0-1] );
-//        }
-//
-//        // EAST
-//        if (k==Ncx && (l>0 && l<Ncz) && model->isperiodic_x==0) {
-//             mesh->T_s[c1]  = 0.5*( mesh->T[c0-1] + mesh->T[c0-Ncx-1]);
-//             mesh->P_s[c1]  = 0.5*( mesh->p_in[c0-1] + mesh->p_in[c0-Ncx-1] );
-//             mesh->d0_s[c1]  = 0.5*( mesh->d0[c0-1] + mesh->d0[c0-Ncx-1]);
-//             mesh->phi1_s[c1] = 0.5*( mesh->phi[c0-1] + mesh->phi[c0-Ncx-1] );
-//        }
-//
-//        // EAST - periodic
-//        if (k==Ncx && (l>0 && l<Ncz) && model->isperiodic_x==1) {
-//             mesh->T_s[c1]  = 0.25*( mesh->T[c0-1] + mesh->T[c0-Ncx-1] + mesh->T[c0-Ncx-Ncx] + mesh->T[c0-Ncx]);
-//             mesh->P_s[c1]  = 0.25*( mesh->p_in[c0-1] + mesh->p_in[c0-Ncx-1] + mesh->p_in[c0-Ncx-Ncx] + mesh->p_in[c0-Ncx] );
-//             mesh->d0_s[c1]  = 0.25*( mesh->d0[c0-1] + mesh->d0[c0-Ncx-1] + mesh->d0[c0-Ncx-Ncx] + mesh->d0[c0-Ncx]);
-//             mesh->phi1_s[c1] = 0.25*( mesh->phi[c0-1] + mesh->phi[c0-Ncx-1] + mesh->phi[c0-Ncx-Ncx] + mesh->phi[c0-Ncx] );
-//        }
-//
-//
-//        // SOUTH
-//        if (l==0 && (k>0 && k<Ncx)) {
-//             mesh->T_s[c1]  = 0.5*( mesh->T[c0]+ mesh->T[c0-1] );
-//             mesh->P_s[c1]  = 0.5*( mesh->p_in[c0] + mesh->p_in[c0-1] );
-//             mesh->d0_s[c1]  = 0.5*( mesh->d0[c0]+ mesh->d0[c0-1] );
-//             mesh->phi1_s[c1] = 0.5*( mesh->phi[c0] + mesh->phi[c0-1] );
-//        }
-//
-//        // NORTH
-//        if (l==Ncz && (k>0 && k<Ncx)) {
-//             mesh->T_s[c1]  = 0.5*( mesh->T[c0-Ncx] + mesh->T[c0-Ncx-1] );
-//             mesh->P_s[c1]  = 0.5*( mesh->p_in[c0-Ncx] + mesh->p_in[c0-Ncx-1] );
-//             mesh->d0_s[c1]  = 0.5*( mesh->d0[c0-Ncx] + mesh->d0[c0-Ncx-1] );
-//             mesh->phi1_s[c1] = 0.5*( mesh->phi[c0-Ncx] + mesh->phi[c0-Ncx-1] );
-//        }
-//
-//        // SOUTH-WEST
-//        if (l==0 && k==0 && model->isperiodic_x==0) {
-//             mesh->T_s[c1]  = mesh->T[c0];
-//             mesh->P_s[c1]  = mesh->p_in[c0];
-//             mesh->d0_s[c1]  = mesh->d0[c0];
-//             mesh->phi1_s[c1] = mesh->phi[c0];
-//        }
-//
-//        // SOUTH-WEST - periodic
-//        if (l==0 && k==0 && model->isperiodic_x==1) {
-//             mesh->T_s[c1]  = 0.5*(mesh->T[c0] + mesh->T[c0+Ncx-1]);
-//             mesh->P_s[c1]  = 0.5*(mesh->p_in[c0] + mesh->p_in[c0+Ncx-1]);
-//             mesh->d0_s[c1]  = 0.5*(mesh->d0[c0] + mesh->d0[c0+Ncx-1]);
-//             mesh->phi1_s[c1] = 0.5*(mesh->phi[c0] + mesh->phi[c0+Ncx-1]);
-//        }
-//
-//        // NORTH-WEST
-//        if (l==Ncz && k==0 && model->isperiodic_x==0) {
-//             mesh->T_s[c1]  = mesh->T[c0-Ncx];
-//             mesh->P_s[c1]  = mesh->p_in[c0-Ncx];
-//             mesh->d0_s[c1]  = mesh->d0[c0-Ncx];
-//             mesh->phi1_s[c1] = mesh->phi[c0-Ncx];
-//        }
-//
-//        // NORTH-WEST - periodic
-//        if (l==Ncz && k==0 && model->isperiodic_x==1) {
-//             mesh->T_s[c1]  = 0.5*(mesh->T[c0-Ncx] + mesh->T[c0-1]);
-//             mesh->P_s[c1]  = 0.5*(mesh->p_in[c0-Ncx] + mesh->p_in[c0-1]);
-//             mesh->d0_s[c1]  = 0.5*(mesh->d0[c0-Ncx] + mesh->d0[c0-1]);
-//             mesh->phi1_s[c1] = 0.5*(mesh->phi[c0-Ncx] + mesh->phi[c0-1]);
-//        }
-//
-//        // SOUTH-EAST
-//        if (l==0 && k==Ncx && model->isperiodic_x==0) {
-//             mesh->T_s[c1]  = mesh->T[c0-1];
-//             mesh->P_s[c1]  = mesh->p_in[c0-1];
-//             mesh->d0_s[c1]  = mesh->d0[c0-1];
-//             mesh->phi1_s[c1] = mesh->phi[c0-1];
-//        }
-//
-//        // SOUTH-EAST - periodic
-//        if (l==0 && k==Ncx && model->isperiodic_x==1) {
-//             mesh->T_s[c1]  = 0.5*(mesh->T[c0-1] + mesh->T[c0-Ncx]);
-//             mesh->P_s[c1]  = 0.5*(mesh->p_in[c0-1]+ mesh->p_in[c0-Ncx]);
-//             mesh->d0_s[c1]  = 0.5*(mesh->d0[c0-1] + mesh->d0[c0-Ncx]);
-//             mesh->phi1_s[c1] = 0.5*(mesh->phi[c0-1]+ mesh->phi[c0-Ncx]);
-//        }
-//
-//        // NORTH-EAST
-//        if (l==Ncz && k==Ncx && model->isperiodic_x==0) {
-//             mesh->T_s[c1]  = mesh->T[c0-Ncx-1];
-//             mesh->P_s[c1]  = mesh->p_in[c0-Ncx-1];
-//             mesh->d0_s[c1]  = mesh->d0[c0-Ncx-1];
-//             mesh->phi1_s[c1] = mesh->phi[c0-Ncx-1];
-//        }
-//
-//        // NORTH-EAST - periodic
-//        if (l==Ncz && k==Ncx && model->isperiodic_x==1) {
-//             mesh->T_s[c1]  = 0.5*(mesh->T[c0-Ncx-1] + mesh->T[c0-Ncx-Ncx]);
-//             mesh->P_s[c1]  = 0.5*(mesh->p_in[c0-Ncx-1] + mesh->p_in[c0-Ncx-Ncx]);
-//             mesh->d0_s[c1]  = 0.5*(mesh->d0[c0-Ncx-1] + mesh->d0[c0-Ncx-Ncx]);
-//             mesh->phi1_s[c1] = 0.5*(mesh->phi[c0-Ncx-1] + mesh->phi[c0-Ncx-Ncx]);
-//        }
-//    }
-//}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------*/
-
 void SetUpModel_NoMarkers ( grid* mesh, params *model, scale *scaling ) {
     
     int k, l, Nx, Nz, Ncx, Ncz, k1, c0, c1;
     double x, z;
     double radius = model->user1/scaling->L;
+    double z0     = 0.5*(model->zmax + model->zmin );
     
     Nx = mesh->Nx;
     Nz = mesh->Nz;
@@ -719,7 +541,7 @@ void SetUpModel_NoMarkers ( grid* mesh, params *model, scale *scaling ) {
         c0 = k + l*(Ncx);
         
         x = mesh->xc_coord[k];
-        z = mesh->zc_coord[l];
+        z = mesh->zc_coord[l] - z0;
         
         mesh->T[k1] = 0.05;
         
@@ -782,13 +604,13 @@ void Diffuse_X( grid* mesh, params* model, scale* scaling ) {
         for (k=1;k<ncx-1;k++) {
             c = k + l*ncx;
             
-            if ( mesh->Xreac_n[c]>0.99 ) flag[c] = 1;
+            if ( mesh->X_n[c]>0.99 ) flag[c] = 1;
         }
     }
     
     
     for (it=0;it<nsteps;it++) {
-        ArrayEqualArray( X0, mesh->Xreac_n, ncx*ncz );
+        ArrayEqualArray( X0, mesh->X0_n, ncx*ncz );
         
         // !!!! BCs are not included!
         for (l=1;l<ncz-1;l++) {
@@ -802,13 +624,13 @@ void Diffuse_X( grid* mesh, params* model, scale* scaling ) {
                     qE = - K*(X0[c+1]-X0[c])/dx;
                     qS = - K*(X0[c]-X0[c-ncz])/dz;
                     qN = - K*(X0[c+ncz]-X0[c])/dz;
-                    mesh->Xreac_n[c] = X0[c] - dt* ( 1.0/dx*(qE-qW) + 1.0/dz*(qN-qS));
+                    mesh->X_n[c] = X0[c] - dt* ( 1.0/dx*(qE-qW) + 1.0/dz*(qN-qS));
                 }
             }
             
         }
     }
-    MinMaxArrayTag( mesh->Xreac_n,   1.0,    (mesh->Nx-1)*(mesh->Nz-1),   "Xreac_n",   mesh->BCp.type );
+    MinMaxArrayTag( mesh->X_n,   1.0,    (mesh->Nx-1)*(mesh->Nz-1),   "Xreac_n",   mesh->BCp.type );
     
     DoodzFree(X0);
     DoodzFree(flag);
