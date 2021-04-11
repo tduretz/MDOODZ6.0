@@ -13,9 +13,12 @@ MarkSize=1e0 ;
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Compression/'
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Shear_periodic_VEVP/'
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
-path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/Huismans_NoReg5its_noise/'%/Pierre00/'
-path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/Huismans_Reg1e20_noise/'%/Pierre00/'
-% path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE//'%/Pierre00/'
+path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/Huismans_Reg2e20_noise/'
+path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/Huismans_OS2e5_n1_5/'
+path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/Huismans_Reg8e19_noise_confirm/'
+
+path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE//'
+
 
 mdoodz6       = 1;
 % path = '/Volumes/Seagate4TB/Wedge_MD6/LR/'
@@ -35,11 +38,11 @@ cd(path)
 
 % Files
 istart = 300;
-ijump  = 100;
+ijump  = 50;
 iend   = 300;
 
 %--------------------------------------------------
-% what do you want to lot:
+% what do you want to plot:
 %--------------------------------------------------
 eta_sym         = 0;
 eta_plot        = 0;
@@ -86,8 +89,9 @@ fstrain          = 0;
 shear_heating    = 0;
 princi_stress    = 0;
 director_vector  = 0;
-Pl_soft          = 1;
+Pl_soft          = 0;
 Sole             = 0;
+overstress       = 1;
 
 % Visualisation options
 printfig      = 0;
@@ -101,7 +105,7 @@ Ftsz          = 20;
 file_suffix   = '';
 ConvTest      = 0;
 show          = 0;
-Ccontours     = 0;
+Ccontours     = 1;
 step          = 10;
 MaskAir       = 1;
 ColorFabio    = 1;
@@ -359,6 +363,10 @@ if printfig == 1 || printfig == 2
     
     if (exist('./Fig_Topo', 'dir') == 0)
         mkdir ./Fig_Topo
+    end
+    
+    if (exist('./Fig_OverS', 'dir') == 0)
+        mkdir ./Fig_OverS
     end
 end
 
@@ -5176,6 +5184,51 @@ for istep=istart:ijump:iend
             end
             
         end
+        
+        %--------------------------------------------------
+    % Overstress plot
+    %--------------------------------------------------
+    if (overstress==1)
+        
+        OverS = hdf5read(filename,'/Centers/OverS');
+        OverS = cast(OverS, 'double');
+        
+        min(OverS(:))
+        max(OverS(:))
+        
+        OverS = reshape(OverS,nx-1,nz-1)';
+        
+        
+        load('roma.mat')
+        
+        if print2screen == 1
+            figCount = figCount +1;
+            figure(figCount), clf
+        else
+            figure('Visible', 'Off')
+        end
+        
+        % overstress
+        colormap(flipud(roma));
+        imagesc( xc_plot, zc_plot, log10(OverS) )
+        hold on
+        if Ccontours == 1; AddCompoContours( filename, VizGrid, crop, lim  ); end
+        imagesc( xc_plot, zc_plot, log10(OverS), 'visible', 'off' )
+        hold off
+        shading flat,axis xy image, colorbar;
+        xlabel(xLabel), ylabel(zLabel);
+        title(['Overstress at' TimeLabel, ' max = ', num2str((max(OverS(:))), '%2.2e'  ), ' Pa' ])
+        if exist('minEii', 'var') caxis([5 log10(3e7)]); end
+        if crop == 1 xlim([lim.xmin lim.xmax]); ylim([lim.zmin lim.zmax]); end
+        if MaskAir==1, patch(x_tab(:,id)', z_tab(:,id)', repmat(f,1,4)', 'EdgeColor', 'none','FaceColor','w' ); end
+        axis([min(xg_plot) max(xg_plot) min(zg_plot) max(zg_plot)])
+        
+        if printfig == 1
+            print([path, './Fig_OverS/Fig_OverS', num2str(istep,'%05d'),file_suffix], format, res)
+            close all
+        end
+        
+    end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         

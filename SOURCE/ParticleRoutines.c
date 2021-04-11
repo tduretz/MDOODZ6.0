@@ -1204,6 +1204,10 @@ void PutPartInBox( markers *particles, grid *mesh, params model, surface topo, s
     double dx_particles, dz_particles;
     int add_noise=model.initial_noise;
     double noise=0.1, random_x, random_z;
+    
+    // Fix the seed for random generation
+    srand(69);
+    
 
     // Compute the spacing between particles:
     if (model.initial_part == 0 ) {

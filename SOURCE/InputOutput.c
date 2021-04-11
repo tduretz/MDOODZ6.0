@@ -1114,7 +1114,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->Plith_trick     = ReadInt2( fin, "Plith_trick", 0 );
     model->IncrementalUpdateGrid     = ReadInt2( fin, "IncrementalUpdateGrid", 1);
     model->DirectNeighbour           = ReadInt2( fin, "DirectNeighbour", 0);
-    model->Reseed          = ReadInt2( fin, "Reseed", 1);
+    model->Reseed          = ReadInt2( fin, "Reseed",          1); // Activates reseeding / particle injection
     model->ConservInterp   = ReadInt2( fin, "ConservInterp",   0); // Activates Taras conservative interpolation
     model->SmoothSoftening = ReadInt2( fin, "SmoothSoftening", 1); // Activates smooth explicit kinematic softening function
 

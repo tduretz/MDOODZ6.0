@@ -64,6 +64,8 @@ isPl_soft       = 1
 SmoothSoftening = 0
 ConservInterp   = 1
 initial_noise   = 1
+Reseed = 0
+IncrementalUpdateGrid = 0
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = -1e-15
@@ -106,7 +108,7 @@ plss     = 0.5
 plse     = 1.5
 phie     = 2.0
 Ce       = 20.0e6
-eta_vp = 1e20
+eta_vp = 2e20
 
 /**** PHASE 2 ****/
 ID   = 1

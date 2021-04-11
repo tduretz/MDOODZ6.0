@@ -1093,7 +1093,7 @@ int main( int nargs, char *args[] ) {
                     printf( "Before reduction: model.dt =, %2.2e\n", model.dt*scaling.t);
                     // ----------------------
                     model.dt /= model.safe_dt_div;
-                    printf( "HARD-CODED: Timestep divided by %2.2f => NEW CURRENT model.dt =, %2.2e\n", model.safe_dt_div, model.dt*scaling.t);
+                    printf( "Timestep divided by %2.2f => NEW CURRENT model.dt =, %2.2e\n", model.safe_dt_div, model.dt*scaling.t);
                     Nmodel.stagnated = 0;
                     // ----------------------
                     Nmodel.nit = -1;
@@ -1149,7 +1149,8 @@ int main( int nargs, char *args[] ) {
             printf("--------------------------------------------------------------\n");
             int i, nit;
             if (Nmodel.nit>=Nmodel.nit_max)  nit = Nmodel.nit_max;
-            if (Nmodel.nit<Nmodel.nit_max)  nit = Nmodel.nit;
+            if (Nmodel.nit< Nmodel.nit_max)  nit = Nmodel.nit;
+            if (Nmodel.Picard2Newton == 1 )  printf("Picard 2 Newton is activated with condition: %2.2e\n", Nmodel.Pic2NewtCond);
             for (i=0; i<=nit; i++) {
                 if (Newt_on[i] == 0) printf("Picard it. %02d: |Fx abs.| = %2.2e - |Fz abs.| = %2.2e --- |Fx rel.| = %2.2e - |Fz rel.| = %2.2e\n", i, rx_abs[i], rz_abs[i], rx_rel[i], rz_rel[i]);
                 if (Newt_on[i] == 1) printf("Newton it. %02d: |Fx abs.| = %2.2e - |Fz abs.| = %2.2e --- |Fx rel.| = %2.2e - |Fz rel.| = %2.2e\n", i, rx_abs[i], rz_abs[i], rx_rel[i], rz_rel[i]);
