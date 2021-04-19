@@ -37,9 +37,9 @@ mdoodz6       = 1;
 cd(path)
 
 % Files
-istart = 300;
+istart = 00;
 ijump  = 50;
-iend   = 300;
+iend   = 1100;
 
 %--------------------------------------------------
 % what do you want to plot:
@@ -91,7 +91,7 @@ princi_stress    = 0;
 director_vector  = 0;
 Pl_soft          = 0;
 Sole             = 0;
-overstress       = 1;
+overstress       = 0;
 
 % Visualisation options
 printfig      = 0;
@@ -105,7 +105,7 @@ Ftsz          = 20;
 file_suffix   = '';
 ConvTest      = 0;
 show          = 0;
-Ccontours     = 1;
+Ccontours     = 0;
 step          = 10;
 MaskAir       = 1;
 ColorFabio    = 1;
@@ -140,11 +140,11 @@ maxEta = 25;
 mindiv  =-0.25e-14;
 maxdiv  = 0.25e-14;
 
-minEii = -17;
-maxEii = -13;
+minEii = -14;
+maxEii = -12;
 
-minSii = 1e6;
-maxSii = 400e6;
+% minSii = 1e6;
+% maxSii = 400e6;
 
 % Size of the window
 crop       = 0;
@@ -1332,6 +1332,7 @@ for istep=istart:ijump:iend
         if ( stress_inv == 1 )
             
             sxxd  = hdf5read(filename,'/Centers/sxxd'); sxxd = cast(sxxd, 'double');
+            szzd  = hdf5read(filename,'/Centers/szzd'); szzd = cast(szzd, 'double');
             sxz   = hdf5read(filename,'/Vertices/sxz'); sxz  = cast(sxz, 'double');
             exxd  = hdf5read(filename,'/Centers/exxd'); exxd = cast(exxd, 'double');
             ezzd  = hdf5read(filename,'/Centers/ezzd'); ezzd = cast(ezzd, 'double');
@@ -1343,14 +1344,19 @@ for istep=istart:ijump:iend
             exx = (reshape(exxd,params(4)-1,params(5)-1)');
             ezz = (reshape(ezzd,params(4)-1,params(5)-1)');
             
-            exz = (reshape(exz, params(4)  ,params(5)  )');
-            eII = sqrt( 0.5*( 2*exx.^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ) );
+            exz  = (reshape(exz, params(4)  ,params(5)  )');
+            exzc = 0.25*(exz(1:end-1,1:end-1) + exz(2:end,1:end-1) + exz(1:end-1,2:end) + exz(2:end,2:end));
+            eII  = sqrt(1/2*(exx.^2+ezz.^2+(-exx-ezz).^2) + exzc.^2);
+%             eII = sqrt( 0.5*( exx.^2 + ezz.^2 + (-exx-ezz).^2 + 0.5*(exz(1:end-1,1:end-1).^2 + exz(2:end,1:end-1).^2 + exz(1:end-1,2:end).^2 + exz(2:end,2:end).^2 ) ) );
             %         sII = 2*eII.*eta;
             
             sxxd = (reshape(sxxd,params(4)-1,params(5)-1)');
-            szzd = -sxxd;
+            szzd = (reshape(szzd,params(4)-1,params(5)-1)');
             sxz  = (reshape(sxz, params(4)  ,params(5)  )');
-            sII  = sqrt( 0.5*(2*sxxd.^2 + 0.5*(sxz(1:end-1,1:end-1).^2 + sxz(2:end,1:end-1).^2 + sxz(1:end-1,2:end).^2 + sxz(2:end,2:end).^2 ) ) );
+            sxzc = 0.25*(sxz(1:end-1,1:end-1) + sxz(2:end,1:end-1) + sxz(1:end-1,2:end) + sxz(2:end,2:end));
+            sII  = sqrt(1/2*(sxxd.^2+szzd.^2+(-sxxd-szzd).^2) + sxzc.^2);
+
+%             sII  = sqrt( 0.5*(sxxd.^2 + szzd.^2 + (-sxxd-szzd).^2 + 0.5*(sxz(1:end-1,1:end-1).^2 + sxz(2:end,1:end-1).^2 + sxz(1:end-1,2:end).^2 + sxz(2:end,2:end).^2 ) ) );
             
             exzc = 0.25*(exz(1:end-1,1:end-1) + exz(2:end,1:end-1) + exz(1:end-1,2:end) + exz(2:end,2:end));
             sxzc = 0.25*(sxz(1:end-1,1:end-1) + sxz(2:end,1:end-1) + sxz(1:end-1,2:end) + sxz(2:end,2:end));
