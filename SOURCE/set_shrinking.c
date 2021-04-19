@@ -54,6 +54,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double Lx = (double) (model.xmax - model.xmin) ;
     double Lz = (double) (model.zmax - model.zmin) ;
     double T_init = (model.user0 + zeroC)/scaling.T;
+    double P_init = (model.PrBG/scaling.S);
     double radius = 0.1/scaling.L;
     double X, Z, xc = 0.0, zc = 0.0;
     int pos = 1;
@@ -108,7 +109,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
                 if (particles->phase[np]==0 && (particles->x[np]-Lx/2.0-spacing/2.0)>=-((il+1)*spacing) && (particles->x[np]-Lx/2.0-spacing/2.0)<-(il*spacing)) particles->phase[np] = 5;
                 if (particles->phase[np]==4 && (particles->x[np]-Lx/2.0-spacing/2.0)>=-((il+1)*spacing) && (particles->x[np]-Lx/2.0-spacing/2.0)<-(il*spacing)) particles->phase[np] = 0;
             }
-            if (particles->phase[np]==5 || particles->phase[np]==4) particles->phase[np] = 3;
+            if (particles->phase[np]==5 || particles->phase[np]==4) particles->phase[np] = 2;
         }
         //==================================================================
                 // 1ere elliptical inclusion
@@ -239,12 +240,16 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
 
         //--------------------------//
         // DENSITY
-        if ( model.eqn_state > 0 ) {
-            particles->rho[np] = materials->rho[particles->phase[np]] * (1 -  materials->alp[particles->phase[np]] * (T_init - materials->T0[particles->phase[np]]) );
-        }
-        else {
-            particles->rho[np] = materials->rho[particles->phase[np]];
-        }
+//        if ( model.eqn_state > 0 ) {
+//            particles->rho[np] = materials->rho[particles->phase[np]] * (1 -  materials->alp[particles->phase[np]] * (T_init - materials->T0[particles->phase[np]]) );
+//            
+//        }
+//        else {
+//            particles->rho[np] = materials->rho[particles->phase[np]];
+//        }
+        
+        particles->rho[np] = materials->rho[particles->phase[np]] * exp(materials->bet[particles->phase[np]]*P_init - materials->alp[particles->phase[np]] * T_init);
+
         //--------------------------//
     }
     MinMaxArray(particles->Vx, scaling.V, particles->Nb_part, "Vxp init" );

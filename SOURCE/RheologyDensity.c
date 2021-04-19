@@ -1051,6 +1051,9 @@ void UpdateParticleDensity( grid* mesh, scale scaling, params model, markers* pa
     rho_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
     rho_inc_grid = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
 
+//    Interp_Grid2P_centroids2( *particles, particles->rho, mesh, mesh->rho_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
+
+
     for (k=0;k<Ncx*Ncz;k++) {
         rho_inc_grid[k] = 0.0;
         if (mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) rho_inc_grid[k] = mesh->rho_n[k] - mesh->rho0_n[k];
@@ -1064,6 +1067,84 @@ void UpdateParticleDensity( grid* mesh, scale scaling, params model, markers* pa
 
     DoodzFree(rho_inc_grid);
     DoodzFree(rho_inc_mark);
+    
+//        DoodzFP *T_inc_mark, *Tm0, dtm, *dTms, *dTgr, *dTmr, *rho_part;
+//        double *Tg0, *dTgs, dx=model.dx, dz=model.dz, d=1.0;
+//        int Nx, Nz, Ncx, Ncz, k, c0, p;
+//        Nx = mesh->Nx; Ncx = Nx-1;
+//        Nz = mesh->Nz; Ncz = Nz-1;
+//
+//        // Allocations
+//        Tm0        = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+//        Tg0        = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+//        T_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+//
+//        // Old temperature grid
+//    #pragma omp parallel for shared(mesh, Tg0) private(c0) firstprivate(Ncx,Ncz)
+//        for ( c0=0; c0<Ncx*Ncz; c0++ ) {
+//            if (mesh->BCt.type[c0] != 30) Tg0[c0] = mesh->rho_n[c0] - mesh->rho0_n[c0];
+//        }
+//        Interp_Grid2P_centroids2( *particles, Tm0, mesh, Tg0, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
+//
+//        // SUBGRID
+//        if ( model.subgrid_diff >= 1 ) { /* CASE WITH SUBGRID DIFFUSION */
+//
+//            printf("Subgrid diffusion for density update\n");
+//            dTgs = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+//            dTgr = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+//            dTms = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+//            dTmr = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+//             double *etam = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+//            Interp_Grid2P_centroids2( *particles, etam,  mesh, mesh->eta_phys_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1  , Nz-1 , mesh->BCp.type, &model);
+//
+//            // Compute subgrid temperature increments on markers
+//    #pragma omp parallel for shared(particles, Tm0, dTms) private(k,p,dtm) firstprivate(materials,dx,dz,model,d)
+//            for ( k=0; k<particles->Nb_part; k++ ) {
+//                if (particles->phase[k] != -1) {
+//                    p = particles->phase[k];
+//                    dtm     = 100e-16*etam[k]/ (materials->bet[p]);
+//                    dTms[k] = -( particles->rho[k] - Tm0[k] ) * (1.0-exp(-d*model.dt/dtm));
+////                    printf("%2.2e %2.2e %2.2e\n", exp(-d*model.dt/dtm), model.dt, dtm);
+//                }
+//            }
+//
+//            // Subgrid temperature increments markers --> grid
+//            Interp_P2C ( *particles, dTms, mesh, dTgs, mesh->xg_coord, mesh->zg_coord, 1, 0 );
+//
+//            // Remaining temperature increments on the grid
+//    #pragma omp parallel for shared(mesh, dTgs, dTgr) private(c0) firstprivate(Ncx,Ncz)
+//            for ( c0=0; c0<Ncx*Ncz; c0++ ) {
+//                if (mesh->BCt.type[c0] != 30) dTgr[c0] = Tg0[c0] - dTgs[c0];
+//            }
+//
+//            // Remaining temperature increments grid --> markers
+//            Interp_Grid2P_centroids2( *particles, dTmr, mesh, dTgr, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
+//
+//            // Final temperature update on markers
+//    #pragma omp parallel for shared(particles,dTms,dTmr,T_inc_mark) private(k)
+//            for ( k=0; k<particles->Nb_part; k++ ) {
+//                if (particles->phase[k] != -1) T_inc_mark[k]      = dTms[k] + dTmr[k];
+//                if (particles->phase[k] != -1) particles->rho[k]  = particles->rho[k] + T_inc_mark[k];
+//            }
+//            DoodzFree(dTms);
+//            DoodzFree(dTmr);
+//            DoodzFree(dTgs);
+//            DoodzFree(dTgr);
+//            DoodzFree(etam);
+//        }
+//        else {  /* CASE WITHOUT SUBGRID DIFFUSION: INTERPOLATE INCREMENT DIRECTLY */
+//
+//            // Interp increments to particles
+//            Interp_Grid2P_centroids2( *particles, T_inc_mark, mesh, Tg0, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
+//
+//            // Increment temperature on particles
+//            ArrayPlusArray( particles->rho, T_inc_mark, particles->Nb_part );
+//        }
+//
+//        // Freedom
+//        DoodzFree(Tg0);
+//        DoodzFree(Tm0);
+//        DoodzFree(T_inc_mark);
 
 }
 
@@ -1374,9 +1455,6 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
 
         // Interp increments to particles
         Interp_Grid2P_centroids2( *particles, P_inc_mark, mesh, mesh->dp, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, &model  );
-
-//        // Interp increments to particles
-//        Interp_Grid2P( *particles, P_inc_mark, mesh, dp, mesh->xg_coord,  mesh->zg_coord, Nx, Nz, mesh->BCg.type  ); DoodzFree(p_s); DoodzFree(dp);
 
         // Increment pressure on particles
         ArrayPlusArray( particles->P, P_inc_mark, particles->Nb_part );
@@ -4355,6 +4433,12 @@ void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* 
     Interp_P2C ( *particles, particles->dd,     mesh,     dd, mesh->xg_coord, mesh->zg_coord, 1, 0 );
     Interp_P2C ( *particles, particles->dphi,   mesh,   dphi, mesh->xg_coord, mesh->zg_coord, 1, 0 );
     Interp_P2C ( *particles, particles->drho,   mesh,   drho, mesh->xg_coord, mesh->zg_coord, 1, 0 );
+    
+//    DoodzFP *drho0_s = DoodzCalloc(Nx*Nz, sizeof(DoodzFP));
+//    Interp_P2N ( *particles, particles->drho, mesh, drho0_s, mesh->xg_coord, mesh->zg_coord, 1, 0, model );
+//
+//    InterpVerticesToCentroidsDouble( drho, drho0_s,  mesh, model );
+//    DoodzFree( drho0_s );
 
 
     ArrayPlusArray(  mesh->T0_n,     dT,     Ncx*Ncz );

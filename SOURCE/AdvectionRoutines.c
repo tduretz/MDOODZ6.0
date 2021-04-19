@@ -821,18 +821,15 @@ printf("Initial timestep = %2.2e s\n", model->dt*scaling.t);
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+//#if 0
 void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scaling, grid *mesh, int quiet ) {
 
     int k, l, c;
     double minVx=0.0, minVz=0.0, maxVx=0.0, maxVz=0.0, dmin, dtc=0.0, vmax, vmin;
-    double C = model->Courant;
-    double Vinc = model->surf_Vinc, dt_surf = 0.0;
-//    double min_vel = 1e-12/scalin.V;
-    
-//    double time_reaction = 3.1558e11;
-//    int reaction_in_progress;
-
-//    model->dt0 = model->dt;
+    double C           = model->Courant;
+    double Vinc        = model->surf_Vinc, dt_surf = 0.0;
+    double min_tau_kin = model->user1/scaling.t;
+    double dt_reac     = min_tau_kin/model->user2;
 
     for (k=0; k<model->Nx; k++) {
         for (l=0; l<model->Nz+1; l++) {
@@ -900,6 +897,13 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
                 model->dt = dt_surf;
             }
         }
+        
+        // If timestep is adaptive: Chemical limitation
+        if ( model->dt_constant != 1 && model->ProgReac == 1 && dt_reac<model->dt ) {
+                printf("EvaluateCourantCriterion: --> min_tau_kin = %2.2e s \n", min_tau_kin*scaling.t);
+                printf("Timestep limited by Chemical Reaction\n");
+                model->dt = dt_reac;
+        }
 
         // If there is no motion, then the timestep becomes huge: cut off the motion.
         if ( model->dt>1.0e30 || vmax<1.0e-30) {
@@ -924,6 +928,110 @@ void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scal
     }
 
 }
+//#endif
+
+#if 0
+void EvaluateCourantCriterion( double* Vx, double* Vz, params *model, scale scaling, grid *mesh, int quiet ) {
+
+    int k, l, c;
+    double minVx=0.0, minVz=0.0, maxVx=0.0, maxVz=0.0, dmin, dtc=0.0, vmax, vmin;
+    double C = model->Courant;
+//    double time_reaction = 3.1558e11;
+//    int reaction_in_progress;
+
+//    model->dt0 = model->dt;
+
+    for (k=0; k<model->Nx; k++) {
+        for (l=0; l<model->Nz+1; l++) {
+            c = k + l*model->Nx;
+            maxVx = MAXV(maxVx, (Vx[c]));
+            minVx = MINV(minVx, (Vx[c]));
+        }
+    }
+
+    for (k=0; k<model->Nx+1; k++) {
+        for (l=0; l<model->Nz; l++) {
+            c = k + l*(model->Nx+1);
+            maxVz = MAXV(maxVz, (Vz[c]));
+            minVz = MINV(minVz, (Vz[c]));
+        }
+    }
+    if (quiet==0) printf("Min Vxm = %2.2e m/s / Max Vxm = %2.2e m/s\n", minVx * scaling.V, maxVx * scaling.V);
+    if (quiet==0) printf("Min Vzm = %2.2e m/s / Max Vzm = %2.2e m/s\n", minVz * scaling.V, maxVz * scaling.V);
+
+    dmin = MINV(model->dx, model->dz);
+    vmax = MAXV(fabs(maxVx), fabs(maxVz));
+    vmin = MAXV(fabs(minVx), fabs(minVz));
+    vmax = MAXV(fabs(vmax),  fabs(vmin));
+
+    if (model->dt_constant == 0) {
+
+        double fact = 1.0;
+
+        // Timestep increase factor
+        if ( model->iselastic == 1 ) {
+            fact = 1.25;
+        }
+        else {
+            fact = 2.00;
+        }
+
+        // Courant dt
+        dtc = C * dmin / fabs(vmax);
+
+        printf("Courant number = %2.2e --- dtc = %2.2e\n", C, dtc*scaling.t);
+
+
+        // Timestep cutoff : Do not allow for very large timestep increase
+        if (dtc > fact*model->dt0 ) {
+            dtc = fact*model->dt0;
+        }
+
+        // If timestep is adaptive
+        if ( model->dt_constant != 1 ) {
+            if (dtc<model->dt) printf("Timestep limited by Courant\n");
+            model->dt = dtc;
+        }
+
+        //  Chemical limitation: ================================================
+        //    get min max kc
+        double min_tau_kin = model->user1/scaling.t;
+        double dt_reac = min_tau_kin/model->user2;
+        //        double min_kc=1.0e30, max_kc=0.0;
+        //        for ( k=0; k<materials->Nb_phases; k++) {
+        //            if (materials->k_chem[k]<min_kc) min_kc = materials->k_chem[k];
+        //            if (materials->k_chem[k]>max_kc) max_kc = materials->k_chem[k];
+        //        }
+        //        printf("EvaluateCourantCriterion: --> min kc = %2.2e m2.s-1 - max kc = %2.2e m2.s-1 \n", min_kc*scaling.L*scaling.L/scaling.t, max_kc*scaling.L*scaling.L/scaling.t );
+        printf("EvaluateCourantCriterion: --> min_tau_kin = %2.2e s \n", min_tau_kin*scaling.t);
+        
+        // If timestep is adaptive
+        if ( model->dt_constant != 1 ) {
+            if (dt_reac<model->dt) {
+                printf("Timestep limited by Chemical Reaction\n");
+                model->dt = dt_reac;
+            }
+        }
+        
+        //=======================================================================
+        
+        // If there is no motion, then the timestep becomes huge: cut off the motion.
+        if ( model->dt>1.0e30 || vmax<1.0e-30) {
+            dtc = 0.0;
+            model->dt = model->dt_start;
+        }
+
+        if ( model->dt>model->dt_max ) model->dt = model->dt_max;
+
+        if (quiet==0) printf("Current dt = %2.2e s / Courant dt = %2.2e s\n", model->dt * scaling.t, dtc * scaling.t );
+    }
+    else {
+        model->dt = model->dt_start;
+        if (quiet==0) printf("Fixed timestep dt = %2.2e s\n", model->dt * scaling.t );
+    }
+
+}
+#endif
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/

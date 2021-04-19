@@ -1068,7 +1068,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->noisy           = ReadInt2( fin, "noisy",         1 );  // Prints a lot of info to standard output
 
     // Switches
-    model->initial_part    = ReadInt2( fin, "initial_part",    0 ); // Initial particule distribution, 0: MD4.5 style, 1: MD6.0 style
+    model->initial_part    = ReadInt2( fin, "initial_part",    1 ); // Initial particule distribution, 0: MD4.5 style, 1: MD6.0 style
     model->initial_noise   = ReadInt2( fin, "initial_noise",   0 ); // Add noise on initial marker locations
     model->ismechanical    = ReadInt2( fin, "ismechanical",    1 ); // Activates mechanical solver
     model->advection       = ReadInt2( fin, "advection",       1 ); // Activates advection
@@ -1168,7 +1168,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->dt0               = model->dt;
     model->dt_start          = model->dt;
     model->dt_max            = ReadDou2( fin, "dt_max",     1e20 ) / scaling->t; // maximum allowed time step
-    model->dt_min            = ReadDou2( fin, "dt_min",      1e8 ) / scaling->t; // maximum allowed time step
+    model->dt_min            = ReadDou2( fin, "dt_min",      1e6 ) / scaling->t; // minimum allowed time step
     model->eta_avg           = ReadInt2( fin, "eta_avg",       0 );              // 0 : arithmetic mean
     model->nexp_radial_basis = ReadDou2( fin, "nexp_radial_basis", 1.0 ); // exponent for radial basis function interp.
 
@@ -1964,7 +1964,8 @@ double ReadMatProps( FILE *fin, char FieldName[], int PhaseID, double Default )
 
                     // Break in case the parameter has not been defined for the current phase.
                     if ( strcmp(param3,"ID") == 0 || feof(fin) ) {
-                        printf("Warning : Parameter '%s' not found in the setup file, running with default value %.2lf\n", FieldName, Default);
+                        if ( fabs(Default) <  100 ) printf("Warning : Parameter '%s' not found in the setup file, running with default value %.2lf\n", FieldName, Default);
+                        if ( fabs(Default) >= 100 ) printf("Warning : Parameter '%s' not found in the setup file, running with default value %2.2e\n", FieldName, Default);
                         rewind (fin);
                         free(param1);
                         free(param2);

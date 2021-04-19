@@ -456,6 +456,7 @@ int main( int nargs, char *args[] ) {
         
         // Define new time step
         EvaluateCourantCriterion( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
+        printf("Selected dt = %2.2e\n", model.dt*scaling.t);
         
         // Save initial dt
         model.dt0 = model.dt;
@@ -657,9 +658,17 @@ int main( int nargs, char *args[] ) {
                 CohesionFrictionDilationGrid( &mesh, &particles, materials, model, scaling );
                 
                 // Detect compressible cells
-                if (model.compressible == 1) DetectCompressibleCells ( &mesh, &model );
+                if ( model.compressible == 1 ) DetectCompressibleCells ( &mesh, &model );
                 
-                Interp_P2C ( particles,   particles.rho, &mesh, mesh.rho0_n,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
+//                Interp_P2C ( particles,   particles.rho, &mesh, mesh.rho0_n,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
+                
+                DoodzFP *rho0_s = DoodzCalloc(Nx*Nz, sizeof(DoodzFP));
+                Interp_P2N ( particles, particles.rho, &mesh, rho0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+
+                InterpVerticesToCentroidsDouble( mesh.rho0_n, rho0_s,  &mesh, &model );
+                DoodzFree( rho0_s );
+
+                
             }
             
             if (  model.IncrementalUpdateGrid == 1 ) {
@@ -672,7 +681,7 @@ int main( int nargs, char *args[] ) {
                 //CheckSym( mesh.p_in, 1.0, mesh.Nx-1, mesh.Nz-1, "p_in main", 0, 0  );
                 //CheckSym( mesh.p0_n, 1.0, mesh.Nx-1, mesh.Nz-1, "p0_n main", 0, 0  );
                 
-                // Make sure T is up to date for rheology evaluation and RHS of heat eqaution
+                // Make sure T is up to date for rheology evaluation and RHS of heat equation
                 ArrayEqualArray( mesh.T, mesh.T0_n, (mesh.Nx-1)*(mesh.Nz-1) );
                 
                 // So far no changes of phi
@@ -1278,14 +1287,12 @@ int main( int nargs, char *args[] ) {
             printf("*************************************\n");
             
             t_omp = (double)omp_get_wtime();
-            
             double dt_solve = model.dt;
-            EvaluateCourantCriterion( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
-            
             int    nsub=1.0, isub;
             double dt_sub;
+            EvaluateCourantCriterion( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
             
-            if ( model.dt<dt_solve ) {
+            if ( model.dt < dt_solve ) { // if dt advection is lower than dt used for thermo-mechanical solve then split dt
                 nsub   = ceil(dt_solve/model.dt);
                 dt_sub = dt_solve / nsub;
                 printf("dt advection = %2.2e --- dt_solve = %2.2e\n", model.dt*scaling.t, dt_solve*scaling.t );
@@ -1294,20 +1301,10 @@ int main( int nargs, char *args[] ) {
                 model.dt = dt_sub;
             }
             else {
-                nsub     = 1;
+                nsub     = 1; // if dt advection is larger than dt used for thermo-mechanical solve then, forget it, and set dt to dt_solve
                 model.dt = dt_solve;
             }
             
-            
-            //            Check_dt_for_advection( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
-            
-            //            double whole_dt = model.dt;
-            //            int nsub, isub;
-            //
-            //            if ( model.ispureshear_ale > 0 ) nsub = 1;
-            //            else nsub = 1;
-            //            model.dt = whole_dt/nsub;
-            //
             // Loop on substeps
             for (isub=0;isub<nsub;isub++) {
                 
