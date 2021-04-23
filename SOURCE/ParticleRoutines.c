@@ -1137,65 +1137,6 @@ void AddPartVert( markers *particles, grid mesh, int ic, int jc, int* ind_list, 
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-// // MD4.5
-//void PutPartInBox( markers *particles, grid *mesh, params model, surface topo, scale scaling ) {
-//    int i, j, ki, kj, np;
-//    double dx_particles, dz_particles;
-//
-//    //int add_noise, double noise, double* random_x, double* random_z
-//
-//    // Compute the spacing between particles:
-//    dx_particles = mesh->dx/(double)(particles->Nx_part+1);
-//    dz_particles = mesh->dz/(double)(particles->Nz_part+1);
-//
-//    printf("Initial particle spacing : dxm = %lf dzm = %lf m\n", dx_particles*scaling.L, dz_particles*scaling.L);
-//
-//    // Loop over loop over loop over loop (on s'en branle, c'est du C)
-//    np = 0;
-//    double h, a, b, coord_x, coord_z;
-//
-//    for (j=0; j<mesh->Nx-1; j++) {
-//        for (i=0; i<mesh->Nz-1; i++) {
-//
-//            if (model.free_surf == 1) {
-//                a = topo.a[j];
-//                b = topo.b[j];
-//            }
-//            for (kj=0; kj<particles->Nx_part; kj++) {
-//                for (ki=0; ki<particles->Nz_part; ki++) {
-//
-//                    if (model.free_surf == 1) {
-//
-//                        coord_x = mesh->xg_coord[j] + dx_particles*kj + dx_particles;
-//                        coord_z = mesh->zg_coord[i] + dz_particles*ki + dz_particles;
-//
-//                        h = b + a*coord_x;
-//
-//                        if ( coord_z < h ) {
-//                            particles->x[np]  = coord_x;
-//                            particles->z[np]  = coord_z;
-//                            np++;
-//                        }
-//                    }
-//
-//                    if (model.free_surf == 0) {
-//                        coord_x = mesh->xg_coord[j] + dx_particles*kj + dx_particles;
-//                        coord_z = mesh->zg_coord[i] + dz_particles*ki + dz_particles;
-//                        particles->x[np]  = coord_x;
-//                        particles->z[np]  = coord_z;
-//                        np++;
-//                    }
-//                }
-//            }
-//        }
-//    }
-//    particles->Nb_part = np;
-//    printf("Initial number of particles = %d\n", particles->Nb_part);
-//
-//}
-
-
-// MD6
 void PutPartInBox( markers *particles, grid *mesh, params model, surface topo, scale scaling ) {
 
     // Set the original particle layout throughout the mesh.
@@ -1205,96 +1146,81 @@ void PutPartInBox( markers *particles, grid *mesh, params model, surface topo, s
     int add_noise=model.initial_noise;
     double noise=0.1, random_x, random_z;
     
-    // Fix the seed for random generation
-    srand(69);
-    
     // Compute the spacing between particles:
-    if (model.initial_part == 0 ) {
-        printf("Initial marker locations following MDoodz4.5 style\n");
-        dx_particles = mesh->dx/(double)(particles->Nx_part + 1); // old
-        dz_particles = mesh->dz/(double)(particles->Nz_part + 1); // old
-    }
-    else {
-        printf("Initial marker locations following MDoodz6.0 style\n");
-        dx_particles = mesh->dx/(double)(particles->Nx_part + 0); // new
-        dz_particles = mesh->dz/(double)(particles->Nz_part + 0); // new
-    }
+    dx_particles = mesh->dx/(double)(particles->Nx_part); // new
+    dz_particles = mesh->dz/(double)(particles->Nz_part); // new
     printf("Initial particle spacing : dxm = %lf dzm = %lf m\n", dx_particles*scaling.L, dz_particles*scaling.L);
-
+    
     // Loop over loop over loop over loop (on s'en branle, c'est du C)
     np = 0;
     double h, a, b, coord_x, coord_z;
-
+    
     for (j=0; j<mesh->Nx-1; j++) {
         for (i=0; i<mesh->Nz-1; i++) {
-
+            
             if (model.free_surf == 1) {
                 a = topo.a[j];
                 b = topo.b[j];
             }
             for (kj=0; kj<particles->Nx_part; kj++) {
                 for (ki=0; ki<particles->Nz_part; ki++) {
-
+                    
                     if (model.free_surf == 1) {
-
-                        if (model.initial_part == 0 ) {
-                            coord_x = mesh->xg_coord[j] + dx_particles*kj + dx_particles;
-                            coord_z = mesh->zg_coord[i] + dz_particles*ki + dz_particles;
-                            
-                        }
-                        else {
-                            coord_x = mesh->xg_coord[j] + dx_particles*(kj+0.5);
-                            coord_z = mesh->zg_coord[i] + dz_particles*(ki+0.5);
-                        }
-
+                        
+//                        coord_x = mesh->xg_coord[j] + dx_particles*kj + dx_particles;
+//                        coord_z = mesh->zg_coord[i] + dz_particles*ki + dz_particles;
+                        
+                        coord_x = mesh->xg_coord[j] + dx_particles*(kj+0.5);
+                        coord_z = mesh->zg_coord[i] + dz_particles*(ki+0.5);
+                        
                         h = b + a*coord_x;
-
+                        
                         if ( coord_z < h ) {
                             particles->x[np]  = coord_x;
                             particles->z[np]  = coord_z;
-
+                            
                             if ( add_noise == 1 ) {
-
+                                
                                 random_x = (double)rand()/(double)RAND_MAX;
                                 random_z = (double)rand()/(double)RAND_MAX;
                                 random_x = ((2*random_x)-1)*dx_particles*noise;
                                 random_z = ((2*random_z)-1)*dz_particles*noise;
-
+                                
                                 particles->x[np]+= random_x;
                                 particles->z[np]+= random_z;
-
+                                
                                 isoutPart( particles, &model, np );
                             }
-
+            
                             np++;
                         }
                     }
-
+                    
                     if (model.free_surf == 0) {
 //                        coord_x = mesh->xg_coord[j] + dx_particles*kj + dx_particles;
 //                        coord_z = mesh->zg_coord[i] + dz_particles*ki + dz_particles;
-
+                        
                         coord_x = mesh->xg_coord[j] + dx_particles*(kj+0.5);
                         coord_z = mesh->zg_coord[i] + dz_particles*(ki+0.5);
                         particles->x[np]  = coord_x;
                         particles->z[np]  = coord_z;
-
+                        
                         if ( add_noise == 1 ) {
-
+                            
                             random_x = (double)rand()/(double)RAND_MAX;
                             random_z = (double)rand()/(double)RAND_MAX;
                             random_x = ((2*random_x)-1)*dx_particles*noise;
                             random_z = ((2*random_z)-1)*dz_particles*noise;
-
+                            
                             particles->x[np]+= random_x;
                             particles->z[np]+= random_z;
-
+                            
                             isoutPart( particles, &model, np );
 
 
-
+                            
                         }
-
+                        
                         np++;
                     }
                 }
@@ -3211,7 +3137,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
     int nthreads=1, Nx=mesh->Nx, Nz=mesh->Nz;
     int Nb_part=particles->Nb_part;
     int Ncx=Nx-1, Ncz=Nz-1, nxl;
-    double dx = model.dx, dz = model.dz, distance;
+    double dx = model.dx, dz = model.dz, distance, weight, dxm, dzm;
     int finite_strain = model.fstrain;
     int rec_T_P_x_z   = model.rec_T_P_x_z;
 
@@ -3231,6 +3157,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
     int nx[nthreads], ncx[nthreads], nx_e[nthreads], ncx_e[nthreads], nz_e = Nz+2, ncz_e = Ncz+2;
     int num_new[nthreads], id_new[nthreads], npart[nthreads], npreuse[nthreads], nnewp[nthreads], npartr[nthreads], nb_new[nthreads];
     double **xg, **xc, **xg_e, **xc_e, *zg_e, *zc_e, ***phv, ***phc;
+    double **npvolc, **npvolv;
     int **pidx, **npc, **mpc, **npv, **ipreuse, ***ipcell, **npcell, **ind_list, **pidxr;
     int neighs=0, oo=0;
     double **newx, **newz;
@@ -3264,6 +3191,8 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
     pidx = DoodzCalloc( nthreads, sizeof(int*));
     pidxr= DoodzCalloc( nthreads, sizeof(int*));
     npc  = DoodzCalloc( nthreads, sizeof(int*));
+    npvolv  = DoodzCalloc( nthreads, sizeof(double*));
+    npvolc  = DoodzCalloc( nthreads, sizeof(double*));
     npv  = DoodzCalloc( nthreads, sizeof(int*));
     xg   = DoodzCalloc( nthreads, sizeof(double*));
     xc   = DoodzCalloc( nthreads, sizeof(double*));
@@ -3290,6 +3219,8 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
 
         npv[ith]    = DoodzCalloc(     nx[ith]*Nz, sizeof(int));
         npc[ith]    = DoodzCalloc( (ncx[ith])*Ncz, sizeof(int));
+        npvolv[ith]    = DoodzCalloc(     nx[ith]*Nz, sizeof(double));
+        npvolc[ith]    = DoodzCalloc( (ncx[ith])*Ncz, sizeof(double));
         phv[ith]    = DoodzCalloc( model.Nb_phases, sizeof(double*));
         phc[ith]    = DoodzCalloc( model.Nb_phases, sizeof(double*));
 
@@ -3304,7 +3235,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
     }
 
     // start parallel section
-#pragma omp parallel private (ith, k, ip, distance, ic, jc, kc, kd, l, neighs, oo, nb, offc, start, flag1, nxl) shared (ncx_e, ncz_e, nx_e, nz_e, xg, xg_e, xc, xc_e, dx, dz, nx, ncx, Nb_part, npart, particles, nthreads, pidx, phv, phc, npv, npc, npreuse, mesh, ind_list, nnewp, newi, newx, newz, pidxr, npartr, nb_new, id_new, num_new, topo, topo_ini) firstprivate(Nx, Nz, Ncx, Ncz, model, sed_phase )
+#pragma omp parallel private (ith, k, ip, distance, weight, dxm, dzm, ic, jc, kc, kd, l, neighs, oo, nb, offc, start, flag1, nxl) shared (ncx_e, ncz_e, nx_e, nz_e, xg, xg_e, xc, xc_e, dx, dz, nx, ncx, Nb_part, npart, particles, nthreads, pidx, phv, phc, npv, npc, npvolv, npvolc, npreuse, mesh, ind_list, nnewp, newi, newx, newz, pidxr, npartr, nb_new, id_new, num_new, topo, topo_ini) firstprivate(Nx, Nz, Ncx, Ncz, model, sed_phase )
             //for (ith=0; ith<nthreads; ith++)
     {
         ith = omp_get_thread_num();
@@ -3403,10 +3334,19 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
                 distance = (particles->z[k]-mesh->zg_coord[0]);
                 jc       = ceil((distance/dz)+0.5) -1;
 
+                //
+//                printf("particles->x[k] = %2.2e ; (PT CENTRE X) = %2.2e; gauche  = %2.2e; xg droite = %2.2e\n", particles->x[k],xg[ith][ic],xg[ith][ic]-dx/2.0, xg[ith][ic]+dx/2.0 );
+//                printf("particles->z[k] = %2.2e ; (PT CENTRE Z) = %2.2e; dessous = %2.2e; dessus    = %2.2e\n", particles->z[k],mesh->zg_coord[jc],mesh->zg_coord[jc]-dz/2.0, mesh->zg_coord[jc]+dz/2.0 );
+                
+                dxm = 2.0*fabs( xg[ith][ic] - particles->x[k]);
+                dzm = 2.0*fabs( mesh->zg_coord[jc] - particles->z[k]);
+                weight = (1.0-dxm/dx)*(1.0-dzm/dz);
+                
                 // If particles are around the nodes: count them
                 if ( particles -> phase[k]>=0 ) {
                     npv[ith][ic + jc * (nx[ith])]++;
-                    phv[ith][particles->phase[k]][ic + jc * (nx[ith])] ++;
+                    npvolv[ith][ic + jc * (nx[ith])]+=weight;
+                    phv[ith][particles->phase[k]][ic + jc * (nx[ith])] +=weight;
                 }
 
                 // -------- Check CELLS ---------- //
@@ -3423,10 +3363,15 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
                     if (jc<0)    jc = 0;
                     if (jc>Nz-2) jc = Nz-2;
 
+                    dxm = 2.0*fabs( xc[ith][ic] - particles->x[k]);
+                    dzm = 2.0*fabs( mesh->zc_coord[jc] - particles->z[k]);
+                    weight = (1.0-dxm/dx)*(1.0-dzm/dz);
+                    
                     // If particles are around the nodes: count them
                     if ( particles -> phase[k]>=0 ) {
                         npc[ith][ic + jc * (nx[ith]-1)]++;
-                        phc[ith][particles->phase[k]][ic + jc * (nx[ith]-1)]++;
+                        npvolc[ith][ic + jc * (nx[ith]-1)]+=weight;
+                        phc[ith][particles->phase[k]][ic + jc * (nx[ith]-1)]+=weight;
                     }
                 }
             }
@@ -3447,12 +3392,14 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
 
             // Calculate phase proportions vertices
             for (ip=0; ip<nx[ith]*Nz; ip++) {
-                if (npv[ith][ip]>0) phv[ith][k][ip] /= npv[ith][ip];
+                //if (npv[ith][ip]>0) phv[ith][k][ip] /= npv[ith][ip];
+                if (npv[ith][ip]>0) phv[ith][k][ip] /= npvolv[ith][ip];
             }
 
             // Calculate phase proportions centroids
             for (ip=0; ip<ncx[ith]*Ncz; ip++) {
-                if (npc[ith][ip]>0) phc[ith][k][ip] /= npc[ith][ip];
+                //if (npc[ith][ip]>0) phc[ith][k][ip] /= npc[ith][ip];
+                if (npc[ith][ip]>0) phc[ith][k][ip] /= npvolc[ith][ip];
             }
 
             // Fill global arrays - centroids
@@ -3983,6 +3930,8 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
         DoodzFree( pidxr[ith]);
         DoodzFree( npv[ith]);
         DoodzFree( npc[ith]);
+        DoodzFree( npvolv[ith]);
+        DoodzFree( npvolc[ith]);
         DoodzFree( mpc[ith]);
         if (RESEED==1) DoodzFree( ipreuse[ith]);
         for (k=0; k<model.Nb_phases; k++) {
@@ -4014,6 +3963,8 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
     DoodzFree( pidxr );
     DoodzFree( npv );
     DoodzFree( npc );
+    DoodzFree( npvolv );
+    DoodzFree( npvolc );
     DoodzFree( mpc );
     DoodzFree( phv );
     DoodzFree( phc );

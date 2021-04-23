@@ -18,7 +18,7 @@ T   = 700
 /**** SPACE-TIME ****/
 Nx      = 201
 Nz      = 201
-Nt      = 1300
+Nt      = 2000
 xmin    =-1.0
 zmin    =-1.0
 xmax    = 1.0
@@ -42,8 +42,8 @@ safe_dt_div       = 2.0
 nstagmax          = 10
 IncrementalUpdateGrid = 1
 StressUpdate      = 0
-ConservInterp     = 1
-Reseed            = 0
+ConservInterp     = 0
+Reseed            = 1
 
 /**** SWITCHES ****/
 compressible    = 1
