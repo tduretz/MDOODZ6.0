@@ -444,10 +444,30 @@ ConservInterp = 1
 \begin{figure}[ht!]
 \centerline{\includegraphics[height=3.0in]{./Figures/LithoScale_MDOODZ.png}}
 \caption{Strain rate and stress after 200 time steps with classical and conservative velocity interpolation schemes.}
-\label{LithoScale_MDOODZ.png}
+\label{LithoScale_MDOODZ}
 \end{figure}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{The rifting model of Chenin et al. (2020)}
 
+No viscoplasticity activated - therefore no global convergence to be expected.
+
+Setup file:
+\begin{verbatim} 
+RiftingPaulineMD6.txt
+\end{verbatim}
+
+\begin{figure}[ht!]
+\centerline{\includegraphics[height=3.0in]{./Figures/RiftingPauline_MDOODZ1.png}}
+\caption{Strain rate and stress after 100 time steps.}
+\label{RiftingPauline_MDOODZ1}
+\end{figure}
+
+\begin{figure}[ht!]
+\centerline{\includegraphics[height=3.0in]{./Figures/RiftingPauline_MDOODZ2.png}}
+\caption{Topography and surface velocity after 100 time steps.}
+\label{RiftingPauline_MDOODZ2}
+\end{figure}
 
 %---------------------------------------------------------------------------------------------------------------%
 \addchap{Matlab Examples}

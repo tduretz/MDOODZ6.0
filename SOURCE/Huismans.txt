@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00300
+istep = 00080
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -24,7 +24,7 @@ zmin    = -120.000000e3
 xmax    =  300.000000e3
 zmax    =  10.000000e3
 dt      = 5e11
-dt_constant = 1
+dt_constant = 0
 Courant = 0.3
 penalty = 1e5
 lsolver = 0
@@ -64,8 +64,8 @@ isPl_soft       = 1
 SmoothSoftening = 0
 ConservInterp   = 1
 initial_noise   = 1
-Reseed = 0
-IncrementalUpdateGrid = 0
+Reseed = 1
+IncrementalUpdateGrid = 1
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = -1e-15
