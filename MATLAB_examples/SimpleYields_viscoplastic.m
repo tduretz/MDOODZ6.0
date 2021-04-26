@@ -1,0 +1,123 @@
+clear
+
+% Drucker-Prager for shear
+Cs       = 3e7;
+sin_phis = sin(30*pi/180);
+sin_psis = sin(0.0*pi/180);
+cos_phis = cos(30*pi/180);
+
+% Drucker-Prager like formulation for tension
+Pt       = -25.0e6;
+sin_phit = -Cs*cos_phis/Pt;
+
+% Other rheological and numerical parameters
+eta_ve  = 1e20;
+K       = 5e10;
+dt      = 1e11;
+eta_vp  = 1e10;
+
+% Axis (for plots)
+pmin = -3e8;
+pmax = 1e9;
+np   = 1000;
+dp   = (pmax-pmin)/(np-1);
+p    = pmin:dp:pmax;
+qmin = 0;
+qmax = 2e9;
+nq   = 1000;
+dq   = (qmax-qmin)/(nq-1);
+q    = qmin:dq:qmax;
+
+
+% Trial pressures and deviatoric stresses
+P_trial_vec = [2e8    -3.8e8  -0.1e7 -1e8 0.1e7];
+T_trial_vec = [4.5e8   0.5e6   2.5e8 1e8  2.5e8];
+
+P_trial_vec = [    -1e8 ];
+T_trial_vec = [     1e8  ];
+
+for i=1:1%length(P_trial_vec)
+    
+    % The aim is to compute sin_psi in dilation suuch that returned stress are
+    % both in the tensile regime (Tii<=C) and positive (Tii>0
+    
+    P_trial = P_trial_vec(i);
+    T_trial = T_trial_vec(i);
+    
+    % First detect wether shear (Ts) or tensile (Tt) yield is active
+    Ts_trial   = P_trial*sin_phis + cos_phis*Cs; % trial: no vicoplasticity
+    Tt_trial   = P_trial*sin_phit + cos_phis*Cs;
+    
+    % Select appropriate yield and potential parameters
+    if Tt_trial>Ts_trial % If shear
+        sin_phi = sin_phis;
+        sin_psi = sin_psis;
+        cos_phi = cos_phis;
+    else  % If tensile
+        sin_phi = sin_phit;
+        cos_phi = cos_phis;
+        
+        % Equation de la droite
+        a = (T_trial)/(P_trial); % Ordonn?e ? l'orgine: b = 0
+        
+        % Resolution num?rique (passe moin ton num?ro, Eric)
+        M      = [1 -a; 1 -sin_phi];
+        r      = [0; cos_phi*Cs];
+        x      = M\r;
+        T_corr = x(1);
+        P_corr = x(2);
+
+        % Resolution analytique
+        P_corr0 = -(Cs.*cos_phi) ./ (-a+sin_phi);
+        T_corr0 = a*P_corr
+
+        
+        % solve for psi from T-corr
+        Tii = T_trial;
+        P   = P_trial;
+        C   = Cs;
+        T_corr1 = T_corr;
+        Pc      = P_corr
+        sin_psi1 = (C.*cos_phi.*eta_ve + C.*cos_phi.*eta_vp + P.*eta_ve.*sin_phi + P.*eta_vp.*sin_phi - T_corr1.*eta_ve - T_corr1.*eta_vp)./(K.*dt.*sin_phi.*(T_corr1 - Tii));
+        sin_psi2 = (P.*eta_ve + P.*eta_vp - Pc.*eta_ve - Pc.*eta_vp)./(K.*dt.*(C.*cos_phi + Pc.*sin_phi - Tii));
+        
+%         sin_psi1 = (C.*cos_phi.*eta_ve + P.*eta_ve.*sin_phi - T_corr1.*eta_ve - T_corr1.*eta_vp + Tii.*eta_vp)./(K.*dt.*sin_phi.*(T_corr1 - Tii))
+% sin_psi2 = (P.*eta_ve + P.*eta_vp - Pc.*eta_ve - Pc.*eta_vp)./(K.*dt.*(C.*cos_phi + Pc.*sin_phi - Tii))
+
+        sin_psi = sin_psi1;
+    end
+    
+
+    % Corrected
+    f_trial = T_trial - P_trial*sin_phi - cos_phi*Cs;
+    gdot    = f_trial / (eta_ve + eta_vp + K*dt*sin_phi*sin_psi);
+    T_corr  = T_trial - eta_ve*gdot ;
+    P_corr  = P_trial + K*dt*gdot*sin_psi
+    f_corr  = T_corr - P_corr*sin_phi - cos_phi*Cs - eta_vp*gdot
+    
+    % Effective stress for shear and tension (for plots) 
+    Ts   = p*sin_phis + cos_phis*Cs + eta_vp*gdot;
+    Tt   = p*sin_phit + cos_phis*Cs + eta_vp*gdot;
+    
+    if i==1
+        figure(1), clf
+        hold on
+        plot(p/1e6, Ts/1e6, '-r')
+        plot(p/1e6, Tt/1e6, '-b')
+        plot(p/1e6*0, q/1e6, '-k')
+        plot(p/1e6, q/1e6*0, '-k')
+        plot([P_trial P_corr]/1e6, [T_trial T_corr]/1e6, 'o-')
+%         plot([P_trial P_corr0]/1e6, [T_trial T_corr0]/1e6, '*-')
+    else
+        plot([P_trial P_corr]/1e6, [T_trial T_corr]/1e6, 'o-')
+    end
+    axis equal
+    
+end
+axis equal
+axis([-4e2 5e2 0 5e2])
+l=legend('Shear', 'Tension', 'location', 'northwest');
+set(l, 'box', 'off', 'interpreter', 'Latex', 'Fontsize', 18)
+xlabel('$P$ [MPa]', 'interpreter', 'Latex', 'Fontsize', 18)
+ylabel('$\tau_{II}$ [MPa]', 'interpreter', 'Latex', 'Fontsize', 18)
+set(gca, 'Fontsize', 18,'TickLabelInterpreter','latex')

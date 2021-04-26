@@ -16,7 +16,7 @@ path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Shear_periodic_VEVP/'
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/ShearInclusionFiniteStrain/'
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/ShearInclusionAnisoFactor10/'
 path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/ShearInclusionFiniteStrain/'
-path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
+path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/'
 % path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/RUNS/SubInit_Cart_MR/'
 % path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/RUNS/Pauline_600x800_6its/'
 % path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/RUNS/Pauline_200x300_Eulerian_markers/'
@@ -27,16 +27,23 @@ cd(path)
 % File
 istart = 00;
 ijump  = 10;
-iend   = 0400;
+iend   = 800;
 
 %--------------------------------------------------
 % what do you want to plot:
 %--------------------------------------------------
-stress_evol     = 0;
-director_vector = 1;
-fstrain         = 1;
+stress_evol     = 1;
+director_vector = 0;
+fstrain         = 0;
 
+data_Stefan     = 1;
 
+if data_Stefan==1
+    Stefan = load('../MATLAB_examples/SimpleScripts/StefanFiniteStrainAnisotropyTest')
+    Stefan.Tauxy = [Stefan.Tauxy(1) Stefan.Tauxy];
+    Stefan.Nx    = [Stefan.Nx(1) Stefan.Nx];
+    Stefan.Ny    = [Stefan.Ny(1) Stefan.Ny];
+end
 
 
 % Visualisation options
@@ -86,12 +93,12 @@ minSii = 1e6;
 maxSii = 400e6;
 
 % Size of the window
-crop       = 0;
+crop       = 1;
 
-lim.xmin   = -175;
-lim.xmax   =  175;
-lim.zmin   = -175;
-lim.zmax   =  175;
+lim.xmin   = -0.5;
+lim.xmax   =  0.5;
+lim.zmin   = -0.5;
+lim.zmax   =  0.5;
 
 % lim.xmin   = -75;
 % lim.xmax   =  75;
@@ -499,6 +506,9 @@ for istep=istart:ijump:iend
         %--------------------------------------------------
         if ( stress_evol == 1 )
             
+            ndx = hdf5read(filename,'/Centers/nx'); ndx = cast(ndx, 'double'); ndx = reshape(ndx,params(4)-1,params(5)-1)';
+            ndz = hdf5read(filename,'/Centers/nz'); ndz = cast(ndz, 'double'); ndz = reshape(ndz,params(4)-1,params(5)-1)';
+            
             Cent.sxxd  = hdf5read(filename,'/Centers/sxxd'); Cent.sxxd = cast(Cent.sxxd, 'double');
 %             Cent.szzd  = hdf5read(filename,'/Centers/szzd'); Cent.szzd = cast(Cent.szzd, 'double');
             Vert.sxz   = hdf5read(filename,'/Vertices/sxz'); Vert.sxz  = cast(Vert.sxz, 'double');
@@ -529,16 +539,42 @@ for istep=istart:ijump:iend
             if istep == 0
                 stress = 0;
             end
+            %%%%%%%%%%%%%%%%%%%%%
             figure(90)
-            hold on
-            %         plot(strain, (stress), '.')
-%             s_anal = 2*1e-14*1e21*(1-exp(-time*1e10/1e21));
-            %         plot(time/1e3/3600/365/24, (stress), '.', time/1e3/3600/365/24, (s_anal), 'or')
-            plot(time/1e3/3600/365/24, (stress), 'k.')
+            %%% Stress
+            subplot(131), hold on
+%             plot(time, mean(sxxd(:)), 'b.')
+            plot(time, mean(sxzc(:)), 'ok')
+            if istep==iend
+                xlabel('time'), title('Txy')
+                set(gca, 'FontSize', 16)
+            end
+            if data_Stefan == 1
+                plot(time, Stefan.Tauxy(istep+1), '*r')
+            end
+            %%% Director
+            subplot(132), hold on
+            plot(time, mean(ndx(:)), 'ok')
+            if istep==iend
+                xlabel('time'), title('Nx')
+                set(gca, 'FontSize', 16)
+            end
+            if data_Stefan == 1
+                plot(time, Stefan.Nx(istep+1), '*r')
+            end
+            subplot(133), hold on
+            plot(time, mean(ndz(:)), 'ok')
+            if data_Stefan == 1
+                plot(time, Stefan.Ny(istep+1), '*r')
+            end
+             if istep==iend
+                xlabel('time'), title('Nz')
+                set(gca, 'FontSize', 16)
+                l=legend('MD6.0', 'Stefan 0D');
+                set(l, 'box','off');
+            end
+
             
-            figure(91), hold on
-            plot(time, mean(sxxd(:)), 'b.')
-            plot(time, mean(sxzc(:)), 'r+')
             eiimaxvec(icount) = max(eII(:));
             short(icount)  =  strain;
             siivec(icount) = sum(sII(:).*(dx*dz))/vol;

@@ -469,6 +469,27 @@ RiftingPaulineMD6.txt
 \label{RiftingPauline_MDOODZ2}
 \end{figure}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Basic computation with anisotropic viscosity, director vector and large strain}
+
+Evolution of stress while the orientation of the director vector rotates under simple shear.
+
+The visualisation was carried out using the specific script:
+\begin{verbatim} 
+ReadHDF5_Aniso.m
+\end{verbatim}
+
+This switch activates the dependance of the anisotropy factor on the finite strain.
+\begin{verbatim} 
+aniso_fstrain = 1
+\end{verbatim}
+
+\begin{figure}[ht!]
+\centerline{\includegraphics[height=3.0in]{./Figures/FiniteStrainAnisotropy_MDOODZ.png}}
+\caption{Homogeneous simple shear, 800 steps. Shear stress and director vector components. MD6.0 versus Stefan's 0D script.}
+\label{FiniteStrainAnisotropy_MDOODZ}
+\end{figure}
+
 %---------------------------------------------------------------------------------------------------------------%
 \addchap{Matlab Examples}
 \section{Finite Strain ellipsoid and tensor and vector rotation}

@@ -32,7 +32,6 @@ penalty      = 1e5
 diag_scaling = 1
 
 /**** SWITCHES ****/
-aniso           = 1
 ismechanical    = 1
 dt_constant     = 1
 RK              = 4
@@ -55,7 +54,8 @@ shear_style     = 1
 fstrain         = 1
 
 /**** ANISOTROPY ****/
-aniso_fstrain        = 1
+aniso           = 1
+aniso_fstrain   = 0
  
 /**** SETUP DEPENDANT ****/
 EpsBG           = 0.5 /Background strain rate

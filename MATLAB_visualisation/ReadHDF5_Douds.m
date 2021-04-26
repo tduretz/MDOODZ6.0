@@ -10,14 +10,14 @@ DEBUG = 0;
 
 MarkSize=1e0 ;
 
-path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Compression/'
-path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Shear_periodic_VEVP/'
-path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/'
-path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/Huismans_Reg2e20_noise/'
-path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/Huismans_OS2e5_n1_5/'
-path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/Huismans_Reg8e19_noise_confirm/'
+path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Compression/';
+path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/Shear_periodic_VEVP/';
+path = '/Users/tduretz/REPO_GIT/MDOODZ6.0/SOURCE/';
+path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/Huismans_Reg2e20_noise/';
+path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/Huismans_OS2e5_n1_5/';
+path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/Huismans_Reg8e19_noise_NEW/';
 
-path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE//'
+path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE//';
 
 
 mdoodz6       = 1;
@@ -37,9 +37,9 @@ mdoodz6       = 1;
 cd(path)
 
 % Files
-istart = 00;
-ijump  = 50;
-iend   = 1100;
+istart = 100;
+ijump  = 1;
+iend   = 100;
 
 %--------------------------------------------------
 % what do you want to plot:
@@ -105,7 +105,7 @@ Ftsz          = 20;
 file_suffix   = '';
 ConvTest      = 0;
 show          = 0;
-Ccontours     = 0;
+Ccontours     = 1;
 step          = 10;
 MaskAir       = 1;
 ColorFabio    = 1;
@@ -140,11 +140,11 @@ maxEta = 25;
 mindiv  =-0.25e-14;
 maxdiv  = 0.25e-14;
 
-minEii = -14;
-maxEii = -12;
+minEii = -17;
+maxEii = -13;
 
-% minSii = 1e6;
-% maxSii = 400e6;
+minSii = 1e6;
+maxSii = 400e6;
 
 % Size of the window
 crop       = 0;
@@ -3429,13 +3429,14 @@ for istep=istart:ijump:iend
                 
                 subplot(231)
                 pcolor(x2D/1e3,t2D/My,topo2D/1e3-topo_ref), colorbar, shading flat;
-%                 caxis([-3 2])
+                caxis([-3 2])
                 xlabel('x [km]'), ylabel('t [My]')
                 title('Topography [km]')
                 
                 subplot(232)
                 pcolor(x2D/1e3,t2D/My,vx2D*y*1e3), colorbar, shading flat;
-%                 caxis([-10 10])
+                caxis([-10 10])
+%  caxis([-0.01 0.01])
                 xlabel('x [km]'), ylabel('t [My]')
                 title('Surface velocity x [mm/y]')
                 
@@ -3443,7 +3444,8 @@ for istep=istart:ijump:iend
                 pcolor(x2D/1e3,t2D/My,vz2D*y*1e3), colorbar, shading flat;
                 hold on 
 %                 contour(x2D/1e3,t2D/My,topo2D/1e3-topo_ref, [0 0], 'k')
-%                 caxis([-2.5 2.5])
+                caxis([-2.5 2.5])
+%  caxis([-0.01 0.01])
                 xlabel('x [km]'), ylabel('t [My]')
                 title('Surface velocity z [mm/y]')
                 
@@ -5398,7 +5400,7 @@ end
 % end
 
 % phases = [-1; 3; 4; 6]
-phases = [-1; 0; 3; 4; 6]
+phases = [-1; 0; 3; 4; 6];
 for j = 1:length(phases)%max(VizGrid.ph(:))-1
     
         i = phases(j);
