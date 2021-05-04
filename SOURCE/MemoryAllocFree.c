@@ -344,6 +344,9 @@ void GridAlloc ( grid* mesh, params* model ) {
     NzVx     = Nz + 1;
 
     printf("Allocation of grid arrays !\n");
+    
+    mesh->FreeSurfW_s = (double*) DoodzCalloc(  mesh->Nx   * mesh->Nz    ,sizeof(double));
+    mesh->FreeSurfW_n = (double*) DoodzCalloc( (mesh->Nx-1)*(mesh->Nz-1) ,sizeof(double));
 
     mesh->xg_coord  = (double*) DoodzCalloc( mesh->Nx ,sizeof(double));
     mesh->zg_coord  = (double*) DoodzCalloc( mesh->Nz ,sizeof(double));
@@ -663,6 +666,9 @@ void GridFree( grid* mesh, params* model ) {
     // Free all grid-based arrays
 
     int k;
+    
+    DoodzFree(mesh->FreeSurfW_s);
+    DoodzFree(mesh->FreeSurfW_n);
 
     DoodzFree(mesh->roger_x);
     DoodzFree(mesh->roger_z);

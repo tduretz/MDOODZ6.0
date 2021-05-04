@@ -1266,15 +1266,18 @@ void SurfaceDensityCorrection( grid *mesh, params model, surface topo, scale sca
     for( j=0; j<ncz; j++ ) {
         for( i=0; i<ncx; i++ ) {
             c1 = i + j*(ncx);
-
+            mesh->FreeSurfW_n[c1] = 1.0;
+            
             if (mesh->BCp.type[c1] == -1 && mesh->BCp.type[c1+ncx] == 31 ) {
                 h  = topo.b[i] + topo.a[i]*mesh->xc_coord[i];
                 h0               = fabs(h - mesh->zc_coord[j]);
                 mesh->rho_n[c1]  *= h0/dz;
                 mesh->rho0_n[c1] *= h0/dz;
+                mesh->FreeSurfW_n[c1] = h0/dz;
             }
             if ( mesh->BCp.type[c1] == 30 || mesh->BCp.type[c1] == 31 ) {
-                mesh->rho_n[c1]     = 1.0/scaling.rho;
+                mesh->rho_n[c1]       = 1.0/scaling.rho;
+                mesh->FreeSurfW_n[c1] = 0.0;
             }
         }
     }
@@ -1284,6 +1287,7 @@ void SurfaceDensityCorrection( grid *mesh, params model, surface topo, scale sca
         for( i=0; i<nx; i++ ) {
 
             c1 = i + j*(nx);
+            mesh->FreeSurfW_s[c1] = 1.0;
 
             if (mesh->BCg.type[c1] == -1 && mesh->BCg.type[c1+nx] == 30) {
                 if (i==0)    h  = topo.b[i] + topo.a[i]*mesh->xc_coord[i];
@@ -1294,9 +1298,11 @@ void SurfaceDensityCorrection( grid *mesh, params model, surface topo, scale sca
                 }
                 h0               = fabs(h - mesh->zg_coord[j]);
                 mesh->rho_s[c1] *= h0/dz;
+                mesh->FreeSurfW_s[c1] = h0/dz;
             }
             if ( mesh->BCg.type[c1] == 30 ) {
                 mesh->rho_s[c1]     = 1.0/scaling.rho;
+                mesh->FreeSurfW_s[c1] = 0.0;
             }
         }
     }
@@ -1362,21 +1368,40 @@ void DiffuseAlongTopography( grid *mesh, params model, scale scaling, double *ar
     double diff = model.surf_diff;
     double dt   = 0.4*dx*dx/diff, time=0.0, dtr;
     int nstep   = (int)(diff_time/dt + 1);
-    double correct[size], s, e;
+    double correct[size], s, e, ev[size];
     double base_level = model.surf_baselev;//0*array[0]; // left side
     double sedi_rate  = model.surf_sedirate;
-    double Wvalley = model.surf_Winc;
-    double Vinc    = -model.surf_Vinc;
+    double Wvalley    = model.surf_Winc;
+    double Vinc       = -model.surf_Vinc, Vinc_num;
     
-//    nstep = 100;
-    printf("****** Surface processes ******", nstep);
+    printf("****** Surface processes ******");
     printf("Going to make %03d substeps for surface processes\n", nstep);
     printf("W valley   = %2.2e m\n", Wvalley*scaling.L);
     printf("Vincision  = %2.2e m.s-1\n", Vinc*scaling.V);
     printf("Kero       = %2.2e m2.s-1\n", diff*(pow(scaling.L,2.0)/scaling.t));
-    printf("Sedimentation rate: %2.2e m/y with base level: %2.2e m\n", model.surf_sedirate*scaling.V*3600.0*365.0*24.0, base_level*scaling.L);
+    printf("Sed. rate  = %2.2e m/y with base level: %2.2e m\n", model.surf_sedirate*scaling.V*3600.0*365.0*24.0, base_level*scaling.L);
 
     if ( model.surf_processes == 1 || model.surf_processes == 3 ) {
+        
+        for (i=1; i<size-1; i++) {
+            ev[i] = Vinc*exp(-pow(mesh->xg_coord[i],2) / pow(Wvalley/2.0,2) );
+        }
+        
+        // Compute volume of cells in the valley region
+        int ncell = 0;
+        for (i=1; i<size-1; i++) {
+            if (fabs(mesh->xg_coord[i]) < 0.5*Wvalley){
+                ncell = ncell + 1;
+            }
+        }
+
+        // Recompute erosion rate to satisfy mass
+        Vinc_num = Wvalley*dt*Vinc / (ncell*dx*dt);
+
+        printf("We currently have %0d cell(s) within the valley region\n", ncell);
+        printf("Real surface of eroded material should be: %2.2e\n", Wvalley*dt*Vinc);
+        printf("Actual surface of eroded material is     : %2.2e\n", ncell*dx*dt*Vinc);
+        printf("Corrected surface of eroded material is  : %2.2e\n", ncell*dx*dt*Vinc_num);
         
         // Calculate timestep for diffusion sub-steps
         if (dt >diff_time) dtr = diff_time;
@@ -1384,14 +1409,7 @@ void DiffuseAlongTopography( grid *mesh, params model, scale scaling, double *ar
         
         // Sub-time loop
         for (it=0; it<nstep; it++) {
-            
-//            for (i=1; i<size-1; i++) {
-//                // Activate the incision
-//                if (fabs(mesh->xg_coord[i]) <= 0.5*Wvalley){
-//                    array[i] -= dtr*Vinc;
-//                }
-//
-//            }
+                        
             for (i=1; i<size-1; i++) {
                 correct[i]  = 0.5*dtr/dx/dx*diff*(array[i-1]+array[i+1]-2.0*array[i]);
             }
@@ -1403,20 +1421,19 @@ void DiffuseAlongTopography( grid *mesh, params model, scale scaling, double *ar
                 s = 0.0;
                 e = 0.0;
                 
-                if (fabs(mesh->xg_coord[i]) <= 0.5*Wvalley){
-//                    printf("EROSION");
-                    e = dtr*Vinc;
+                if (fabs(mesh->xg_coord[i]) < 0.5*Wvalley){
+                    printf("EROSION at x = %2.2e\n", mesh->xg_coord[i]);
+                    e = dtr*Vinc_num;
                 }
                 
                 if (array[i]<base_level) s = sedi_rate*dtr;
-                array[i] = array_ini[i] + correct[i] + s + e ;
+                array[i] = array_ini[i] + correct[i] + s + e;//+ ev[i]*dt;// + ev[i] ;
                 
             }
             time += dtr;
         }
         printf("Do %d topographic diffusion steps - whole time: %2.2e s - final time: %2.2e s - explicit dt: %2.2e s - diffusivity: %2.2e m^2/s\n", nstep, diff_time*scaling.t, time*scaling.t, dt*scaling.t, diff*pow(scaling.L,2)/scaling.t );
     }
-    
     
     // Instantaneous basin filling
     if (model.surf_processes == 2) {

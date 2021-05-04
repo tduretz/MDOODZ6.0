@@ -1,5 +1,5 @@
 clear
-close all
+% close all
 clc
 
 path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/'
@@ -8,15 +8,15 @@ mdoodz6       = 1;
 cd(path)
 
 % File numbers
-istart = 50;
-ijump  = 10;
-iend   = 50;
+istart = 22;
+ijump  = 1;
+iend   = 22;
 
 iter   = 0;
 
 % Visualisation options
 MarkSize      = 5e0;
-printfig      = 1;
+printfig      = 0;
 print2screen  = 1;
  
 format        = '-dpng';
@@ -24,7 +24,7 @@ res           = '-r200';
 color_map     = 'piston0';
 file_suffix   = '';
 
-particles = 1;
+particles = 0;
 topo      = 1;
 vel_plot  = 1;
 tags      = 1;
@@ -47,10 +47,10 @@ maxTopo = 3e3;
 % Size of the window
 crop   = 1;
 
-xmin   =  -1e4;
-xmax   =  1e4;
+xmin   =  -4e3;
+xmax   =  4e3;
 zmin   = -4e3;
-zmax   =0e3;
+zmax   =  1e3;
 
 % Arrays
 gamma  = zeros(10000,1);
@@ -74,6 +74,10 @@ for istep=istart:ijump:iend
     
     filename = [path,'Output',num2str(istep,'%05d'),file_suffix,'.gzip.h5'];
     filename_p = [path,'Particles',num2str(istep,'%05d'),file_suffix,'.gzip.h5'];
+    
+%      filename = [path,'Output_BeforeSolve',num2str(istep,'%05d'),file_suffix,'.gzip.h5'];
+%     filename_p = [path,'Particles_BeforeSolve',num2str(istep,'%05d'),file_suffix,'.gzip.h5'];
+
 
 %     filename = [path,'Outputxx',num2str(istep,'%05d'),file_suffix,'.gzip.h5'];
 %     filename_p = [path,'Particlesxx',num2str(istep,'%05d'),file_suffix,'.gzip.h5'];
@@ -323,7 +327,21 @@ for istep=istart:ijump:iend
             tag_u = hdf5read(filename,'/Flags/tag_u');
             tag_v = hdf5read(filename,'/Flags/tag_v');
 
-            figure(3)
+            if print2screen == 1
+                figure(1), clf
+            else
+                figure('Visible', 'Off')
+            end
+           
+%             subplot(211)
+%             xtopoc = hdf5read(filename,'/Topo/x_mark');
+%             Vxtopo = hdf5read(filename,'/Topo/Vx_mark');
+%             Vztopo = hdf5read(filename,'/Topo/Vz_mark');
+%             plot( xtopo, Vxtopo, '*m' )
+%                             xlim([xmin xmax])
+%                 ylim([-5e-13 5e-13])
+%             
+%             subplot(212), 
             hold on
             mesh(xg_coord, zg_coord, zeros(length(zg_coord),length(xg_coord)), 'edgecolor', [0.7 0.7 0.7] )
             % axis image
@@ -366,12 +384,20 @@ for istep=istart:ijump:iend
                     xtopo = hdf5read(filename,'/Topo/x');
                     ztopo = hdf5read(filename,'/Topo/z');
                 end
-                plot( xtopo, ztopo, '*c' )
+                plot( xtopo, ztopo, '*m' )
             end
             if crop == 1
                 xlim([xmin xmax])
                 ylim([zmin zmax])
             end
+            
+            
+            if printfig == 1
+                print([path, './Fig_Phases/Fig_DEBUG', num2str(istep,'%05d'),file_suffix], '-dtiff', res)
+                close all
+            end
+
+            
         end
         
         if residuals == 1

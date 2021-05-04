@@ -583,8 +583,9 @@ int main( int nargs, char *args[] ) {
                 // Elasticity - interpolate advected/rotated stresses
                 if  ( model.iselastic == 1 ) {
                     
-                    
-                    //                OldDeviatoricStressesPressure( &mesh, &particles, scaling, &model );
+                    // Get old stresses from particles
+                    if (model.StressUpdate==1)                     OldDeviatoricStressesPressure( &mesh, &particles, scaling, &model );
+
                     
                     //                                    Interp_P2G ( &particles, particles.sxxd,  &mesh, mesh.sxxd0,   mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz );
                     //                                    Interp_P2G ( &particles, particles.sxxd,  &mesh, mesh.sxxd0_s, mesh.xg_coord,   mesh.zg_coord, 1, 0, &model, mesh.BCg.type,  Nx,  Nz );
@@ -593,10 +594,11 @@ int main( int nargs, char *args[] ) {
                     //                                    Interp_P2G ( &particles, particles.sxz,   &mesh, mesh.sxz0_n,  mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz );
                     //                                    Interp_P2G ( &particles, particles.sxz,   &mesh, mesh.sxz0,    mesh.xg_coord,   mesh.zg_coord, 1, 0, &model, mesh.BCg.type,  Nx,  Nz );
                     
-                    //                // Get old stresses from particles
+                    if (model.StressUpdate==0){
                     Interp_P2C ( particles, particles.sxxd, &mesh, mesh.sxxd0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
                     Interp_P2C ( particles, particles.szzd, &mesh, mesh.szzd0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
                     Interp_P2N ( particles, particles.sxz,  &mesh, mesh.sxz0,    mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+                    }
                     
                     //                Interp_P2N ( particles, particles.sxxd, &mesh, mesh.sxxd0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
                     //                Interp_P2N ( particles, particles.szzd, &mesh, mesh.szzd0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
@@ -767,6 +769,7 @@ int main( int nargs, char *args[] ) {
         
         // Min/Max interpolated fields
         if ( model.noisy == 1 ) {
+            MinMaxArray(particles.sxxd, scaling.S, particles.Nb_part, "sxxd part  ");
             MinMaxArray(particles.rho, scaling.rho, particles.Nb_part, "rho part  ");
             MinMaxArray(particles.T,   scaling.T,   particles.Nb_part, "T part    ");
             MinMaxArrayTag( mesh.p0_n,         scaling.S,    (mesh.Nx-1)*(mesh.Nz-1),   "p0_n",   mesh.BCp.type );
@@ -1218,7 +1221,6 @@ int main( int nargs, char *args[] ) {
         // Update pressure on markers
         UpdateParticlePressure( &mesh, scaling, model, &particles, &materials );
         //        Interp_Grid2P_centroids( particles, particles.P, &mesh, mesh.p_in, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
-        
         UpdateParticleX( &mesh, scaling, model, &particles, &materials );
         
         // Grain size evolution

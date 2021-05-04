@@ -2437,6 +2437,9 @@ void Interp_Grid2P ( markers particles, DoodzFP* PartField, grid *mesh, double* 
     
     dx=mesh->dx;
     dz=mesh->dz;
+    
+    int inSE, inSW, inNW, inNE;
+
 
 #pragma omp parallel for shared ( particles, PartField, X_vect, Z_vect, NodeField, Nb_part, dx, dz, Nx, Nz, tag ) \
 private ( k, dxm, dzm, j_part, i_part, distance, iSW, iNW, iSE, iNE, sumW, Xp ) firstprivate( Lx, Nxg )// schedule( static )
@@ -2527,26 +2530,64 @@ private ( k, dxm, dzm, j_part, i_part, distance, iSW, iNW, iSE, iNE, sumW, Xp ) 
 
             PartField[k] = 0.0;
             sumW         = 0.0;
+            
+//            inSE = 0; inSW = 0; inNW = 0; inNE = 0;
 
             if (tag[iSW]!=30 && tag[iSW]!=31) {
                 PartField[k] +=  (1.0-dxm/dx)* (1.0-dzm/dz) * NodeField[iSW];
                 sumW += (1.0-dxm/dx)* (1.0-dzm/dz);
-
+            }
+            else {
+                PartField[k] +=  (1.0-dxm/dx)* (1.0-dzm/dz) * NodeField[iNW];
+                sumW += (1.0-dxm/dx)* (1.0-dzm/dz);
             }
             if (tag[iSE]!=30 && tag[iSE]!=31) {
                 PartField[k] += (dxm/dx)  * (1.0-dzm/dz)  * NodeField[iSE];
+                sumW += (dxm/dx)* (1.0-dzm/dz);
+            }
+            else {
+                PartField[k] += (dxm/dx)  * (1.0-dzm/dz)  * NodeField[iNE];
                 sumW += (dxm/dx)* (1.0-dzm/dz);
             }
             if (tag[iNW]!=30 && tag[iNW]!=31) {
                 PartField[k] += (1.0-dxm/dx)* (dzm/dz)    * NodeField[iNW];
                 sumW += (1.0-dxm/dx)* (dzm/dz);
             }
+            else {
+                PartField[k] += (1.0-dxm/dx)* (dzm/dz)    * NodeField[iSW];
+                sumW += (1.0-dxm/dx)* (dzm/dz);
+            }
             if (tag[iNE]!=30 && tag[iNE]!=31) {
                 PartField[k] += (dxm/dx)  * (dzm/dz)    * NodeField[iNE];
                 sumW += (dxm/dx)* (dzm/dz);
             }
+            else {
+                PartField[k] += (dxm/dx)  * (dzm/dz)    * NodeField[iSE];
+                sumW += (dxm/dx)  * (dzm/dz) ;
+            }
 
-            if(sumW>1e-13) PartField[k] /= sumW;
+//            if(sumW>1e-13) PartField[k] /= sumW;
+//            if(sumW<0.5) {
+//                printf("New\n");
+//                if (tag[iSW]!=30 && tag[iSW]!=31) {
+//                    printf("SW %2.2e %2.2e\n", (1.0-dxm/dx)* (1.0-dzm/dz), NodeField[iSW]);
+//                    printf("%2.2e %2.2e\n", (1.0-dxm/dx), (1.0-dzm/dz));
+//                    inSW = 1;
+//                }
+//                if (tag[iSE]!=30 && tag[iSE]!=31) {
+//                    printf("SE %2.2e %2.2e\n", (dxm/dx)  * (1.0-dzm/dz)  , NodeField[iSE]);
+//                    inSE = 1;
+//                }
+//                if (tag[iNW]!=30 && tag[iNW]!=31) {
+//                    printf("NW %2.2e %2.2e\n", (1.0-dxm/dx)* (dzm/dz)    , NodeField[iNW]);
+//                    inNW = 1;
+//                }
+//                if (tag[iNE]!=30 && tag[iNE]!=31) {
+//                    printf("NE %2.2e %2.2e\n", (dxm/dx)  * (dzm/dz)    , NodeField[iNE]);
+//                    inNE = 1;
+//                }
+//                printf("%lf %d %d %d %d\n", sumW, inSW, inSE, inNE, inNE);
+//            }
         }
     }
 }
@@ -2595,7 +2636,7 @@ private ( k, dxm, dzm, j_part, i_part, distance, iSW, iNW, iSE, iNE, sumW, Xp, i
                 iNW = jc + (ic+1)*Nx;
                 iNE = jc + (ic+1)*Nx+1;
             }
-            
+
             if (j_part==0 && i_part > 0 && i_part<Nz ) {
                 if (periodix==1) {
                     ic  = i_part-1;
@@ -2635,8 +2676,8 @@ private ( k, dxm, dzm, j_part, i_part, distance, iSW, iNW, iSE, iNE, sumW, Xp, i
                     iNE = jc + (ic+1)*Nx;
                 }
             }
-            
-            
+
+
             if (i_part==0 && j_part > 0 && j_part<Nx) {
                 // Copy solution along edge
                 ic  = i_part;
@@ -2656,7 +2697,7 @@ private ( k, dxm, dzm, j_part, i_part, distance, iSW, iNW, iSE, iNE, sumW, Xp, i
                 iNW = jc + ic*Nx;
                 iNE = jc + ic*Nx + 1;
             }
-            
+
             // SW
             if (i_part==0 && j_part==0) {
 
@@ -2743,26 +2784,64 @@ private ( k, dxm, dzm, j_part, i_part, distance, iSW, iNW, iSE, iNE, sumW, Xp, i
             
             PartField[k] = 0.0;
             sumW         = 0.0;
-
+            
             if (tag[iSW]!=30 && tag[iSW]!=31) {
                 PartField[k] +=  (1.0-dxm/dx)* (1.0-dzm/dz) * NodeField[iSW];
                 sumW += (1.0-dxm/dx)* (1.0-dzm/dz);
-
+            }
+            else {
+                PartField[k] +=  (1.0-dxm/dx)* (1.0-dzm/dz) * NodeField[iNW];
+                sumW += (1.0-dxm/dx)* (1.0-dzm/dz);
             }
             if (tag[iSE]!=30 && tag[iSE]!=31) {
                 PartField[k] += (dxm/dx)  * (1.0-dzm/dz)  * NodeField[iSE];
+                sumW += (dxm/dx)* (1.0-dzm/dz);
+            }
+            else {
+                PartField[k] += (dxm/dx)  * (1.0-dzm/dz)  * NodeField[iNE];
                 sumW += (dxm/dx)* (1.0-dzm/dz);
             }
             if (tag[iNW]!=30 && tag[iNW]!=31) {
                 PartField[k] += (1.0-dxm/dx)* (dzm/dz)    * NodeField[iNW];
                 sumW += (1.0-dxm/dx)* (dzm/dz);
             }
+            else {
+                PartField[k] += (1.0-dxm/dx)* (dzm/dz)    * NodeField[iSW];
+                sumW += (1.0-dxm/dx)* (dzm/dz);
+            }
             if (tag[iNE]!=30 && tag[iNE]!=31) {
                 PartField[k] += (dxm/dx)  * (dzm/dz)    * NodeField[iNE];
                 sumW += (dxm/dx)* (dzm/dz);
             }
+            else {
+                PartField[k] += (dxm/dx)  * (dzm/dz)    * NodeField[iSE];
+                sumW += (dxm/dx)  * (dzm/dz) ;
+            }
 
-            if(sumW>1e-13) PartField[k] /= sumW;
+//            if (tag[iSW]!=30 && tag[iSW]!=31) {
+//                PartField[k] +=  (1.0-dxm/dx)* (1.0-dzm/dz) * NodeField[iSW];
+//                sumW += (1.0-dxm/dx)* (1.0-dzm/dz);
+//
+//            }
+//            if (tag[iSE]!=30 && tag[iSE]!=31) {
+//                PartField[k] += (dxm/dx)  * (1.0-dzm/dz)  * NodeField[iSE];
+//                sumW += (dxm/dx)* (1.0-dzm/dz);
+//            }
+//            if (tag[iNW]!=30 && tag[iNW]!=31) {
+//                PartField[k] += (1.0-dxm/dx)* (dzm/dz)    * NodeField[iNW];
+//                sumW += (1.0-dxm/dx)* (dzm/dz);
+//            }
+//            if (tag[iNE]!=30 && tag[iNE]!=31) {
+//                PartField[k] += (dxm/dx)  * (dzm/dz)    * NodeField[iNE];
+//                sumW += (dxm/dx)* (dzm/dz);
+//            }
+
+            if (sumW>1e-13) PartField[k] /= sumW;
+            if (isinf(PartField[k])) {
+                printf("%2.2e %2.2e %2.2e %2.2e \n", NodeField[iSW],NodeField[iSE], NodeField[iNW],NodeField[iNE]);
+                printf("%2.2e\n", sumW);
+                exit(1);
+            }
         }
     }
 }

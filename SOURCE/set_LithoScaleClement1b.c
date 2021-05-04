@@ -33,11 +33,11 @@
 void BuildInitialTopography( surface *topo, markers *topo_chain, params model, grid mesh, scale scaling ) {
     
     int k;
-    double TopoLevel = 4e3/scaling.L; // sets zero initial topography
-    double sig = 50e3/scaling.L;
+    double TopoLevel = 2.e-1/scaling.L; // sets zero initial topography
+    double sig = 0.5/scaling.L;
     
     for ( k=0; k<topo_chain->Nb_part; k++ ) {
-        topo_chain->z[k]     = 0.0;//-5e3/scaling.L + TopoLevel * exp(-topo_chain->x[k]*topo_chain->x[k]/sig/sig) ;
+        topo_chain->z[k]     = 0;//TopoLevel * exp(-topo_chain->x[k]*topo_chain->x[k]/sig/sig) ;
         topo_chain->phase[k] = 0;
     }
     
@@ -54,22 +54,26 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     
     // Define dimensions;
     double Lz = (double) (model.zmax - model.zmin) ;
-    double HLit  = model.user1/scaling.L, Hcrust=5e3/scaling.L;
-    double Tsurf = 273.15/scaling.T, Tpart;
-    double Htot  = Lz, Tmant = (model.user0 + 273.15)/scaling.T;
-    double WZHW  = 10e3/scaling.L;
-    double angle = model.user4*M_PI/180.0;
-    double zlc = -35e3/scaling.L;
-    double zmc = -25e3/scaling.L;
-    double zuc = -15e3/scaling.L;
+    double HLit   = model.user1/scaling.L;
+    double Hcrust = -60e3/scaling.L;
+    double Tsurf  = 273.15/scaling.T, Tpart;
+    double Htot   = Lz, Tmant = (model.user0 + 273.15)/scaling.T;
+    double WZHW   = 10e3/scaling.L;
+    double angle  = 0.0;//model.user4*M_PI/180.0;
+//    double zlc = -35e3/scaling.L;
+//    double zmc = -25e3/scaling.L;
+//    double zuc = -15e3/scaling.L;
     double x_ell, z_ell, a_ell = 10e3/scaling.L, b_ell = 2e3/scaling.L;
     double x0 = 0.0*350e3/scaling.L;
-    double z0 = -35e3/scaling.L;
+    double z0 = -20e3/scaling.L;
+    int il; //Number of layers in the crust
+    
+    double spacing = 5.0e3/scaling.L; // espacement layering crust
     
     //angle = 00*M_PI/180;
     
     // Loop on particles
-    for( np=0; np<particles->Nb_part; np++ ) {
+    for ( np=0; np<particles->Nb_part; np++ ) {
         
         // Standart initialisation of particles
         particles->Vx[np]    = -1.0*particles->x[np]*model.EpsBG;               // set initial particle velocity (unused)
@@ -89,17 +93,41 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         // If particles are in the lithosphere: change phase
         if (particles->z[np]>-HLit) particles->phase[np] = 0;
         
-        // Define crust
-        if (particles->z[np]>zlc) particles->phase[np] = 5;
-        if (particles->z[np]>zmc) particles->phase[np] = 4;
-        if (particles->z[np]>zuc) particles->phase[np] = 3;
+//        // If particles are in the crust: change phase
+//        if (particles->z[np] > Hcrust)  particles->phase[np] = 3;
+//        
+//        // layering crust:
+//        if (particles->phase[np]==3){
+//            for( il=0; il<= 50; il=il+2 ) {
+//                if (particles->z[np]>= Hcrust && particles->z[np]>=-((il+1)*spacing) && particles->z[np]<-(il*spacing)) particles->phase[np] = 4;
+//            }
+//        }
+//
+//
+//        // inverse layering for checking streching/shortening
+//
+//        if (particles->x[np] < -150.0e3/scaling.L && particles->phase[np]==3) particles->phase[np] = 11;
+//        if (particles->x[np] < -150.0e3/scaling.L && particles->phase[np]==4) particles->phase[np] = 10;
+//        if (particles->x[np] > +150.0e3/scaling.L && particles->phase[np]==3) particles->phase[np] = 11;
+//        if (particles->x[np] > +150.0e3/scaling.L && particles->phase[np]==4) particles->phase[np] = 10;
+//
+//        if (particles->x[np] < -50.0e3/scaling.L && particles->phase[np]==3) particles->phase[np] = 10;
+//        if (particles->x[np] < -50.0e3/scaling.L && particles->phase[np]==4) particles->phase[np] = 11;
+//        if (particles->x[np] > +50.0e3/scaling.L && particles->phase[np]==3) particles->phase[np] = 10;
+//        if (particles->x[np] > +50.0e3/scaling.L && particles->phase[np]==4) particles->phase[np] = 11;
+//
+//        if (particles->phase[np]==10) particles->phase[np] = 4;
+//        if (particles->phase[np]==11) particles->phase[np] = 3;
+        
+
+//        if (particles->z[np]>zlc) particles->phase[np] = 5;
+//        if (particles->z[np]>zmc) particles->phase[np] = 4;
+//        if (particles->z[np]>zuc) particles->phase[np] = 3;
         
         
-        x_ell = (particles->x[np]-x0)*cos(angle) + (particles->z[np]-z0)*sin(angle);
-        z_ell =-(particles->x[np]-x0)*sin(angle) + (particles->z[np]-z0)*cos(angle);
-        if (pow(x_ell/a_ell,2) + pow(z_ell/b_ell,2) < 1) particles->phase[np] = 1;
-        
-        if (particles->z[np]>0.0) particles->phase[np] = 6;
+//        x_ell = (particles->x[np]-x0)*cos(angle) + (particles->z[np]-z0)*sin(angle);
+//        z_ell =-(particles->x[np]-x0)*sin(angle) + (particles->z[np]-z0)*cos(angle);
+//        if (pow(x_ell/a_ell,2) + pow(z_ell/b_ell,2) < 1) particles->phase[np] = 1;
         
         
         // Weak zone

@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00066
+istep = 00154
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -16,9 +16,9 @@ V   = 1e-9
 T   = 100
 
 /**** SPACE-TIME ****/
-Nx      = 501
+Nx      = 51
 Nz      = 161
-Nt      = 50
+Nt      = 500
 xmin    = -250.000000e3
 zmin    = -150.000000e3
 xmax    =  250.000000e3
@@ -33,7 +33,7 @@ ismechanical    = 1
 RK              = 4
 isperiodic_x    = 0
 ispureshear_ALE = -1
-iselastic       = 1
+iselastic       = 0
 isthermal       = 1
 line_search     = 0
 free_surf       = 1
@@ -57,8 +57,8 @@ rel_tol_div    = 1e-11
 pc_type        = 1
 num_deriv      = 0
 compressible   = 1
-StressRotation = 2
-subgrid_diff   = 2
+StressRotation = 0
+subgrid_diff   = 0
 line_search_min = 0.1
 nexp_radial_basis = 2.0
 Plith_trick     = 0
@@ -82,7 +82,7 @@ user4           = 1.75     /angle
 
 /**** GRAVITY ****/
 gx = 0.0000
-gz = -9.810
+gz = -9.81
 
 /**** PHASE PROPERTIES ****/
 Nb_phases = 6
@@ -101,11 +101,11 @@ Slim = 500e9   / Stress limit
 alp  = 3.2e-5  /thermal expansion
 bet  = 5e-11   /incompressibility
 drho = 0
-cstv = 0       /cst viscosity
-pwlv = 40
-linv = 40
+cstv = 1       /cst viscosity
+pwlv = 0
+linv = 0
 gbsv = 0
-expv = 40
+expv = 0
 gsel = 0
 eta0 = 1e22
 npwl = 1

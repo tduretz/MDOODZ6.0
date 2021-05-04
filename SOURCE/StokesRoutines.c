@@ -922,33 +922,53 @@ void EvaluateStokesResidualDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
 void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
 
     int c, k, l, c1, c2;
-    int NX, NZ, NZVX, NXVZ;
-    int NCX, NCZ;
+    int Nx, Nz, NzVx, NxVz;
+    int Ncx, Ncz;
     double rhoVx, rhoVz, gx, gz, g, tet, x, z;
     double dx, dz;
     double inW, inE, inS, inN;
 
-    NX   = mesh->Nx;
-    NXVZ = mesh->Nx+1;
-    NZ   = mesh->Nz;
-    NZVX = mesh->Nz+1;
-    NCX=NX-1; NCZ=NZ-1;
+    Nx   = mesh->Nx;
+    NxVz = mesh->Nx+1;
+    Nz   = mesh->Nz;
+    NzVx = mesh->Nz+1;
+    Ncx=Nx-1; Ncz=Nz-1;
     dx   = mesh->dx;
     dz   = mesh->dz;
 
     int iPrW, iPrE, ixyN, ixyS, iVxS, iVxN;
     int iPrS, iPrN, ixyE, ixyW, iVyW, iVyE;
+    
+    int k1, c0;
+
+       for ( k1=0; k1<Ncx*Ncz; k1++ ) {
+           if ( mesh->BCp.type[k1] == 30 || mesh->BCp.type[k1] == 31) {
+               mesh->sxxd0[k1] = mesh->sxxd0[k1-Ncx];
+               mesh->szzd0[k1] = mesh->szzd0[k1-Ncx];
+               mesh->p0_n[k1] = mesh->p0_n[k1-Ncx];
+               mesh->eta_n[k1] = mesh->eta_n[k1-Ncx];
+               mesh->mu_n[k1] = mesh->mu_n[k1-Ncx];
+           }
+       }
+
+       for ( k1=0; k1<Nx*Nz; k1++ ) {
+           if ( mesh->BCg.type[k1] == 30) {
+               mesh->sxz0[k1]  = mesh->sxz0[k1-Nx];
+               mesh->eta_s[k1] = mesh->eta_s[k1-Nx];
+               mesh->mu_s[k1]  = mesh->mu_s[k1-Nx];
+           }
+       }
 
     /* --------------------------------------------------------------------*/
     /* Here we calculate the forcing term -rho*gx on the finest grid level */
     /* --------------------------------------------------------------------*/
 
     // U POINTS
-    for (l=0; l<NZVX; l++) {
-        for (k=0; k<NX; k++) {
+    for (l=0; l<NzVx; l++) {
+        for (k=0; k<Nx; k++) {
 
-            c  = k + l*NX;
-            c2 = k + (l-1)*NCX;
+            c  = k + l*Nx;
+            c2 = k + (l-1)*Ncx;
 
             mesh->roger_x[c] = 0.0;
             gx  = model.gx;
@@ -964,18 +984,18 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
 
 //            printf("gx = %2.2e\n", gx*scaling.L/pow(scaling.t,2.0));
 
-            if (l>0 && l<NZVX-1) {
+            if (l>0 && l<NzVx-1) {
 
                 if ( mesh->BCu.type[c] == -1 || mesh->BCu.type[c] == 2 || mesh->BCu.type[c] == -2 ) {
 
                     iPrW   = c2-1;
                     iPrE   = c2;
                     ixyN   = c;
-                    ixyS   = c-NX;
-                    iVxS   = c-NX;
-                    iVxN   = c+NX;
+                    ixyS   = c-Nx;
+                    iVxS   = c-Nx;
+                    iVxN   = c+Nx;
                     // Periodic BC !!!!!!!!!!!
-                    if ( mesh->BCu.type[c] == -2 ) iPrW  = c2+NCX-1;
+                    if ( mesh->BCu.type[c] == -2 ) iPrW  = c2+Ncx-1;
 
                     // Free surface
                     inW=0.0, inE = 0.0, inS=0.0, inN = 0.0;
@@ -993,7 +1013,12 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                     if ( model.iselastic == 1 ) {
 
                         // Inner nodes
-                        if (k<NX-1) {
+                        if (k>0 && k<Nx-1) {
+//                            inW=1.0, inE = 1.0, inS=1.0, inN = 1.0;
+//                            mesh->roger_x[c]  -= inE/dx * ( mesh->FreeSurfW_n[iPrE] * mesh->eta_n[iPrE] / (mesh->mu_n[iPrE]*model.dt)  * mesh->sxxd0[iPrE] );
+//                            mesh->roger_x[c]  -= inW/dx * (-mesh->FreeSurfW_n[iPrW] * mesh->eta_n[iPrW] / (mesh->mu_n[iPrW]*model.dt)  * mesh->sxxd0[iPrW] );
+//                            mesh->roger_x[c]  -= inN/dz * ( mesh->FreeSurfW_s[ixyN] * mesh->eta_s[ixyN] / (mesh->mu_s[ixyN]*model.dt)  * mesh->sxz0[ixyN] );
+//                            mesh->roger_x[c]  -= inS/dz * (-mesh->FreeSurfW_s[ixyS] * mesh->eta_s[ixyS] / (mesh->mu_s[ixyS]*model.dt)  * mesh->sxz0[ixyS] );
                             if ( inE ) mesh->roger_x[c]  -= 1.0/dx * ( mesh->eta_n[iPrE] / (mesh->mu_n[iPrE]*model.dt)  * mesh->sxxd0[iPrE] );
                             if ( inW ) mesh->roger_x[c]  -= 1.0/dx * (-mesh->eta_n[iPrW] / (mesh->mu_n[iPrW]*model.dt)  * mesh->sxxd0[iPrW] );
                             if ( inN ) mesh->roger_x[c]  -= 1.0/dz * ( mesh->eta_s[ixyN] / (mesh->mu_s[ixyN]*model.dt)  * mesh->sxz0[ixyN] );
@@ -1018,12 +1043,12 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
 
 
     // V POINTS
-    for (l=0; l<NZ; l++) {
-        for (k=0; k<NXVZ; k++) {
+    for (l=0; l<Nz; l++) {
+        for (k=0; k<NxVz; k++) {
 
-            c  = k + l*(NXVZ);
-            c1 = k + l*(NX)-1;
-            c2 = k-1 + (l-1)*(NX-1);
+            c  = k + l*(NxVz);
+            c1 = k + l*(Nx)-1;
+            c2 = k-1 + (l-1)*(Nx-1);
 
             mesh->roger_z[c]  = 0.0;
             gz  = model.gz;
@@ -1037,12 +1062,12 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
             }
             mesh->gz[c]         = gz;
 
-            if (k>0 && k<NXVZ-1) {
+            if (k>0 && k<NxVz-1) {
 
                 if ( mesh->BCv.type[c] == -1  ) {
 
                     iPrS   = c2;
-                    iPrN   = c2+NCX;
+                    iPrN   = c2+Ncx;
                     ixyE   = c1+1;
                     ixyW   = c1;
                     iVyW   = c-1;
@@ -1061,24 +1086,29 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                     
                     mesh->roger_z[c]  = - gz * rhoVz;
 
-                    // Additional stabilisation term from surface processes
-                    if (model.surf_processes >= 1 && ( mesh->BCp.type[iPrS] == 30 || mesh->BCp.type[iPrS] == 31 || mesh->BCp.type[iPrN] == 30 || mesh->BCp.type[iPrN] == 31 ) ) {
-                        drhodz = ( mesh->rho_n[iPrN] - mesh->rho_n[iPrS] ) / dz;
-                        if ( fabs(mesh->xvz_coord[k]) <= 0.5*Wvalley ) {
-                            mesh->roger_z[c]  += -1.0*om*Vinc*model.dt*gz*drhodz;
-                        }
-                    }
+//                    // Additional stabilisation term from surface processes
+//                    if (model.surf_processes >= 1 && ( mesh->BCp.type[iPrS] == 30 || mesh->BCp.type[iPrS] == 31 || mesh->BCp.type[iPrN] == 30 || mesh->BCp.type[iPrN] == 31 ) ) {
+//                        drhodz = ( mesh->rho_n[iPrN] - mesh->rho_n[iPrS] ) / dz;
+//                        if ( fabs(mesh->xvz_coord[k]) <= 0.5*Wvalley ) {
+//                            mesh->roger_z[c]  += -1.0*om*Vinc*model.dt*gz*drhodz;
+//                        }
+//                    }
                     
                     
                     // Elastic force
                     if  (model.iselastic == 1 ) {
 
                         // Backward Euler
-                        if ( l>0 && l<NZ-1 ) {
+                        if ( l>0 && l<Nz-1 ) {
+//                            inW=1.0, inE = 1.0, inS=1.0, inN = 1.0;
                             if ( inN ) mesh->roger_z[c]  -= 1.0/dz * (  mesh->eta_n[iPrN] / (mesh->mu_n[iPrN] *model.dt ) * (mesh->szzd0[iPrN]) );
                             if ( inS ) mesh->roger_z[c]  -= 1.0/dz * ( -mesh->eta_n[iPrS] / (mesh->mu_n[iPrS] *model.dt ) * (mesh->szzd0[iPrS]) );
                             if ( inE ) mesh->roger_z[c]  -= 1.0/dx * (  mesh->eta_s[ixyE] / (mesh->mu_s[ixyE] *model.dt ) *  mesh->sxz0[ixyE]) ;
                             if ( inW ) mesh->roger_z[c]  -= 1.0/dx * ( -mesh->eta_s[ixyW] / (mesh->mu_s[ixyW] *model.dt ) *  mesh->sxz0[ixyW]) ;
+//                            mesh->roger_z[c]  -= inN/dz * (  mesh->FreeSurfW_n[iPrN] * mesh->eta_n[iPrN] / (mesh->mu_n[iPrN] *model.dt ) * (mesh->szzd0[iPrN]) );
+//                            mesh->roger_z[c]  -= inS/dz * ( -mesh->FreeSurfW_n[iPrS] * mesh->eta_n[iPrS] / (mesh->mu_n[iPrS] *model.dt ) * (mesh->szzd0[iPrS]) );
+//                            mesh->roger_z[c]  -= inE/dx * (  mesh->FreeSurfW_s[ixyE] * mesh->eta_s[ixyE] / (mesh->mu_s[ixyE] *model.dt ) *  mesh->sxz0[ixyE]) ;
+//                            mesh->roger_z[c]  -= inW/dx * ( -mesh->FreeSurfW_s[ixyW] * mesh->eta_s[ixyW] / (mesh->mu_s[ixyW] *model.dt ) *  mesh->sxz0[ixyW]) ;
                         }
 
                     }
@@ -1094,10 +1124,10 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
     /* ------------------------------------------------------------------------*/
 
     // P-T RHS
-    for (l=0; l<NZ-1; l++) {
-        for (k=0; k<NX-1; k++) {
+    for (l=0; l<Nz-1; l++) {
+        for (k=0; k<Nx-1; k++) {
 
-            c  = k + l*(NX-1);
+            c  = k + l*(Nx-1);
 
             if ( mesh->BCp.type[c] != 30 && mesh->BCp.type[c] != 31 ) {
 
@@ -1228,14 +1258,14 @@ void InitialiseSolutionVector( grid* mesh, SparseMat *Stokes, params* model ) {
 void ExtractDiagonalScale(SparseMat *StokesA, SparseMat *StokesB, SparseMat *StokesC, SparseMat *StokesD ) {
 
 // Extract Diagonal of A - Viscous block
-int i, j, locNNZ;
+int i, j, locNNz;
 int I1, J1;
 
-#pragma omp parallel for shared(StokesA, StokesB) private(I1, J1, i, j, locNNZ )
+#pragma omp parallel for shared(StokesA, StokesB) private(I1, J1, i, j, locNNz )
     for (i=0;i<StokesA->neq; i++) {
         I1     = StokesA->Ic[i];
-        locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
-        for (J1=0;J1<locNNZ; J1++) {
+        locNNz = StokesA->Ic[i+1] - StokesA->Ic[i];
+        for (J1=0;J1<locNNz; J1++) {
             j = StokesA->J[I1 + J1];
             if (i==j) StokesA->d[i] = StokesA->A[I1 + J1];
         }
@@ -1252,11 +1282,11 @@ int I1, J1;
 
 //    MinMaxArray(StokesA->d, 1, StokesA->neq, "diag. A" );
 
-#pragma omp parallel for shared(StokesC,StokesD) private(I1,J1, i, j, locNNZ )
+#pragma omp parallel for shared(StokesC,StokesD) private(I1,J1, i, j, locNNz )
     for (i=0;i<StokesD->neq; i++) {
         I1     = StokesD->Ic[i];
-        locNNZ = StokesD->Ic[i+1] - StokesD->Ic[i];
-        for (J1=0;J1<locNNZ; J1++) {
+        locNNz = StokesD->Ic[i+1] - StokesD->Ic[i];
+        for (J1=0;J1<locNNz; J1++) {
             j = StokesD->J[I1 + J1];
             if (i==j) StokesD->d[i] = StokesD->A[I1 + J1];
         }
@@ -1271,64 +1301,64 @@ int I1, J1;
 
 void ScaleMatrix(SparseMat *StokesA, SparseMat *StokesB, SparseMat *StokesC, SparseMat *StokesD ) {
 
-    int i, j, locNNZ;
+    int i, j, locNNz;
     int I1, J1;
 
 // Scale A
-#pragma omp parallel for shared(StokesA) private(I1,J1, i, j, locNNZ )
+#pragma omp parallel for shared(StokesA) private(I1,J1, i, j, locNNz )
 for (i=0;i<StokesA->neq; i++) {
 
     StokesA->b[i] *= StokesA->d[i];  // scale RHS
     StokesA->F[i] *= StokesA->d[i];  // scale RHS
 
     I1     = StokesA->Ic[i];
-    locNNZ = StokesA->Ic[i+1] - StokesA->Ic[i];
-    for (J1=0;J1<locNNZ; J1++) {
+    locNNz = StokesA->Ic[i+1] - StokesA->Ic[i];
+    for (J1=0;J1<locNNz; J1++) {
         j = StokesA->J[I1 + J1];
         StokesA->A[I1 + J1] *= StokesA->d[i]*StokesA->d[j];
     }
 }
 
 // Scale B
-#pragma omp parallel for shared(StokesB,StokesA) private(I1,J1, i, j, locNNZ )
+#pragma omp parallel for shared(StokesB,StokesA) private(I1,J1, i, j, locNNz )
 for (i=0;i<StokesB->neq; i++) {
 
     StokesB->b[i] *= StokesB->d[i]; // scale RHS
     StokesB->F[i] *= StokesB->d[i]; // scale RHS
 
     I1     = StokesB->Ic[i];
-    locNNZ = StokesB->Ic[i+1] - StokesB->Ic[i];
-    for (J1=0;J1<locNNZ; J1++) {
+    locNNz = StokesB->Ic[i+1] - StokesB->Ic[i];
+    for (J1=0;J1<locNNz; J1++) {
         j = StokesB->J[I1 + J1];
         StokesB->A[I1 + J1] *= StokesA->d[i]*StokesD->d[j];
     }
 }
 
 // Scale C
-#pragma omp parallel for shared(StokesC,StokesA) private(I1,J1, i, j, locNNZ )
+#pragma omp parallel for shared(StokesC,StokesA) private(I1,J1, i, j, locNNz )
 for (i=0;i<StokesC->neq; i++) {
 
     StokesC->b[i] *= StokesC->d[i]; // scale RHS
     StokesC->F[i] *= StokesC->d[i]; // scale RHS
 
     I1     = StokesC->Ic[i];
-    locNNZ = StokesC->Ic[i+1] - StokesC->Ic[i];
-    for (J1=0;J1<locNNZ; J1++) {
+    locNNz = StokesC->Ic[i+1] - StokesC->Ic[i];
+    for (J1=0;J1<locNNz; J1++) {
         j = StokesC->J[I1 + J1];
         StokesC->A[I1 + J1] *= StokesD->d[i]*StokesA->d[j];
     }
 }
 
     // Scale D
-#pragma omp parallel for shared(StokesD) private(I1,J1, i, j, locNNZ )
+#pragma omp parallel for shared(StokesD) private(I1,J1, i, j, locNNz )
     for (i=0;i<StokesC->neq; i++) {
 
         StokesD->b[i] *= StokesD->d[i]; // scale RHS
         StokesD->F[i] *= StokesD->d[i]; // scale RHS
 
         I1     = StokesD->Ic[i];
-        locNNZ = StokesD->Ic[i+1] - StokesD->Ic[i];
-        for (J1=0;J1<locNNZ; J1++) {
+        locNNz = StokesD->Ic[i+1] - StokesD->Ic[i];
+        for (J1=0;J1<locNNz; J1++) {
             j = StokesD->J[I1 + J1];
             StokesD->A[I1 + J1] *= StokesD->d[i]*StokesD->d[j];
         }

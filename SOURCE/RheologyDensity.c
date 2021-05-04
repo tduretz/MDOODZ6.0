@@ -142,7 +142,6 @@ void TotalStresses( grid* mesh, markers* particles, scale scaling, params* model
     mdszz = DoodzCalloc(particles->Nb_part,sizeof(DoodzFP));
     mdsxz = DoodzCalloc(particles->Nb_part,sizeof(DoodzFP));
 
-
 #pragma omp parallel for shared( mesh, dsxx, dsyy, dszz ) private( k, k1, l, c0, c1, c2, sxx, syy, szz, tyy, tyy0, sxx0, syy0, szz0  ) firstprivate( Nx, Ncx, Ncz )
     for ( k1=0; k1<Ncx*Ncz; k1++ ) {
         k  = mesh->kp[k1];
@@ -173,11 +172,11 @@ void TotalStresses( grid* mesh, markers* particles, scale scaling, params* model
             if (mesh->BCg.type[c1] !=30 ) dsxz[c1] =  mesh->sxz[c1] - mesh->sxz0[c1];
         }
     }
-
+    
     // Interpolate stress changes to markers
-    Interp_Grid2P_centroids2( *particles, mdsxx,  mesh, dsxx, mesh->xvz_coord,  mesh->xvz_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, model  );
-    Interp_Grid2P_centroids2( *particles, mdszz,  mesh, dszz, mesh->xvz_coord,  mesh->xvz_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, model  );
-    Interp_Grid2P_centroids2( *particles, mdsyy,  mesh, dsyy, mesh->xvz_coord,  mesh->xvz_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, model  );
+    Interp_Grid2P_centroids2( *particles, mdsxx,  mesh, dsxx, mesh->xvz_coord,  mesh->zvx_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, model  );
+    Interp_Grid2P_centroids2( *particles, mdszz,  mesh, dszz, mesh->xvz_coord,  mesh->zvx_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, model  );
+    Interp_Grid2P_centroids2( *particles, mdsyy,  mesh, dsyy, mesh->xvz_coord,  mesh->zvx_coord,  mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, model  );
     Interp_Grid2P( *particles, mdsxz,  mesh, dsxz, mesh->xg_coord,  mesh->zg_coord,  mesh->Nx,   mesh->Nz,   mesh->BCg.type  );
 
     // Update marker stresses
@@ -186,6 +185,7 @@ void TotalStresses( grid* mesh, markers* particles, scale scaling, params* model
     ArrayPlusArray( particles->syy , mdsyy, particles->Nb_part );
     ArrayPlusArray( particles->sxz,  mdsxz, particles->Nb_part );
 
+    // Freedom
     DoodzFree( dsxx );
     DoodzFree( dsyy );
     DoodzFree( dszz );
@@ -1662,6 +1662,10 @@ firstprivate( model, dt )
         Interp_Grid2P( *particles, txzm0, mesh, mesh->sxz0 , mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type     );
         Interp_Grid2P( *particles, etam,  mesh, mesh->eta_phys_s, mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type);
 
+        MinMaxArray(mesh->eta_phys_s, scaling->eta, Nx*Nz, "eta grid  ");
+        MinMaxArrayTag( mesh->eta_phys_s, scaling->eta, Nx*Nz,   "eta_s", mesh->BCg.type );
+        MinMaxArray(etam, scaling->eta, particles->Nb_part, "eta phys part  ");
+
 
         if ( model->subgrid_diff == 2 ) {
 
@@ -1672,10 +1676,19 @@ firstprivate( model, dt )
             for ( k=0; k<particles->Nb_part; k++ ) {
                 if (particles->phase[k] != -1) {
                     p         = particles->phase[k];
-                    dtaum     = etam[k]/ (materials->mu[p]);
+                    dtaum     = etam[k] / materials->mu[p];
                     dtxxms[k] = -( particles->sxxd[k] - txxm0[k]) * (1.0 - exp(-d*dt/dtaum));
                     dtzzms[k] = -( particles->szzd[k] - tzzm0[k]) * (1.0 - exp(-d*dt/dtaum));
                     dtxzms[k] = -( particles->sxz[k]  - txzm0[k]) * (1.0 - exp(-d*dt/dtaum));
+                    if isinf(dtxxms[k]) {
+                       printf("Infinite dtxxms[k]: %2.2e %2.2e %2.2e\n", particles->sxxd[k], txxm0[k], exp(-d*dt/dtaum));
+                        printf("%2.2e %2.2e %2.2e %2.2e %2.2e", d, dt, dtaum, etam[k]*scaling->eta, materials->mu[p]*scaling->S );
+                       exit(1);
+                   }
+                    if isnan(dtxxms[k]) {
+                        printf("Infinite dtxxms[k]: %2.2e %2.2e %2.2e\n", particles->sxxd[k], txxm0[k], exp(-d*dt/dtaum));
+                        exit(1);
+                    }
                 }
             }
 
@@ -1683,18 +1696,39 @@ firstprivate( model, dt )
             Interp_P2C ( *particles, dtxxms, mesh, dtxxgs, mesh->xg_coord, mesh->zg_coord, 1, 0 );
             Interp_P2C ( *particles, dtzzms, mesh, dtzzgs, mesh->xg_coord, mesh->zg_coord, 1, 0 );
             Interp_P2N ( *particles, dtxzms, mesh, dtxzgs, mesh->xg_coord, mesh->zg_coord, 1, 0, model );
+            
+            IsInfArray2DFP(dtxxgs, Ncx*Ncz);
+            IsNanArray2DFP(dtxxgs, Ncx*Ncz);
 
             // Remaining stress increments on the grid
 #pragma omp parallel for shared(mesh,dtxxgs,dtxxgr,dtzzgs,dtzzgr) private(c0) firstprivate(Ncx,Ncz)
             for ( c0=0; c0<Ncx*Ncz; c0++ ) {
-                if (mesh->BCp.type[c0]!=30) dtxxgr[c0] = (mesh->sxxd[c0]-mesh->sxxd0[c0]) - dtxxgs[c0];
-                if (mesh->BCp.type[c0]!=30) dtzzgr[c0] = (mesh->szzd[c0]-mesh->szzd0[c0]) - dtzzgs[c0];
+                dtxxmr[k] = 0.0;
+                dtzzmr[k] = 0.0;
+                if (mesh->BCp.type[c0]!=30 && mesh->BCp.type[c0]!=31) dtxxgr[c0] = (mesh->sxxd[c0] - mesh->sxxd0[c0]) - dtxxgs[c0];
+                if (mesh->BCp.type[c0]!=30 && mesh->BCp.type[c0]!=31) dtzzgr[c0] = (mesh->szzd[c0] - mesh->szzd0[c0]) - dtzzgs[c0];
+                
+//                if isinf(dtxxgs[c0]) {
+//                    printf("Infinite dtxxgs[k]: %2.2e %2.2e %2.2e\n", mesh->sxxd[c0], mesh->sxxd0[c0], dtxxgs[c0]);
+//                    exit(1);
+//                }
+//
+//
+//                if isinf(dtxxgr[c0]) {
+//                    printf("Infinite dtxxgr[k]: %2.2e %2.2e %2.2e\n", mesh->sxxd[c0], mesh->sxxd0[c0], dtxxgs[c0]);
+//                    exit(1);
+//                }
+//                if isnan(dtxxgr[c0]) {
+//                    printf("Nan dtxxgr[k]\n");
+//                    exit(1);
+//                }
             }
 #pragma omp parallel for shared(mesh,dtxzgs,dtxzgr) private(c0) firstprivate(Nx,Nz)
             for ( c0=0; c0<Nx*Nz; c0++ ) {
+                dtxzmr[k] = 0.0;
                 if (mesh->BCg.type[c0]   !=30) dtxzgr[c0] = (mesh->sxz[c0]-mesh->sxz0[c0]) - dtxzgs[c0];
             }
-
+            
             // Remaining stress increments grid --> markers
             Interp_Grid2P_centroids2( *particles, dtxxmr, mesh, dtxxgr, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
             Interp_Grid2P_centroids2( *particles, dtzzmr, mesh, dtzzgr, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
@@ -1703,12 +1737,14 @@ firstprivate( model, dt )
             // Final stresses update on markers
 #pragma omp parallel for shared(particles,dtxxms,dtzzms,dtxzms,dtxxmr,dtzzmr,dtxzmr) private(k) firstprivate(style)
             for ( k=0; k<particles->Nb_part; k++ ) {
-
                 if (particles->phase[k] != -1) particles->sxxd[k]  = particles->sxxd[k] + dtxxms[k] + dtxxmr[k];
                 if (particles->phase[k] != -1) particles->szzd[k]  = particles->szzd[k] + dtzzms[k] + dtzzmr[k];
                 if (particles->phase[k] != -1) particles->sxz[k]   = particles->sxz[k]  + dtxzms[k] + dtxzmr[k];
             }
         }
+        
+//        MinMaxArray(particles->sxxd, scaling->S, particles->Nb_part, "sxxd part  ");
+
 
         // Free
         DoodzFree( dtxxgs );
@@ -4319,7 +4355,7 @@ void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* 
     int Nz = mesh->Nz;
     int Ncx = mesh->Nx-1;
     int Ncz = mesh->Nz-1;
-
+    int c0, k1, l, k;
 
 //    double *dP     = DoodzCalloc ( Nx*Nz, sizeof(double));
 //    Interp_P2N ( *particles, particles->dP,  mesh, dP ,   mesh->xg_coord, mesh->zg_coord, 1, 0, model );
@@ -4353,10 +4389,6 @@ void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* 
             DoodzFree(dsxxd);
             DoodzFree(dszzd);
             DoodzFree(dsxz );
-            // Interpolate to necessary locations for rheological computations...
-            InterpCentroidsToVerticesDouble( mesh->sxxd0, mesh->sxxd0_s, mesh, model );
-            InterpCentroidsToVerticesDouble( mesh->szzd0, mesh->szzd0_s, mesh, model );
-            InterpVerticesToCentroidsDouble( mesh->sxz0_n,  mesh->sxz0,  mesh, model );
         }
         if (model->StressUpdate==1) {
             double *dsxxd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
@@ -4367,10 +4399,8 @@ void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* 
             Interp_P2C ( *particles, particles->dsxxd, mesh, dsxxd,   mesh->xg_coord, mesh->zg_coord, 1, 0 );
             Interp_P2C ( *particles, particles->dszzd, mesh, dszzd,   mesh->xg_coord, mesh->zg_coord, 1, 0 );
             Interp_P2N ( *particles, particles->dsxz,  mesh, dsxz ,   mesh->xg_coord, mesh->zg_coord, 1, 0, model );
-                Interp_P2C ( *particles, particles->dsyy, mesh, dsyy,   mesh->xg_coord, mesh->zg_coord, 1, 0 );
+            Interp_P2C ( *particles, particles->dsyy, mesh, dsyy,   mesh->xg_coord, mesh->zg_coord, 1, 0 );
 
-
-                int c0, k1, l, k;
                 for ( k1=0; k1<Ncx*Ncz; k1++ ) {
                     k  = mesh->kp[k1];
                     l  = mesh->lp[k1];
@@ -4390,12 +4420,38 @@ void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* 
             DoodzFree(dszzd);
             DoodzFree(dsxz );
             DoodzFree(dsyy );
-            // Interpolate to necessary locations for rheological computations...
-            InterpCentroidsToVerticesDouble( mesh->sxxd0, mesh->sxxd0_s, mesh, model );
-            InterpCentroidsToVerticesDouble( mesh->szzd0, mesh->szzd0_s, mesh, model );
-            InterpVerticesToCentroidsDouble( mesh->sxz0_n,  mesh->sxz0,  mesh, model );
         }
     }
+    
+ 
+    
+//    for ( k1=0; k1<Ncx*Ncz; k1++ ) {
+//        k  = mesh->kp[k1];
+//        l  = mesh->lp[k1];
+//        c0 = k  + l*(Nx-1);
+//        if ( mesh->BCp.type[c0+Nx-1] == 30 || mesh->BCp.type[c0+Nx-1] == 31) {
+//            mesh->sxxd0[c0] = 0.0;
+//            mesh->szzd0[c0] = 0.0;
+//            mesh->sxz0_n[c0] = 0.0;
+//            mesh->p0_n[c0] = 0.0;
+//        }
+//    }
+//
+//    for ( k1=0; k1<Nx*Nz; k1++ ) {
+//        k  = mesh->kn[k1];
+//        l  = mesh->ln[k1];
+//        c0 = k  + l*(Nx);
+//        if ( mesh->BCp.type[c0+Nx] == 30) {
+//            mesh->sxz0[c0] = 0.0;
+//    }
+//
+//            }
+    
+    // Interpolate to necessary locations for rheological computations...
+    InterpCentroidsToVerticesDouble( mesh->sxxd0, mesh->sxxd0_s, mesh, model );
+    InterpCentroidsToVerticesDouble( mesh->szzd0, mesh->szzd0_s, mesh, model );
+    InterpVerticesToCentroidsDouble( mesh->sxz0_n,  mesh->sxz0,  mesh, model );
+    
 
     // Director vector
     if (model->aniso == 1 ) {

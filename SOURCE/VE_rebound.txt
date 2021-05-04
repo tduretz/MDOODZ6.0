@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 000130
+istep = 000010
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -17,14 +17,14 @@ T   = 400
 /**** SPACE-TIME ****/
 Nx   = 51
 Nz   = 51
-Nt   = 130
+Nt   = 10
 xmin = -00.000000e3
 zmin = -00.0000000e3
 xmax =  1000.000000e3
 zmax =  1000.0000000e3 
 dt   = 5.0e+9
 Courant = 0.25
-penalty = 10e0
+penalty = 1e1
 eta_avg = 0
 rel_tol_div = 1e-10
 abs_tol_div = 1e-10
@@ -45,10 +45,11 @@ eqn_state       = 0
 thermal_eq      = 0
 shear_heat      = 0
 adiab_heat      = 0
-StressRotation  = 2
-subgrid_diff    = 2
-StressUpdate    = 0
-IncrementalUpdateGrid = 1
+StressRotation  = 0
+subgrid_diff    = 0
+StressUpdate    = 1
+IncrementalUpdateGrid = 0
+Reseed = 0
 
 /**** SETUP DEPENDANT ****/
 EpsBG           =-5e-140

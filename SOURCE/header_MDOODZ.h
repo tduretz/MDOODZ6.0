@@ -212,6 +212,7 @@ struct _grid {
     double *dil_n, *dil_s, *fric_n, *fric_s, *C_n, *C_s;
     double *exz_n_el, *exz_n_diss, *exz_n_pl, *Wdiss, *Wel, *Wtot;
     double *kc_x, *kc_z;
+    double *FreeSurfW_s, *FreeSurfW_n;
 };
 
 // Contains information needed for the direct solver
