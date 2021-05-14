@@ -42,6 +42,22 @@
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+void Compute4Cell( int ic, int jc , int Nx, double** xc, grid *mesh, markers *particles, int k, int**npc, double** npvolc, double*** phc, int ith ) {
+    double dxm, dzm, w;
+    int ind;
+    ind = ic + jc * Nx;
+    dxm = fabs(        xc[ith][ic] - particles->x[k]);
+    dzm = fabs( mesh->zc_coord[jc] - particles->z[k]);
+    w   = (1.0-dxm/mesh->dx)*(1.0-dzm/mesh->dz);
+    npc[ith][ind]++;
+    npvolc[ith][ind]+=w;
+    phc[ith][particles->phase[k]][ind]+=w;
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 void V2P( double *Vxm, double *Vzm, markers* particles, double*Vx,  double*Vz, double*xg, double*zg, double *zvx, double *xvz, int Nxg, int Nzg, int NzVx, int NxVz, char *tagVx, char *tagVz, double dx, double dz, int k, int TarasCorr ) {
     
     double val  = 0.0;
@@ -3202,10 +3218,205 @@ void Interp_Phase2VizGrid ( markers particles, int* PartField, grid *mesh, char*
 //    printf("** Time for particles inflow check = %lf sec\n",  (double)((double)omp_get_wtime() - t_omp) );
 //
 //}
-//
-///*--------------------------------------------------------------------------------------------------------------------*/
-///*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
-///*--------------------------------------------------------------------------------------------------------------------*/
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+// Particles to reference nodes
+void P2Mastah ( params *model, markers particles, DoodzFP* mat_prop, grid *mesh, double* NodeField, int flag, int avg, int prop, int centroid ) {
+    
+    // flag == 0 --> interpolate from material properties structure
+    // flag == 1 --> interpolate straight from the particle arrays
+    // avg  == 0 --> arithmetic distance-weighted average
+    // avg  == 1 --> harmonic distance-weighted average
+    // avg  == 2 --> geometric distance-weighted average
+    
+    int p, i, k, i_part,j_part, Np, nthreads, thread_num, Nx, Nz;
+    double dx, dz, dxm, dzm,  distance, mark_val, dx_itp, dz_itp;
+    double *WM, *BMWM;
+    double **Wm, **BmWm, ***Wm_ph;
+    double *X_vect, *Z_vect;
+    
+    if (centroid==1) {
+        Nx = mesh->Nx-1;
+        Nz = mesh->Nz-1;
+        X_vect = mesh->xc_coord;
+        Z_vect = mesh->zc_coord;
+    }
+    else {
+        Nx = mesh->Nx;
+        Nz = mesh->Nz;
+        X_vect = mesh->xg_coord;
+        Z_vect = mesh->zg_coord;
+    }
+
+    Np = particles.Nb_part;
+    dx = mesh->dx;
+    dz = mesh->dz;
+    if (model->itp_stencil==1) dx_itp =     dx/2.0; // 1-cell
+    if (model->itp_stencil==1) dz_itp =     dz/2.0; // 1-cell
+    if (model->itp_stencil==9) dx_itp = 3.0*dx/2.0; // 9-cell
+    if (model->itp_stencil==9) dz_itp = 3.0*dz/2.0; // 9-cell
+    
+    // Initialisation
+    if (prop==1) {
+#pragma omp parallel for shared ( mesh ) private( i, k ) firstprivate( Nx, Nz, nthreads, model, centroid ) schedule( static )
+        for ( i=0; i<Nx*Nz; i++ ) {
+            for (p=0; p<model->Nb_phases; p++) {
+                if (centroid==0) mesh->phase_perc_s[p][i] = 0.0;
+                if (centroid==1) mesh->phase_perc_n[p][i] = 0.0;
+            }
+        }
+    }
+    
+#pragma omp parallel
+    {
+        nthreads = omp_get_num_threads();
+    }
+    
+    //--------------------------------------------------------------
+    // Initialize Wm and BmWm
+    //--------------------------------------------------------------
+    Wm    = DoodzCalloc ( nthreads, sizeof(double*));    // allocate storage for the array
+    BmWm  = DoodzCalloc ( nthreads, sizeof(double*));    // allocate storage for the array
+    Wm_ph = DoodzCalloc ( nthreads, sizeof(double**));
+    
+    for ( k=0; k<nthreads; k++ ) {
+        Wm[k]    = DoodzCalloc ( Nx*Nz, sizeof(double));
+        BmWm[k]  = DoodzCalloc ( Nx*Nz, sizeof(double));
+        Wm_ph[k] = DoodzCalloc ( model->Nb_phases, sizeof(double*));
+        for (p=0; p<model->Nb_phases; p++) Wm_ph[k][p] = DoodzCalloc ( Nx*Nz, sizeof(double));
+    }
+    
+    WM   = DoodzCalloc ( Nx*Nz, sizeof(double));
+    BMWM = DoodzCalloc ( Nx*Nz, sizeof(double));
+    
+    //--------------------------------------------------------------
+    // Compute Wm and BmWm
+    //--------------------------------------------------------------
+    
+#pragma omp parallel for shared ( particles, BmWm, Wm, Wm_ph, X_vect, Z_vect )       \
+private ( k, dxm, dzm, j_part, i_part, distance, mark_val, thread_num, p     )       \
+firstprivate ( mat_prop, dx, dz, Np, Nx, Nz, mesh, flag, avg, dx_itp, dz_itp, prop)  //schedule( dynamic )
+    
+    for (k=0; k<Np; k++) {
+        
+        // Filter out particles that are inactive (out of the box)
+        if (particles.phase[k] != -1) {
+            
+            thread_num = omp_get_thread_num();
+            p          = particles.phase[k];
+            
+            // Get the column:
+            distance = ( particles.x[k] - X_vect[0] );
+            j_part   = ceil( (distance/dx) + 0.5) - 1;
+
+            if (j_part<0   ) j_part = 0;
+            if (j_part>Nx-1) j_part = Nx-1;
+
+            // Get the line:
+            distance = ( particles.z[k] - Z_vect[0] );
+            i_part   = ceil( (distance/dz) + 0.5) - 1;
+            
+            if (i_part<0   ) i_part = 0;
+            if (i_part>Nz-1) i_part = Nz-1;
+
+            dxm = fabs( X_vect[j_part] - particles.x[k]);
+            dzm = fabs( Z_vect[i_part] - particles.z[k]);
+            
+            if ( prop == 0 ) {
+                // Get material properties (from particules or mat_prop array)
+                if (flag==0) {
+                    mark_val = mat_prop[particles.phase[k]];
+                }
+                if (flag==1) {
+                    mark_val = mat_prop[k];
+                }
+                if (avg==1) {
+                    mark_val =  1.0/mark_val;
+                }
+                if (avg==2) {
+                    mark_val =  log(mark_val);
+                }
+            }
+        
+            Wm_ph[thread_num][p][j_part+i_part*Nx]  +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+            Wm[thread_num][j_part+i_part*Nx]        +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+            BmWm[thread_num][j_part+i_part*Nx]      += mark_val*(1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+        }
+    }
+
+    // Final reduction
+#pragma omp parallel for shared ( BmWm, Wm, BMWM, WM, Wm_ph, mesh ) private( i, k ) firstprivate( Nx, Nz, nthreads, model, centroid, prop) schedule( static )
+    for ( i=0; i<Nx*Nz; i++ ) {
+        for ( k=0; k<nthreads; k++ ) {
+            WM[i]   += Wm[k][i];
+            BMWM[i] += BmWm[k][i];
+            if ( prop == 1 ) {
+                for (p=0; p<model->Nb_phases; p++) {
+                    if (centroid==0) mesh->phase_perc_s[p][i] += Wm_ph[k][p][i];
+                    if (centroid==1) mesh->phase_perc_n[p][i] += Wm_ph[k][p][i];
+                }
+            }
+        }
+    }
+    
+//    for ( i=0; i<Nx*Nz; i++ ) {
+//        printf("%lf\n", mesh->phase_perc_n[1][i]);
+//    }
+
+    //--------------------------------------------------------------
+    // Get interpolated value on nodes
+    //--------------------------------------------------------------
+    
+    
+#pragma omp parallel for shared ( NodeField, BMWM, WM, Nx, Nz, mesh ) private( i ) firstprivate ( avg ) schedule( static )
+        for (i=0;i<Nx*Nz;i++) {
+            
+            if ( fabs(WM[i])<1e-30  || (mesh->BCp.type[i]==30 || mesh->BCp.type[i]==31) ) { //|| mesh->BCp.type[0][i]==0
+            }
+            else {
+                
+                if ( prop == 0 ) {
+                    
+                    NodeField[i] = BMWM[i]/WM[i];
+                    if (avg==1) {
+                        NodeField[i] =  1.0 / NodeField[i];
+                    }
+                    if (avg==2) {
+                        NodeField[i] =  exp(NodeField[i]);
+                    }
+                }
+                if ( prop == 1 ) {
+                    for (p=0; p<model->Nb_phases; p++) {
+                        if (centroid==0) mesh->phase_perc_s[p][i] /= WM[i];
+                        if (centroid==1) mesh->phase_perc_n[p][i] /= WM[i];
+                    }
+                }
+                
+            }
+        }
+    
+
+    // Clean up
+    DoodzFree(WM);
+    DoodzFree(BMWM);
+    
+    for ( k=0; k<nthreads; k++ ) {
+        for (p=0; p<model->Nb_phases; p++) DoodzFree(Wm_ph[k][p]);
+        DoodzFree(Wm[k]);
+        DoodzFree(BmWm[k]);
+        DoodzFree(Wm_ph[k]);
+    }
+    DoodzFree(Wm_ph);
+    DoodzFree(Wm);
+    DoodzFree(BmWm);
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 void CountPartCell ( markers* particles, grid *mesh, params model, surface topo, surface topo_ini, int RESEED, scale scaling ) {
 
@@ -3227,6 +3438,12 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
 
     printf("USING NEW PART IN CELL\n");
     if (RESEED==1) printf("OLD NUMBER OF MARKERS = %02d\n", particles->Nb_part);
+    
+    // First operation - compute phase proportions on centroids and vertices
+    int cent=1, vert=0, prop=1, interp=0;
+//    P2Mastah ( &model, *particles, NULL, mesh, NULL,  0, 0, prop, cent );
+//    P2Mastah ( &model, *particles, NULL, mesh, NULL,  0, 0, prop, vert );
+    
     // Split the domain in N threads in x direction
 #pragma omp parallel
     {
@@ -3243,7 +3460,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
     int    **newi;
     int offc=0;
     int flag1;
-
+    
     // Get the value of nx for each processor
     for (ith=0; ith<nthreads; ith++) {
         ncx[ith]  = (Ncx-Ncx%nthreads)/nthreads;
@@ -3318,6 +3535,13 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
             //for (ith=0; ith<nthreads; ith++)
     {
         ith = omp_get_thread_num();
+        
+        // Compute anchor for global cell index in x direction
+        int igc, ii, ancrage_cell = 0;
+        if (ith == 0) ancrage_cell = 0;
+        if (ith  > 0) {
+            for (ii=0;ii<ith;ii++) ancrage_cell += (nx[ii]-1);
+        }
 
         nnewp[ith]   = 0;
         npart[ith]   = 0;
@@ -3417,18 +3641,33 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
 //                printf("particles->x[k] = %2.2e ; (PT CENTRE X) = %2.2e; gauche  = %2.2e; xg droite = %2.2e\n", particles->x[k],xg[ith][ic],xg[ith][ic]-dx/2.0, xg[ith][ic]+dx/2.0 );
 //                printf("particles->z[k] = %2.2e ; (PT CENTRE Z) = %2.2e; dessous = %2.2e; dessus    = %2.2e\n", particles->z[k],mesh->zg_coord[jc],mesh->zg_coord[jc]-dz/2.0, mesh->zg_coord[jc]+dz/2.0 );
                 
-                dxm = 2.0*fabs( xg[ith][ic] - particles->x[k]);
-                dzm = 2.0*fabs( mesh->zg_coord[jc] - particles->z[k]);
-                weight = (1.0-dxm/dx)*(1.0-dzm/dz);
+                weight = 1.0;
+                
+                if (model.itp_stencil==1) {
+                    dxm = 1.0*fabs( xg[ith][ic] - particles->x[k]);
+                    dzm = 1.0*fabs( mesh->zg_coord[jc] - particles->z[k]);
+                    weight = (1.0-dxm/(dx/2.0))*(1.0-dzm/(dz/2.0));
+                }
+                
+//                if (dxm>dx/2.0) {
+//                 printf("nodes Outside X !!!");
+//                    exit(1);
+//                }
+//                if (dzm>dz/2.0) {
+//                 printf("nodes Outside Z !!!");
+//                    exit(1);
+//                }
                 
                 // If particles are around the nodes: count them
                 if ( particles -> phase[k]>=0 ) {
                     npv[ith][ic + jc * (nx[ith])]++;
                     npvolv[ith][ic + jc * (nx[ith])]+=weight;
                     phv[ith][particles->phase[k]][ic + jc * (nx[ith])] +=weight;
+//                    phv[ith][particles->phase[k]][ic + jc * (nx[ith])] +=1.0;
+
                 }
 
-                // -------- Check CELLS ---------- //
+                 //-------- Check CELLS ---------- //
 
 
                 // Filter out overlapping domain
@@ -3442,16 +3681,71 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
                     if (jc<0)    jc = 0;
                     if (jc>Nz-2) jc = Nz-2;
 
-                    dxm = 2.0*fabs( xc[ith][ic] - particles->x[k]);
-                    dzm = 2.0*fabs( mesh->zc_coord[jc] - particles->z[k]);
-                    weight = (1.0-dxm/dx)*(1.0-dzm/dz);
+                    weight = 1.0;
                     
+                    if (model.itp_stencil==1) {
+                        dxm    = 1.0*fabs( xc[ith][ic] - particles->x[k]);
+                        dzm    = 1.0*fabs( mesh->zc_coord[jc] - particles->z[k]);
+                        weight = (1.0-dxm/(dx/2.0))*(1.0-dzm/(dz/2.0));
+                    }
                     // If particles are around the nodes: count them
-                    if ( particles -> phase[k]>=0 ) {
+                    if ( particles -> phase[k]>=0 )  { //&& (model.itp_stencil==0 || model.itp_stencil==1
                         npc[ith][ic + jc * (nx[ith]-1)]++;
                         npvolc[ith][ic + jc * (nx[ith]-1)]+=weight;
                         phc[ith][particles->phase[k]][ic + jc * (nx[ith]-1)]+=weight;
+//                        phc[ith][particles->phase[k]][ic + jc * (nx[ith]-1)]+=1.0;
                     }
+                    
+//                    if ( particles -> phase[k]>=0 && model.itp_stencil==4) {
+//                        
+//                        // Global cell index in x direction
+//                        igc = ancrage_cell + ic;
+//                        
+//                        // if particle lies in the SW quadrant of the cell -- reference to NE
+//                        if ( particles->x[k] < xc[ith][ic] &&  particles->z[k] < mesh->zc_coord[jc] ) {
+//                                                   Compute4Cell( ic  , jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NE
+//                            if (igc>0            ) Compute4Cell( ic-1, jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NW
+//                            if (igc>0   &&   jc>0) Compute4Cell( ic-1, jc-1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SW
+//                            if (             jc>0) Compute4Cell( ic  , jc-1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SE
+//                        }
+//                        
+//                        // if particle lies in the SE quadrant of the cell -- reference to NW
+//                        if ( particles->x[k] > xc[ith][ic] &&  particles->z[k] < mesh->zc_coord[jc] ) {
+//                                                   Compute4Cell( ic  , jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NW
+//                            if (igc<Ncx          ) Compute4Cell( ic+1, jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NE
+//                            if (igc<Ncx  &&  jc>0) Compute4Cell( ic+1, jc-1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SE
+//                            if (             jc>0) Compute4Cell( ic  , jc-1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SW
+//                        }
+//                        // if particle lies in the NW quadrant of the cell -- reference to SE
+//                        if ( particles->x[k] < xc[ith][ic] &&  particles->z[k] > mesh->zc_coord[jc] ) {
+//                                                   Compute4Cell( ic  , jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SE
+//                            if (igc>0            ) Compute4Cell( ic-1, jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SW
+//                            if (           jc<Ncz) Compute4Cell( ic  , jc+1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NE
+//                            if (igc>0  &&  jc<Ncz) Compute4Cell( ic-1, jc+1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NW
+//                            
+//                        }
+//                        // if particle lies in the NE quadrant of the cell -- reference to SW
+//                        if ( particles->x[k] > xc[ith][ic] &&  particles->z[k] > mesh->zc_coord[jc] ) {
+//                                                   Compute4Cell( ic  , jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SW
+//                            if (igc<Ncx          ) Compute4Cell( ic+1, jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SE
+//                            if (           jc<Ncz) Compute4Cell( ic  , jc+1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NW
+//                            if (igc<Ncx && jc<Ncz) Compute4Cell( ic+1, jc+1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NE
+//                        }
+//                        
+//                        
+//                    }
+                    
+                    if (dxm>dx/2.0) {
+                        printf("centers Outside X !!!");
+                        exit(1);
+                    }
+                    if (dzm>dz/2.0) {
+                        printf("centers Outside Z !!!");
+                        exit(1);
+                    }
+                    
+                    
+
                 }
             }
         }

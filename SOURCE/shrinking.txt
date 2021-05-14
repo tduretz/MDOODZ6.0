@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 01300
+istep = 00010
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -18,7 +18,7 @@ T   = 700
 /**** SPACE-TIME ****/
 Nx      = 201
 Nz      = 201
-Nt      = 2000
+Nt      = 10
 xmin    =-1.0
 zmin    =-1.0
 xmax    = 1.0
@@ -41,9 +41,7 @@ safe_mode         = 1
 safe_dt_div       = 2.0
 nstagmax          = 10
 IncrementalUpdateGrid = 1
-StressUpdate      = 0
-ConservInterp     = 0
-Reseed            = 1
+StressUpdate    = 0
 
 /**** SWITCHES ****/
 compressible    = 1

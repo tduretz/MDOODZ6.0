@@ -61,6 +61,7 @@ int main( int nargs, char *args[] ) {
     SparseMat    JacobA,  JacobB,  JacobC,  JacobD;
     int          Nx, Nz, Ncx, Ncz;
     int          Newton, *Newt_on, first_Newton;
+    int cent=1, vert=0, prop=1, interp=0;
     
     double *rx_abs, *rz_abs, *rp_abs, *rx_rel, *rz_rel, *rp_rel;
     
@@ -382,10 +383,11 @@ int main( int nargs, char *args[] ) {
             MinMaxArrayTag( mesh.eta_phys_n, scaling.eta, (mesh.Nx-1)*(mesh.Nz-1), "eta_phys_n", mesh.BCp.type );
             MinMaxArrayTag( mesh.rho_s,      scaling.rho, (mesh.Nx-0)*(mesh.Nz-0), "rho_s     ", mesh.BCg.type );
             MinMaxArrayTag( mesh.rho_n,      scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n     ", mesh.BCp.type );
-            MinMaxArrayTag( mesh.phase_perc_n[0],    1.0, (mesh.Nx-1)*(mesh.Nz-1), "ph 0      ", mesh.BCp.type );
-            MinMaxArrayTag( mesh.phase_perc_n[1],    1.0, (mesh.Nx-1)*(mesh.Nz-1), "ph 1      ", mesh.BCp.type );
-            MinMaxArrayTag( mesh.phase_perc_s[0],    1.0, (mesh.Nx-0)*(mesh.Nz-0), "ph 0      ", mesh.BCg.type );
-            MinMaxArrayTag( mesh.phase_perc_s[1],    1.0, (mesh.Nx-0)*(mesh.Nz-0), "ph 1      ", mesh.BCg.type );
+            for (int p=0; p<model.Nb_phases; p++) {
+                printf("Phase number %d:\n", p);
+                MinMaxArrayTag( mesh.phase_perc_n[p],    1.0, (mesh.Nx-1)*(mesh.Nz-1), "ph_n      ", mesh.BCp.type );
+                MinMaxArrayTag( mesh.phase_perc_s[p],    1.0, (mesh.Nx-0)*(mesh.Nz-0), "ph_s      ", mesh.BCg.type );
+            }
         }
         
         printf("*************************************\n");
@@ -731,6 +733,13 @@ int main( int nargs, char *args[] ) {
             MinMaxArrayTag( mesh.T0_n,     scaling.T,   (mesh.Nx-1)*(mesh.Nz-1), "T       ", mesh.BCt.type );
             MinMaxArrayTag( mesh.p_in,     scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P       ", mesh.BCt.type );
             MinMaxArrayI  ( mesh.comp_cells, 1.0, (mesh.Nx-1)*(mesh.Nz-1), "comp_cells" );
+            
+            for (int p=0; p<model.Nb_phases; p++) {
+                printf("Phase number %d:\n", p);
+                MinMaxArrayTag( mesh.phase_perc_n[p],    1.0, (mesh.Nx-1)*(mesh.Nz-1), "ph_n      ", mesh.BCp.type );
+                MinMaxArrayTag( mesh.phase_perc_s[p],    1.0, (mesh.Nx-0)*(mesh.Nz-0), "ph_s      ", mesh.BCg.type );
+            }
+            
             if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nx0_n,    1.0,   (mesh.Nx-1)*(mesh.Nz-1), "nx0_n  ", mesh.BCp.type );
             if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nz0_n,    1.0,   (mesh.Nx-1)*(mesh.Nz-1), "nz0_n  ", mesh.BCp.type );
             if  ( model.aniso == 1 ) MinMaxArrayTag( mesh.nx0_s,    1.0,   (mesh.Nx)*(mesh.Nz),     "nx0_s  ", mesh.BCg.type );

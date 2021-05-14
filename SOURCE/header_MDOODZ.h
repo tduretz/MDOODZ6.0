@@ -104,7 +104,7 @@ struct _params {
     double  xmin0, zmin0, xmax0, zmax0;
 	double gx, gz;
 	int Nx, Nz, Nt, step, nit, Newton, noisy;
-	int eta_avg;
+	int eta_avg, itp_stencil;
     double nexp_radial_basis;
 	int ismechanical, isperiodic_x, isinertial, iselastic, isnonnewtonian, isthermal, ispureshear_ale, free_surf, eqn_state, write_markers, write_debug, write_energies, no_markers;
     double free_surf_stab;
@@ -339,6 +339,7 @@ void Interp_Grid2P_strain( markers, DoodzFP*, grid*, double*, double*, double*, 
 //void FreeP2Mesh( grid* );
 void Interp_Phase2VizGrid( markers, int*, grid*, char*, double*, double*, int, int, params, surface );
 void ParticleInflowCheck ( markers*, grid*, params, surface, int);
+void P2Mastah ( params*, markers , DoodzFP*, grid*, double*, int, int, int, int );
 //
 //// Stokes
 //void ResidualCalc2( grid*OutputSparseMatrix *, params, int, double*, double*, double*, double*, double*, double*, int, scale );

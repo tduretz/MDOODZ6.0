@@ -333,7 +333,6 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     
     Cszzd  = DoodzMalloc( sizeof(float)*(model.Nx-1)*(model.Nz-1));
     DoubleToFloat( mesh->szzd, Cszzd, (model.Nx-1)*(model.Nz-1) );
-    DoubleToFloat( mesh->sxxd0, Cszzd, (model.Nx-1)*(model.Nz-1) );
     ScaleBack( Cszzd, scaling.S, (model.Nx-1)*(model.Nz-1) );
 
     Csxz  = DoodzMalloc( sizeof(float)*model.Nx*model.Nz);
