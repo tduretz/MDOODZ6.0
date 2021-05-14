@@ -448,7 +448,14 @@ void ComputeLithostaticPressure( grid *mesh, params *model, double RHO_REF, scal
     for( l=0; l<ncz; l++) {
         for( k=0; k<ncx; k++) {
             c  = k + l*ncx;
-            if ( mesh->BCp.type[c] != 30 && mesh->BCp.type[c] != 31 ) mesh->p_lith[c] += model->PrBG;
+            // density
+            if ( mode == 0 ) rho_eff = RHO_REF;
+            if ( mode == 1 ) rho_eff = mesh->rho_n[c];
+            
+            if ( mesh->BCp.type[c] != 30 && mesh->BCp.type[c] != 31 ) {
+                //                mesh->p_lith[c] += model->PrBG;
+                mesh->p_lith[c]  += 0.5*model->gz * mesh->dz * rho_eff;
+            }
         }
     }
     

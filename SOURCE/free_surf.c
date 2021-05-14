@@ -241,36 +241,36 @@ void RemeshMarkerChain( markers *topo_chain, surface *topo, params model, scale 
         // This procedure is likely diffusive
         // For each cell
         
-//        for ( k=0; k<Ncx; k++ ) {
-//            // Initialise marker x coordinate and topography
-//            for ( ip=0; ip<fact; ip++ ) {
-//                topo_chain->x[count]   = dxm + ip*dxm + mesh->xg_coord[k];
-//                distance               = (topo_chain->x[count] - xmin);
-//                ic                     = ceil((distance/model.dx)+0.5) - 1;
-//                if ( ic<0)          ic = 0;
-//                if ( ic>Ncx)        ic = Ncx;
-//                topo_chain->z[count]   = (topo->b[ic] + topo->a[ic] * ( topo_chain->x[count] ));
-//                count++;
-//            }
-//        }
+        //        for ( k=0; k<Ncx; k++ ) {
+        //            // Initialise marker x coordinate and topography
+        //            for ( ip=0; ip<fact; ip++ ) {
+        //                topo_chain->x[count]   = dxm + ip*dxm + mesh->xg_coord[k];
+        //                distance               = (topo_chain->x[count] - xmin);
+        //                ic                     = ceil((distance/model.dx)+0.5) - 1;
+        //                if ( ic<0)          ic = 0;
+        //                if ( ic>Ncx)        ic = Ncx;
+        //                topo_chain->z[count]   = (topo->b[ic] + topo->a[ic] * ( topo_chain->x[count] ));
+        //                count++;
+        //            }
+        //        }
         
         fact = 23;
         xmin = model.xmin + model.dx/2.0;
         dx   = model.dx/fact;
         topo_chain->Nb_part = model.Nx*fact - (fact-1) - 2;
-
+        
         for ( k=0; k<topo_chain->Nb_part; k++ ) {
-
+            
             // Reset x coordinate
             topo_chain->x[k]     = model.xmin + k*dx + dx;
             distance=fabs(topo_chain->x[k] - xmin);
             ic = ceil((distance/model.dx)+0.5) - 1;
-
+            
             if ( ic<0)          ic = 0;
             if ( ic>model.Nx-1) ic =model.Nx-1;
             topo_chain->z[k]     = (topo->b[ic] + topo->a[ic] * ( topo_chain->x[k] ));
         }
-
+        
         topo_chain->x[topo_chain->Nb_part] = topo_chain->x[topo_chain->Nb_part-1];
         topo_chain->z[topo_chain->Nb_part] = topo_chain->z[topo_chain->Nb_part-1];
         
@@ -283,20 +283,21 @@ void RemeshMarkerChain( markers *topo_chain, surface *topo, params model, scale 
         
         if ( mode == 1 ) {
             
+            int nout=0;
             // Find to which cell each marker contribute / find number of topo. markers per FINE cell column (DX/res)
             for (k=0;k<topo_chain->Nb_part;k++) {
-                          
-                // Kick lateral markers inside
-                if (topo_chain->x[k]<model.xmin) {
-                    topo_chain->x[k]    += model.dx/6.0;
-                    topo_chain->phase[k] = 0;
-                }
                 
-                // Kick lateral markers inside
-                if (topo_chain->x[k]>model.xmax) {
-                    topo_chain->x[k]    -= model.dx/6.0;
-                    topo_chain->phase[k] = 0;
-                }
+                //                // Kick lateral markers inside
+                //                if (topo_chain->x[k]<model.xmin) {
+                //                    topo_chain->x[k]    += model.dx/6.0;
+                //                    topo_chain->phase[k] = 0;
+                //                }
+                //
+                //                // Kick lateral markers inside
+                //                if (topo_chain->x[k]>model.xmax) {
+                //                    topo_chain->x[k]    -= model.dx/6.0;
+                //                    topo_chain->phase[k] = 0;
+                //                }
                 
                 if (topo_chain->x[k]>model.xmax || topo_chain->x[k]<model.xmin  ) topo_chain->phase[k] = -1;
                 else topo_chain->phase[k]=0;
@@ -307,17 +308,35 @@ void RemeshMarkerChain( markers *topo_chain, surface *topo, params model, scale 
                 if (in<0        ) in = 0;
                 if (in>res*Ncx-1) in = res*Ncx-1;
                 if (topo_chain->phase[k]!=-1) NumMarkCell[in]++;
+                // NEW
+                if (topo_chain->phase[k]== -1) nout++;
+                
             }
+            
+            // NEW
+            int ii=0;
+            int *reuse = DoodzCalloc( nout, sizeof(int) );
+            for (k=0;k<topo_chain->Nb_part;k++) {
+                if (topo_chain->phase[k]== -1) {
+                    reuse[ii] = k;
+                    ii++;
+                }
+            }
+            int recycle = 0;
+            
+            ii = 0;
+            if (nout>0) recycle = 1;
+            printf("%d surface markers are out, so recycle is %d\n", nout, recycle);
             
             for ( k=0; k<res*Ncx; k++ ) {
                 
                 if ( NumMarkCell[k]<minPartCell ) {
-                    
                     //                printf("Adding topo. markers in cell %d who owns %d markers --  xc = %2.4lf\n", k, NumMarkCell[k], (model.xmin + k*dx/res + dx/2/res)*scaling.L);
                     // check for possibility of adding markers
                     if( topo_chain->Nb_part+1<topo_chain->Nb_part_max && topo_chain->Nb_part+2<topo_chain->Nb_part_max) {
                         // Add one particle on the WEST side of the fine column
-                        NewInd                = topo_chain->Nb_part;
+                        if (recycle==0) NewInd                = topo_chain->Nb_part;
+                        if (recycle==1) NewInd                = reuse[ii];
                         topo_chain->x[NewInd] = model.xmin + k*dx/res + dx/4.0/res;
                         // Index of the coarse grid column
                         distance        = (topo_chain->x[NewInd]-model.xmin-dx/2.0);
@@ -337,23 +356,18 @@ void RemeshMarkerChain( markers *topo_chain, surface *topo, params model, scale 
                         if (in>Ncx-1)in = Ncx-1;
                         // Topography computed from the coarse grid column
                         topo_chain->z[NewInd] = (topo->b[in] + topo->a[in] * ( topo_chain->x[NewInd] ));
-                        printf("New z = %2.2e \n", topo_chain->z[NewInd]);
-                        topo_chain->Nb_part++;
+//                        printf("New z = %2.2e \n", topo_chain->z[NewInd]);
+                        if (recycle==0) topo_chain->Nb_part++;
+                        if (recycle==1) ii++;
+                        if (  ii>=nout) recycle=0;
                     }
                     else {
-                        printf("The max. number of topographic particles (currently %d) needs to be increased (number of particles%d)\n", topo_chain->Nb_part_max, topo_chain->Nb_part);
+                        printf("The max. number of topographic particles (currently %d) needs to be increased (number of particles %d)\n", topo_chain->Nb_part_max, topo_chain->Nb_part);
                         exit(45);
                     }
-                    
                 }
-//                if (k==0) {
-//                    printf("WEST Number topo mark = %d\n",  NumMarkCell[k]);
-//                }
-//                
-//                if (k==Ncx-1) {
-//                    printf("EAST Number topo mark = %d\n",  NumMarkCell[k]);
-//                }
             }
+            DoodzFree(reuse);
         }
         
         if (mode==2) {
@@ -1368,7 +1382,7 @@ void DiffuseAlongTopography( grid *mesh, params model, scale scaling, double *ar
     double diff = model.surf_diff;
     double dt   = 0.4*dx*dx/diff, time=0.0, dtr;
     int nstep   = (int)(diff_time/dt + 1);
-    double correct[size], s, e, ev[size];
+    double correct[size], s, e;//, ev[size];
     double base_level = model.surf_baselev;//0*array[0]; // left side
     double sedi_rate  = model.surf_sedirate;
     double Wvalley    = model.surf_Winc;
@@ -1383,9 +1397,9 @@ void DiffuseAlongTopography( grid *mesh, params model, scale scaling, double *ar
 
     if ( model.surf_processes == 1 || model.surf_processes == 3 ) {
         
-        for (i=1; i<size-1; i++) {
-            ev[i] = Vinc*exp(-pow(mesh->xg_coord[i],2) / pow(Wvalley/2.0,2) );
-        }
+//        for (i=1; i<size-1; i++) {
+//            ev[i] = Vinc*exp(-pow(mesh->xg_coord[i],2) / pow(Wvalley/2.0,2) );
+//        }
         
         // Compute volume of cells in the valley region
         int ncell = 0;
@@ -1422,7 +1436,7 @@ void DiffuseAlongTopography( grid *mesh, params model, scale scaling, double *ar
                 e = 0.0;
                 
                 if (fabs(mesh->xg_coord[i]) < 0.5*Wvalley){
-                    printf("EROSION at x = %2.2e\n", mesh->xg_coord[i]);
+                    //printf("EROSION at x = %2.2e\n", mesh->xg_coord[i]);
                     e = dtr*Vinc_num;
                 }
                 

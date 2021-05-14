@@ -482,7 +482,6 @@ int main( int nargs, char *args[] ) {
             if ( model.IncrementalUpdateGrid == 0 ) { // OLD STYLE
                 
                 // Energy - interpolate thermal parameters and advected energy
-                //                if ( model.isthermal == 1 ) {
                 
                 // Get energy and related material parameters from particles
                 Interp_P2C ( particles, materials.Cv,   &mesh, mesh.Cv,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
@@ -496,44 +495,7 @@ int main( int nargs, char *args[] ) {
                 Interp_P2C ( particles, particles.divth, &mesh, mesh.divth0_n, mesh.xg_coord, mesh.zg_coord,  1, 0 );
                 // Make sure T is up to date for rheology evaluation
                 ArrayEqualArray( mesh.T, mesh.T0_n, (mesh.Nx-1)*(mesh.Nz-1) );
-                //                }
                 
-                
-//                printf("LOADING DATA FOR STOKES\n");
-//
-//                Initialise1DArrayDouble(mesh.T, (mesh.Nx-1)*(mesh.Nz-1), 0.0);
-//                Initialise1DArrayDouble(mesh.p_in, (mesh.Nx-1)*(mesh.Nz-1), 0.0);
-//
-//                FILE *file;
-//                file = fopen("data_T_n", "rb");
-//                fread( mesh.T, sizeof(DoodzFP), (mesh.Nx-1)*(mesh.Nz-1), file );
-//                fclose(file);
-//
-//                file = fopen("data_p_n", "rb");
-//                fread( mesh.p_in, sizeof(DoodzFP), (mesh.Nx-1)*(mesh.Nz-1), file );
-//                fclose(file);
-//
-//                file = fopen("data_BCptype", "rb");
-//                fread( mesh.BCp.type, sizeof(char), (mesh.Nx-1)*(mesh.Nz-1), file );
-//                fclose(file);
-//
-//                file = fopen("data_BCgtype", "rb");
-//                fread( mesh.BCg.type, sizeof(char), (mesh.Nx-0)*(mesh.Nz-0), file );
-//                fclose(file);
-                
-//                FILE *file;
-//                char* fname;
-//                int k;
-//                for ( k=0; k<model.Nb_phases; k++) {
-//
-//                        asprintf(&fname,"data_phaseperc_%02d", k);
-//                        file = fopen(fname, "rb");
-//                        fread( mesh.phase_perc_n[k], sizeof(double), (mesh.Nx-1)*(mesh.Nz-1), file );
-//                        fclose(file);
-//                        free(fname);
-//
-//               }
-
                 // Get physical properties that are constant throughout each timestep
                 if ( model.eqn_state  > 0 ) {
                     UpdateDensity( &mesh, &particles, &materials, &model, &scaling );
@@ -546,35 +508,11 @@ int main( int nargs, char *args[] ) {
                 MinMaxArrayTag( mesh.rho_s,      scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s     ", mesh.BCg.type );
                 MinMaxArrayTag( mesh.rho_n,      scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n     ", mesh.BCp.type );
                 MinMaxArrayTag( mesh.rho0_n,     scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho0_n    ", mesh.BCp.type );
-                
-
-                
-//                FILE *file;
-//                Initialise1DArrayDouble(mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1), 0.0);
-//                Initialise1DArrayDouble(mesh.rho_s, (mesh.Nx-0)*(mesh.Nz-0), 0.0);
-//
-//                file = fopen("data_rho_n", "rb");
-//                fread( mesh.rho_n, sizeof(DoodzFP), (mesh.Nx-1)*(mesh.Nz-1), file );
-//                fclose(file);
-//
-//                file = fopen("data_rho_s", "rb");
-//                fread( mesh.rho_s, sizeof(DoodzFP), (mesh.Nx-0)*(mesh.Nz-0), file );
-//                fclose(file);
-                               
-                
 
                 // Free surface - subgrid density correction
                 if ( model.free_surf == 1 ) {
                     SurfaceDensityCorrection( &mesh, model, topo, scaling  );
                 }
-                
-
-                
-               
-                
-                
-               
-                
                 
                 // Lithostatic pressure
                 ArrayEqualArray(  mesh.p_lith0,   mesh.p_lith, Ncx*Ncz );
@@ -882,47 +820,6 @@ int main( int nargs, char *args[] ) {
                 if ( model.Newton == 1 ) { printf("*** Newton it. %02d of %02d (step = %05d) ***\n", Nmodel.nit, Nmodel.nit_max, model.step); Newt_on[Nmodel.nit] = 1;}
                 printf("**********************************************\n");
                 
-
-                
-//                // Diffuse topography
-//                if ( model.surf_processes >= 1 )  DiffuseAlongTopography( &mesh, model, scaling,  topo.height0, topo.height, mesh.Nx, 0.0, model.dt );
-//
-//                // Marker chain polynomial fit
-//                MarkerChainPolyFit( &topo,     &topo_chain,     model, mesh );
-//
-//                // Get physical properties that are constant throughout each timestep
-//                if ( model.eqn_state  > 0 ) {
-//                    UpdateDensity( &mesh, &particles, &materials, &model, &scaling );
-//                }
-//                else {
-//                    Interp_P2N ( particles, materials.rho,  &mesh, mesh.rho_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
-//                    Interp_P2C ( particles, materials.rho,  &mesh, mesh.rho_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
-//                }
-//
-//                // Free surface - subgrid density correction
-//                if ( model.free_surf == 1 ) {
-//                    SurfaceDensityCorrection( &mesh, model, topo, scaling  );
-//                }
-                
-
-//                printf("LOADING DATA FOR STOKES\n");
-//
-//                Initialise1DArrayDouble(mesh.eta_n, (mesh.Nx-1)*(mesh.Nz-1), 0.0);
-//                Initialise1DArrayDouble(mesh.eta_s, (mesh.Nx-0)*(mesh.Nz-0), 0.0);
-
-//
-                
-//                file = fopen("data_eta_n", "rb");
-//                fread( mesh.eta_n, sizeof(DoodzFP), (mesh.Nx-1)*(mesh.Nz-1), file );
-//                fclose(file);
-//
-//                file = fopen("data_eta_s", "rb");
-//                fread( mesh.eta_s, sizeof(DoodzFP), (mesh.Nx-0)*(mesh.Nz-0), file );
-//                fclose(file);
-//
-
-
-                
                 UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
 
                 RheologicalOperators( &mesh, &model, &scaling, 0 );                               // ??????????? déjà fait dans UpdateNonLinearity
@@ -943,21 +840,6 @@ int main( int nargs, char *args[] ) {
                     MinMaxArrayTag( mesh.rho_n,      scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n     ", mesh.BCp.type );
                     MinMaxArrayTag( mesh.rho0_n,     scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho0_n    ", mesh.BCp.type );
                     MinMaxArrayTag( mesh.d_n,        scaling.L,   (mesh.Nx-1)*(mesh.Nz-1), "d         ", mesh.BCp.type );
-
-                    
-                    
-//                    for (int iphase=0; iphase<model.Nb_phases; iphase++) {
-//                                   CheckSym( mesh.phase_perc_n[iphase], 1.0, mesh.Nx-1, mesh.Nz-1, "perc_n" );
-//                                   CheckSym( mesh.phase_perc_s[iphase], 1.0, mesh.Nx-0, mesh.Nz-0, "perc_s" );
-//                    }
-//
-//                    CheckSym( mesh.rho_n, scaling.rho, mesh.Nx, mesh.Nz, "rho_n" );
-//                    CheckSym( mesh.rho_s, scaling.rho, mesh.Nx-1, mesh.Nz-1, "rho_s" );
-//
-//                    CheckSym( mesh.eta_n, scaling.eta, mesh.Nx-1, mesh.Nz-1, "eta_n" );
-//
-//                    CheckSym( mesh.eta_s, scaling.eta, mesh.Nx, mesh.Nz, "eta_s" );
-                    
                 }
                 
                 if ( model.write_debug == 1 ) {
@@ -1399,7 +1281,7 @@ int main( int nargs, char *args[] ) {
                     MarkerChainPolyFit( &topo_ini, &topo_chain_ini, model, mesh );
 
                     // Sedimentation
-                    if ( model.surf_processes >= 1 ) {
+                    if ( model.surf_processes >= 2 ) {
                         AddPartSed( &particles, materials, &topo_chain, &topo, model, scaling, &mesh);
                         if (model.cpc==-1) CountPartCell_BEN( &particles, &mesh, model, topo, 0, scaling );
                         if (model.cpc== 0) CountPartCell_Old( &particles, &mesh, model, topo, 0, scaling );

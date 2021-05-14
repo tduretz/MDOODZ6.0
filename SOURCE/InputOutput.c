@@ -1089,7 +1089,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->subgrid_diff    = ReadInt2( fin, "subgrid_diff",    0 );
     model->shear_heat      = ReadInt2( fin, "shear_heat",      1 );
     model->adiab_heat      = ReadInt2( fin, "adiab_heat",      0 );
-    model->surf_processes  = ReadInt2( fin, "surf_processes",  0 );
+    model->surf_processes  = ReadInt2( fin, "surf_processes",  0 ); // 1 = diffusion; 2 = diffusion + sedimentation
     model->surf_remesh     = ReadInt2( fin, "surf_remesh",     1 );
     model->cpc             = ReadInt2( fin, "cpc",             1 );
     model->loc_iter        = ReadInt2( fin, "loc_iter",        1 );

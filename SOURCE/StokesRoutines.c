@@ -1014,11 +1014,6 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
 
                         // Inner nodes
                         if (k>0 && k<Nx-1) {
-//                            inW=1.0, inE = 1.0, inS=1.0, inN = 1.0;
-//                            mesh->roger_x[c]  -= inE/dx * ( mesh->FreeSurfW_n[iPrE] * mesh->eta_n[iPrE] / (mesh->mu_n[iPrE]*model.dt)  * mesh->sxxd0[iPrE] );
-//                            mesh->roger_x[c]  -= inW/dx * (-mesh->FreeSurfW_n[iPrW] * mesh->eta_n[iPrW] / (mesh->mu_n[iPrW]*model.dt)  * mesh->sxxd0[iPrW] );
-//                            mesh->roger_x[c]  -= inN/dz * ( mesh->FreeSurfW_s[ixyN] * mesh->eta_s[ixyN] / (mesh->mu_s[ixyN]*model.dt)  * mesh->sxz0[ixyN] );
-//                            mesh->roger_x[c]  -= inS/dz * (-mesh->FreeSurfW_s[ixyS] * mesh->eta_s[ixyS] / (mesh->mu_s[ixyS]*model.dt)  * mesh->sxz0[ixyS] );
                             if ( inE ) mesh->roger_x[c]  -= 1.0/dx * ( mesh->eta_n[iPrE] / (mesh->mu_n[iPrE]*model.dt)  * mesh->sxxd0[iPrE] );
                             if ( inW ) mesh->roger_x[c]  -= 1.0/dx * (-mesh->eta_n[iPrW] / (mesh->mu_n[iPrW]*model.dt)  * mesh->sxxd0[iPrW] );
                             if ( inN ) mesh->roger_x[c]  -= 1.0/dz * ( mesh->eta_s[ixyN] / (mesh->mu_s[ixyN]*model.dt)  * mesh->sxz0[ixyN] );
@@ -1081,8 +1076,9 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                     if (mesh->BCg.type[ixyE] != 30 && mesh->BCv.type[iVyE] != 13 ) inE = 1.0;
 
                     // Gravity force: use apparent density (free surface correction)
-                    if (model.polar==0) rhoVz             = 0.5 * (mesh->rho_s[ixyW] + mesh->rho_s[ixyE]);  // USE THIS ALWAYS but not for polar!å
-                    if (model.polar==1) rhoVz             = 0.5 * (mesh->rho_n[iPrS] + mesh->rho_n[iPrN]);
+//                    if (model.polar==0) rhoVz             = 0.5 * (mesh->rho_s[ixyW] + mesh->rho_s[ixyE]);  // USE THIS ALWAYS but not for polar!
+//                    if (model.polar==1) rhoVz             = 0.5 * (mesh->rho_n[iPrS] + mesh->rho_n[iPrN]);
+                    rhoVz             = 0.5 * (mesh->rho_n[iPrS] + mesh->rho_n[iPrN]);
                     
                     mesh->roger_z[c]  = - gz * rhoVz;
 
@@ -1105,10 +1101,6 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                             if ( inS ) mesh->roger_z[c]  -= 1.0/dz * ( -mesh->eta_n[iPrS] / (mesh->mu_n[iPrS] *model.dt ) * (mesh->szzd0[iPrS]) );
                             if ( inE ) mesh->roger_z[c]  -= 1.0/dx * (  mesh->eta_s[ixyE] / (mesh->mu_s[ixyE] *model.dt ) *  mesh->sxz0[ixyE]) ;
                             if ( inW ) mesh->roger_z[c]  -= 1.0/dx * ( -mesh->eta_s[ixyW] / (mesh->mu_s[ixyW] *model.dt ) *  mesh->sxz0[ixyW]) ;
-//                            mesh->roger_z[c]  -= inN/dz * (  mesh->FreeSurfW_n[iPrN] * mesh->eta_n[iPrN] / (mesh->mu_n[iPrN] *model.dt ) * (mesh->szzd0[iPrN]) );
-//                            mesh->roger_z[c]  -= inS/dz * ( -mesh->FreeSurfW_n[iPrS] * mesh->eta_n[iPrS] / (mesh->mu_n[iPrS] *model.dt ) * (mesh->szzd0[iPrS]) );
-//                            mesh->roger_z[c]  -= inE/dx * (  mesh->FreeSurfW_s[ixyE] * mesh->eta_s[ixyE] / (mesh->mu_s[ixyE] *model.dt ) *  mesh->sxz0[ixyE]) ;
-//                            mesh->roger_z[c]  -= inW/dx * ( -mesh->FreeSurfW_s[ixyW] * mesh->eta_s[ixyW] / (mesh->mu_s[ixyW] *model.dt ) *  mesh->sxz0[ixyW]) ;
                         }
 
                     }
