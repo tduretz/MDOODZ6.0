@@ -251,7 +251,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
 
 
 // Set physical properties on the grid and boundary conditions
-void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_prop *materials ) {
+void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_prop *materials, surface* topo ) {
     
     int   kk, k, l, c, c1;
     double *X, *Z, *XC, *ZC;

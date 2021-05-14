@@ -614,9 +614,11 @@ firstprivate( model, dx, dz, new )
         VxA = (1.0/6.0) * ( VxA + 2.0 * VxB + 2.0 * VxC + VxD);
         VzA = (1.0/6.0) * ( VzA + 2.0 * VzB + 2.0 * VzC + VzD);
 
-        if (particles->phase[k] != -1 && particles->phase[k] != 4) {
+        if (particles->phase[k] != -1) {
             particles->x[k]    = xA + model.dt * VxA;
             particles->z[k]    = zA + model.dt * VzA;
+            particles->Vx[k]   = VxA;
+            particles->Vz[k]   = VzA;
         }
         isoutPart( particles, &model, k );
     }

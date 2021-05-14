@@ -149,7 +149,7 @@ int main( int nargs, char *args[] ) {
 #ifdef _NEW_INPUT_
             // Initial grid tags
             model.BC_setup_type = 1; // eventually it should be set from the input file
-            SetBCs_new( &mesh, &model, scaling , &particles, &materials );
+            SetBCs_new( &mesh, &model, scaling, &particles, &materials);
             
             LoadIniParticles( PartFileName, &particles, &mesh, &topo_chain, &topo_chain_ini, &model, scaling );
             
@@ -166,7 +166,7 @@ int main( int nargs, char *args[] ) {
             
 #else
             // Initial grid tags
-            SetBCs( &mesh, &model, scaling , &particles, &materials );
+            SetBCs( &mesh, &model, scaling , &particles, &materials, &topo);
             if ( model.free_surf == 1 ) {
                 
                 // Define the horizontal position of the surface marker chain
@@ -221,7 +221,7 @@ int main( int nargs, char *args[] ) {
 #ifdef _NEW_INPUT_
             SetBCs_new( &mesh, &model, scaling , &particles, &materials );
 #else
-            SetBCs( &mesh, &model, scaling , &particles, &materials );
+            SetBCs( &mesh, &model, scaling , &particles, &materials, &topo);
 #endif
             InitialiseSolutionFields( &mesh, &model );
             
@@ -243,7 +243,7 @@ int main( int nargs, char *args[] ) {
 #ifdef _NEW_INPUT_
             SetBCs_new( &mesh, &model, scaling , &particles, &materials );
 #else
-            SetBCs( &mesh, &model, scaling , &particles, &materials );
+            SetBCs( &mesh, &model, scaling , &particles, &materials, &topo);
 #endif
             if ( model.thermal_eq == 1 ) ThermalSteps( &mesh, model,  mesh.T,  mesh.dT,  mesh.rhs_t, mesh.T, &particles, model.cooling_time, scaling );
             if ( model.therm_pert == 1 ) SetThermalPert( &mesh, model, scaling );
@@ -362,7 +362,7 @@ int main( int nargs, char *args[] ) {
             InitialiseSolutionFields( &mesh, &model );
             StrainRateComponents( &mesh, scaling, &model );
             if ( model.iselastic == 1 ) ShearModCompExpGrid( &mesh, materials, model, scaling );
-            SetBCs( &mesh, &model, scaling , &particles, &materials );
+            SetBCs( &mesh, &model, scaling , &particles, &materials, &topo);
             ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 1 );
             NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
         }
@@ -811,7 +811,7 @@ int main( int nargs, char *args[] ) {
 #ifdef _NEW_INPUT_
             SetBCs_new( &mesh, &model, scaling , &particles, &materials );
 #else
-            SetBCs( &mesh, &model, scaling , &particles, &materials );
+            SetBCs( &mesh, &model, scaling , &particles, &materials, &topo);
 #endif
             // Reset fields and BC values if needed
             //        if ( model.ispureshear_ale == 1 ) InitialiseSolutionFields( &mesh, &model );

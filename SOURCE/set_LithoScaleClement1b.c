@@ -33,11 +33,13 @@
 void BuildInitialTopography( surface *topo, markers *topo_chain, params model, grid mesh, scale scaling ) {
     
     int k;
-    double TopoLevel = 2.e-1/scaling.L; // sets zero initial topography
-    double sig = 0.5/scaling.L;
+    double TopoLevel = 500/scaling.L; // sets zero initial topography
+    double sig = 2e3/scaling.L;
     
     for ( k=0; k<topo_chain->Nb_part; k++ ) {
-        topo_chain->z[k]     = 0;//TopoLevel * exp(-topo_chain->x[k]*topo_chain->x[k]/sig/sig) ;
+//        topo_chain->z[k]     = 100/scaling.L;//TopoLevel * exp(-topo_chain->x[k]*topo_chain->x[k]/sig/sig) ;
+        topo_chain->z[k]     = TopoLevel * exp(-topo_chain->x[k]*topo_chain->x[k]/sig/sig) ;
+
         topo_chain->phase[k] = 0;
     }
     
@@ -91,7 +93,21 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         //--------------------------//
         
         // If particles are in the lithosphere: change phase
-        if (particles->z[np]>-HLit) particles->phase[np] = 0;
+//        if (particles->z[np]>-HLit) particles->phase[np] = 0;
+//
+//        if (particles->z[np] > -5e3/scaling.L)  particles->phase[np] = 1;
+        
+        
+        if (particles->z[np]>-HLit) particles->phase[np] = 1;
+        
+        
+//        if (particles->z[np] < -5e3/scaling.L )  particles->phase[np] = 0;
+        
+//        if (particles->z[np] < -5e3/scaling.L && particles->z[np] > -18e3/scaling.L && particles->x[np] > -18e3/scaling.L && particles->x[np] < 18e3/scaling.L)  particles->phase[np] = 0;
+  
+//        if (particles->z[np] < -5e3/scaling.L && particles->x[np] > -18e3/scaling.L && particles->x[np] < 18e3/scaling.L)  particles->phase[np] = 0;
+        
+        if (particles->z[np] < -5e3/scaling.L && particles->z[np] > -18e3/scaling.L )  particles->phase[np] = 0;
         
 //        // If particles are in the crust: change phase
 //        if (particles->z[np] > Hcrust)  particles->phase[np] = 3;
@@ -163,7 +179,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 // Set physical properties on the grid and boundary conditions
-void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_prop *materials ) {
+void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_prop *materials, surface* topo ) {
 
     int   kk, k, l, c, c1;
     double *X, *Z, *XC, *ZC;
@@ -238,6 +254,29 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     printf("Vx Outflow         = %2.2e Vx Inflow = %2.2e\n", VxOut*scaling.V,  VxIn*scaling.V);
     printf("Total influx       = %2.2e\n", influx*scaling.V*scaling.L);
     
+    double V_pure_shear, dh;
+    
+    double V_W = -model->xmin*model->EpsBG;
+    double V_E = -model->xmax*model->EpsBG;
+    double h_W = topo->height[   0] - model->zmin;
+    double h_E = topo->height[NX-1] - model->zmin;
+    double h_W_num = 0.0;
+    double h_E_num = 0.0;
+    
+    // Sum of cells on which Vx is applied
+    for (l=0; l<mesh->Nz+1; l++) {
+        
+        // West
+        k = 0; c = k + l*(mesh->Nx);
+        if ( mesh->BCu.type[c] != 30 ) h_W_num += model->dz;
+        
+        // East
+        k = mesh->Nx-1; c = k + l*(mesh->Nx);
+        if ( mesh->BCu.type[c] != 30 ) h_E_num += model->dz;
+    }
+    
+//    V_W = V_W * h_W/h_W_num;
+//    V_E = V_E * h_E/h_E_num;
     
     /* --------------------------------------------------------------------------------------------------------*/
     /* Set the BCs for Vx on all grid levels                                                                   */
@@ -263,21 +302,42 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
             c = k + l*(mesh->Nx);
             
             if ( mesh->BCu.type[c] != 30 ) {
-                
+
                 // Internal points:  -1
                 mesh->BCu.type[c] = -1;
                 mesh->BCu.val[c]  =  0;
                 
                 // Matching BC nodes WEST
                 if (k==0 ) {
+                    
+//                    if ( mesh->BCu.type[c+mesh->Nx] == 30 ) {
+//                        dh = topo->height[k] - (mesh->zvx_coord[l]-model->dz/2.0); // height of topo - base of cell
+//
+//                        V_pure_shear = V_pure_shear * dh/model->dz;
+//                        printf("Need to correct for FS, %d %d\n", mesh->BCu.type[c], mesh->BCu.type[c+NX]);
+//                        printf("%2.2e %2.2e\n", topo->height[k], mesh->zvx_coord[l]-model->dz/2.0);
+//                        printf("%2.2e %2.2e", dh, model->dz);
+//                        if (dh<0.0) {
+//                            printf("ng1\n"); exit(1);
+//                        }
+//                        if (dh>model->dz) {
+//                            printf("ng2\n"); exit(1);
+//                        }
+//                        exit(1);
+//                    }
+                    
                     mesh->BCu.type[c] = 0;
-                    mesh->BCu.val[c]  = -mesh->xg_coord[k] * model->EpsBG;
+                    mesh->BCu.val[c]  = V_W;
                 }
                 
                 // Matching BC nodes EAST
                 if (k==mesh->Nx-1 ) {
+//                    if ( mesh->BCu.type[c+mesh->Nx] == 30 ) {
+//                        dh = topo->height[k] - mesh->zvx_coord[l]-model->dz/2; // height of topo - base of cell
+//                        V_pure_shear = V_pure_shear * dh/model->dz;
+//                    }
                     mesh->BCu.type[c] = 0;
-                    mesh->BCu.val[c]  = -mesh->xg_coord[k] * model->EpsBG;
+                    mesh->BCu.val[c]  = V_E;
                 }
                 
                 // Free slip SOUTH
@@ -330,13 +390,13 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                 // Matching BC nodes SOUTH
                 if (l==0 ) {
                     mesh->BCv.type[c] = 0;
-                    mesh->BCv.val[c]  = mesh->zg_coord[l] * model->EpsBG;
+                    mesh->BCv.val[c]  = 0*mesh->zg_coord[l] * model->EpsBG;
                 }
                 
                 // Matching BC nodes NORTH
                 if (l==mesh->Nz-1 ) {
                     mesh->BCv.type[c] = 0;
-                    mesh->BCv.val[c]  = mesh->zg_coord[l] * model->EpsBG;
+                    mesh->BCv.val[c]  = 0*mesh->zg_coord[l] * model->EpsBG;
                 }
                 
                 // Non-matching boundary WEST

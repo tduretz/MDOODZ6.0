@@ -317,7 +317,7 @@ void InterpVerticesToCentroidsDouble( double*, double*, grid*, params* );
 // Grid initialisation and boundary conditions
 //void MInitialiseSolutionFields( grid*, params* );
 //void MinitMG( grid*, paramsOutputSparseMatrix  );
-void SetBCs( grid*, params*, scale, markers*, mat_prop* );
+void SetBCs( grid*, params*, scale, markers*, mat_prop* , surface*);
 void SetBCs_new( grid*, params*, scale, markers*, mat_prop* );
 void SetBCs_user( grid*, params*, scale, markers*, mat_prop* );
 //void MSetRes( grid*, paramsOutputSparseMatrix  );
