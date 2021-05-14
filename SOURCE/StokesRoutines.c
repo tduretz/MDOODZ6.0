@@ -941,24 +941,6 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
     
     int k1, c0;
 
-       for ( k1=0; k1<Ncx*Ncz; k1++ ) {
-           if ( mesh->BCp.type[k1] == 30 || mesh->BCp.type[k1] == 31) {
-               mesh->sxxd0[k1] = mesh->sxxd0[k1-Ncx];
-               mesh->szzd0[k1] = mesh->szzd0[k1-Ncx];
-               mesh->p0_n[k1] = mesh->p0_n[k1-Ncx];
-               mesh->eta_n[k1] = mesh->eta_n[k1-Ncx];
-               mesh->mu_n[k1] = mesh->mu_n[k1-Ncx];
-           }
-       }
-
-       for ( k1=0; k1<Nx*Nz; k1++ ) {
-           if ( mesh->BCg.type[k1] == 30) {
-               mesh->sxz0[k1]  = mesh->sxz0[k1-Nx];
-               mesh->eta_s[k1] = mesh->eta_s[k1-Nx];
-               mesh->mu_s[k1]  = mesh->mu_s[k1-Nx];
-           }
-       }
-
     /* --------------------------------------------------------------------*/
     /* Here we calculate the forcing term -rho*gx on the finest grid level */
     /* --------------------------------------------------------------------*/

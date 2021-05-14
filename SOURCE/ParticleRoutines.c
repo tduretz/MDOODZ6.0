@@ -3441,8 +3441,8 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
     
     // First operation - compute phase proportions on centroids and vertices
     int cent=1, vert=0, prop=1, interp=0;
-//    P2Mastah ( &model, *particles, NULL, mesh, NULL,  0, 0, prop, cent );
-//    P2Mastah ( &model, *particles, NULL, mesh, NULL,  0, 0, prop, vert );
+    P2Mastah ( &model, *particles, NULL, mesh, NULL,  0, 0, prop, cent );
+    P2Mastah ( &model, *particles, NULL, mesh, NULL,  0, 0, prop, vert );
     
     // Split the domain in N threads in x direction
 #pragma omp parallel
@@ -3616,7 +3616,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
             npart[ith] = particles->Nb_part;
             npartr[ith] = particles->Nb_part;
             for (ip=0; ip<npart[ith]; ip++)  {
-                pidx[ith][ip] = ip;
+                pidx[ith][ip]  = ip;
                 pidxr[ith][ip] = ip;
             }
         }
@@ -3624,131 +3624,131 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
 //        printf("ith = %d --> Npart  = %d tot = %d\n", ith,  npart[ith],  particles->Nb_part);
 //        printf("ith = %d --> Npartr = %d\n", ith,  npartr[ith]);
 
-        // Count number of particles per nodes and cell
-        for (ip=0; ip<npart[ith]; ip++) {
-
-            k = pidx[ith][ip];
-
-            if ( particles->phase[k] != -1 && particles->x[k] > xg[ith][0] - dx/2.0 && particles->x[k] < xg[ith][nx[ith]-1] + dx/2.0) {
-
-                // -------- Check NODES ---------- //
-                distance = (particles->x[k]-          xg[ith][0]);
-                ic       = ceil((distance/dx)+0.5) -1;
-                distance = (particles->z[k]-mesh->zg_coord[0]);
-                jc       = ceil((distance/dz)+0.5) -1;
-
-                //
-//                printf("particles->x[k] = %2.2e ; (PT CENTRE X) = %2.2e; gauche  = %2.2e; xg droite = %2.2e\n", particles->x[k],xg[ith][ic],xg[ith][ic]-dx/2.0, xg[ith][ic]+dx/2.0 );
-//                printf("particles->z[k] = %2.2e ; (PT CENTRE Z) = %2.2e; dessous = %2.2e; dessus    = %2.2e\n", particles->z[k],mesh->zg_coord[jc],mesh->zg_coord[jc]-dz/2.0, mesh->zg_coord[jc]+dz/2.0 );
-                
-                weight = 1.0;
-                
-                if (model.itp_stencil==1) {
-                    dxm = 1.0*fabs( xg[ith][ic] - particles->x[k]);
-                    dzm = 1.0*fabs( mesh->zg_coord[jc] - particles->z[k]);
-                    weight = (1.0-dxm/(dx/2.0))*(1.0-dzm/(dz/2.0));
-                }
-                
-//                if (dxm>dx/2.0) {
-//                 printf("nodes Outside X !!!");
-//                    exit(1);
+//        // Count number of particles per nodes and cell
+//        for (ip=0; ip<npart[ith]; ip++) {
+//
+//            k = pidx[ith][ip];
+//
+//            if ( particles->phase[k] != -1 && particles->x[k] > xg[ith][0] - dx/2.0 && particles->x[k] < xg[ith][nx[ith]-1] + dx/2.0) {
+//
+//                // -------- Check NODES ---------- //
+//                distance = (particles->x[k]-          xg[ith][0]);
+//                ic       = ceil((distance/dx)+0.5) -1;
+//                distance = (particles->z[k]-mesh->zg_coord[0]);
+//                jc       = ceil((distance/dz)+0.5) -1;
+//
+//                //
+////                printf("particles->x[k] = %2.2e ; (PT CENTRE X) = %2.2e; gauche  = %2.2e; xg droite = %2.2e\n", particles->x[k],xg[ith][ic],xg[ith][ic]-dx/2.0, xg[ith][ic]+dx/2.0 );
+////                printf("particles->z[k] = %2.2e ; (PT CENTRE Z) = %2.2e; dessous = %2.2e; dessus    = %2.2e\n", particles->z[k],mesh->zg_coord[jc],mesh->zg_coord[jc]-dz/2.0, mesh->zg_coord[jc]+dz/2.0 );
+//
+//                weight = 1.0;
+//
+//                if (model.itp_stencil==1) {
+//                    dxm = 1.0*fabs( xg[ith][ic] - particles->x[k]);
+//                    dzm = 1.0*fabs( mesh->zg_coord[jc] - particles->z[k]);
+//                    weight = (1.0-dxm/(dx/2.0))*(1.0-dzm/(dz/2.0));
 //                }
-//                if (dzm>dz/2.0) {
-//                 printf("nodes Outside Z !!!");
-//                    exit(1);
+//
+////                if (dxm>dx/2.0) {
+////                 printf("nodes Outside X !!!");
+////                    exit(1);
+////                }
+////                if (dzm>dz/2.0) {
+////                 printf("nodes Outside Z !!!");
+////                    exit(1);
+////                }
+//
+//                // If particles are around the nodes: count them
+//                if ( particles -> phase[k]>=0 ) {
+//                    npv[ith][ic + jc * (nx[ith])]++;
+//                    npvolv[ith][ic + jc * (nx[ith])]+=weight;
+//                    phv[ith][particles->phase[k]][ic + jc * (nx[ith])] +=weight;
+////                    phv[ith][particles->phase[k]][ic + jc * (nx[ith])] +=1.0;
+//
 //                }
-                
-                // If particles are around the nodes: count them
-                if ( particles -> phase[k]>=0 ) {
-                    npv[ith][ic + jc * (nx[ith])]++;
-                    npvolv[ith][ic + jc * (nx[ith])]+=weight;
-                    phv[ith][particles->phase[k]][ic + jc * (nx[ith])] +=weight;
-//                    phv[ith][particles->phase[k]][ic + jc * (nx[ith])] +=1.0;
-
-                }
-
-                 //-------- Check CELLS ---------- //
-
-
-                // Filter out overlapping domain
-                if (particles->x[k] > xg[ith][0] && particles->x[k] < xg[ith][nx[ith]-1]) {
-                    distance = (particles->x[k]-          xc[ith][0]);
-                    ic       = ceil((distance/dx)+0.5) -1;
-                    if (ic<0)    ic = 0;
-                    if (ic>nx[ith]-2) ic = nx[ith]-2;
-                    distance = (particles->z[k]-mesh->zc_coord[0]);
-                    jc       = ceil((distance/dz)+0.5) -1;
-                    if (jc<0)    jc = 0;
-                    if (jc>Nz-2) jc = Nz-2;
-
-                    weight = 1.0;
-                    
-                    if (model.itp_stencil==1) {
-                        dxm    = 1.0*fabs( xc[ith][ic] - particles->x[k]);
-                        dzm    = 1.0*fabs( mesh->zc_coord[jc] - particles->z[k]);
-                        weight = (1.0-dxm/(dx/2.0))*(1.0-dzm/(dz/2.0));
-                    }
-                    // If particles are around the nodes: count them
-                    if ( particles -> phase[k]>=0 )  { //&& (model.itp_stencil==0 || model.itp_stencil==1
-                        npc[ith][ic + jc * (nx[ith]-1)]++;
-                        npvolc[ith][ic + jc * (nx[ith]-1)]+=weight;
-                        phc[ith][particles->phase[k]][ic + jc * (nx[ith]-1)]+=weight;
-//                        phc[ith][particles->phase[k]][ic + jc * (nx[ith]-1)]+=1.0;
-                    }
-                    
-//                    if ( particles -> phase[k]>=0 && model.itp_stencil==4) {
-//                        
-//                        // Global cell index in x direction
-//                        igc = ancrage_cell + ic;
-//                        
-//                        // if particle lies in the SW quadrant of the cell -- reference to NE
-//                        if ( particles->x[k] < xc[ith][ic] &&  particles->z[k] < mesh->zc_coord[jc] ) {
-//                                                   Compute4Cell( ic  , jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NE
-//                            if (igc>0            ) Compute4Cell( ic-1, jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NW
-//                            if (igc>0   &&   jc>0) Compute4Cell( ic-1, jc-1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SW
-//                            if (             jc>0) Compute4Cell( ic  , jc-1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SE
-//                        }
-//                        
-//                        // if particle lies in the SE quadrant of the cell -- reference to NW
-//                        if ( particles->x[k] > xc[ith][ic] &&  particles->z[k] < mesh->zc_coord[jc] ) {
-//                                                   Compute4Cell( ic  , jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NW
-//                            if (igc<Ncx          ) Compute4Cell( ic+1, jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NE
-//                            if (igc<Ncx  &&  jc>0) Compute4Cell( ic+1, jc-1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SE
-//                            if (             jc>0) Compute4Cell( ic  , jc-1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SW
-//                        }
-//                        // if particle lies in the NW quadrant of the cell -- reference to SE
-//                        if ( particles->x[k] < xc[ith][ic] &&  particles->z[k] > mesh->zc_coord[jc] ) {
-//                                                   Compute4Cell( ic  , jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SE
-//                            if (igc>0            ) Compute4Cell( ic-1, jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SW
-//                            if (           jc<Ncz) Compute4Cell( ic  , jc+1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NE
-//                            if (igc>0  &&  jc<Ncz) Compute4Cell( ic-1, jc+1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NW
-//                            
-//                        }
-//                        // if particle lies in the NE quadrant of the cell -- reference to SW
-//                        if ( particles->x[k] > xc[ith][ic] &&  particles->z[k] > mesh->zc_coord[jc] ) {
-//                                                   Compute4Cell( ic  , jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SW
-//                            if (igc<Ncx          ) Compute4Cell( ic+1, jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SE
-//                            if (           jc<Ncz) Compute4Cell( ic  , jc+1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NW
-//                            if (igc<Ncx && jc<Ncz) Compute4Cell( ic+1, jc+1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NE
-//                        }
-//                        
-//                        
+//
+//                 //-------- Check CELLS ---------- //
+//
+//
+//                // Filter out overlapping domain
+//                if (particles->x[k] > xg[ith][0] && particles->x[k] < xg[ith][nx[ith]-1]) {
+//                    distance = (particles->x[k]-          xc[ith][0]);
+//                    ic       = ceil((distance/dx)+0.5) -1;
+//                    if (ic<0)    ic = 0;
+//                    if (ic>nx[ith]-2) ic = nx[ith]-2;
+//                    distance = (particles->z[k]-mesh->zc_coord[0]);
+//                    jc       = ceil((distance/dz)+0.5) -1;
+//                    if (jc<0)    jc = 0;
+//                    if (jc>Nz-2) jc = Nz-2;
+//
+//                    weight = 1.0;
+//
+//                    if (model.itp_stencil==1) {
+//                        dxm    = 1.0*fabs( xc[ith][ic] - particles->x[k]);
+//                        dzm    = 1.0*fabs( mesh->zc_coord[jc] - particles->z[k]);
+//                        weight = (1.0-dxm/(dx/2.0))*(1.0-dzm/(dz/2.0));
 //                    }
-                    
-                    if (dxm>dx/2.0) {
-                        printf("centers Outside X !!!");
-                        exit(1);
-                    }
-                    if (dzm>dz/2.0) {
-                        printf("centers Outside Z !!!");
-                        exit(1);
-                    }
-                    
-                    
-
-                }
-            }
-        }
+//                    // If particles are around the nodes: count them
+//                    if ( particles -> phase[k]>=0 )  { //&& (model.itp_stencil==0 || model.itp_stencil==1
+//                        npc[ith][ic + jc * (nx[ith]-1)]++;
+//                        npvolc[ith][ic + jc * (nx[ith]-1)]+=weight;
+//                        phc[ith][particles->phase[k]][ic + jc * (nx[ith]-1)]+=weight;
+////                        phc[ith][particles->phase[k]][ic + jc * (nx[ith]-1)]+=1.0;
+//                    }
+//
+////                    if ( particles -> phase[k]>=0 && model.itp_stencil==4) {
+////
+////                        // Global cell index in x direction
+////                        igc = ancrage_cell + ic;
+////
+////                        // if particle lies in the SW quadrant of the cell -- reference to NE
+////                        if ( particles->x[k] < xc[ith][ic] &&  particles->z[k] < mesh->zc_coord[jc] ) {
+////                                                   Compute4Cell( ic  , jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NE
+////                            if (igc>0            ) Compute4Cell( ic-1, jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NW
+////                            if (igc>0   &&   jc>0) Compute4Cell( ic-1, jc-1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SW
+////                            if (             jc>0) Compute4Cell( ic  , jc-1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SE
+////                        }
+////
+////                        // if particle lies in the SE quadrant of the cell -- reference to NW
+////                        if ( particles->x[k] > xc[ith][ic] &&  particles->z[k] < mesh->zc_coord[jc] ) {
+////                                                   Compute4Cell( ic  , jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NW
+////                            if (igc<Ncx          ) Compute4Cell( ic+1, jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NE
+////                            if (igc<Ncx  &&  jc>0) Compute4Cell( ic+1, jc-1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SE
+////                            if (             jc>0) Compute4Cell( ic  , jc-1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SW
+////                        }
+////                        // if particle lies in the NW quadrant of the cell -- reference to SE
+////                        if ( particles->x[k] < xc[ith][ic] &&  particles->z[k] > mesh->zc_coord[jc] ) {
+////                                                   Compute4Cell( ic  , jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SE
+////                            if (igc>0            ) Compute4Cell( ic-1, jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SW
+////                            if (           jc<Ncz) Compute4Cell( ic  , jc+1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NE
+////                            if (igc>0  &&  jc<Ncz) Compute4Cell( ic-1, jc+1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NW
+////
+////                        }
+////                        // if particle lies in the NE quadrant of the cell -- reference to SW
+////                        if ( particles->x[k] > xc[ith][ic] &&  particles->z[k] > mesh->zc_coord[jc] ) {
+////                                                   Compute4Cell( ic  , jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SW
+////                            if (igc<Ncx          ) Compute4Cell( ic+1, jc  , nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> SE
+////                            if (           jc<Ncz) Compute4Cell( ic  , jc+1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NW
+////                            if (igc<Ncx && jc<Ncz) Compute4Cell( ic+1, jc+1, nx[ith]-1, xc, mesh, particles, k, npc,  npvolc, phc, ith );  // ---> NE
+////                        }
+////
+////
+////                    }
+//
+//                    if (dxm>dx/2.0) {
+//                        printf("centers Outside X !!!");
+//                        exit(1);
+//                    }
+//                    if (dzm>dz/2.0) {
+//                        printf("centers Outside Z !!!");
+//                        exit(1);
+//                    }
+//
+//
+//
+//                }
+//            }
+//        }
 
         // Count number of particles available for re-use (no overlapping particles)
         for (ip=0; ip<npartr[ith]; ip++) {
@@ -3760,45 +3760,45 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
             }
         }
 
-        // Phase proportions
-        for (k=0; k<model.Nb_phases; k++) {
-
-            // Calculate phase proportions vertices
-            for (ip=0; ip<nx[ith]*Nz; ip++) {
-                //if (npv[ith][ip]>0) phv[ith][k][ip] /= npv[ith][ip];
-                if (npv[ith][ip]>0) phv[ith][k][ip] /= npvolv[ith][ip];
-            }
-
-            // Calculate phase proportions centroids
-            for (ip=0; ip<ncx[ith]*Ncz; ip++) {
-                //if (npc[ith][ip]>0) phc[ith][k][ip] /= npc[ith][ip];
-                if (npc[ith][ip]>0) phc[ith][k][ip] /= npvolc[ith][ip];
-            }
-
-            // Fill global arrays - centroids
-            for (ic=0; ic<ncx[ith]; ic++) {
-                for (jc=0; jc<Ncz; jc++) {
-                    ip =        ic + jc*ncx[ith];
-                    kc = offc + ic + jc*Ncx;
-                    mesh->nb_part_cell[kc]    = npc[ith][ip];
-                    if ( mesh->nb_part_cell[kc]>0 ) mesh->phase_perc_n[k][kc] = phc[ith][k][ip];
-                }
-            }
-
-            start=0;
-            if (ith>0) start = 1; // Do not include overlapping nodal values
-
-            // Fill global arrays - vertices
-            for (ic=start; ic<(nx[ith]); ic++) {
-                for (jc=0; jc<Nz; jc++) {
-                    ip =        ic + jc*nx[ith];
-                    kc = offc + ic + jc*Nx;
-                    mesh->nb_part_vert[kc]    = npv[ith][ip];
-                    if ( mesh->nb_part_vert[kc]>0 ) mesh->phase_perc_s[k][kc] = phv[ith][k][ip];
-                }
-            }
-
-        }
+//        // Phase proportions
+//        for (k=0; k<model.Nb_phases; k++) {
+//
+//            // Calculate phase proportions vertices
+//            for (ip=0; ip<nx[ith]*Nz; ip++) {
+//                //if (npv[ith][ip]>0) phv[ith][k][ip] /= npv[ith][ip];
+//                if (npv[ith][ip]>0) phv[ith][k][ip] /= npvolv[ith][ip];
+//            }
+//
+//            // Calculate phase proportions centroids
+//            for (ip=0; ip<ncx[ith]*Ncz; ip++) {
+//                //if (npc[ith][ip]>0) phc[ith][k][ip] /= npc[ith][ip];
+//                if (npc[ith][ip]>0) phc[ith][k][ip] /= npvolc[ith][ip];
+//            }
+//
+//            // Fill global arrays - centroids
+//            for (ic=0; ic<ncx[ith]; ic++) {
+//                for (jc=0; jc<Ncz; jc++) {
+//                    ip =        ic + jc*ncx[ith];
+//                    kc = offc + ic + jc*Ncx;
+//                    mesh->nb_part_cell[kc]    = npc[ith][ip];
+//                    if ( mesh->nb_part_cell[kc]>0 ) mesh->phase_perc_n[k][kc] = phc[ith][k][ip];
+//                }
+//            }
+//
+//            start=0;
+//            if (ith>0) start = 1; // Do not include overlapping nodal values
+//
+//            // Fill global arrays - vertices
+//            for (ic=start; ic<(nx[ith]); ic++) {
+//                for (jc=0; jc<Nz; jc++) {
+//                    ip =        ic + jc*nx[ith];
+//                    kc = offc + ic + jc*Nx;
+//                    mesh->nb_part_vert[kc]    = npv[ith][ip];
+//                    if ( mesh->nb_part_vert[kc]>0 ) mesh->phase_perc_s[k][kc] = phv[ith][k][ip];
+//                }
+//            }
+//
+//        }
         
 //        MinMaxArrayTag( mesh->phase_perc_n[0], 1.0, Ncx*Ncz, "phase % n", mesh->BCp.type );
         
