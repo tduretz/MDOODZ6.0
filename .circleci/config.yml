@@ -12,7 +12,7 @@ jobs:
           command: sudo apt update
       - run:
           name: install suite-sparse
-          command: sudo apt -y install suite-sparse
+          command: sudo apt -y install libsuitesparse-dev
       - run:
           name: install hdf5
           command: sudo apt -y install hdf5
