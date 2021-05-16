@@ -3,7 +3,6 @@ jobs:
   build:
     working_directory: ~/SOURCE
     steps:
-      - checkout
       - run:
           name: update Ubuntu
           command: sudo apt update
