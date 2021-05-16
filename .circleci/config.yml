@@ -11,17 +11,17 @@ jobs:
     steps:
       - checkout
       - run:
-          name: update Ubuntu
-          command: sudo apt update
+          name: install homebrew
+          command: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
       - run:
           name: install suite-sparse
-          command: sudo apt -y install libsuitesparse-dev
+          command: brew install suite-sparse
       - run:
           name: install hdf5
-          command: sudo apt -y install hdf5-tools
+          command: brew install hdf5
       - run:
           name: install gcc@7
-          command: sudo apt -y install gcc-7
+          command: brew install gcc@7
       - run:
           name: prepare makefiile
           command: mv SOURCE/Makefiles/makefile_ubuntu_ci SOURCE/makefile
