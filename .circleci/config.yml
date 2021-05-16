@@ -1,7 +1,7 @@
 version: 2
 jobs:
   build:
-    working_directory: ~/SOURCE
+    working_directory: ~/MDOODZ
     docker:
       - image: cimg/node:14.10.1
         environment:

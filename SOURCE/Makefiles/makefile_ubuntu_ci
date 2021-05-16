@@ -33,7 +33,7 @@ CFLAGS += -Wno-unused-variable  -Wno-comment
 LIBS = -lz -lhdf5
 
 # Related to SuiteSparse
-LIBS += -L /usr/lib/ -llapack -lcxsparse -lumfpack -lcblas -lamd -lcholmod -lcolamd -lbtf -lsuitesparseconfig -lblas
+LIBS += -L /usr/lib/ -liblapack3 -libcxsparse3 -libumfpack5 -libblas3 -libcamd2 -libcholmod3 -libccolamd2 -libbtf1 -libsuitesparseconfig5 -libblas3
 
 # Link to openmp
 ifeq ($(OMP),yes)
