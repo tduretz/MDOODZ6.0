@@ -15,7 +15,7 @@ jobs:
           command: sudo apt -y install libsuitesparse-dev
       - run:
           name: install hdf5
-          command: sudo apt -y install hdf5
+          command: sudo apt -y install hdf5-tools
       - run:
           name: install gcc@7
           command: sudo apt -y install gcc@7
