@@ -4,10 +4,6 @@ jobs:
     working_directory: ~/MDOODZ
     docker:
       - image: cimg/node:14.10.1
-        environment:
-          HDF5_USE_FILE_LOCKING: FALSE
-          C_INCLUDE_PATH: /usr/local/include
-          LIBRARY_PATH: /usr/local/lib
     steps:
       - checkout
       - run:
@@ -19,6 +15,9 @@ jobs:
             echo 'export PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin/:$PATH"' >> $BASH_ENV
             echo 'export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"' >> $BASH_ENV
             echo 'export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"' >> $BASH_ENV
+      - run:
+          name: setting up varirables
+          command: echo 'export HDF5_USE_FILE_LOCKING="FALSE"' >> $BASH_ENV && echo 'export C_INCLUDE_PATH="/usr/local/include"' && echo 'export LIBRARY_PATH="/usr/local/lib"'
       - run:
           name: install suite-sparse
           command: brew install suite-sparse
