@@ -8,12 +8,12 @@ jobs:
       - run:
           name: install suite-sparse
           command: sudo apt -y install suite-sparse
-      -run:
+      - run:
           name: install hdf5
           command: sudo apt -y install hdf5
-      -run:
+      - run:
           name: install gcc@7
           command: sudo apt -y install gcc@7
-      -run:
+      - run:
           name: set up variables
           command: ./env.sh apt
