@@ -21,4 +21,4 @@ jobs:
           command: sudo apt -y install gcc-7
       - run:
           name: set up variables
-          command: ./env.sh apt
+          command: export HDF5_USE_FILE_LOCKING="FALSE" && export C_INCLUDE_PATH="/usr/local/include" && export LIBRARY_PATH="/usr/local/lib"
