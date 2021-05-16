@@ -1,7 +1,6 @@
 version: 2
 jobs:
   build:
-    working_directory: ~/SOURCE
     steps:
       - run:
           name: update Ubuntu
