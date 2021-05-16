@@ -1,6 +1,11 @@
 version: 2
 jobs:
   build:
+    docker:
+      - image: cimg/node:14.10.1
+        auth:
+          username: mydockerhub-user
+          password: $DOCKERHUB_PASSWORD
     steps:
       - run:
           name: update Ubuntu
