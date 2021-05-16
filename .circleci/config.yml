@@ -22,3 +22,6 @@ jobs:
       - run:
           name: install gcc@7
           command: sudo apt -y install gcc-7
+      - run:
+          name: prepare makefiile
+          command: mv SOURCE/Makefiles/makefile_ubuntu_ci SOURCE/makefile
