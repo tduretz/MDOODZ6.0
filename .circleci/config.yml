@@ -4,9 +4,10 @@ jobs:
     working_directory: ~/SOURCE
     docker:
       - image: cimg/node:14.10.1
-        auth:
-          username: mydockerhub-user
-          password: $DOCKERHUB_PASSWORD
+        environment:
+          HDF5_USE_FILE_LOCKING: FALSE
+          C_INCLUDE_PATH: /usr/local/include
+          LIBRARY_PATH: /usr/local/lib
     steps:
       - checkout
       - run:
@@ -21,6 +22,3 @@ jobs:
       - run:
           name: install gcc@7
           command: sudo apt -y install gcc-7
-      - run:
-          name: set up variables
-          command: export HDF5_USE_FILE_LOCKING="FALSE" && export C_INCLUDE_PATH="/usr/local/include" && export LIBRARY_PATH="/usr/local/lib"
