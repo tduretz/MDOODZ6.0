@@ -17,7 +17,7 @@ jobs:
             echo 'export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"' >> $BASH_ENV
       - run:
           name: setting up varirables
-          command: echo 'export HDF5_USE_FILE_LOCKING="FALSE"' >> $BASH_ENV && echo 'export C_INCLUDE_PATH="/usr/local/include"' && echo 'export LIBRARY_PATH="/usr/local/lib"'
+          command: echo 'export HDF5_USE_FILE_LOCKING="FALSE"' >> $BASH_ENV && echo 'export C_INCLUDE_PATH="/usr/local/include"' >> $BASH_ENV && echo 'export LIBRARY_PATH="/usr/local/lib"' >> $BASH_ENV
       - run:
           name: install suite-sparse
           command: brew install suite-sparse
