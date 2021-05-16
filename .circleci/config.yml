@@ -9,7 +9,7 @@ jobs:
     steps:
       - run:
           name: update Ubuntu
-          command: sudo apt update
+          command: sudo add-apt-repository ppa:jonathonf/gcc-7.1 && sudo apt update
       - run:
           name: install suite-sparse
           command: sudo apt -y install libsuitesparse-dev
@@ -18,7 +18,7 @@ jobs:
           command: sudo apt -y install hdf5-tools
       - run:
           name: install gcc@7
-          command: sudo apt -y install gcc@7
+          command: sudo apt -y install gcc-7
       - run:
           name: set up variables
           command: ./env.sh apt
