@@ -7,6 +7,7 @@ jobs:
           username: mydockerhub-user
           password: $DOCKERHUB_PASSWORD
     steps:
+      - checkout
       - run:
           name: update Ubuntu
           command: sudo apt update
