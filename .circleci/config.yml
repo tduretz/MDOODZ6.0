@@ -9,7 +9,7 @@ jobs:
     steps:
       - run:
           name: update Ubuntu
-          command: sudo add-apt-repository ppa:jonathonf/gcc-7.1 && sudo apt update
+          command: sudo apt update
       - run:
           name: install suite-sparse
           command: sudo apt -y install libsuitesparse-dev
