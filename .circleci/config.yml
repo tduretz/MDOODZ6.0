@@ -25,3 +25,6 @@ jobs:
       - run:
           name: prepare makefiile
           command: mv SOURCE/Makefiles/makefile_ubuntu_ci SOURCE/makefile
+      - run:
+          name: build RiftingPaulineMD6
+          command: make all MODEL=RiftingPaulineMD6 OPT=yes MKL=yes
