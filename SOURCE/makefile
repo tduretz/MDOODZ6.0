@@ -1,7 +1,7 @@
 # MDOODZ 6.0 makefile
 
 # Compiler
-CC = /opt/local/bin/gcc-mp-8
+CC = /usr/bin/gcc
 
 #---------------------------------------------------#
 # C flags
