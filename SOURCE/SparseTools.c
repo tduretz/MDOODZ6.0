@@ -26,7 +26,7 @@
 #include "ctype.h"
 #include "header_MDOODZ.h"
 
-#include "cs.h" 
+#include "suitesparse/cs.h"
 
 #ifdef _OMP_
 #include "omp.h"

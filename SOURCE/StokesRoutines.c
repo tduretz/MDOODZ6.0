@@ -26,8 +26,8 @@
 #include "time.h"
 #include "header_MDOODZ.h"
 #include "umfpack.h"
-#include "amd.h"
-#include "cs.h"
+#include "suitesparse/amd.h"
+#include "suitesparse/cs.h"
 #include "suitesparse/cholmod.h"
 
 #ifdef _OMP_
