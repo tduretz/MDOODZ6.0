@@ -26,7 +26,7 @@
 #include "string.h"
 #include "math.h"
 #include "time.h"
-#include "suitesparse/cholmod.h"
+#include "cholmod.h"
 #include "header_MDOODZ.h"
 
 
