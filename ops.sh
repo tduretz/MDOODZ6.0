@@ -18,11 +18,11 @@ EOF
 }
 
 function install_packcages_with_apt {
-    echo "installing packages using Homebrew" &&
+    echo "installing packages using apt (Ubuntu)" &&
     sudo apt -y install git || echo "git is already installed" &&
-    sudo apt -y install suite-sparse || echo "suitesparse is already installed" &&
-    sudo apt -y install hdf5 || echo "hdf5 is already installed" &&
-    sudo apt -y install gcc@7 || echo "gcc7 is already installed" &&
+    sudo apt -y install libsuitesparse-dev || echo "suitesparse is already installed" &&
+    sudo apt -y install hdf5-tools || echo "hdf5 is already installed" &&
+    sudo apt -y install gcc-7 || echo "gcc7 is already installed" &&
     ./env.sh apt
 }
 

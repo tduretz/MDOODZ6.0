@@ -5,8 +5,8 @@ COMMAND=$1
 function set_up_apt_variables {
   echo "setting up variables for apt" &&
     export HDF5_USE_FILE_LOCKING="FALSE" &&
-    export C_INCLUDE_PATH="/usr/local/include" &&
-    export LIBRARY_PATH="/usr/local/lib"
+    export C_INCLUDE_PATH="/usr/include" &&
+    export LIBRARY_PATH="/usr/lib"
 }
 
 function set_up_brew_variables {

@@ -420,7 +420,7 @@ void  IsInfArray2DFP( DoodzFP* arr1, int size1 ) {
     //#pragma omp parallel for shared( arr1, mesh ) private(k) schedule( static )
     for(k=0;k<size1;k++) {
 
-        if ( isinf(arr1[k])!=0 ) {
+        if (isinf(arr1[k])!=0 ) {
             printf("Inf Scheisse!\n");
             break;
         }

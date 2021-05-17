@@ -1680,7 +1680,7 @@ firstprivate( model, dt )
                     dtxxms[k] = -( particles->sxxd[k] - txxm0[k]) * (1.0 - exp(-d*dt/dtaum));
                     dtzzms[k] = -( particles->szzd[k] - tzzm0[k]) * (1.0 - exp(-d*dt/dtaum));
                     dtxzms[k] = -( particles->sxz[k]  - txzm0[k]) * (1.0 - exp(-d*dt/dtaum));
-                    if isinf(dtxxms[k]) {
+                    if (isinf(dtxxms[k])) {
                        printf("Infinite dtxxms[k]: %2.2e %2.2e %2.2e\n", particles->sxxd[k], txxm0[k], exp(-d*dt/dtaum));
                         printf("%2.2e %2.2e %2.2e %2.2e %2.2e", d, dt, dtaum, etam[k]*scaling->eta, materials->mu[p]*scaling->S );
                        exit(1);
@@ -3307,7 +3307,7 @@ void ShearModCompExpGrid( grid* mesh, mat_prop materials, params model, scale sc
 
                 }
 
-                if ( isinf(1.0/mesh->mu_s[c1]) ) {
+                if (isinf(1.0/mesh->mu_s[c1]) ) {
                     printf("Aaaaargh...!! %2.2e %2.2e ----> ShearModulusCompressibilityExpansivityGrid\n", mesh->phase_perc_s[0][c1], mesh->phase_perc_s[1][c1]);
                 }
 
