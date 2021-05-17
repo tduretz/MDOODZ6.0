@@ -6,8 +6,8 @@ jobs:
       - image: cimg/node:14.10.1
         environment:
           HDF5_USE_FILE_LOCKING: FALSE
-          C_INCLUDE_PATH: /usr/include
-          LIBRARY_PATH: /usr/lib
+          C_INCLUDE_PATH: /usr/local/include
+          LIBRARY_PATH: /usr/local/lib
     steps:
       - checkout
       - run:
