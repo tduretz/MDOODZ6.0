@@ -24,7 +24,7 @@
 #include "string.h"
 #include "math.h"
 #include "header_MDOODZ.h"
-#include "umfpack.h"
+#include "suitesparse/umfpack.h"
 
 #include "time.h"
 #include "suitesparse/amd.h"
