@@ -7,7 +7,7 @@ jobs:
         environment:
           HDF5_USE_FILE_LOCKING: FALSE
           C_INCLUDE_PATH: /usr/local/include
-          LIBRARY_PATH: /usr/bin
+          LIBRARY_PATH: /usr/local/
     steps:
       - checkout
       - run:

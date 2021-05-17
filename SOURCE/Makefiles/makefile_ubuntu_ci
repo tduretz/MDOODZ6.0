@@ -30,7 +30,6 @@ endif
 CFLAGS += -Wno-unused-variable  -Wno-comment
 #---------------------------------------------------#
 # Libraries
-CFLAGS += -I /usr/bin
 LIBS = -lz -lhdf5
 
 # Related to SuiteSparse
