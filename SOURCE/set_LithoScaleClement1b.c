@@ -61,7 +61,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double Tsurf  = 273.15/scaling.T, Tpart;
     double Htot   = Lz, Tmant = (model.user0 + 273.15)/scaling.T;
     double WZHW   = 10e3/scaling.L;
-    double angle  = 0.0;//model.user4*M_PI/180.0;
+    double angle  = 0.0;//model.user4*PI/180.0;
 //    double zlc = -35e3/scaling.L;
 //    double zmc = -25e3/scaling.L;
 //    double zuc = -15e3/scaling.L;
@@ -72,7 +72,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     
     double spacing = 5.0e3/scaling.L; // espacement layering crust
     
-    //angle = 00*M_PI/180;
+    //angle = 00*PI/180;
     
     // Loop on particles
     for ( np=0; np<particles->Nb_part; np++ ) {

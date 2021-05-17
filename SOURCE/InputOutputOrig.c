@@ -1123,7 +1123,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->EpsBG           = ReadDou2( fin, "EpsBG",           0.0 ) / scaling->E;
     model->PrBG            = ReadDou2( fin, "PrBG",            0.0 ) / scaling->S;
     // Anisotropy
-//    model->director_angle  = ReadDou2( fin, "director_angle",  0.0 )  * M_PI/ 180.0;
+//    model->director_angle  = ReadDou2( fin, "director_angle",  0.0 )  * PI/ 180.0;
 //    model->aniso_factor    = ReadDou2( fin, "aniso_factor",    1.0 );
         // Surface processes
     model->surf_diff       = ReadDou2( fin, "surf_diff",       0.0 ) / (pow(scaling->L,2.0)/scaling->t);
@@ -1186,8 +1186,8 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         materials->k_eff[k] = materials->k[k];
         materials->Qr[k]   = ReadMatProps( fin, "Qr",  k,   1.0e-30)  / (scaling->W / pow(scaling->L,3.0));
         materials->C[k]    = ReadMatProps( fin, "C",   k,   1.0e7  )  / scaling->S;
-        materials->phi[k]  = ReadMatProps( fin, "phi", k,    30.0  )  * M_PI/ 180.0;
-        materials->psi[k]  = ReadMatProps( fin, "psi", k,     0.0  )  * M_PI/ 180.0;
+        materials->phi[k]  = ReadMatProps( fin, "phi", k,    30.0  )  * PI/ 180.0;
+        materials->psi[k]  = ReadMatProps( fin, "psi", k,     0.0  )  * PI/ 180.0;
         materials->Slim[k] = ReadMatProps( fin, "Slim",k,   1.0e10 )  / scaling->S;
         materials->alp[k]  = ReadMatProps( fin, "alp", k,      0.0)  / (1.0/scaling->T);
         materials->bet[k]  = ReadMatProps( fin, "bet", k,  1.0e-40 )  / (1.0/scaling->S);
@@ -1213,11 +1213,11 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         materials->psi_soft[k]   = (int)ReadMatProps( fin, "psi_soft",   k,    0.0   );
         materials->is_tensile[k] = (int)ReadMatProps( fin, "is_tensile", k,    0.0   );
         materials->C_end[k]     = ReadMatProps( fin, "Ce",     k,    materials->C[k]*scaling->S    ) / scaling->S;
-        materials->phi_end[k]   = ReadMatProps( fin, "phie",   k,    materials->phi[k]*180.0/M_PI  ) * M_PI / 180.0;
-        materials->psi_end[k]   = ReadMatProps( fin, "psie",   k,    materials->psi[k]*180.0/M_PI  ) * M_PI / 180.0;
+        materials->phi_end[k]   = ReadMatProps( fin, "phie",   k,    materials->phi[k]*180.0/PI  ) * PI / 180.0;
+        materials->psi_end[k]   = ReadMatProps( fin, "psie",   k,    materials->psi[k]*180.0/PI  ) * PI / 180.0;
         double eps_coh = 1.0 / scaling->S;
-        double eps_phi = 0.1  * M_PI / 180.0;
-        double eps_psi = 0.1  * M_PI / 180.0;
+        double eps_phi = 0.1  * PI / 180.0;
+        double eps_psi = 0.1  * PI / 180.0;
         if ( materials->coh_soft[k] == 1 && fabs( materials->C_end[k]   - materials->C[k]  ) < eps_coh ) { printf("Please set a difference in cohesion, if not set coh_soft of phase %d to 0.0\n", k); exit(122); };
         if ( materials->phi_soft[k] == 1 && fabs( materials->phi_end[k] - materials->phi[k]) < eps_phi ) { printf("Please set a difference in friction angle, if not set phi_soft of phase %d to 0.0\n", k); exit(122); };
         if ( materials->psi_soft[k] == 1 && fabs( materials->psi_end[k] - materials->psi[k]) < eps_psi ) { printf("Please set a difference in dilation angle, if not set psi_soft of phase %d to 0.0\n", k); exit(122); };
@@ -1245,7 +1245,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         materials->phase_two[k]  = (int)ReadMatProps( fin, "phase_mix",k,    (double)k  );
         // Anisotropy
         materials->aniso_factor[k] =      ReadMatProps( fin, "aniso_factor", k,    1.0  );
-        materials->aniso_angle[k]  =      ReadMatProps( fin, "aniso_angle"  ,k,   90.0  )  * M_PI/ 180.0;
+        materials->aniso_angle[k]  =      ReadMatProps( fin, "aniso_angle"  ,k,   90.0  )  * PI/ 180.0;
         // Check if any flow law is active
         int sum = abs(materials->cstv[k]) + abs(materials->pwlv[k]) + abs(materials->linv[k]) + abs(materials->gbsv[k]) + abs(materials->expv[k]);
         if ( sum == 0 ) {
@@ -1259,10 +1259,10 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         printf("-------------------------------------------- PHASE: %d -------------------------------------------\n", k);
         printf("rho    = %2.2e kg/m^3     mu = %2.2e Pa\n", materials->rho[k]*scaling->rho, materials->mu[k]*scaling->S );
         printf("Cv     = %2.2e J/kg/K      k = %2.2e W/m/K      Qr = %2.2e W/m3\n", materials->Cv[k]*scaling->Cv, materials->k[k]*scaling->k, materials->Qr[k]*(scaling->W / pow(scaling->L,3)) );
-        printf("C      = %2.2e Pa        phi = %2.2e deg      Slim = %2.2e Pa\n",  materials->C[k]*scaling->S, materials->phi[k]*180/M_PI, materials->Slim[k]*scaling->S );
+        printf("C      = %2.2e Pa        phi = %2.2e deg      Slim = %2.2e Pa\n",  materials->C[k]*scaling->S, materials->phi[k]*180/PI, materials->Slim[k]*scaling->S );
         printf("alp    = %2.2e 1/T        T0 = %2.2e K         bet = %2.2e 1/Pa       P0 = %2.2e Pa       drho = %2.2e kg/m^3 \n", materials->alp[k]*(1/scaling->T), materials->T0[k]*(scaling->T), materials->bet[k]*(1/scaling->S), materials->P0[k]*(scaling->S), materials->drho[k]*scaling->rho );
         printf("prefactor for power-law: %2.2e\n", materials->pref_pwl[k]);
-                 printf("C_end    = %2.2e Pa        Phi_end = %2.2e deg         pls_start = %2.2e        pls_end = %2.2e \n", materials->C_end[k]*scaling->S, materials->phi_end[k]*180/M_PI, materials->pls_start[k],  materials->pls_end[k] );
+                 printf("C_end    = %2.2e Pa        Phi_end = %2.2e deg         pls_start = %2.2e        pls_end = %2.2e \n", materials->C_end[k]*scaling->S, materials->phi_end[k]*180/PI, materials->pls_start[k],  materials->pls_end[k] );
         printf("eta0_vp   = %2.2e  Pa.s^(1/n)         n_vp   = %2.2e\n", materials->eta_vp[k]* (scaling->S*pow(scaling->t,1.0/materials->n_vp[k])) , materials->n_vp[k]);
 
         printf("Flow law settings:\n");

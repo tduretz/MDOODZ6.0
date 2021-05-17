@@ -58,7 +58,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double Tsurf = 273.15/scaling.T, Tpart;
     double Htot  = Lz, Tmant = (model.user0 + 273.15)/scaling.T;
     double WZHW  = 10e3/scaling.L;
-    double angle = model.user4*M_PI/180.0;
+    double angle = model.user4*PI/180.0;
     double zlc = -35e3/scaling.L;
     double zmc = -25e3/scaling.L;
     double zuc = -15e3/scaling.L;
@@ -66,7 +66,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double x0 = 0.0*350e3/scaling.L;
     double z0 = -35e3/scaling.L;
     
-    //angle = 00*M_PI/180;
+    //angle = 00*PI/180;
     
     // Loop on particles
     for( np=0; np<particles->Nb_part; np++ ) {

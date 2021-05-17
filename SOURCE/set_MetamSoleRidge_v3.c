@@ -86,7 +86,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double z_sed = (double)(model.user4)/scaling.L;
     
     double AspectRatio = 5.0;
-    double x_ell, z_ell, a_ell = model.user1/scaling.L, b_ell = model.user1/scaling.L * AspectRatio, angle = 70*M_PI/180;
+    double x_ell, z_ell, a_ell = model.user1/scaling.L, b_ell = model.user1/scaling.L * AspectRatio, angle = 70*PI/180;
     double x0 = 0.0*350e3/scaling.L;
     double z0 = -5e3/scaling.L;
     double z_uc   = (double)(model.user1)/scaling.L;
@@ -143,10 +143,10 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
             infsum = 0.0;
             for( j=1; j<10; j++ ) {
                 jd = (double)j;
-                betj   = sqrt(R*R + jd*jd*M_PI*M_PI) - R;
+                betj   = sqrt(R*R + jd*jd*PI*PI) - R;
 
-                c      = 2.0/jd/M_PI;
-                infsum = infsum + c*exp(-betj*particles->x[np]/a) * sin(jd * M_PI * -particles->z[np]/a);
+                c      = 2.0/jd/PI;
+                infsum = infsum + c*exp(-betj*particles->x[np]/a) * sin(jd * PI * -particles->z[np]/a);
             }
             particles->T[np]   = (Tmant-zeroC/scaling.T) *(-particles->z[np]/a + infsum);
         }

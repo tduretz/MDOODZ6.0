@@ -86,7 +86,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double z_sed = (double)(model.user4)/scaling.L;
     
     double AspectRatio = 5.0;
-    double x_ell, z_ell, a_ell = model.user1/scaling.L, b_ell = model.user1/scaling.L * AspectRatio, angle = 70*M_PI/180;
+    double x_ell, z_ell, a_ell = model.user1/scaling.L, b_ell = model.user1/scaling.L * AspectRatio, angle = 70*PI/180;
     double x0 = 0.0*350e3/scaling.L;
     double z0 = -5e3/scaling.L;
     double z_uc   = (double)(model.user1)/scaling.L;

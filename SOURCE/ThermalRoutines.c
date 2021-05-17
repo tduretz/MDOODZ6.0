@@ -333,7 +333,7 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
                             zn   = mesh->zc_coord[l];
                             tet  = atan(zn/xn);
                             if (tet<0.0) tet  *= -1;
-                            yW   = atan(M_PI/2.0-tet) * model.dx;
+                            yW   = atan(PI/2.0-tet) * model.dx;
                             aW   = yW/model.dz;
                             val +=  (1.0-aW)*AW*one_dx_dx;
                         }
@@ -350,7 +350,7 @@ void EnergyDirectSolve( grid *mesh, params model, double *rhoE, double *drhoE, d
                             zn   = mesh->zc_coord[l];
                             tet  = atan(zn/xn);
                             if (tet<0.0) tet  *= -1;
-                            yE   = atan(M_PI/2.0-tet) * model.dx;
+                            yE   = atan(PI/2.0-tet) * model.dx;
                             aE   = yE/model.dz;
                             val +=  (1.0-aE)*AE*one_dx_dx;
                         }

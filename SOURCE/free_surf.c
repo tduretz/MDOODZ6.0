@@ -719,7 +719,7 @@ void FreeMarkerChain( surface *topo, markers* topo_chain ) {
 double TopoFun0( double X, double H, double L, scale scaling ) {
     double Y = -10.0e3/scaling.L;
     Y = 0 + 2000/scaling.L*cos(X*PI/L*6.0);
-    Y = -5000.0/scaling.L + 4500.0/scaling.L*cos(X*M_PI/L*1);
+    Y = -5000.0/scaling.L + 4500.0/scaling.L*cos(X*PI/L*1);
     return Y;
 }
 

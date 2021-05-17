@@ -113,7 +113,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         //==================================================================
                 // 1ere elliptical inclusion
         double rad=0.1/scaling.L;
-        double X,Xn,Z,Zn, xc=model.xmax, zc=model.zmin, la= 5.00*rad, sa = 1.00*rad, theta=(30.0)*M_PI/180.0;
+        double X,Xn,Z,Zn, xc=model.xmax, zc=model.zmin, la= 5.00*rad, sa = 1.00*rad, theta=(30.0)*PI/180.0;
         xc=model.xmax;
         zc=model.zmin;
         
@@ -127,7 +127,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         // ------------------------------------------------
 //        // 1ere elliptical inclusion
 //        double rad=0.25/scaling.L;
-//        double X,Xn,Z,Zn, xc=model.xmax, zc=model.zmin, la= 1.00*rad, sa = 1.00*rad, theta=(90.0)*M_PI/180.0;
+//        double X,Xn,Z,Zn, xc=model.xmax, zc=model.zmin, la= 1.00*rad, sa = 1.00*rad, theta=(90.0)*PI/180.0;
 //        X = particles->x[np]-xc;
 //        Z = particles->z[np]-zc;
 //        // elliptical inclusion
@@ -140,7 +140,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
 //        zc=model.zmin;
 //        la= 1.0*rad;
 //        sa = 1.0*rad;
-//        //theta=(90.0)*M_PI/180.0;
+//        //theta=(90.0)*PI/180.0;
 //
 //        X = particles->x[np]-xc;
 //        Z = particles->z[np]-zc;
@@ -154,7 +154,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
 //        zc=+0.2/scaling.L;
 //        la= 1.0*rad;
 //        sa = 9.0*rad;
-//        //theta=(0.0)*M_PI/180.0;
+//        //theta=(0.0)*PI/180.0;
 //        
 //        X = particles->x[np]-xc;
 //        Z = particles->z[np]-zc;
@@ -168,7 +168,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
 //        zc=-0.2/scaling.L;
 //        la= 1.0*rad;
 //        sa = 9.0*rad;
-//        //theta=(0.0)*M_PI/180.0;
+//        //theta=(0.0)*PI/180.0;
 //        //
 //        X = particles->x[np]-xc;
 //        Z = particles->z[np]-zc;
@@ -182,7 +182,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
 //        zc=+0.35/scaling.L;
 //        la= 1.0*rad;
 //        sa = 15.0*rad;
-//        //theta=(0.0)*M_PI/180.0;
+//        //theta=(0.0)*PI/180.0;
 //        
 //        X = particles->x[np]-xc;
 //        Z = particles->z[np]-zc;
@@ -196,7 +196,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
 //        zc=-0.35/scaling.L;
 //        la= 1.0*rad;
 //        sa = 15.0*rad;
-//        //theta=(0.0)*M_PI/180.0;
+//        //theta=(0.0)*PI/180.0;
 //        
 //        X = particles->x[np]-xc;
 //        Z = particles->z[np]-zc;
