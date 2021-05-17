@@ -4,7 +4,7 @@
 #include "math.h"
 //---- M-Doodz header file
 #include "header_MDOODZ.h"
-#include "umfpack.h"
+#include "suitesparse/umfpack.h"
 
 #ifdef _OMP_
 #include "omp.h"
