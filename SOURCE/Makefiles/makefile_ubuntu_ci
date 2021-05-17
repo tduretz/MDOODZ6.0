@@ -30,7 +30,7 @@ endif
 CFLAGS += -Wno-unused-variable  -Wno-comment
 #---------------------------------------------------#
 # Libraries
-CFLAGS += -I /usr/include/hdf5/serial
+CFLAGS += -I /usr/bin
 LIBS = -lz -lhdf5
 
 # Related to SuiteSparse
