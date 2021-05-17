@@ -21,7 +21,7 @@ jobs:
           command: sudo apt -y install libsuitesparse-dev
       - run:
           name: install hdf5
-          command: sudo apt-get -y install libhdf5-serial-dev
+          command: sudo apt -y install libhdf5-serial-dev
       - run:
           name: prepare makefiile
           command: mv SOURCE/Makefiles/makefile_ubuntu_ci SOURCE/makefile
