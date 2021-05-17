@@ -22,7 +22,6 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
-#define _USE_MATH_DEFINES
 #include "math.h"
 //---- M-Doodz header file
 #include "header_MDOODZ.h"
@@ -719,7 +718,7 @@ void FreeMarkerChain( surface *topo, markers* topo_chain ) {
 
 double TopoFun0( double X, double H, double L, scale scaling ) {
     double Y = -10.0e3/scaling.L;
-    Y = 0 + 2000/scaling.L*cos(X*M_PI/L*6.0);
+    Y = 0 + 2000/scaling.L*cos(X*PI/L*6.0);
     Y = -5000.0/scaling.L + 4500.0/scaling.L*cos(X*M_PI/L*1);
     return Y;
 }
