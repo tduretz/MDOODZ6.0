@@ -29,7 +29,7 @@
 #include "time.h"
 #include "amd.h"
 #include "cs.h"
-#include "cholmod.h"
+#include "suitesparse/cholmod.h"
 
 #ifdef _OMP_
 #include "omp.h"

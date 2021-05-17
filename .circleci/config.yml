@@ -15,13 +15,13 @@ jobs:
           command: sudo apt update
       - run:
           name: install gcc@7
-          command: sudo apt-get -y install gcc-7
+          command: sudo apt -y install gcc-7
       - run:
           name: install suite-sparse
-          command: sudo apt-get -y install libsuitesparse-dev
+          command: sudo apt -y install libsuitesparse-dev
       - run:
           name: install hdf5
-          command: sudo apt-get -y install hdf5-tools
+          command: sudo apt -y install hdf5-tools
       - run:
           name: prepare makefiile
           command: mv SOURCE/Makefiles/makefile_ubuntu_ci SOURCE/makefile
