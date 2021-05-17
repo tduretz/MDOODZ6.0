@@ -1685,7 +1685,7 @@ firstprivate( model, dt )
                         printf("%2.2e %2.2e %2.2e %2.2e %2.2e", d, dt, dtaum, etam[k]*scaling->eta, materials->mu[p]*scaling->S );
                        exit(1);
                    }
-                    if isnan(dtxxms[k]) {
+                    if (isnan(dtxxms[k])) {
                         printf("Infinite dtxxms[k]: %2.2e %2.2e %2.2e\n", particles->sxxd[k], txxm0[k], exp(-d*dt/dtaum));
                         exit(1);
                     }

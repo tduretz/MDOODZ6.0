@@ -823,7 +823,7 @@ void EvaluateStokesResidual( SparseMat *Stokes, Nparams *Nmodel, grid *mesh, par
         printf("Fp = %2.6e\n", Nmodel->resp ); // Units of velocity gradient
     }
 
-    if ( isnan(Nmodel->resx) || isnan(Nmodel->resz) || isnan(Nmodel->resp) ) {
+    if (isnan(Nmodel->resx) || isnan(Nmodel->resz) || isnan(Nmodel->resp) ) {
         printf("Fu = %2.6e\n", Nmodel->resx ); // Units of momentum
         printf("Fv = %2.6e\n", Nmodel->resz ); // Units of momentum
         printf("Fp = %2.6e\n", Nmodel->resp );// Units of velocity gradient
@@ -905,7 +905,7 @@ void EvaluateStokesResidualDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
         printf("Fp abs. = %2.6e --- Fp rel. = %2.6e\n", Nmodel->resp, Nmodel->resp/Nmodel->resp0 ); // Units of velocity gradient
     }
 
-    if ( isnan(Nmodel->resx) || isnan(Nmodel->resz) || isnan(Nmodel->resp) ) {
+    if (isnan(Nmodel->resx) || isnan(Nmodel->resz) || isnan(Nmodel->resp) ) {
         printf("Fu = %2.6e\n", Nmodel->resx * scaling.S * scaling.L ); // Units of momentum
         printf("Fv = %2.6e\n", Nmodel->resz * scaling.S * scaling.L ); // Units of momentum
         printf("Fp = %2.6e\n", Nmodel->resp * scaling.E * scaling.L * scaling.L ); // Units of velocity gradient
