@@ -17,7 +17,7 @@ Examples:
 EOF
 }
 
-function install_packcages_with_apt {
+function install_packages_with_apt {
     echo "installing packages using apt (Ubuntu)" &&
     sudo apt -y install git || echo "git is already installed" &&
     sudo apt -y install libsuitesparse-dev || echo "suitesparse is already installed" &&
@@ -49,6 +49,8 @@ if [[ $COMMAND == "install" ]]; then
     install_packages_with_brew
   elif [[ $OPTIONS == "port" ]]; then
     install_packages_with_macport
+  elif [[ $OPTIONS == "apt" ]]; then
+    install_packages_with_apt
   else
     usage
   fi
