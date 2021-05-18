@@ -30,7 +30,7 @@ endif
 CFLAGS += -Wno-unused-variable  -Wno-comment
 #---------------------------------------------------#
 # Libraries
-LIBS = -lz -lhdf5
+LIBS = -L /usr/lib/x86_64-linux-gnu -lhdf5
 
 # Related to SuiteSparse
 LIBS += -L /usr/lib/x86_64-linux-gnu -llapack -lcxsparse -lumfpack -lcblas -lamd -lcholmod -lcolamd -lbtf -lsuitesparseconfig -lblas
