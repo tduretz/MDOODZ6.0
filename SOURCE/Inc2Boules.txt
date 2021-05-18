@@ -4,7 +4,7 @@ irestart = 0
 
 /**** OUTPUT FILES ****/
 writer = 1
-writer_step = 1
+writer_step = 10
 writer_markers = 0
 writer_debug   = 0
 
@@ -18,8 +18,8 @@ V   = 1e0
 T   = 1
  
 /**** SPACE-TIME ****/
-Nx   = 101
-Nz   = 101
+Nx   = 110
+Nz   = 100
 Nt   = 30
 xmin = -0.5000000
 zmin = -0.5000000
@@ -31,7 +31,7 @@ Courant = 0.3
 lsolver      = 0
 penalty      = 1e2
 diag_scaling = 1
-
+itp_stencil  = 9
 
 /**** SWITCHES ****/
 ismechanical    = 1
