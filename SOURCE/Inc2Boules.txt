@@ -54,7 +54,7 @@ isPl_soft       = 0
 surf_processes  = 0
  
 /**** SETUP DEPENDANT ****/
-shear_style     = 1
+shear_style     = 0
 EpsBG           = 1e1 /Background strain rate
 PrBG            = 0
 surf_diff       = 0

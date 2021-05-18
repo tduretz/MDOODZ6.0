@@ -254,35 +254,35 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
             }
         }
     }
-    // Calculate influx/outflux
-    ccbcOUT = cctot - ccbcIN;
-    influx  = ccbcIN*model->dz*VxIn;
-    VxOut   = -influx/model->dz/(ccbcOUT+1);
-    printf ("Number of cells on East side = %d\nNumber of cells with inflow  = %d\nNumber of cells with outflow = %d\n", cctot, ccbcIN, ccbcOUT);
-    //        VxOut = -(ccbc*VxIn) / (cctot-ccbc-1);
-    printf("Vx Outflow         = %2.2e Vx Inflow = %2.2e\n", VxOut*scaling.V,  VxIn*scaling.V);
-    printf("Total influx       = %2.2e\n", influx*scaling.V*scaling.L);
-    
-    double V_pure_shear, dh;
-    
+//    // Calculate influx/outflux
+//    ccbcOUT = cctot - ccbcIN;
+//    influx  = ccbcIN*model->dz*VxIn;
+//    VxOut   = -influx/model->dz/(ccbcOUT+1);
+//    printf ("Number of cells on East side = %d\nNumber of cells with inflow  = %d\nNumber of cells with outflow = %d\n", cctot, ccbcIN, ccbcOUT);
+//    //        VxOut = -(ccbc*VxIn) / (cctot-ccbc-1);
+//    printf("Vx Outflow         = %2.2e Vx Inflow = %2.2e\n", VxOut*scaling.V,  VxIn*scaling.V);
+//    printf("Total influx       = %2.2e\n", influx*scaling.V*scaling.L);
+//
+//    double V_pure_shear, dh;
+//
     double V_W = -model->xmin*model->EpsBG;
     double V_E = -model->xmax*model->EpsBG;
-    double h_W = topo->height[   0] - model->zmin;
-    double h_E = topo->height[NX-1] - model->zmin;
-    double h_W_num = 0.0;
-    double h_E_num = 0.0;
-    
-    // Sum of cells on which Vx is applied
-    for (l=0; l<mesh->Nz+1; l++) {
-        
-        // West
-        k = 0; c = k + l*(mesh->Nx);
-        if ( mesh->BCu.type[c] != 30 ) h_W_num += model->dz;
-        
-        // East
-        k = mesh->Nx-1; c = k + l*(mesh->Nx);
-        if ( mesh->BCu.type[c] != 30 ) h_E_num += model->dz;
-    }
+//    double h_W = topo->height[   0] - model->zmin;
+//    double h_E = topo->height[NX-1] - model->zmin;
+//    double h_W_num = 0.0;
+//    double h_E_num = 0.0;
+//
+//    // Sum of cells on which Vx is applied
+//    for (l=0; l<mesh->Nz+1; l++) {
+//
+//        // West
+//        k = 0; c = k + l*(mesh->Nx);
+//        if ( mesh->BCu.type[c] != 30 ) h_W_num += model->dz;
+//
+//        // East
+//        k = mesh->Nx-1; c = k + l*(mesh->Nx);
+//        if ( mesh->BCu.type[c] != 30 ) h_E_num += model->dz;
+//    }
     
 //    V_W = V_W * h_W/h_W_num;
 //    V_E = V_E * h_E/h_E_num;

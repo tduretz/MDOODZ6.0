@@ -8,9 +8,9 @@ mdoodz6       = 1;
 cd(path)
 
 % File numbers
-istart = 22;
+istart = 0;
 ijump  = 1;
-iend   = 22;
+iend   = 0;
 
 iter   = 0;
 
@@ -24,10 +24,10 @@ res           = '-r200';
 color_map     = 'piston0';
 file_suffix   = '';
 
-particles = 0;
-topo      = 1;
-vel_plot  = 1;
-tags      = 1;
+particles = 1;
+topo      = 0;
+vel_plot  = 0;
+tags      = 0;
 residuals = 0;
 numbering = 0;
 
@@ -45,7 +45,7 @@ minTopo = -5e3;
 maxTopo = 3e3;
 
 % Size of the window
-crop   = 1;
+crop   = 0;
 
 xmin   =  -4e3;
 xmax   =  4e3;

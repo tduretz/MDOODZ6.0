@@ -44,13 +44,13 @@ cd(path)
 % Files
 istart = 0;
 ijump  = 1;
-iend   = 25;
+iend   = 0;
 
 %--------------------------------------------------
 % what do you want to plot:
 %--------------------------------------------------
 eta_sym         = 0;
-eta_plot        = 0;
+eta_plot        = 1;
 rho_plot        = 0;
 phase_on_grid   = 0;
 phase_temp2     = 0;
@@ -76,7 +76,7 @@ topo            = 0;
 topo_eta_plot   = 0;
 topo_SR_plot    = 0;
 
-topo_maps       = 1;
+topo_maps       = 0;
 phases_uplift   = 0;
 dt_time         = 0;
 srate_add       = 0;
@@ -175,18 +175,18 @@ maxStr = 0.4;
 minPdyn = -1e8;
 maxPdyn =  5e8;
 
-minEta = 19;
-maxEta = 25;
+% minEta = 19;
+% maxEta = 25;
 
 mindiv  =-0.25e-14;
 maxdiv  = 0.25e-14;
 
-
-minEii = -17;
-maxEii = -15;
-
-minSii = 1e6;
-maxSii = 9e7;
+% 
+% minEii = -17;
+% maxEii = -15;
+% 
+% minSii = 1e6;
+% maxSii = 9e7;
 
 % minEii = -17;
 % maxEii = -13;
@@ -195,7 +195,7 @@ maxSii = 9e7;
 % maxSii = 400e6;
 
 % Size of the window
-crop       = 1;
+crop       = 0;
 
 lim.xmin   = -4;
 lim.xmax   =  4;
