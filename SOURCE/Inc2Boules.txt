@@ -14,7 +14,7 @@ input_file = setup_r201x201_F40_P20_B20.bin
 /**** SCALES ****/
 eta = 1e0
 L   = 1e0
-V   = 1e1
+V   = 1e0
 T   = 1
  
 /**** SPACE-TIME ****/
@@ -25,10 +25,11 @@ xmin = -0.5000000
 zmin = -0.5000000
 xmax =  0.5000000
 zmax =  0.5000000 
-dt   = 1.2623e+11
+dt   = 1.2623e1
+dt_min  = 1e-6  
 Courant = 0.3
 lsolver      = 0
-penalty      = 1e5
+penalty      = 1e2
 diag_scaling = 1
 
 
@@ -53,6 +54,7 @@ isPl_soft       = 0
 surf_processes  = 0
  
 /**** SETUP DEPENDANT ****/
+shear_style     = 1
 EpsBG           = 1e1 /Background strain rate
 PrBG            = 0
 surf_diff       = 0
