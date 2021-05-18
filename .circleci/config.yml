@@ -28,3 +28,6 @@ jobs:
       - run:
           name: build RiftingPaulineMD6
           command: cd SOURCE/ && make all MODEL=RiftingPaulineMD6 OPT=yes MKL=yes
+      - run:
+          name: build RiftingPaulineMD6 2
+          command: cd SOURCE/ && ./Doodzi_RiftingPaulineMD6 RiftingPaulineMD6.txt
