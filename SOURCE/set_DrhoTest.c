@@ -75,7 +75,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         // ------------------------------------------------
         // 1ere elliptical inclusion
         double rad=0.25/scaling.L;
-        double X,Xn,Z,Zn, xc=0.0, zc=0.0, la= 1.00*rad, sa = 1.00*rad, theta=(90.0)*PI/180.0;
+        double X,Xn,Z,Zn, xc=0.0, zc=0.0, la= 1.00*rad, sa = 1.00*rad, theta=(90.0)*M_PI/180.0;
         X = particles->x[np]-xc;
         Z = particles->z[np]-zc;
         // elliptical inclusion

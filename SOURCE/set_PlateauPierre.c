@@ -52,7 +52,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double dLab = 40e3/scaling.L;
 
     double zW  = model.user6/scaling.L;
-    double dip = atan(model.user7*PI/180.0);
+    double dip = atan(model.user7*M_PI/180.0);
     double Vel = model.user8/scaling.V;
     
     double ztop, zbot, Hslab = 100e3/scaling.L;
@@ -170,7 +170,7 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     double VzBC = -1.5e-9/scaling.V;
     
     double zW  = model->user6/scaling.L;
-    double dip = atan(model->user7*PI/180.0);
+    double dip = atan(model->user7*M_PI/180.0);
     double Vel = model->user8/scaling.V;
     
     // Linear gradient of velocity along West boundary

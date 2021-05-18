@@ -1832,8 +1832,8 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
             X = X0;
         }
         
-        dXdP   = retro*dt*exp(-pow(P - Pr, 2.0)/pow(dPr, 2.0))/(sqrt(PI)*dPr*(dt + tau_kin));
-        d2XdP2 = -retro*dt*(2.0*P - 2.0*Pr)*exp(-pow(P - Pr, 2.0)/pow(dPr, 2.0))/(sqrt(PI)*pow(dPr, 3.0)*(dt + tau_kin));
+        dXdP   = retro*dt*exp(-pow(P - Pr, 2.0)/pow(dPr, 2.0))/(sqrt(M_PI)*dPr*(dt + tau_kin));
+        d2XdP2 = -retro*dt*(2.0*P - 2.0*Pr)*exp(-pow(P - Pr, 2.0)/pow(dPr, 2.0))/(sqrt(M_PI)*pow(dPr, 3.0)*(dt + tau_kin));
 
         ndis1  = materials->npwl[phase];
         Adis1  = materials->Apwl[phase];
@@ -2646,8 +2646,8 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
     //    MinMaxArrayTag( mesh->eta_s, scaling->eta, Nx*Nz,   "eta_s", mesh->BCg.type );
     //    MinMaxArrayTag( mesh->detadexx_n, scaling->eta/scaling->E, Ncx*Ncz, "detadexx_n", mesh->BCp.type );
     //    MinMaxArrayTag( mesh->detadexx_s, scaling->eta/scaling->E, Nx*Nz,   "detadexx_s", mesh->BCg.type );
-    //    MinMaxArrayTag( mesh->fric_n, 180.0/PI, Ncx*Ncz, "Phin", mesh->BCp.type );
-    //    MinMaxArrayTag( mesh->fric_s, 180.0/PI, Nx*Nz,   "Phis", mesh->BCg.type    );
+    //    MinMaxArrayTag( mesh->fric_n, 180.0/M_PI, Ncx*Ncz, "Phin", mesh->BCp.type );
+    //    MinMaxArrayTag( mesh->fric_s, 180.0/M_PI, Nx*Nz,   "Phis", mesh->BCg.type    );
     //    MinMaxArrayTag( mesh->C_n, scaling->S, Ncx*Ncz, "Cn", mesh->BCp.type );
     //    MinMaxArrayTag( mesh->C_s, scaling->S, Nx*Nz,   "Cs", mesh->BCg.type    );
 

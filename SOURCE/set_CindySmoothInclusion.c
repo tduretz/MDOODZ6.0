@@ -34,7 +34,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double Lx = (double) (model.xmax - model.xmin) ;
     double Lz = (double) (model.zmax - model.zmin) ;
     double x0 =0.0, z0 =-0*0.0*Lz ;
-    double Smajor = model.user1 / scaling.L, Sminor = model.user2 / scaling.L, theta = (360-model.user3) * PI / 180;
+    double Smajor = model.user1 / scaling.L, Sminor = model.user2 / scaling.L, theta = (360-model.user3) * M_PI / 180;
     double xp, zp;
     double a , b, crit;
     

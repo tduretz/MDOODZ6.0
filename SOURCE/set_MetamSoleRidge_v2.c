@@ -37,7 +37,7 @@ double myErfInv2(double x){
    x = (1 - x)*(1 + x);        // x = 1 - x*x;
    lnx = logf(x);
 
-   tt1 = 2/(PI*0.147) + 0.5f * lnx;
+   tt1 = 2/(M_PI*0.147) + 0.5f * lnx;
    tt2 = 1/(0.147) * lnx;
 
    return(sgn*sqrtf(-tt1 + sqrtf(tt1*tt1 - tt2)));
@@ -86,7 +86,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double z_sed = (double)(model.user4)/scaling.L;
     
     double AspectRatio = 5.0;
-    double x_ell, z_ell, a_ell = model.user1/scaling.L, b_ell = model.user1/scaling.L * AspectRatio, angle = 70*PI/180;
+    double x_ell, z_ell, a_ell = model.user1/scaling.L, b_ell = model.user1/scaling.L * AspectRatio, angle = 70*M_PI/180;
     double x0 = 0.0*350e3/scaling.L;
     double z0 = -5e3/scaling.L;
     double z_uc   = (double)(model.user1)/scaling.L;

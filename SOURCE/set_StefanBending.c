@@ -35,9 +35,9 @@ void BuildInitialTopography( surface *topo, markers *topo_chain, params model, g
     int k;
     double TopoLevel = 2.e-1/scaling.L; // sets zero initial topography
     double a = 100e3/scaling.L, b = 10e3/scaling.L, Rad=6370e3/scaling.L;
-    double maxAngle = 18.0/2.0*PI/180.0;
+    double maxAngle = 18.0/2.0*M_PI/180.0;
     double maxX     = model.xmax, X, tet;
-    double amp      = Rad*sin(PI/2.0) - Rad*sin(maxAngle+PI/2);
+    double amp      = Rad*sin(M_PI/2.0) - Rad*sin(maxAngle+M_PI/2);
 
     for ( k=0; k<topo_chain->Nb_part; k++ ) {
 
@@ -48,7 +48,7 @@ void BuildInitialTopography( surface *topo, markers *topo_chain, params model, g
             // see PolarCoordinatesStuff.py
             topo_chain->z[k]     =  sqrt((Rad - topo_chain->x[k])*(Rad + topo_chain->x[k]));
         }
-//        printf("topo = %2.2e tet = %2.2e\n", topo_chain->z[k]*scaling.L/1e3, tet*180/PI);
+//        printf("topo = %2.2e tet = %2.2e\n", topo_chain->z[k]*scaling.L/1e3, tet*180/M_PI);
         topo_chain->phase[k] = 0;
     }
 
@@ -72,16 +72,16 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
 
 //    printf("%2.2e %2.2e %2.2e\n", Ttop, Tbot, Tgrad );
     double a = 100e3/scaling.L, b = 10e3/scaling.L, Rad=6370e3/scaling.L;
-    double maxAngle = 18.0/2.0*PI/180.0;
+    double maxAngle = 18.0/2.0*M_PI/180.0;
     double maxX     = model.xmax;
-    double amp      = Rad*sin(PI/2.0) - Rad*sin(maxAngle+PI/2);
+    double amp      = Rad*sin(M_PI/2.0) - Rad*sin(maxAngle+M_PI/2);
     double zMoho = Rad + model.user0/scaling.L;
     double zLAB  = Rad + model.user1/scaling.L;
 
     double Ttop  = 293.0/(scaling.T);
     double Tbot  = (model.user3 + zeroC)/scaling.T;
     double Tgrad = (Ttop-Tbot)/ (Lz - (model.zmax-Rad));
-    double x0, z0, x_ell, z_ell, angle = 35.*PI/180;
+    double x0, z0, x_ell, z_ell, angle = 35.*M_PI/180;
     double a_ell = 2.0*model.user5/scaling.L, b_ell = 0.5*model.user5/scaling.L;
 
     // Loop on particles
@@ -170,17 +170,17 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
     double VxOut_W = 0.0, VzOut_W = 0.0, VxIn_W = 0.5*Vx_tot, VzIn_W = 0.0;
     double VxOut_E = 0.0, VzOut_E = 0.0, VxIn_E =-0.5*Vx_tot, VzIn_E = 0.0;
     double VzOut_S = 0.0;
-    double maxAngle = 18.0/2.0*PI/180.0, tet_W, alp_W, tet_E, alp_E;
+    double maxAngle = 18.0/2.0*M_PI/180.0, tet_W, alp_W, tet_E, alp_E;
 
     if (model->polar == 1) {
         tet_W  = -maxAngle;
-        alp_W  = PI/2.0 - tet_W;
+        alp_W  = M_PI/2.0 - tet_W;
         VxIn_W = (0.5*Vx_tot) * sin(alp_W);
         VzIn_W =-(0.5*Vx_tot) * cos(alp_W);
         printf("VxIn_W = %2.2e m/s VzIn_W = %2.2e m/s \n", VxIn_W*scaling.V, VzIn_W*scaling.V);
 
         tet_E  = maxAngle;
-        alp_E  = PI/2.0 - tet_E;
+        alp_E  = M_PI/2.0 - tet_E;
         VxIn_E =-(0.5*Vx_tot) * sin(alp_E);
         VzIn_E = (0.5*Vx_tot) * cos(alp_E);
         printf("VxIn_E = %2.2e m/s VzIn_E = %2.2e m/s \n", VxIn_E*scaling.V, VzIn_E*scaling.V);

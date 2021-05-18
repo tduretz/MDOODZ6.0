@@ -66,7 +66,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double x0 = 0.0*350e3/scaling.L;
     double z0 = -35e3/scaling.L;
 
-    angle = 30*PI/180;
+    angle = 30*M_PI/180;
 
     // Loop on particles
     for( np=0; np<particles->Nb_part; np++ ) {

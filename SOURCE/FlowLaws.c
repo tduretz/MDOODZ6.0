@@ -818,7 +818,7 @@ void ReadDataGSE( mat_prop* mat, params* model, int k, int number, scale* scalin
             mat->Kpzm[k] = 2.5e9* pow(10.0,-6.0*mat->ppzm[k]) / (pow(scaling->L, mat->ppzm[k]) / scaling->t);
             mat->Qpzm[k] = 175.0e3                          / scaling->J;
             mat->Gpzm[k] = 1                              / (scaling->J * pow(scaling->L, -2.0) );
-            mat->cpzm[k] = PI;
+            mat->cpzm[k] = M_PI;
             mat->Lpzm[k] = 0.1;
             success      = 1;
             break;

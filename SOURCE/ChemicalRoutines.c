@@ -328,7 +328,7 @@ void ChemicalDirectSolve( grid *mesh, params model, markers *particles, mat_prop
                     zn   = mesh->zc_coord[l];
                     tet  = atan(zn/xn);
                     if (tet<0.0) tet  *= -1;
-                    yW   = atan(PI/2.0-tet) * model.dx;
+                    yW   = atan(M_PI/2.0-tet) * model.dx;
                     aW   = yW/model.dz;
                     val +=  (1.0-aW)*AW*one_dx_dx;
                 }
@@ -339,7 +339,7 @@ void ChemicalDirectSolve( grid *mesh, params model, markers *particles, mat_prop
                     zn   = mesh->zc_coord[l];
                     tet  = atan(zn/xn);
                     if (tet<0.0) tet  *= -1;
-                    yE   = atan(PI/2.0-tet) * model.dx;
+                    yE   = atan(M_PI/2.0-tet) * model.dx;
                     aE   = yE/model.dz;
                     val +=  (1.0-aE)*AE*one_dx_dx;
                 }
