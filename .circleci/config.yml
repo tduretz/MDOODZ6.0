@@ -6,8 +6,8 @@ jobs:
       - image: cimg/node:14.10.1
         environment:
           HDF5_USE_FILE_LOCKING: FALSE
-          C_INCLUDE_PATH: /usr/local/include
-          LIBRARY_PATH: /usr/lib/
+          C_INCLUDE_PATH: /usr/local/include:/usr/include/hdf5/serial:/usr/include/suitesparse
+          LIBRARY_PATH: /usr/lib/:/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu/hdf5/serial
     steps:
       - checkout
       - run:

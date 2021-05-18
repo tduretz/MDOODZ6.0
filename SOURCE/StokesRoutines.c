@@ -25,10 +25,10 @@
 #include "math.h"
 #include "time.h"
 #include "header_MDOODZ.h"
-#include "suitesparse/umfpack.h"
-#include "suitesparse/amd.h"
-#include "suitesparse/cs.h"
-#include "suitesparse/cholmod.h"
+#include "umfpack.h"
+#include "amd.h"
+#include "cs.h"
+#include "cholmod.h"
 
 #ifdef _OMP_
 #include "omp.h"

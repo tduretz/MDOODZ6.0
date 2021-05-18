@@ -27,7 +27,7 @@
 #include "string.h"
 #include "math.h"
 #include "header_MDOODZ.h"
-#include "hdf5/serial/hdf5.h"
+#include "hdf5.h"
 #include "zlib.h"
 
 #ifdef _OMP_
