@@ -5,7 +5,7 @@ irestart = 0
 
 /**** OUTPUT FILES ****/
 writer = 1
-writer_step = 1
+writer_step = 10
 writer_markers = 0
 writer_debug   = 0 
 
@@ -30,6 +30,7 @@ dt      = 1.2623e+11
 Courant = 0.45
 penalty = 1e2
 eta_avg = 0
+itp_stencil = 1
 
 /**** SWITCHES ****/
 ismechanical    = 1
