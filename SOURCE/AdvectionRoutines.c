@@ -777,12 +777,13 @@ void PureShearALE( params *model, grid *Mmesh, markers *topo_chain, scale scalin
 void DefineInitialTimestep( params *model, grid *Mmesh, markers particles, mat_prop materials, scale scaling ) {
     int k;
     double dt_maxwell, minMaxwell = 1e100, maxMaxwell = 0.0;
+    int interp = 0, vert = 0, cent = 1;
 
 // Define initial timestep is elasticity is turned on
 if ( model->iselastic == 1 && model->dt_constant != 1 ) {
 
-    Interp_P2C ( particles, materials.mu,  Mmesh, Mmesh->mu_n,      Mmesh->xg_coord, Mmesh->zg_coord, 0, 1 );
-    Interp_P2N ( particles, materials.mu,  Mmesh, Mmesh->mu_s,      Mmesh->xg_coord, Mmesh->zg_coord, 0, 1, model );
+    P2Mastah( model, particles, materials.mu,     Mmesh, Mmesh->mu_n,   Mmesh->BCp.type,  0, 0, interp, cent    );
+    P2Mastah( model, particles, materials.mu,     Mmesh, Mmesh->mu_s,   Mmesh->BCg.type,  0, 0, interp, vert    );
 
     for ( k=0; k<Mmesh->Nx*Mmesh->Nz; k++) {
 

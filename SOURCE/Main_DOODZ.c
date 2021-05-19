@@ -61,7 +61,7 @@ int main( int nargs, char *args[] ) {
     SparseMat    JacobA,  JacobB,  JacobC,  JacobD;
     int          Nx, Nz, Ncx, Ncz;
     int          Newton, *Newt_on, first_Newton;
-    int cent=1, vert=0, prop=1, interp=0;
+    int cent=1, vert=0, prop=1, interp=0, vxnodes=-1, vznodes=-2;
     
     double *rx_abs, *rz_abs, *rp_abs, *rx_rel, *rz_rel, *rp_rel;
     
@@ -192,26 +192,26 @@ int main( int nargs, char *args[] ) {
             
             // Set phases on particles
             SetParticles( &particles, scaling, model, &materials );
-//            if ( model.free_surf == 1 ) CleanUpSurfaceParticles( &particles, &mesh, topo, scaling ); /////////!!!!!!!!!
             
 #endif
-            if ( model.free_surf == 1 ) CleanUpSurfaceParticles( &particles, &mesh, topo, scaling ); /////////!!!!!!!!!
+            if ( model.free_surf == 1 ) CleanUpSurfaceParticles( &particles, &mesh, topo, scaling );
             
-            Interp_P2N ( particles, materials.eta0,  &mesh, mesh.eta_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
-            Interp_P2C ( particles, materials.eta0,  &mesh, mesh.eta_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
+            P2Mastah( &model, particles, materials.eta0, &mesh, mesh.eta_s, mesh.BCg.type,  0, 0, interp, vert );
+            P2Mastah( &model, particles, materials.eta0, &mesh, mesh.eta_n, mesh.BCp.type,  0, 0, interp, cent );
             
-            Interp_P2C ( particles, particles.T,        &mesh, mesh.T,     mesh.xg_coord,  mesh.zg_coord, 1, 0 );
-            Interp_P2C ( particles, materials.Cv,       &mesh, mesh.Cv,       mesh.xg_coord,  mesh.zg_coord, 0, 0 );
-            Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kz,       mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1,     mesh.Nz,   0, mesh.BCv.type , &model);
-            Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kx,       mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,       mesh.Nz+1, 0, mesh.BCu.type , &model);
+            P2Mastah( &model, particles, particles.T,  &mesh, mesh.T , mesh.BCp.type,  1, 0, interp, cent );
+            P2Mastah( &model, particles, materials.Cv, &mesh, mesh.Cv, mesh.BCp.type,  0, 0, interp, cent );
             
+            P2Mastah( &model, particles, materials.k_eff, &mesh, mesh.kx, mesh.BCu.type,  0, 0, interp, vxnodes );
+            P2Mastah( &model, particles, materials.k_eff, &mesh, mesh.kz, mesh.BCv.type,  0, 0, interp, vznodes );
+
             if ( model.eqn_state > 0) {
-                Interp_P2N ( particles, particles.rho,  &mesh, mesh.rho_s, mesh.xg_coord,  mesh.zg_coord, 1, 0, &model );
-                Interp_P2C ( particles, particles.rho,  &mesh, mesh.rho_n, mesh.xg_coord,  mesh.zg_coord, 1, 0 );
+                P2Mastah( &model, particles, particles.rho, &mesh, mesh.rho_s, mesh.BCg.type,  1, 0, interp, vert );
+                P2Mastah( &model, particles, particles.rho, &mesh, mesh.rho_n, mesh.BCp.type,  1, 0, interp, cent );
             }
             else {
-                Interp_P2N ( particles, materials.rho,  &mesh, mesh.rho_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
-                Interp_P2C ( particles, materials.rho,  &mesh, mesh.rho_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
+                P2Mastah( &model, particles, materials.rho, &mesh, mesh.rho_s, mesh.BCg.type,  0, 0, interp, vert );
+                P2Mastah( &model, particles, materials.rho, &mesh, mesh.rho_n, mesh.BCp.type,  0, 0, interp, cent );
             }
             
             MinMaxArray( mesh.u_in,  scaling.V, (mesh.Nx)*(mesh.Nz+1),   "Vx. grid" );
@@ -235,11 +235,11 @@ int main( int nargs, char *args[] ) {
             printf("*************************************\n");
             
             // Get energy and related material parameters from particles
-            Interp_P2C ( particles, materials.Cv,   &mesh, mesh.Cv,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
-            Interp_P2C ( particles, materials.Qr,   &mesh, mesh.Qr,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
-            Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kz,   mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz,   0, mesh.BCv.type , &model);
-            Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kx,   mesh.xg_coord, mesh.zvx_coord,  mesh.Nx, mesh.Nz+1,   0, mesh.BCu.type , &model);
-            Interp_P2C ( particles, particles.T, &mesh, mesh.T, mesh.xg_coord, mesh.zg_coord,  1, 0 );
+            P2Mastah( &model, particles, materials.k_eff, &mesh, mesh.kx, mesh.BCu.type,  0, 0, interp, vxnodes );
+            P2Mastah( &model, particles, materials.k_eff, &mesh, mesh.kz, mesh.BCv.type,  0, 0, interp, vznodes );
+            P2Mastah( &model, particles, particles.T,     &mesh, mesh.T , mesh.BCp.type,  1, 0, interp, cent    );
+            P2Mastah( &model, particles, materials.Cv,    &mesh, mesh.Cv, mesh.BCp.type,  0, 0, interp, cent    );
+            P2Mastah( &model, particles, materials.Qr,    &mesh, mesh.Qr, mesh.BCp.type,  0, 0, interp, cent    );
             
 #ifdef _NEW_INPUT_
             SetBCs_new( &mesh, &model, scaling , &particles, &materials );
@@ -293,7 +293,7 @@ int main( int nargs, char *args[] ) {
                 // Lithostatic pressure for initial visco-plastic viscosity field
                 ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 1 );
                 Interp_Grid2P_centroids2( particles, particles.P,    &mesh, mesh.p_lith, mesh.xvz_coord,  mesh.zvx_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
-                Interp_P2C ( particles, particles.P, &mesh, mesh.p_in, mesh.xg_coord, mesh.zg_coord,  1, 0 );
+                P2Mastah( &model, particles, particles.P,     &mesh, mesh.p_in , mesh.BCp.type,  1, 0, interp, cent    );
                 ArrayEqualArray( mesh.p_in, mesh.p_lith,  (mesh.Nx-1)*(mesh.Nz-1) );
                 ArrayEqualArray( mesh.p0_n, mesh.p_lith,  (mesh.Nx-1)*(mesh.Nz-1) );
 
@@ -311,7 +311,7 @@ int main( int nargs, char *args[] ) {
             
             // Grain size
             InitialiseGrainSizeParticles( &particles, &materials );
-            Interp_P2C ( particles, particles.d,  &mesh, mesh.d_n, mesh.xg_coord,  mesh.zg_coord, 1, 0 );
+            P2Mastah( &model, particles, particles.d,     &mesh, mesh.d_n , mesh.BCp.type,  1, 0, interp, cent    );
             ArrayEqualArray( mesh.d0_n, mesh.d_n,  (mesh.Nx-1)*(mesh.Nz-1) );
             
             printf("*************************************\n");
@@ -336,8 +336,8 @@ int main( int nargs, char *args[] ) {
             //                Interp_P2N ( particles, particles.X, &mesh, mesh.Xreac_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
             //            }
             
-            Interp_P2C ( particles, particles.X, &mesh, mesh.X0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-            Interp_P2N ( particles, particles.X, &mesh, mesh.X0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+            P2Mastah( &model, particles, particles.X,     &mesh, mesh.X0_n , mesh.BCp.type,  1, 0, interp, cent    );
+            P2Mastah( &model, particles, particles.X,     &mesh, mesh.X0_s , mesh.BCg.type,  1, 0, interp, vert    );
             
             if ( model.aniso == 1 ) InitialiseDirectorVector ( &mesh, &particles, &model, &materials );
             //
@@ -486,15 +486,16 @@ int main( int nargs, char *args[] ) {
                 // Energy - interpolate thermal parameters and advected energy
                 
                 // Get energy and related material parameters from particles
-                Interp_P2C ( particles, materials.Cv,   &mesh, mesh.Cv,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
-                Interp_P2C ( particles, materials.Qr,   &mesh, mesh.Qr,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
+                P2Mastah( &model, particles, materials.Cv,     &mesh, mesh.Cv,     mesh.BCp.type,  0, 0, interp, cent    );
+                P2Mastah( &model, particles, materials.Qr,     &mesh, mesh.Qr,     mesh.BCp.type,  0, 0, interp, cent    );
                 
-                Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kz,   mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz,   0, mesh.BCv.type , &model);
-                Interp_P2U ( particles, materials.k_eff,    &mesh, mesh.kx,   mesh.xg_coord, mesh.zvx_coord,  mesh.Nx, mesh.Nz+1,   0, mesh.BCu.type , &model);
+                P2Mastah ( &model, particles, materials.k_eff, &mesh, mesh.kx, mesh.BCu.type,  0, 0, interp, vxnodes );
+                P2Mastah ( &model, particles, materials.k_eff, &mesh, mesh.kz, mesh.BCv.type,  0, 0, interp, vznodes );
                 
                 // Get T and dTdt from previous step from particles
-                Interp_P2C ( particles, particles.T,    &mesh, mesh.T0_n,    mesh.xg_coord, mesh.zg_coord,  1, 0 );
-                Interp_P2C ( particles, particles.divth, &mesh, mesh.divth0_n, mesh.xg_coord, mesh.zg_coord,  1, 0 );
+                P2Mastah( &model, particles, particles.T,     &mesh, mesh.T0_n,     mesh.BCp.type,  1, 0, interp, cent    );
+                P2Mastah( &model, particles, particles.divth, &mesh, mesh.divth0_n, mesh.BCp.type,  1, 0, interp, cent    );
+                
                 // Make sure T is up to date for rheology evaluation
                 ArrayEqualArray( mesh.T, mesh.T0_n, (mesh.Nx-1)*(mesh.Nz-1) );
                 
@@ -503,8 +504,8 @@ int main( int nargs, char *args[] ) {
                     UpdateDensity( &mesh, &particles, &materials, &model, &scaling );
                 }
                 else {
-                    Interp_P2N ( particles, materials.rho,  &mesh, mesh.rho_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
-                    Interp_P2C ( particles, materials.rho,  &mesh, mesh.rho_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
+                    P2Mastah( &model, particles, materials.rho, &mesh, mesh.rho_s, mesh.BCg.type,  0, 0, interp, vert );
+                    P2Mastah( &model, particles, materials.rho, &mesh, mesh.rho_n, mesh.BCp.type,  0, 0, interp, cent );
                 }
                 
                 MinMaxArrayTag( mesh.rho_s,      scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s     ", mesh.BCg.type );
@@ -526,23 +527,11 @@ int main( int nargs, char *args[] ) {
                     // Get old stresses from particles
                     if (model.StressUpdate==1)                     OldDeviatoricStressesPressure( &mesh, &particles, scaling, &model );
 
-                    
-                    //                                    Interp_P2G ( &particles, particles.sxxd,  &mesh, mesh.sxxd0,   mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz );
-                    //                                    Interp_P2G ( &particles, particles.sxxd,  &mesh, mesh.sxxd0_s, mesh.xg_coord,   mesh.zg_coord, 1, 0, &model, mesh.BCg.type,  Nx,  Nz );
-                    //                                    Interp_P2G ( &particles, particles.szzd,  &mesh, mesh.szzd0,   mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz );
-                    //                                    Interp_P2G ( &particles, particles.szzd,  &mesh, mesh.szzd0_s, mesh.xg_coord,   mesh.zg_coord, 1, 0, &model, mesh.BCg.type,  Nx,  Nz );
-                    //                                    Interp_P2G ( &particles, particles.sxz,   &mesh, mesh.sxz0_n,  mesh.xc_coord,   mesh.zc_coord, 1, 0, &model, mesh.BCp.type, Ncx, Ncz );
-                    //                                    Interp_P2G ( &particles, particles.sxz,   &mesh, mesh.sxz0,    mesh.xg_coord,   mesh.zg_coord, 1, 0, &model, mesh.BCg.type,  Nx,  Nz );
-                    
                     if (model.StressUpdate==0){
-                    Interp_P2C ( particles, particles.sxxd, &mesh, mesh.sxxd0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                    Interp_P2C ( particles, particles.szzd, &mesh, mesh.szzd0,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                    Interp_P2N ( particles, particles.sxz,  &mesh, mesh.sxz0,    mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+                        P2Mastah( &model, particles, particles.sxxd,    &mesh, mesh.sxxd0, mesh.BCp.type,  1, 0, interp, cent    );
+                        P2Mastah( &model, particles, particles.szzd,    &mesh, mesh.szzd0, mesh.BCp.type,  1, 0, interp, cent    );
+                        P2Mastah( &model, particles, particles.sxz,     &mesh, mesh.sxz0,  mesh.BCg.type,  1, 0, interp, vert    );
                     }
-                    
-                    //                Interp_P2N ( particles, particles.sxxd, &mesh, mesh.sxxd0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-                    //                Interp_P2N ( particles, particles.szzd, &mesh, mesh.szzd0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-                    //                Interp_P2C ( particles, particles.sxz,  &mesh, mesh.sxz0_n,  mesh.xg_coord, mesh.zg_coord, 1, 0 );
                     
                     //                ArrayEqualArray(  mesh.sxxd0,  mesh.sxxd, Ncx*Ncz );
                     //                ArrayEqualArray(  mesh.szzd0,  mesh.szzd, Ncx*Ncz );
@@ -554,23 +543,22 @@ int main( int nargs, char *args[] ) {
                     
                     // Interpolate shear modulus
                     ShearModCompExpGrid( &mesh, materials, model, scaling );
-                    
                 }
                 
                 // Director vector
                 if (model.aniso == 1 ) {
-                    Interp_P2C ( particles, particles.nx, &mesh,  mesh.nx0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                    Interp_P2C ( particles, particles.nz, &mesh,  mesh.nz0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                    Interp_P2N ( particles, particles.nx, &mesh, mesh.nx0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
-                    Interp_P2N ( particles, particles.nz, &mesh, mesh.nz0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+                    P2Mastah( &model, particles, particles.nx,     &mesh, mesh.nx0_n , mesh.BCp.type,  1, 0, interp, cent    );
+                    P2Mastah( &model, particles, particles.nz,     &mesh, mesh.nz0_n , mesh.BCp.type,  1, 0, interp, cent    );
+                    P2Mastah( &model, particles, particles.nx,     &mesh, mesh.nx0_s , mesh.BCg.type,  1, 0, interp, vert    );
+                    P2Mastah( &model, particles, particles.nz,     &mesh, mesh.nz0_s , mesh.BCg.type,  1, 0, interp, vert    );
                     NormalizeDirector( &mesh, mesh.nx0_n, mesh.nz0_n, mesh.nx0_s, mesh.nz0_s, &model );
                     FiniteStrainAspectRatio ( &mesh, scaling, model, &particles );
-                    Interp_P2C ( particles, materials.aniso_factor,  &mesh, mesh.aniso_factor_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
-                    Interp_P2N ( particles, materials.aniso_factor,  &mesh, mesh.aniso_factor_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
+                    P2Mastah( &model, particles, materials.aniso_factor,     &mesh, mesh.aniso_factor_n , mesh.BCp.type,  0, 0, interp, cent    );
+                    P2Mastah( &model, particles, materials.aniso_factor,     &mesh, mesh.aniso_factor_s , mesh.BCg.type,  0, 0, interp, vert    );
                 }
                 
-                Interp_P2C ( particles, particles.X, &mesh, mesh.X0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                Interp_P2N ( particles, particles.X, &mesh, mesh.X0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+                P2Mastah( &model, particles, particles.X,     &mesh, mesh.X0_n , mesh.BCp.type,  1, 0, interp, cent    );
+                P2Mastah( &model, particles, particles.X,     &mesh, mesh.X0_s , mesh.BCg.type,  1, 0, interp, vert    );
                 
                 // Diffuse rheological contrasts
                 //            if (model.diffuse_X == 1) {
@@ -582,18 +570,17 @@ int main( int nargs, char *args[] ) {
                 //            }
                 
                 // Interpolate Grain size
-                Interp_P2C ( particles,   particles.d, &mesh, mesh.d0_n,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
+                P2Mastah( &model, particles, particles.d,     &mesh, mesh.d0_n , mesh.BCp.type,  1, 0, interp, cent    );
                 ArrayEqualArray(  mesh.d_n,  mesh.d0_n, Ncx*Ncz );
                 
                 // Interpolate Melt fraction
-                Interp_P2C ( particles, particles.phi, &mesh, mesh.phi0_n,  mesh.xg_coord, mesh.zg_coord, 1, 0 );
+                P2Mastah( &model, particles, particles.phi,   &mesh, mesh.phi0_n , mesh.BCp.type,  1, 0, interp, cent    );
                 
                 //-----------------------------------------------------------------------------------------------------------
                 // Interp P --> p0_n , p0_s
-                //            ArrayEqualArray(  mesh.p0_n,  mesh.p_in, Ncx*Ncz );
-                Interp_P2C ( particles, particles.P, &mesh, mesh.p0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                //                            ArrayPlusArray(  mesh.p0_n,   mesh.p_lith0, Ncx*Ncz ); // Add back lithostatic component
-                
+                P2Mastah( &model, particles, particles.P,     &mesh, mesh.p0_n,   mesh.BCp.type,  1, 0, interp, cent    );
+                P2Mastah( &model, particles, particles.rho,   &mesh, mesh.rho0_n, mesh.BCp.type,  1, 0, interp, cent    );
+
                 //-------------------------------------------------------------------------------------------------------------
                 
                 // Compute cohesion and friction angle on the grid
@@ -601,16 +588,11 @@ int main( int nargs, char *args[] ) {
                 
                 // Detect compressible cells
                 if ( model.compressible == 1 ) DetectCompressibleCells ( &mesh, &model );
-                
-//                Interp_P2C ( particles,   particles.rho, &mesh, mesh.rho0_n,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                
-                DoodzFP *rho0_s = DoodzCalloc(Nx*Nz, sizeof(DoodzFP));
-                Interp_P2N ( particles, particles.rho, &mesh, rho0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
 
-                InterpVerticesToCentroidsDouble( mesh.rho0_n, rho0_s,  &mesh, &model );
-                DoodzFree( rho0_s );
-
-                
+//                DoodzFP *rho0_s = DoodzCalloc(Nx*Nz, sizeof(DoodzFP)); // ???????
+//                Interp_P2N ( particles, particles.rho, &mesh, rho0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+//                InterpVerticesToCentroidsDouble( mesh.rho0_n, rho0_s,  &mesh, &model );
+//                DoodzFree( rho0_s );
             }
             
             if (  model.IncrementalUpdateGrid == 1 ) {
@@ -629,17 +611,17 @@ int main( int nargs, char *args[] ) {
                 // So far no changes of phi
                 ArrayEqualArray(  mesh.phi_n,   mesh.phi0_n, Ncx*Ncz );
                 
-                Interp_P2C ( particles, particles.X, &mesh, mesh.X0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-                Interp_P2N ( particles, particles.X, &mesh, mesh.X0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+                P2Mastah( &model, particles, particles.X,     &mesh, mesh.X0_n , mesh.BCp.type,  1, 0, interp, cent    );
+                P2Mastah( &model, particles, particles.X,     &mesh, mesh.X0_s , mesh.BCg.type,  1, 0, interp, vert    );
                 
                 // Energy - interpolate thermal parameters and advected energy
                 if ( model.isthermal == 1 ) {
                     
                     // Get energy and related material parameters from particles
-                    Interp_P2C ( particles,    materials.Cv,   &mesh, mesh.Cv,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
-                    Interp_P2C ( particles,    materials.Qr,   &mesh, mesh.Qr,   mesh.xg_coord, mesh.zg_coord,  0, 0 );
-                    Interp_P2U ( particles, materials.k_eff,   &mesh, mesh.kz,   mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1, mesh.Nz,   0, mesh.BCv.type , &model);
-                    Interp_P2U ( particles, materials.k_eff,   &mesh, mesh.kx,   mesh.xg_coord, mesh.zvx_coord,  mesh.Nx, mesh.Nz+1,   0, mesh.BCu.type , &model);
+                    P2Mastah( &model, particles, materials.Cv,     &mesh, mesh.Cv,     mesh.BCp.type,  0, 0, interp, cent    );
+                    P2Mastah( &model, particles, materials.Qr,     &mesh, mesh.Qr,     mesh.BCp.type,  0, 0, interp, cent    );
+                    P2Mastah ( &model, particles, materials.k_eff, &mesh, mesh.kx, mesh.BCu.type,  0, 0, interp, vxnodes );
+                    P2Mastah ( &model, particles, materials.k_eff, &mesh, mesh.kz, mesh.BCv.type,  0, 0, interp, vznodes );
                 }
                 
                 // Get physical properties that are constant throughout each timestep
@@ -647,8 +629,8 @@ int main( int nargs, char *args[] ) {
                     UpdateDensity( &mesh, &particles, &materials, &model, &scaling );
                 }
                 else {
-                    Interp_P2N ( particles, materials.rho,  &mesh, mesh.rho_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
-                    Interp_P2C ( particles, materials.rho,  &mesh, mesh.rho_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
+                    P2Mastah( &model, particles, materials.rho, &mesh, mesh.rho_s, mesh.BCg.type,  0, 0, interp, vert );
+                    P2Mastah( &model, particles, materials.rho, &mesh, mesh.rho_n, mesh.BCp.type,  0, 0, interp, cent );
                 }
                 
                 // Free surface - subgrid density correction
@@ -667,8 +649,8 @@ int main( int nargs, char *args[] ) {
                 
                 if ( model.aniso == 1 ) {
                     FiniteStrainAspectRatio ( &mesh, scaling, model, &particles );
-                    Interp_P2C ( particles, materials.aniso_factor,  &mesh, mesh.aniso_factor_n, mesh.xg_coord,  mesh.zg_coord, 0, 0 );
-                    Interp_P2N ( particles, materials.aniso_factor,  &mesh, mesh.aniso_factor_s, mesh.xg_coord,  mesh.zg_coord, 0, 0, &model );
+                    P2Mastah( &model, particles, materials.aniso_factor,     &mesh, mesh.aniso_factor_n , mesh.BCp.type,  0, 0, interp, cent    );
+                    P2Mastah( &model, particles, materials.aniso_factor,     &mesh, mesh.aniso_factor_s , mesh.BCg.type,  0, 0, interp, vert    );
                 }
                 
                 // Diffuse rheological contrasts
@@ -1160,8 +1142,8 @@ int main( int nargs, char *args[] ) {
             printf("********** Chemical solver **********\n");
             printf("*************************************\n");
 
-            Interp_P2U ( particles, materials.k_chem,    &mesh, mesh.kc_z,       mesh.xvz_coord, mesh.zg_coord,  mesh.Nx+1,     mesh.Nz,   0, mesh.BCv.type , &model);
-            Interp_P2U ( particles, materials.k_chem,    &mesh, mesh.kc_x,       mesh.xg_coord,  mesh.zvx_coord, mesh.Nx,       mesh.Nz+1, 0, mesh.BCu.type , &model);
+            P2Mastah ( &model, particles, materials.k_chem, &mesh, mesh.kc_x, mesh.BCu.type,  0, 0, interp, vxnodes );
+            P2Mastah ( &model, particles, materials.k_chem, &mesh, mesh.kc_z, mesh.BCv.type,  0, 0, interp, vznodes );
             ChemicalDirectSolve( &mesh, model, &particles, &materials, model.dt, scaling );
 
         }

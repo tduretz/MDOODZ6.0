@@ -1,5 +1,5 @@
 **** RESTART ****/
-istep =00800
+istep =00500
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -20,7 +20,7 @@ T   = 1
 /**** SPACE-TIME ****/
 Nx   = 101
 Nz   = 101
-Nt   = 800
+Nt   = 500
 xmin = -0.5000000
 zmin = -0.5000000
 xmax =  0.5000000
@@ -55,7 +55,7 @@ fstrain         = 1
 
 /**** ANISOTROPY ****/
 aniso           = 1
-aniso_fstrain   = 0
+aniso_fstrain   = 1 // finite strain anisotropy activated
  
 /**** SETUP DEPENDANT ****/
 EpsBG           = 0.5 /Background strain rate

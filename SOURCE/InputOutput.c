@@ -1171,6 +1171,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->dt_min            = ReadDou2( fin, "dt_min",      1e6 ) / scaling->t; // minimum allowed time step
     model->eta_avg           = ReadInt2( fin, "eta_avg",       0 );              // 0: arithmetic mean - 1: harmonic mean - 2: geometric mean
     model->itp_stencil       = ReadInt2( fin, "itp_stencil",       1   );        // 1: 1-Cell          - 9: 9-Cell
+    if (model->itp_stencil!=1 && model->itp_stencil!=9) { printf("Wrong value of itp_stencil: shoulbd be 1 or 9.\n"); exit(1); }
     model->nexp_radial_basis = ReadDou2( fin, "nexp_radial_basis", 1.0 ); // exponent for radial basis function interp.
 
        // For Cindy's setup
