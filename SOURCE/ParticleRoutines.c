@@ -1,4 +1,3 @@
-
 // =========================================================================
 // MDOODZ - Visco-Elasto-Plastic Thermo-Mechanical solver
 //
@@ -3224,7 +3223,7 @@ void Interp_Phase2VizGrid ( markers particles, int* PartField, grid *mesh, char*
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 // Particles to reference nodes
-void P2Mastah ( params *model, markers particles, DoodzFP* mat_prop, grid *mesh, double* NodeField, int flag, int avg, int prop, int centroid ) {
+void P2Mastah ( params *model, markers particles, DoodzFP* mat_prop, grid *mesh, double* NodeField, char* NodeType, int flag, int avg, int prop, int centroid ) {
     
     // flag == 0 --> interpolate from material properties structure
     // flag == 1 --> interpolate straight from the particle arrays
@@ -3232,11 +3231,12 @@ void P2Mastah ( params *model, markers particles, DoodzFP* mat_prop, grid *mesh,
     // avg  == 1 --> harmonic distance-weighted average
     // avg  == 2 --> geometric distance-weighted average
     
-    int p, i, k, i_part,j_part, Np, nthreads, thread_num, Nx, Nz;
+    int p, i, k, kp, ip, jp, Np, nthreads, thread_num, Nx, Nz;
     double dx, dz, dxm, dzm,  distance, mark_val, dx_itp, dz_itp;
     double *WM, *BMWM;
     double **Wm, **BmWm, ***Wm_ph;
     double *X_vect, *Z_vect;
+    int itp_stencil = model->itp_stencil, peri;
     
     if (centroid==1) {
         Nx = mesh->Nx-1;
@@ -3244,23 +3244,35 @@ void P2Mastah ( params *model, markers particles, DoodzFP* mat_prop, grid *mesh,
         X_vect = mesh->xc_coord;
         Z_vect = mesh->zc_coord;
     }
-    else {
+    if (centroid==0) {
         Nx = mesh->Nx;
         Nz = mesh->Nz;
         X_vect = mesh->xg_coord;
+        Z_vect = mesh->zg_coord;
+    }
+    if (centroid==-1) {           // Vx nodes
+        Nx = mesh->Nx;
+        Nz = mesh->Nz+1;
+        X_vect = mesh->xg_coord;
+        Z_vect = mesh->zvx_coord;
+    }
+    if (centroid==-2) {           // Vy nodes
+        Nx = mesh->Nx+1;
+        Nz = mesh->Nz;
+        X_vect = mesh->xvz_coord;
         Z_vect = mesh->zg_coord;
     }
 
     Np = particles.Nb_part;
     dx = mesh->dx;
     dz = mesh->dz;
-    if (model->itp_stencil==1) dx_itp =     dx/2.0; // 1-cell
-    if (model->itp_stencil==1) dz_itp =     dz/2.0; // 1-cell
-    if (model->itp_stencil==9) dx_itp = 3.0*dx/2.0; // 9-cell
-    if (model->itp_stencil==9) dz_itp = 3.0*dz/2.0; // 9-cell
+    if (itp_stencil==1) dx_itp =     dx/2.0; // 1-cell
+    if (itp_stencil==1) dz_itp =     dz/2.0; // 1-cell
+    if (itp_stencil==9) dx_itp = 3.0*dx/2.0; // 9-cell
+    if (itp_stencil==9) dz_itp = 3.0*dz/2.0; // 9-cell
     
     // Initialisation
-    if (prop==1) {
+    if ( prop == 1 ) {
 #pragma omp parallel for shared ( mesh ) private( i, k ) firstprivate( Nx, Nz, nthreads, model, centroid ) schedule( static )
         for ( i=0; i<Nx*Nz; i++ ) {
             for (p=0; p<model->Nb_phases; p++) {
@@ -3296,56 +3308,166 @@ void P2Mastah ( params *model, markers particles, DoodzFP* mat_prop, grid *mesh,
     // Compute Wm and BmWm
     //--------------------------------------------------------------
     
-#pragma omp parallel for shared ( particles, BmWm, Wm, Wm_ph, X_vect, Z_vect )       \
-private ( k, dxm, dzm, j_part, i_part, distance, mark_val, thread_num, p     )       \
-firstprivate ( mat_prop, dx, dz, Np, Nx, Nz, mesh, flag, avg, dx_itp, dz_itp, prop)  //schedule( dynamic )
-    
-    for (k=0; k<Np; k++) {
+    #pragma omp parallel for shared ( particles, BmWm, Wm, Wm_ph, X_vect, Z_vect )       \
+    private ( k, kp, dxm, dzm, ip, jp, distance, mark_val, thread_num, p, peri   )       \
+    firstprivate ( mat_prop, dx, dz, Np, Nx, Nz, mesh, flag, avg, dx_itp, dz_itp, prop)  //schedule( dynamic )
         
-        // Filter out particles that are inactive (out of the box)
-        if (particles.phase[k] != -1) {
+        for (k=0; k<Np; k++) {
             
-            thread_num = omp_get_thread_num();
-            p          = particles.phase[k];
-            
-            // Get the column:
-            distance = ( particles.x[k] - X_vect[0] );
-            j_part   = ceil( (distance/dx) + 0.5) - 1;
+            // Filter out particles that are inactive (out of the box)
+            if (particles.phase[k] != -1) {
+                
+                thread_num = omp_get_thread_num();
+                p          = particles.phase[k];
+                
+                // Get the column:
+                distance = ( particles.x[k] - X_vect[0] );
+                ip   = ceil( (distance/dx) + 0.5) - 1;
 
-            if (j_part<0   ) j_part = 0;
-            if (j_part>Nx-1) j_part = Nx-1;
+                if (ip<0   ) ip = 0;
+                if (ip>Nx-1) ip = Nx-1;
 
-            // Get the line:
-            distance = ( particles.z[k] - Z_vect[0] );
-            i_part   = ceil( (distance/dz) + 0.5) - 1;
-            
-            if (i_part<0   ) i_part = 0;
-            if (i_part>Nz-1) i_part = Nz-1;
+                // Get the line:
+                distance = ( particles.z[k] - Z_vect[0] );
+                jp   = ceil( (distance/dz) + 0.5) - 1;
+                
+                if (jp<0   ) jp = 0;
+                if (jp>Nz-1) jp = Nz-1;
 
-            dxm = fabs( X_vect[j_part] - particles.x[k]);
-            dzm = fabs( Z_vect[i_part] - particles.z[k]);
+                dxm = fabs( X_vect[ip] - particles.x[k]);
+                dzm = fabs( Z_vect[jp] - particles.z[k]);
+                
+                if ( prop == 0 ) {
+                    // Get material properties (from particules or mat_prop array)
+                    if (flag==0) {
+                        mark_val = mat_prop[particles.phase[k]];
+                    }
+                    if (flag==1) {
+                        mark_val = mat_prop[k];
+                    }
+                    if (avg==1) {
+                        mark_val =  1.0/mark_val;
+                    }
+                    if (avg==2) {
+                        mark_val =  log(mark_val);
+                    }
+                }
             
-            if ( prop == 0 ) {
-                // Get material properties (from particules or mat_prop array)
-                if (flag==0) {
-                    mark_val = mat_prop[particles.phase[k]];
+                // Center
+                kp = ip + jp*Nx;
+                Wm_ph[thread_num][p][kp]  +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                Wm[thread_num][kp]        +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                BmWm[thread_num][kp]      += mark_val*(1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                
+                // --------------------------
+                
+                // Case for 9 Cell
+                if ( itp_stencil==9 ) {
+                
+                    // N
+                    if ( jp<Nz-1 ){
+                        kp  = ip + (jp+1)*Nx;
+                        dxm = fabs( X_vect[ip]      - particles.x[k]);
+                        dzm = fabs( Z_vect[jp] + dz - particles.z[k]);
+                        Wm_ph[thread_num][p][kp]  +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                        Wm[thread_num][kp]        +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                        BmWm[thread_num][kp]      += mark_val*(1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                    }
+
+                    // S
+                    if ( jp>0 ){
+                        kp  = ip + (jp-1)*Nx;
+                        dxm = fabs( X_vect[ip]      - particles.x[k]);
+                        dzm = fabs( Z_vect[jp] - dz - particles.z[k]);
+                        Wm_ph[thread_num][p][kp]  +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                        Wm[thread_num][kp]        +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                        BmWm[thread_num][kp]      += mark_val*(1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                    }
+
+                    // E
+                    peri = 0;
+                    if (ip==Nx-1 && model->isperiodic_x==1) peri = 1;
+
+                    if ( ip<Nx-1 || peri==1 ){
+                        kp  = ip + jp*Nx + (1.0-peri)*1 - peri*(Nx-1);
+                        dxm = fabs( X_vect[ip] + dx - particles.x[k]);
+                        dzm = fabs( Z_vect[jp]      - particles.z[k]);
+                        Wm_ph[thread_num][p][kp]  +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                        Wm[thread_num][kp]        +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                        BmWm[thread_num][kp]      += mark_val*(1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                    }
+
+                    // W
+                    peri = 0;
+                    if (ip==0 && model->isperiodic_x==1) peri = 1;
+
+                    if ( ip>0 || peri==1 ){
+                        kp  = ip + jp*Nx - (1.0-peri)*1 + peri*(Nx-1);
+                        dxm = fabs( X_vect[ip] - dx - particles.x[k]);
+                        dzm = fabs( Z_vect[jp]      - particles.z[k]);
+                        Wm_ph[thread_num][p][kp]  +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                        Wm[thread_num][kp]        +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                        BmWm[thread_num][kp]      += mark_val*(1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                    }
+                    
+                    // --------------------------
+                    
+                    // SW
+                    peri = 0;
+                    if (ip==0 && model->isperiodic_x==1) peri = 1;
+
+                    if ( jp>0 && (ip>0 || peri==1) ){
+                        kp = ip + (jp-1)*Nx - (1.0-peri)*1 + peri*(Nx-1);
+                        dxm = fabs( X_vect[ip] - dx - particles.x[k]);
+                        dzm = fabs( Z_vect[jp] - dz - particles.z[k]);
+                        Wm_ph[thread_num][p][kp]  +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                        Wm[thread_num][kp]        +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                        BmWm[thread_num][kp]      += mark_val*(1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                    }
+
+                    // NW
+                    peri = 0;
+                    if (ip==0 && model->isperiodic_x==1) peri = 1;
+
+                    if ( jp<Nz-1 && (ip>0 || peri==1) ){
+                        kp = ip + (jp+1)*Nx - (1.0-peri)*1 + peri*(Nx-1);
+                        dxm = fabs( X_vect[ip] - dx - particles.x[k]);
+                        dzm = fabs( Z_vect[jp] + dz - particles.z[k]);
+                        Wm_ph[thread_num][p][kp]  +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                        Wm[thread_num][kp]        +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                        BmWm[thread_num][kp]      += mark_val*(1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                    }
+
+                    // NE
+                    peri = 0;
+                    if (ip==Nx-1 && model->isperiodic_x==1) peri = 1;
+
+                    if ( jp<Nz-1 && (ip<Nx-1 || peri==1) ){
+                        kp = ip + (jp+1)*Nx + (1.0-peri)*1 - peri*(Nx-1);
+                        dxm = fabs( X_vect[ip] + dx - particles.x[k]);
+                        dzm = fabs( Z_vect[jp] + dz - particles.z[k]);
+                        Wm_ph[thread_num][p][kp]  +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                        Wm[thread_num][kp]        +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                        BmWm[thread_num][kp]      += mark_val*(1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                    }
+
+                    // SE
+                    peri = 0;
+                    if (ip==Nx-1 && model->isperiodic_x==1) peri = 1;
+
+                    if ( jp>0 && (ip<Nx-1 || peri==1) ){
+                        kp = ip + (jp-1)*Nx + (1.0-peri)*1 - peri*(Nx-1);
+                        dxm = fabs( X_vect[ip] + dx - particles.x[k]);
+                        dzm = fabs( Z_vect[jp] - dz - particles.z[k]);
+                        Wm_ph[thread_num][p][kp]  +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                        Wm[thread_num][kp]        +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                        BmWm[thread_num][kp]      += mark_val*(1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
+                    }
+           
                 }
-                if (flag==1) {
-                    mark_val = mat_prop[k];
-                }
-                if (avg==1) {
-                    mark_val =  1.0/mark_val;
-                }
-                if (avg==2) {
-                    mark_val =  log(mark_val);
-                }
+                
             }
-        
-            Wm_ph[thread_num][p][j_part+i_part*Nx]  +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
-            Wm[thread_num][j_part+i_part*Nx]        +=          (1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
-            BmWm[thread_num][j_part+i_part*Nx]      += mark_val*(1.0-dxm/dx_itp)*(1.0-dzm/dz_itp);
         }
-    }
 
     // Final reduction
 #pragma omp parallel for shared ( BmWm, Wm, BMWM, WM, Wm_ph, mesh ) private( i, k ) firstprivate( Nx, Nz, nthreads, model, centroid, prop) schedule( static )
@@ -3371,10 +3493,10 @@ firstprivate ( mat_prop, dx, dz, Np, Nx, Nz, mesh, flag, avg, dx_itp, dz_itp, pr
     //--------------------------------------------------------------
     
     
-#pragma omp parallel for shared ( NodeField, BMWM, WM, Nx, Nz, mesh ) private( i ) firstprivate ( avg ) schedule( static )
+#pragma omp parallel for shared ( NodeField, BMWM, WM, Nx, Nz, mesh, NodeType ) private( i ) firstprivate ( avg ) schedule( static )
         for (i=0;i<Nx*Nz;i++) {
             
-            if ( fabs(WM[i])<1e-30  || (mesh->BCp.type[i]==30 || mesh->BCp.type[i]==31) ) { //|| mesh->BCp.type[0][i]==0
+            if ( fabs(WM[i])<1e-30  || (NodeType[i]==30 || NodeType[i]==31) ) {
             }
             else {
                 
@@ -3441,8 +3563,8 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
     
     // First operation - compute phase proportions on centroids and vertices
     int cent=1, vert=0, prop=1, interp=0;
-    P2Mastah ( &model, *particles, NULL, mesh, NULL,  0, 0, prop, cent );
-    P2Mastah ( &model, *particles, NULL, mesh, NULL,  0, 0, prop, vert );
+    P2Mastah ( &model, *particles, NULL, mesh, NULL, mesh->BCp.type,  0, 0, prop, cent );
+    P2Mastah ( &model, *particles, NULL, mesh, NULL, mesh->BCg.type,  0, 0, prop, vert );
     
     // Split the domain in N threads in x direction
 #pragma omp parallel
@@ -4229,7 +4351,7 @@ void CountPartCell ( markers* particles, grid *mesh, params model, surface topo,
 //    isoutPart( particles, &model, k );
 //    }
 //    int dum1 = 0;
-//    
+//
 //    for (k=0;k<particles->Nb_part;k++) {
 //        if ( particles->phase[k] == -1 ) dum1++;
 //    }
@@ -5004,3 +5126,4 @@ firstprivate( ncx, mesh ) schedule( static )
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
+

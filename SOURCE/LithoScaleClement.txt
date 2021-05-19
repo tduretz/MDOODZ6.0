@@ -62,12 +62,12 @@ subgrid_diff   = 2
 line_search_min = 0.1
 nexp_radial_basis = 2.0
 Plith_trick     = 0
-surf_processes = 1
 
 /**** erosion parameters ****/
-surf_diff = 5.0e-6
-surf_Winc = 4.0e3
-surf_Vinc = 1.5844e-11
+surf_processes = 5
+surf_diff      = 5.0e-6
+surf_Winc      = 4.0e3
+surf_Vinc      = 1.5844e-11
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = 1e-18
