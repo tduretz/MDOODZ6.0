@@ -12,7 +12,7 @@ Compile: make clean all MODEL=LithoScale OPT=yes OMP=yes
 
 Run: ./Doodzi_LithoScale LithoScale.txt
 
-Visualize using either Matlab, Python or whatever that can reads HDF5 files and enjoy!
+Visualize using either Matlab, Python, Julia or whatever language that can handle HDF5 files and enjoy!
 
 # Prequisites
 
