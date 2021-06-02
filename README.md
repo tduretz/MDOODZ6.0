@@ -2,6 +2,8 @@
 
 Welcome to MDOODZ6.0 public repository!
 
+![](/images/Compression_Symmetric.gif)
+
 # Quickstart
 
 To reproduce the results of the (submitted) manuscript:
