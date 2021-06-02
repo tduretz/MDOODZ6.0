@@ -3196,7 +3196,7 @@ void ShearModCompExpGrid( grid* mesh, mat_prop materials, params model, scale sc
 
                 }
 
-                if (isinf(1.0/mesh->mu_s[c1]) ) {
+                if ( isinf(1.0/mesh->mu_s[c1]) ) {
                     printf("Aaaaargh...!! %2.2e %2.2e ----> ShearModulusCompressibilityExpansivityGrid\n", mesh->phase_perc_s[0][c1], mesh->phase_perc_s[1][c1]);
                 }
 
