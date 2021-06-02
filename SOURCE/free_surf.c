@@ -606,6 +606,7 @@ void ProjectTopography( surface *topo, markers *topo_chain, params model, grid m
 //    DoodzFree(Xc_virtual);
     DoodzFree(Wm);
     DoodzFree(BmWm);
+    DoodzFree(heightc);
 //    DoodzFree(npn);
 //    DoodzFree(NumMarkCell);
 }

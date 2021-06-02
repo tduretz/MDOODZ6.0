@@ -4,7 +4,7 @@ istep = 00000100
 irestart = 0
 
 /**** OUTPUT FILES ****/
-writer = 1
+writer = 0
 writer_step = 10
 writer_markers = 0
 writer_debug   = 0 
@@ -19,9 +19,9 @@ V   = 1.5e-8     /velocity
 T   = 1.e+02      /temperature
  
 /**** SPACE-TIME ****/
-Nx      = 150 // 300/600 = 0.5 km horizontal resolution 
-Nz      = 100 // 200/800 = 0.25 km vertical resolution
-Nt      = 10
+Nx      = 75 // 300/600 = 0.5 km horizontal resolution 
+Nz      = 50 // 200/800 = 0.25 km vertical resolution
+Nt      = 2
 xmin    = -150.000000e3
 zmin    = -200.000000e3
 xmax    =  150.000000e3

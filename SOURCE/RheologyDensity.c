@@ -1613,15 +1613,12 @@ firstprivate( model, dt )
             // Remaining stress increments on the grid
 #pragma omp parallel for shared(mesh,dtxxgs,dtxxgr,dtzzgs,dtzzgr) private(c0) firstprivate(Ncx,Ncz)
             for ( c0=0; c0<Ncx*Ncz; c0++ ) {
-                dtxxmr[k] = 0.0;
-                dtzzmr[k] = 0.0;
                 if (mesh->BCp.type[c0]!=30 && mesh->BCp.type[c0]!=31) dtxxgr[c0] = (mesh->sxxd[c0] - mesh->sxxd0[c0]) - dtxxgs[c0];
                 if (mesh->BCp.type[c0]!=30 && mesh->BCp.type[c0]!=31) dtzzgr[c0] = (mesh->szzd[c0] - mesh->szzd0[c0]) - dtzzgs[c0];
             }
 #pragma omp parallel for shared(mesh,dtxzgs,dtxzgr) private(c0) firstprivate(Nx,Nz)
             for ( c0=0; c0<Nx*Nz; c0++ ) {
-                dtxzmr[k] = 0.0;
-                if (mesh->BCg.type[c0]   !=30) dtxzgr[c0] = (mesh->sxz[c0]-mesh->sxz0[c0]) - dtxzgs[c0];
+                if (mesh->BCg.type[c0]!=30) dtxzgr[c0] = (mesh->sxz[c0]-mesh->sxz0[c0]) - dtxzgs[c0];
             }
             
             // Remaining stress increments grid --> markers
@@ -4114,8 +4111,6 @@ firstprivate( model, materials )
 
         }
     }
-    MinMaxArray( particles->dsxxd, scaling->S, particles->Nb_part, "dsxxm" );
-
 
     DoodzFree(txxm0);
     DoodzFree(tzzm0);

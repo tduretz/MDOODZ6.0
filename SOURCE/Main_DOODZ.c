@@ -124,6 +124,7 @@ int main( int nargs, char *args[] ) {
     Nx = mesh.Nx; Nz = mesh.Nz; Ncx = Nx-1; Ncz = Nz-1;
     if ( model.aniso  == 1 ) model.Newton = 1;
     if ( model.Newton == 1 ) Newton = 1;
+    if ( model.Newton == 0 ) Newton = 0;
     
     printf("*************************************\n");
     printf("******* Initialize particles ********\n");
