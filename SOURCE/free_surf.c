@@ -336,7 +336,10 @@ void RemeshMarkerChain( markers *topo_chain, surface *topo, params model, scale 
                     if( topo_chain->Nb_part+1<topo_chain->Nb_part_max && topo_chain->Nb_part+2<topo_chain->Nb_part_max) {
                         // Add one particle on the WEST side of the fine column
                         if (recycle==0) NewInd                = topo_chain->Nb_part;
+                        if (recycle==0) topo_chain->Nb_part++;
                         if (recycle==1) NewInd                = reuse[ii];
+                        if (recycle==1) ii++;
+                        if (  ii>=nout) recycle=0;
                         topo_chain->x[NewInd] = model.xmin + k*dx/res + dx/4.0/res;
                         // Index of the coarse grid column
                         distance        = (topo_chain->x[NewInd]-model.xmin-dx/2.0);
@@ -345,10 +348,12 @@ void RemeshMarkerChain( markers *topo_chain, surface *topo, params model, scale 
                         if (in>Ncx-1)in = Ncx-1;
                         // Topography computed from the coarse grid column
                         topo_chain->z[NewInd] = (topo->b[in] + topo->a[in] * ( topo_chain->x[NewInd] ));
-                        topo_chain->Nb_part++;
                         // Add one particle on the EAST side of the fine column
-                        NewInd                = topo_chain->Nb_part;
-                        topo_chain->x[NewInd] = model.xmin + k*dx/res + 3.0*dx/4.0/res;
+                        if (recycle==0) NewInd                = topo_chain->Nb_part;
+                        if (recycle==0) topo_chain->Nb_part++;
+                        if (recycle==1) NewInd                = reuse[ii];
+                        if (recycle==1) ii++;
+                        if (  ii>=nout) recycle=0;                        topo_chain->x[NewInd] = model.xmin + k*dx/res + 3.0*dx/4.0/res;
                         // Index of the coarse grid column
                         distance        = (topo_chain->x[NewInd]-model.xmin-dx/2.0);
                         in              = ceil((distance/dx)+0.5) - 1;
@@ -356,10 +361,6 @@ void RemeshMarkerChain( markers *topo_chain, surface *topo, params model, scale 
                         if (in>Ncx-1)in = Ncx-1;
                         // Topography computed from the coarse grid column
                         topo_chain->z[NewInd] = (topo->b[in] + topo->a[in] * ( topo_chain->x[NewInd] ));
-//                        printf("New z = %2.2e \n", topo_chain->z[NewInd]);
-                        if (recycle==0) topo_chain->Nb_part++;
-                        if (recycle==1) ii++;
-                        if (  ii>=nout) recycle=0;
                     }
                     else {
                         printf("The max. number of topographic particles (currently %d) needs to be increased (number of particles %d)\n", topo_chain->Nb_part_max, topo_chain->Nb_part);
