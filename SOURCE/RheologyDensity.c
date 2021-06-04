@@ -74,10 +74,10 @@ void  OldDeviatoricStressesPressure( grid* mesh, markers* particles, scale scali
     szz0 = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
     sxz0 = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
 
-    P2Mastah( model, *particles, particles->sxxd,    mesh, sxx0,   mesh->BCp.type,  1, 0, interp, cent    );
-    P2Mastah( model, *particles, particles->szzd,    mesh, szz0,   mesh->BCp.type,  1, 0, interp, cent    );
-    P2Mastah( model, *particles, particles->syy,     mesh, syy0,   mesh->BCp.type,  1, 0, interp, cent    );
-    P2Mastah( model, *particles, particles->sxz,     mesh, mesh->sxz0,   mesh->BCg.type,  1, 0, interp, vert    );
+    P2Mastah( model, *particles, particles->sxxd,    mesh, sxx0,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+    P2Mastah( model, *particles, particles->szzd,    mesh, szz0,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+    P2Mastah( model, *particles, particles->syy,     mesh, syy0,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+    P2Mastah( model, *particles, particles->sxz,     mesh, mesh->sxz0,   mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
 
 #pragma omp parallel for shared( mesh, sxx0, syy0, szz0 ) private( k, k1, l, c0, c1, c2 ) firstprivate( Nx, Ncx, Ncz )
     for ( k1=0; k1<Ncx*Ncz; k1++ ) {
@@ -919,8 +919,8 @@ void FiniteStrainAspectRatio ( grid *mesh, scale scaling, params model, markers 
         FS_AR[k] = e1/e2;
     }
 
-    P2Mastah( &model, *particles, FS_AR, mesh, mesh->FS_AR_n,   mesh->BCp.type,  1, 0, interp, cent    );
-    P2Mastah( &model, *particles, FS_AR, mesh, mesh->FS_AR_s,   mesh->BCg.type,  1, 0, interp, vert    );
+    P2Mastah( &model, *particles, FS_AR, mesh, mesh->FS_AR_n,   mesh->BCp.type,  1, 0, interp, cent, model.itp_stencil);
+    P2Mastah( &model, *particles, FS_AR, mesh, mesh->FS_AR_s,   mesh->BCg.type,  1, 0, interp, vert, model.itp_stencil);
 
     DoodzFree(FS_AR);
 
@@ -1220,7 +1220,7 @@ void UpdateParticleEnergy( grid* mesh, scale scaling, params model, markers* par
         }
 
         // Subgrid temperature increments markers --> grid
-        P2Mastah( &model, *particles, dTms,     mesh, dTgs,   mesh->BCp.type,  1, 0, interp, cent    );
+        P2Mastah( &model, *particles, dTms,     mesh, dTgs,   mesh->BCp.type,  1, 0, interp, cent, 1);
 
         // Remaining temperature increments on the grid
 #pragma omp parallel for shared(mesh, dTgs, dTgr) private(c0) firstprivate(Ncx,Ncz)
@@ -1336,7 +1336,7 @@ void UpdateParticlePressure( grid* mesh, scale scaling, params model, markers* p
         }
 
         // Subgrid temperature increments markers --> grid
-        P2Mastah( &model, *particles, dPms,     mesh, dPgs,   mesh->BCp.type,  1, 0, interp, cent    );
+        P2Mastah( &model, *particles, dPms,     mesh, dPgs,   mesh->BCp.type,  1, 0, interp, cent, 1);
 
         // Remaining temperature increments on the grid
 #pragma omp parallel for shared(mesh, dPgs, dPgr) private(c0) firstprivate(Ncx,Ncz)
@@ -1606,9 +1606,9 @@ firstprivate( model, dt )
             }
 
             // Subgrid stress increments markers --> grid
-            P2Mastah( model, *particles, dtxxms,     mesh, dtxxgs,   mesh->BCp.type,  1, 0, interp, cent    );
-            P2Mastah( model, *particles, dtzzms,     mesh, dtzzgs,   mesh->BCp.type,  1, 0, interp, cent    );
-            P2Mastah( model, *particles, dtxzms,     mesh, dtxzgs,   mesh->BCg.type,  1, 0, interp, vert    );
+            P2Mastah( model, *particles, dtxxms,     mesh, dtxxgs,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+            P2Mastah( model, *particles, dtzzms,     mesh, dtzzgs,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+            P2Mastah( model, *particles, dtxzms,     mesh, dtxzgs,   mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
 
             // Remaining stress increments on the grid
 #pragma omp parallel for shared(mesh,dtxxgs,dtxxgr,dtzzgs,dtzzgr) private(c0) firstprivate(Ncx,Ncz)
@@ -2871,7 +2871,7 @@ void CohesionFrictionDilationGrid( grid* mesh, markers* particles, mat_prop mate
 
     // Plastic strain
     strain_pl  = DoodzCalloc((model.Nx-1)*(model.Nz-1), sizeof(double));
-    P2Mastah( &model, *particles,  particles->strain_pl,     mesh, strain_pl,   mesh->BCp.type,  1, 0, interp, cent    );
+    P2Mastah( &model, *particles,  particles->strain_pl,     mesh, strain_pl,   mesh->BCp.type,  1, 0, interp, cent, model.itp_stencil);
 
     // Calculate cell centers cohesion and friction
 #pragma omp parallel for shared( mesh, strain_pl ) private( p, c0, strain_acc, fric, dil, C, fric0, dil0, C0, dstrain, ddil, dcoh, dfric, mu_strain ) firstprivate( model, materials, average, Ncx, Ncz )
@@ -3981,10 +3981,10 @@ void InitialiseDirectorVector (grid* mesh, markers* particles, params* model, ma
         }
     }
 
-    P2Mastah( model, *particles, particles->nx,     mesh, mesh->nx0_n,   mesh->BCp.type,  1, 0, interp, cent    );
-    P2Mastah( model, *particles, particles->nz,     mesh, mesh->nz0_n,   mesh->BCp.type,  1, 0, interp, cent    );
-    P2Mastah( model, *particles, particles->nx,     mesh, mesh->nx0_s,   mesh->BCg.type,  1, 0, interp, vert    );
-    P2Mastah( model, *particles, particles->nz,     mesh, mesh->nz0_s,   mesh->BCg.type,  1, 0, interp, vert    );
+    P2Mastah( model, *particles, particles->nx,     mesh, mesh->nx0_n,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+    P2Mastah( model, *particles, particles->nz,     mesh, mesh->nz0_n,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+    P2Mastah( model, *particles, particles->nx,     mesh, mesh->nx0_s,   mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
+    P2Mastah( model, *particles, particles->nz,     mesh, mesh->nz0_s,   mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -4145,7 +4145,7 @@ void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* 
     int    cent=1, vert=0, prop=1, interp=0;
 
     double *dP     = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-    P2Mastah( model, *particles, particles->dP,     mesh, dP,   mesh->BCp.type,  1, 0, interp, cent    );
+    P2Mastah( model, *particles, particles->dP,     mesh, dP,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
     ArrayPlusArray(  mesh->p0_n,     dP,     Ncx*Ncz );
 
     // Elasticity - interpolate advected/rotated stresses
@@ -4155,9 +4155,9 @@ void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* 
             double *dsxxd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
             double *dszzd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
             double *dsxz  = DoodzCalloc ( Nx*Nz,   sizeof(double));
-            P2Mastah( model, *particles, particles->dsxxd,     mesh, dsxxd,  mesh->BCp.type,  1, 0, interp, cent    );
-            P2Mastah( model, *particles, particles->dszzd,     mesh, dszzd,  mesh->BCp.type,  1, 0, interp, cent    );
-            P2Mastah( model, *particles, particles->dsxz,      mesh, dsxz,   mesh->BCg.type,  1, 0, interp, vert    );
+            P2Mastah( model, *particles, particles->dsxxd,     mesh, dsxxd,  mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+            P2Mastah( model, *particles, particles->dszzd,     mesh, dszzd,  mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+            P2Mastah( model, *particles, particles->dsxz,      mesh, dsxz,   mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
 
             ArrayPlusArray(  mesh->sxxd0,  dsxxd, Ncx*Ncz );
             ArrayPlusArray(  mesh->szzd0,  dszzd, Ncx*Ncz );
@@ -4172,10 +4172,10 @@ void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* 
             double *dsxz  = DoodzCalloc ( Nx*Nz,   sizeof(double));
             double *dsyy = DoodzCalloc ( Ncx*Ncz, sizeof(double));
 
-            P2Mastah( model, *particles, particles->dsxxd,     mesh, dsxxd,  mesh->BCp.type,  1, 0, interp, cent    );
-            P2Mastah( model, *particles, particles->dszzd,     mesh, dszzd,  mesh->BCp.type,  1, 0, interp, cent    );
-            P2Mastah( model, *particles, particles->dsxz,      mesh, dsxz,   mesh->BCg.type,  1, 0, interp, vert    );
-            P2Mastah( model, *particles, particles->dsyy,      mesh, dsyy,   mesh->BCp.type,  1, 0, interp, cent    );
+            P2Mastah( model, *particles, particles->dsxxd,     mesh, dsxxd,  mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+            P2Mastah( model, *particles, particles->dszzd,     mesh, dszzd,  mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+            P2Mastah( model, *particles, particles->dsxz,      mesh, dsxz,   mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
+            P2Mastah( model, *particles, particles->dsyy,      mesh, dsyy,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
 
                 for ( k1=0; k1<Ncx*Ncz; k1++ ) {
                     k  = mesh->kp[k1];
@@ -4210,10 +4210,10 @@ void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* 
         double *dnz_n = DoodzCalloc ( Ncx*Ncz, sizeof(double));
         double *dnx_s = DoodzCalloc ( Nx*Nz,   sizeof(double));
         double *dnz_s = DoodzCalloc ( Nx*Nz,   sizeof(double));
-        P2Mastah( model, *particles, particles->dnx,     mesh, dnx_n,  mesh->BCp.type,  1, 0, interp, cent    );
-        P2Mastah( model, *particles, particles->dnz,     mesh, dnz_n,  mesh->BCp.type,  1, 0, interp, cent    );
-        P2Mastah( model, *particles, particles->dnx,     mesh, dnx_s,  mesh->BCg.type,  1, 0, interp, vert    );
-        P2Mastah( model, *particles, particles->dnz,     mesh, dnz_s,  mesh->BCg.type,  1, 0, interp, vert    );
+        P2Mastah( model, *particles, particles->dnx,     mesh, dnx_n,  mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+        P2Mastah( model, *particles, particles->dnz,     mesh, dnz_n,  mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+        P2Mastah( model, *particles, particles->dnx,     mesh, dnx_s,  mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
+        P2Mastah( model, *particles, particles->dnz,     mesh, dnz_s,  mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
         ArrayPlusArray(  mesh->nx0_n,  dnx_n, Ncx*Ncz );
         ArrayPlusArray(  mesh->nx0_s,  dnx_s,   Nx*Nz );
         ArrayPlusArray(  mesh->nz0_n,  dnz_n, Ncx*Ncz );
@@ -4233,13 +4233,13 @@ void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* 
     double *dphi   = DoodzCalloc ( Ncx*Ncz, sizeof(double));
     double *drho   = DoodzCalloc ( Ncx*Ncz, sizeof(double));
     
-    P2Mastah( model, *particles, particles->dT,     mesh, dT,     mesh->BCp.type,  1, 0, interp, cent    );
-    P2Mastah( model, *particles, particles->ddivth, mesh, ddivth, mesh->BCp.type,  1, 0, interp, cent    );
-    P2Mastah( model, *particles, particles->dd,     mesh, dd,     mesh->BCp.type,  1, 0, interp, cent    );
-    P2Mastah( model, *particles, particles->dphi,   mesh, dphi,   mesh->BCp.type,  1, 0, interp, cent    );
-    P2Mastah( model, *particles, particles->drho,   mesh, drho,   mesh->BCp.type,  1, 0, interp, cent    );
-    P2Mastah( model, *particles, particles->dX,     mesh, dX_n,   mesh->BCp.type,  1, 0, interp, cent    );
-    P2Mastah( model, *particles, particles->dX,     mesh, dX_s,   mesh->BCg.type,  1, 0, interp, vert    );
+    P2Mastah( model, *particles, particles->dT,     mesh, dT,     mesh->BCp.type,  1, 0, interp, cent, 1);
+    P2Mastah( model, *particles, particles->ddivth, mesh, ddivth, mesh->BCp.type,  1, 0, interp, cent, 1);
+    P2Mastah( model, *particles, particles->dd,     mesh, dd,     mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+    P2Mastah( model, *particles, particles->dphi,   mesh, dphi,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+    P2Mastah( model, *particles, particles->drho,   mesh, drho,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+    P2Mastah( model, *particles, particles->dX,     mesh, dX_n,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+    P2Mastah( model, *particles, particles->dX,     mesh, dX_s,   mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
 
     ArrayPlusArray(  mesh->T0_n,     dT,     Ncx*Ncz );
     ArrayPlusArray(  mesh->divth0_n, ddivth, Ncx*Ncz );
