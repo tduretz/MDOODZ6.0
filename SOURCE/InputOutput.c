@@ -134,21 +134,23 @@ void LoadIniParticles( char* name, markers* particles, grid* mesh, markers *topo
 void DeletePreviousBreakpoint( int step, int writer_step ) {
     char *name, *command, *new_name;
     int success;
-    asprintf(&new_name, "Breakpoint%05d.dat", step- 0*writer_step);
-    asprintf(&name,     "Breakpoint%05d.dat", step- 2*writer_step);
-    asprintf(&command, "mv %s %s", name, new_name );
-    success = system( command );
-    printf("File %s replaced by %s\n", name, new_name);
-//    success = system( command );
-//        success = remove( name );
-//    if ( success!=-1 ) {
-//        printf("File %s was successfully deleted\n", name);
-//    }
-    if ( success!=-1 ) printf("File %s was successfully renamed\n", name);
-    else printf("File %s was not successfully renamed\n", name);
-    free(name);
-    free(new_name);
-    free(command);
+    if ((step- 2*writer_step)>1) {
+        asprintf(&new_name, "Breakpoint%05d.dat", step- 0*writer_step);
+        asprintf(&name,     "Breakpoint%05d.dat", step- 2*writer_step);
+        asprintf(&command, "mv %s %s", name, new_name );
+        success = system( command );
+        printf("File %s replaced by %s\n", name, new_name);
+    //    success = system( command );
+    //        success = remove( name );
+    //    if ( success!=-1 ) {
+    //        printf("File %s was successfully deleted\n", name);
+    //    }
+        if ( success!=-1 ) printf("File %s was successfully renamed\n", name);
+        else printf("File %s was not successfully renamed\n", name);
+        free(name);
+        free(new_name);
+        free(command);
+    }
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/

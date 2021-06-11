@@ -1991,7 +1991,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     *Eii_pl = 0.0;
 
     // Define viscosity bounds
-    eta_up   = 1.0e100/scaling->S;
+    eta_up   = 1.0e100/scaling->eta;
     ieta_sum = 0.0;
 
     if ( constant == 1 ) {
@@ -2022,13 +2022,12 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         ieta_sum += 1.0/eta_gbs;
     }
     eta_lo = 1.0/(ieta_sum);
-
-
+    
     //------------------------------------------------------------------------//
 
     // Initial guess
     eta_ve                  = 0.5*(eta_up+eta_lo);
-
+    
     // Local iterations
     for (it=0; it<nitmax; it++) {
 
@@ -2214,6 +2213,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     }
     }
     
+
     //------------------------------------------------------------------------//
     double dsin_dildExx = 0.0, dsin_dildEzz = 0.0, dsin_dildExz = 0.0, dsin_dildP = 0.0;
 
@@ -2324,6 +2324,9 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         (*ddivpdp)    = -dQdP*dlamdP   + gdot*dsin_dildP    + ddivrdpc;
         inv_eta_diss += 1.0/eta_vep;
     }
+    
+//       if (phase==0) printf("phase = %d, eta_cst = %2.2e, eta_ve = %2.2e, eta_vep = %2.2e, eta_up = %2.2e, eta_lo = %2.2e, eta = %2.2e *etaVE=%2.2e elastic=%d constant=%d pl=%d\n",   phase, eta_cst*scaling->eta, eta_ve*scaling->eta, eta_vep*scaling->eta, eta_up*scaling->eta, eta_lo*scaling->eta, eta*scaling->eta, *etaVE*scaling->eta, elastic, constant, is_pl);
+    
     
 
     //    if ( fabs(*detadexx) >1e10 ) {
@@ -2450,7 +2453,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     if( *etaVE < minEta ) {
         *etaVE = minEta;
     }
-    
+        
 //    if (P>4.6e9/scaling->S && P<4.7e9/scaling->S) {
 //        printf("%2.2e %2.2e\n", eta_ve*scaling->eta, eta_lin*scaling->eta);
 //        printf("%2.2e %2.2e\n", *etaVE*scaling->eta, eta_lin*scaling->eta);
