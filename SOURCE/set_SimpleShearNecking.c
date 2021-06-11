@@ -55,8 +55,8 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
 	s1 = sizeof(int);
 	s2 = sizeof(double);
     
-    double H,xl,lx;
-    int    k,nb_layers = 20;
+    double H, xl, lx;
+    int    k, nb_layers = 20;
 
     H = (model.zmax - model.zmin);
     lx = (model.xmax - model.xmin);
@@ -65,6 +65,11 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double Temperature = (model.user2+zeroC)/scaling.T;
     double rad=model.user1/scaling.L, xc=-0e3/scaling.L, zc=-0e3/scaling.L;
     double spacing = 5.0e-3/scaling.L;
+    
+    double alpha = (model.user3)/180*M_PI; // angle radians
+    double h     = model.user1/scaling.L;  // layer thickness
+    double a     = tan(alpha);
+    double b     = (h/2.0)/cos(alpha);    
 
     for( np=0; np<particles->Nb_part; np++ ) {
         
@@ -77,25 +82,32 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         // INCLUSIONS INCLUSIONS INCLUSIONS
         //----------------------------------
         // Central inclusion
-        if ( pow(particles->x[np],2) + pow(particles->z[np],2) < pow(rad,2) ) {
+//        if ( pow(particles->x[np],2) + pow(particles->z[np],2) < pow(rad,2) ) {
+//            particles->phase[np] = 0;
+//        }
+        
+        if ( (particles->z[np] < (a*particles->x[np] + b) ) && (particles->z[np] > (a*particles->x[np] - b) ) ) {
             particles->phase[np] = 0;
         }
-        // SE inclusion
-        if ( pow(particles->x[np]-0.5/scaling.L,2) + pow(particles->z[np]+0.5/scaling.L,2) < pow(rad,2) ) {
-            particles->phase[np] = 0;
-        }
-        // NW inclusion
-        if ( pow(particles->x[np]+0.5/scaling.L,2) + pow(particles->z[np]-0.5/scaling.L,2) < pow(rad,2) ) {
-            particles->phase[np] = 0;
-        }
-        // SW inclusion
-        if ( pow(particles->x[np]+0.5/scaling.L,2) + pow(particles->z[np]+0.5/scaling.L,2) < pow(rad,2) ) {
-            particles->phase[np] = 0;
-        }
-        // NE inclusion
-        if ( pow(particles->x[np]-0.5/scaling.L,2) + pow(particles->z[np]-0.5/scaling.L,2) < pow(rad,2) ) {
-            particles->phase[np] = 0;
-        }
+        
+        
+        
+//        // SE inclusion
+//        if ( pow(particles->x[np]-0.5/scaling.L,2) + pow(particles->z[np]+0.5/scaling.L,2) < pow(rad,2) ) {
+//            particles->phase[np] = 0;
+//        }
+//        // NW inclusion
+//        if ( pow(particles->x[np]+0.5/scaling.L,2) + pow(particles->z[np]-0.5/scaling.L,2) < pow(rad,2) ) {
+//            particles->phase[np] = 0;
+//        }
+//        // SW inclusion
+//        if ( pow(particles->x[np]+0.5/scaling.L,2) + pow(particles->z[np]+0.5/scaling.L,2) < pow(rad,2) ) {
+//            particles->phase[np] = 0;
+//        }
+//        // NE inclusion
+//        if ( pow(particles->x[np]-0.5/scaling.L,2) + pow(particles->z[np]-0.5/scaling.L,2) < pow(rad,2) ) {
+//            particles->phase[np] = 0;
+//        }
 //
 //        // phase 1 for visualisation:
 //        if (particles->phase[np] == 0 && particles->x[np]>0 && particles->z[np]>0) {
@@ -448,29 +460,29 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                 // LEFT
                 if ( k==0 ) {
                     mesh->BCt.type[c] = 1;
-                    mesh->BCt.val[c]  = Tbg;
-                    mesh->BCt.valW[c] = Tbg;
+                    mesh->BCt.typW[l] = 1;
+                    mesh->BCt.valW[l] = Tbg;
                 }
                 
                 // RIGHT
                 if ( k==NCX-1 ) {
                     mesh->BCt.type[c] = 1;
-                    mesh->BCt.val[c]  = Tbg;
-                    mesh->BCt.valE[c] = Tbg;
+                    mesh->BCt.typE[l] = 1;
+                    mesh->BCt.valE[l] = Tbg;
                 }
                 
                 // BOT
                 if ( l==0 ) {
                     mesh->BCt.type[c] = 1;
-                    mesh->BCt.val[c]  = Tbg;
-                    mesh->BCt.valS[c] = Tbg;
+                    mesh->BCt.typS[k] = 1;
+                    mesh->BCt.valS[k] = Tbg;
                 }
                 
                 // TOP
                 if ( l==NCZ-1 ) {
                     mesh->BCt.type[c] = 1;
-                    mesh->BCt.val[c]  = Tbg;
-                    mesh->BCt.valN[c] = Tbg;
+                    mesh->BCt.typN[k] = 1;
+                    mesh->BCt.valN[k] = Tbg;
                 }
                 // FREE SURFACE
                 else {
