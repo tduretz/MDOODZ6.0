@@ -26,6 +26,6 @@ jobs:
       - name: prepare makefiile
         run: mv SOURCE/Makefiles/makefile_ubuntu_ci SOURCE/makefile
       - name: compile with RiftingPaulineMD6 model
-        run: cd SOURCE/ && make all MODEL=RiftingPaulineMD6 OPT=yes MKL=yes
+        run: cd SOURCE/ && make all MODEL=RiftingPaulineMD6 MKL=yes
       - name: run RiftingPaulineMD6 simulation
         run: cd SOURCE/ && ./Doodzi_RiftingPaulineMD6 RiftingPaulineMD6.txt
