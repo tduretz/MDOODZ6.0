@@ -40,6 +40,8 @@ ifeq ($(OMP),yes)
     LIBS += -lgomp
 endif
 
+LIBS += -lgcov
+
 #---------------------------------------------------#
 # Rules
 all: Doodzi_$(MODEL)

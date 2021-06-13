@@ -25,8 +25,6 @@ jobs:
         run: sudo apt -y install gcovr
       - name: prepare makefiile
         run: mv SOURCE/Makefiles/makefile_ubuntu_ci SOURCE/makefile
-      - name: log
-        run: dpkg -L gcovr
       - name: compile with RiftingPaulineMD6 model
         run: cd SOURCE/ && make all MODEL=RiftingPaulineMD6 MKL=yes
       - name: run RiftingPaulineMD6 simulation

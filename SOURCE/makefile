@@ -1,7 +1,7 @@
 # MDOODZ 6.0 makefile
 
 # Compiler
-CC = /usr/bin/gcc
+CC = /usr/bin/llvm-gcc
 
 #---------------------------------------------------#
 # C flags
@@ -39,6 +39,8 @@ LIBS += -llapack -lcxsparse -lumfpack -lamd -lcholmod -lcolamd -lbtf -lsuitespar
 ifeq ($(OMP),yes)
     LIBS += -lgomp
 endif
+
+LIBS += -lgcov
 
 #---------------------------------------------------#
 # Rules
