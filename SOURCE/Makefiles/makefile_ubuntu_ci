@@ -10,7 +10,7 @@ CFLAGS = -std=c99 -D _UMFPACK_ -I ./
 ifeq ($(OPT),yes)	
 	CFLAGS += -O3 -ftree-vectorize -funroll-loops
 else
-	CFLAGS += -g -Wall  -O0 -fno-inline -fno-omit-frame-pointer
+	CFLAGS += --coverage -g -Wall  -O0 -fno-inline -fno-omit-frame-pointer
 endif
 
 ifeq ($(OMP),yes)

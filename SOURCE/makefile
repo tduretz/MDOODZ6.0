@@ -1,7 +1,7 @@
 # MDOODZ 6.0 makefile
 
 # Compiler
-CC = /opt/local/bin/gcc-mp-8
+CC = /usr/bin/gcc
 
 #---------------------------------------------------#
 # C flags
@@ -10,7 +10,7 @@ CFLAGS = -std=c99 -D _UMFPACK_ -I ./
 ifeq ($(OPT),yes)	
 	CFLAGS += -O3 -ftree-vectorize -funroll-loops
 else
-	CFLAGS += -g -Wall  -O0 -fno-inline -fno-omit-frame-pointer
+	CFLAGS += --coverage -g -O0
 endif
 
 ifeq ($(OMP),yes)
@@ -30,10 +30,10 @@ endif
 CFLAGS += -Wno-unused-variable  -Wno-comment
 #---------------------------------------------------#
 # Libraries
-LIBS = -lz -lhdf5
+LIBS = -lm -lz -lhdf5
 
 # Related to SuiteSparse
-LIBS += -L /usr/lib/ -llapack -lcxsparse -lumfpack -lcblas -lamd -lcholmod -lcolamd -lbtf -lsuitesparseconfig -lblas
+LIBS += -llapack -lcxsparse -lumfpack -lamd -lcholmod -lcolamd -lbtf -lsuitesparseconfig -lblas
 
 # Link to openmp
 ifeq ($(OMP),yes)
