@@ -29,3 +29,5 @@ jobs:
         run: cd SOURCE/ && make all MODEL=RiftingPaulineMD6 MKL=yes
       - name: run RiftingPaulineMD6 simulation
         run: cd SOURCE/ && ./Doodzi_RiftingPaulineMD6 RiftingPaulineMD6.txt
+      - name: show coverage data
+        run: cd SOURCE/ && gcovr -r .
