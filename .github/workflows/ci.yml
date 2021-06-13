@@ -28,4 +28,4 @@ jobs:
       - name: compile with RiftingPaulineMD6 model
         run: cd SOURCE/ && make all MODEL=RiftingPaulineMD6 OPT=yes MKL=yes
       - name: run RiftingPaulineMD6 simulation
-        run: cd SOURCE/ && valgrind --leak-check=yes ./Doodzi_RiftingPaulineMD6 RiftingPaulineMD6_VALGRIND.txt
+        run: cd SOURCE/ && valgrind --leak-check=full --error-exitcode=1 ./Doodzi_RiftingPaulineMD6 RiftingPaulineMD6_VALGRIND.txt
