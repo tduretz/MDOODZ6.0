@@ -81,13 +81,17 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         //----------------------------------
         // INCLUSIONS INCLUSIONS INCLUSIONS
         //----------------------------------
-        // Central inclusion
-//        if ( pow(particles->x[np],2) + pow(particles->z[np],2) < pow(rad,2) ) {
-//            particles->phase[np] = 0;
-//        }
         
+        
+        
+        // Dipping layer with angle alpha
         if ( (particles->z[np] < (a*particles->x[np] + b) ) && (particles->z[np] > (a*particles->x[np] - b) ) ) {
             particles->phase[np] = 0;
+        }
+        
+        // Central inclusion
+        if ( pow(particles->x[np],2) + pow(particles->z[np],2) < pow(rad/10,2) ) {
+            particles->phase[np] = 2;
         }
         
         
