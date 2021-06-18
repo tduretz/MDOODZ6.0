@@ -134,23 +134,21 @@ void LoadIniParticles( char* name, markers* particles, grid* mesh, markers *topo
 void DeletePreviousBreakpoint( int step, int writer_step ) {
     char *name, *command, *new_name;
     int success;
-    if ((step- 2*writer_step)>1) {
-        asprintf(&new_name, "Breakpoint%05d.dat", step- 0*writer_step);
-        asprintf(&name,     "Breakpoint%05d.dat", step- 2*writer_step);
-        asprintf(&command, "mv %s %s", name, new_name );
-        success = system( command );
-        printf("File %s replaced by %s\n", name, new_name);
-    //    success = system( command );
-    //        success = remove( name );
-    //    if ( success!=-1 ) {
-    //        printf("File %s was successfully deleted\n", name);
-    //    }
-        if ( success!=-1 ) printf("File %s was successfully renamed\n", name);
-        else printf("File %s was not successfully renamed\n", name);
-        free(name);
-        free(new_name);
-        free(command);
-    }
+    asprintf(&new_name, "Breakpoint%05d.dat", step- 0*writer_step);
+    asprintf(&name,     "Breakpoint%05d.dat", step- 2*writer_step);
+    asprintf(&command, "mv %s %s", name, new_name );
+    success = system( command );
+    printf("File %s replaced by %s\n", name, new_name);
+//    success = system( command );
+//        success = remove( name );
+//    if ( success!=-1 ) {
+//        printf("File %s was successfully deleted\n", name);
+//    }
+    if ( success!=-1 ) printf("File %s was successfully renamed\n", name);
+    else printf("File %s was not successfully renamed\n", name);
+    free(name);
+    free(new_name);
+    free(command);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -1031,10 +1029,6 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
 
     // Output
     *writer                = ReadInt2( fin, "writer",          0 );
-    if (*writer<0 || *writer>1) {
-        printf("'writer' should be set to 1 or 0\n Exiting...\n");
-        exit(1);
-    }
     *writer_step           = ReadInt2( fin, "writer_step",     1 );
     model->write_markers   = ReadInt2( fin, "writer_markers",  0 );
     model->write_debug     = ReadInt2( fin, "writer_debug",    0 );
@@ -1071,16 +1065,14 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->safe_mode       = ReadInt2( fin, "safe_mode",     0 );
     model->safe_dt_div     = ReadDou2( fin, "safe_dt_div",  5.0 );
     model->nstagmax        = ReadInt2( fin, "nstagmax",      3 );
-    model->noisy           = ReadInt2( fin, "noisy",         1 );  // Prints a lot of info to standard output
+    model->noisy           = ReadInt2( fin, "noisy",         1 );  // prints a lot of info to standard output
 
     // Switches
-    model->initial_part    = ReadInt2( fin, "initial_part",    1 ); // Initial particule distribution, 0: MD4.5 style, 1: MD6.0 style
-    model->initial_noise   = ReadInt2( fin, "initial_noise",   0 ); // Add noise on initial marker locations
-    model->ismechanical    = ReadInt2( fin, "ismechanical",    1 ); // Activates mechanical solver
-    model->advection       = ReadInt2( fin, "advection",       1 ); // Activates advection
-    model->dt_constant     = ReadInt2( fin, "dt_constant",     0 ); // Fixed time step
-    model->RK              = ReadInt2( fin, "RK",              4 ); // Order of Runge-Kutta advection solver
-    model->isperiodic_x    = ReadInt2( fin, "isperiodic_x",    0 ); // Activates periodicity in x
+    model->initial_noise   = ReadInt2( fin, "initial_noise",   0 );
+    model->ismechanical    = ReadInt2( fin, "ismechanical",    1 );
+    model->dt_constant     = ReadInt2( fin, "dt_constant",     0 );
+    model->RK              = ReadInt2( fin, "RK",              4 );
+    model->isperiodic_x    = ReadInt2( fin, "isperiodic_x",    0 );
     model->ispureshear_ale = ReadInt2( fin, "ispureshear_ALE", 0 );
     model->isinertial      = ReadInt2( fin, "isinertial",      0 );
     model->iselastic       = ReadInt2( fin, "iselastic",       0 );
@@ -1095,9 +1087,10 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->subgrid_diff    = ReadInt2( fin, "subgrid_diff",    0 );
     model->shear_heat      = ReadInt2( fin, "shear_heat",      1 );
     model->adiab_heat      = ReadInt2( fin, "adiab_heat",      0 );
-    model->surf_processes  = ReadInt2( fin, "surf_processes",  0 ); // 1 = diffusion; 2 = diffusion + sedimentation
+    model->surf_processes  = ReadInt2( fin, "surf_processes",  0 );
     model->surf_remesh     = ReadInt2( fin, "surf_remesh",     1 );
     model->cpc             = ReadInt2( fin, "cpc",             1 );
+    model->advection       = ReadInt2( fin, "advection",       1 );
     model->loc_iter        = ReadInt2( fin, "loc_iter",        1 );
     model->therm_pert      = ReadInt2( fin, "therm_pert",      0 );
     model->fstrain         = ReadInt2( fin, "fstrain",         0 );
@@ -1116,13 +1109,11 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->ProgReac        = ReadInt2( fin, "ProgReac",       0 ); // Activate progressive reactions
     model->NoReturn        = ReadInt2( fin, "NoReturn",       0 ); // Turns off retrogression if 1.0
     model->UnsplitDiffReac = ReadInt2( fin, "UnsplitDiffReac",0 ); // Unsplit diffusion reaction
-    model->VolChangeReac   = ReadInt2( fin, "VolChangeReac",  0 ); // Turns on volume change due to reaction if 1
+    model->VolChangeReac   = ReadInt2( fin, "VolChangeReac", 0 ); // Turns on volume change due to reaction if 1
     model->Plith_trick     = ReadInt2( fin, "Plith_trick", 0 );
-    model->IncrementalUpdateGrid     = ReadInt2( fin, "IncrementalUpdateGrid", 0);
+    model->IncrementalUpdateGrid     = ReadInt2( fin, "IncrementalUpdateGrid", 1);
     model->DirectNeighbour           = ReadInt2( fin, "DirectNeighbour", 0);
-    model->Reseed          = ReadInt2( fin, "Reseed",          1); // Activates reseeding / particle injection
-    model->ConservInterp   = ReadInt2( fin, "ConservInterp",   0); // Activates Taras conservative interpolation
-    model->SmoothSoftening = ReadInt2( fin, "SmoothSoftening", 1); // Activates smooth explicit kinematic softening function
+    model->Reseed          = ReadInt2( fin, "Reseed", 1);
 
     if ( model->shear_style == 1 ) model->isperiodic_x  = 1;
     if ( model->shear_style == 0 ) model->isperiodic_x  = 0;
@@ -1140,8 +1131,6 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->surf_ised2      = ReadInt2( fin, "surf_ised2",      0.0 );
     model->surf_sedirate   = ReadDou2( fin, "surf_sedirate",   0.0 ) / scaling->V;
     model->surf_baselev    = ReadDou2( fin, "surf_baselev",    0.0 ) / scaling->L;
-    model->surf_Winc       = ReadDou2( fin, "surf_Winc",       0.0 ) / scaling->L;
-    model->surf_Vinc       = ReadDou2( fin, "surf_Vinc",       0.0 ) / scaling->V;
     // Initial thermal perturbation
     model->therm_pert_x0   = ReadDou2( fin, "therm_pert_x0",   0.0 ) / scaling->L;
     model->therm_pert_z0   = ReadDou2( fin, "therm_pert_z0",   0.0 ) / scaling->L;
@@ -1174,15 +1163,12 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->dt0               = model->dt;
     model->dt_start          = model->dt;
     model->dt_max            = ReadDou2( fin, "dt_max",     1e20 ) / scaling->t; // maximum allowed time step
-    model->dt_min            = ReadDou2( fin, "dt_min",      1e6 ) / scaling->t; // minimum allowed time step
-    model->eta_avg           = ReadInt2( fin, "eta_avg",       0 );              // 0: arithmetic mean - 1: harmonic mean - 2: geometric mean
-    model->itp_stencil       = ReadInt2( fin, "itp_stencil",       1   );        // 1: 1-Cell          - 9: 9-Cell
-    if (model->itp_stencil!=1 && model->itp_stencil!=9) { printf("Wrong value of itp_stencil: shoulbd be 1 or 9.\n"); exit(1); }
+    model->eta_avg           = ReadInt2( fin, "eta_avg",       0 );              // 0 : arithmetic mean
     model->nexp_radial_basis = ReadDou2( fin, "nexp_radial_basis", 1.0 ); // exponent for radial basis function interp.
 
        // For Cindy's setup
     model->diffuse_X       = ReadInt2( fin, "diffuse_X",     0 );              // 0 or 1
-    model->diffuse_avg     = ReadInt2( fin, "diffuse_avg",   0 );              // 0: arithmetic mean - 1: harmonic mean - 2: geometric mean
+    model->diffuse_avg     = ReadInt2( fin, "diffuse_avg",   0 );              // 0 : arithmetic mean
     model->diffusion_length= ReadDou2( fin, "diffusion_length",  0.0 ) / scaling->L;
 
     // Gravity
@@ -1220,7 +1206,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         materials->Qpwl[k]  = ReadMatProps( fin, "Qpwl",k,    0.0  );//   / scaling->J;
         materials->pref_pwl[k] = ReadMatProps( fin, "pref_pwl",k,    1.0 );    // weakening prefactor for power law
         materials->gs[k]    = ReadMatProps( fin, "gs",    k,    0.0   );
-        materials->gs_ref[k]= ReadMatProps( fin, "gs_ref" ,k,  2.0e-3  ) /scaling->L;
+        materials->gs_ref[k]= ReadMatProps( fin, "gsref" ,k,  2.0e-3  ) /scaling->L;
         // Strain softening
         materials->coh_soft[k]   = (int)ReadMatProps( fin, "coh_soft",   k,    0.0   );
         materials->phi_soft[k]   = (int)ReadMatProps( fin, "phi_soft",   k,    0.0   );
@@ -1972,8 +1958,7 @@ double ReadMatProps( FILE *fin, char FieldName[], int PhaseID, double Default )
 
                     // Break in case the parameter has not been defined for the current phase.
                     if ( strcmp(param3,"ID") == 0 || feof(fin) ) {
-                        if ( fabs(Default) <  100 ) printf("Warning : Parameter '%s' not found in the setup file, running with default value %.2lf\n", FieldName, Default);
-                        if ( fabs(Default) >= 100 ) printf("Warning : Parameter '%s' not found in the setup file, running with default value %2.2e\n", FieldName, Default);
+                        printf("Warning : Parameter '%s' not found in the setup file, running with default value %.2lf\n", FieldName, Default);
                         rewind (fin);
                         free(param1);
                         free(param2);

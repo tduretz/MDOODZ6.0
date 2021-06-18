@@ -1,12 +1,12 @@
 /**** RESTART ****/
 
-istep = 500
-irestart = 1
+istep = 00000200
+irestart = 0
 
 /**** OUTPUT FILES ****/
 
 writer = 1
-writer_step = 100
+writer_step = 10
 writer_markers = 0
 writer_debug   = 0 
 
@@ -17,7 +17,7 @@ input_file = setup_r501x501_fsp40.bin
 /**** SCALES ****/ Scaling parameters for
 
 eta = 1.0e+20      /viscosity
-L   = 5.0e3       /length
+L   = 100.0e3       /length
 V   = 1.0e-9     /velocity
 T   = 500.0      /temperature
 
@@ -25,14 +25,14 @@ T   = 500.0      /temperature
 
 Nx      = 501  
 Nz      = 381 
-Nt      = 500
+Nt      = 0
 xmin    = -800.0e3
 xmax    =  800.0e3
 zmin    = -660.0e3
 zmax    =   20.0e3 
 dt      = 1.2623e+11
 Courant = 0.45
-penalty = 1e4
+penalty = 1e2
 eta_avg = 0
 abs_tol_div = 1e-30
 
@@ -74,8 +74,6 @@ surf_ised1      = 6 /sediment phase indices
 surf_ised2      = 7
 surf_sedirate   = 1.584404391e-11 / sediementation rate [m/s]:3.1688e-12 <-> 0.01 cm/yr
 surf_baselev    = -5.0e3.0e3 / base level for sedimentation
-surf_erorate    = 1.584404391e-11 / erosion rate similar to sedimentation rate
-surf_erolev     = 2.0e3 / level above which material is eroded
 rec_T_P_x_z     = 1 / initial P and T field record
 polar           = 0
 

@@ -96,20 +96,6 @@ void ReadDataPowerLaw( mat_prop* mat, params* model, int k, int number, scale* s
             success      = 1;
             break;
             
-        case 4:
-            printf("Olivine Dry Dislocation creep - Hirth & Kohlstedt (2003):\n" ); // added by Pauline
-            mat->tpwl[k] = 1;
-            mat->npwl[k] = 3.5;
-            mat->mpwl[k] = 0.0;
-            mat->rpwl[k] = 0.0;
-            mat->Qpwl[k] = 520.0e3;
-            mat->Vpwl[k] = 0.0e-6;
-            mat->Apwl[k] = 1.60e-18;
-            mat->fpwl[k] = 0.0;
-            mat->apwl[k] = 0.0;
-            success      = 1;
-            break;
-            
         /******************************** Crust flow laws *********************************/
                 
         case 10:
@@ -445,7 +431,7 @@ void ReadDataPowerLaw( mat_prop* mat, params* model, int k, int number, scale* s
             mat->mpwl[k] = 0.0;
             mat->rpwl[k] = 0.0;
             mat->Qpwl[k] = 530.0e3;
-            mat->Vpwl[k] = 14.0e-6;
+            mat->Vpwl[k] = 11.0e-6;
             if ( model->force_act_vol_ast == 1 ) mat->Vpwl[k] = model->act_vol_dis_ast;
             mat->Apwl[k] = 1.1000e-16;
             mat->fpwl[k] = 0.0;
@@ -510,6 +496,20 @@ void ReadDataPowerLaw( mat_prop* mat, params* model, int k, int number, scale* s
             break;
             
         case 45:
+            printf("Olivine Dry Dislocation creep - Hirth & Kohlstedt (2003):\n" ); // added by Pauline
+            mat->tpwl[k] = 1;
+            mat->npwl[k] = 3.5;
+            mat->mpwl[k] = 0.0;
+            mat->rpwl[k] = 0.0;
+            mat->Qpwl[k] = 520.0e3;
+            mat->Vpwl[k] = 0.0e-6;
+            mat->Apwl[k] = 1.60e-18;
+            mat->fpwl[k] = 0.0;
+            mat->apwl[k] = 0.0;
+            success      = 1;
+            break;
+            
+        case 46:
             printf("Serpentine 1 GPa - Hilairet et al. (2007):\n" ); // added by Pauline
             mat->tpwl[k] = 1;
             mat->npwl[k] = 5.8;
@@ -614,8 +614,8 @@ void ReadDataLinear( mat_prop* mat, params* model, int k, int number, scale* sca
             mat->nlin[k] = 1.0;
             mat->mlin[k] = 3.0;
             mat->rlin[k] = 0.0;
-            mat->Qlin[k] = 370.0e3;
-            mat->Vlin[k] = 7.5e-6;            // 4e-6 Annelore 7e-6 Lorenzo
+            mat->Qlin[k] = 375e3;
+            mat->Vlin[k] = 4.0e-6;            // 4e-6 Annelore 7e-6 Lorenzo
             if ( model->force_act_vol_ast == 1 ) mat->Vlin[k] = model->act_vol_dif_ast;
             mat->Alin[k] = 1.5000e-15;
             mat->flin[k] = 0.0;
