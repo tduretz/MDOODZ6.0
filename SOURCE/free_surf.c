@@ -1387,6 +1387,8 @@ void DiffuseAlongTopography( grid *mesh, params model, scale scaling, double *ar
     double correct[size], s, e;//, ev[size];
     double base_level = model.surf_baselev;//0*array[0]; // left side
     double sedi_rate  = model.surf_sedirate;
+    double ero_level  = model.surf_erolev;
+    double ero_rate   = model.surf_erorate;
     double Wvalley    = model.surf_Winc;
     double Vinc       = -model.surf_Vinc, Vinc_num;
     
@@ -1460,6 +1462,17 @@ void DiffuseAlongTopography( grid *mesh, params model, scale scaling, double *ar
             if (array[i]<base_level)
                 //                array[i]  = base_level;
                 array[i]  = array_ini[i] + sedi_rate*model.dt;
+        }
+    }
+    // Instantaneous basin filling and erosion
+    if (model.surf_processes == 4) {
+        for (i=0; i<size; i++) {
+            if (array[i]<base_level) {
+                array[i] = base_level;
+            }
+            if (array[i]>ero_level) {
+                array[i] = array[i] - ero_rate*model.dt;
+            }
         }
     }
     

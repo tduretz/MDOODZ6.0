@@ -1134,6 +1134,8 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->surf_ised2      = ReadInt2( fin, "surf_ised2",      0.0 );
     model->surf_sedirate   = ReadDou2( fin, "surf_sedirate",   0.0 ) / scaling->V;
     model->surf_baselev    = ReadDou2( fin, "surf_baselev",    0.0 ) / scaling->L;
+    model->surf_erorate    = ReadDou2( fin, "surf_erorate",    0.0 ) / scaling->V;
+    model->surf_erolev     = ReadDou2( fin, "surf_erolev",     0.0 ) / scaling->L;
     model->surf_Winc       = ReadDou2( fin, "surf_Winc",       0.0 ) / scaling->L;
     model->surf_Vinc       = ReadDou2( fin, "surf_Vinc",       0.0 ) / scaling->V;
     // Initial thermal perturbation
@@ -1178,13 +1180,14 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->diffuse_X       = ReadInt2( fin, "diffuse_X",     0 );              // 0 or 1
     model->diffuse_avg     = ReadInt2( fin, "diffuse_avg",   0 );              // 0: arithmetic mean - 1: harmonic mean - 2: geometric mean
     model->diffusion_length= ReadDou2( fin, "diffusion_length",  0.0 ) / scaling->L;
-
+    model->Nb_phases       = ReadInt2( fin, "Nb_phases",   0 );              // 0: arithmetic mean - 1: harmonic mean - 2:
     // Gravity
     model->gx              = ReadDou2( fin, "gx",  0.0 ) / scaling->a;
     model->gz              = ReadDou2( fin, "gz",  0.0 ) / scaling->a;
 
     // Material properties
-    model->Nb_phases = materials->Nb_phases =  ReadInt2( fin, "Nb_phases", 0 );
+    materials->Nb_phases = ReadInt2( fin, "Nb_phases", 0 );
+    printf("\nMaterials max phases = %d\nModel max phases = %d\n",materials->Nb_phases,model->Nb_phases);
     for ( k=0; k<materials->Nb_phases; k++) {
         // Read general parameters
         materials->rho[k]  = ReadMatProps( fin, "rho", k,   2700.0 )  / scaling->rho;
@@ -1214,7 +1217,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         materials->Qpwl[k]  = ReadMatProps( fin, "Qpwl",k,    0.0  );//   / scaling->J;
         materials->pref_pwl[k] = ReadMatProps( fin, "pref_pwl",k,    1.0 );    // weakening prefactor for power law
         materials->gs[k]    = ReadMatProps( fin, "gs",    k,    0.0   );
-        materials->gs_ref[k]= ReadMatProps( fin, "gs_ref" ,k,  2.0e-3  ) /scaling->L;
+        materials->gs_ref[k]= ReadMatProps( fin, "gs_ref" ,k,  2.0e-3  ) /scaling->L; // Schierjott et al. 2020 have determined 1-3 mm for the upper mantle (120-660km)
         // Strain softening
         materials->coh_soft[k]   = (int)ReadMatProps( fin, "coh_soft",   k,    0.0   );
         materials->phi_soft[k]   = (int)ReadMatProps( fin, "phi_soft",   k,    0.0   );
@@ -1268,7 +1271,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
         printf("rho    = %2.2e kg/m^3     mu = %2.2e Pa\n", materials->rho[k]*scaling->rho, materials->mu[k]*scaling->S );
         printf("Cv     = %2.2e J/kg/K      k = %2.2e W/m/K      Qr = %2.2e W/m3\n", materials->Cv[k]*scaling->Cv, materials->k[k]*scaling->k, materials->Qr[k]*(scaling->W / pow(scaling->L,3)) );
         printf("C      = %2.2e Pa        phi = %2.2e deg      Slim = %2.2e Pa\n",  materials->C[k]*scaling->S, materials->phi[k]*180/M_PI, materials->Slim[k]*scaling->S );
-        printf("alp    = %2.2e 1/T        T0 = %2.2e K         bet = %2.2e 1/Pa       P0 = %2.2e Pa       drho = %2.2e kg/m^3 \n", materials->alp[k]*(1/scaling->T), materials->T0[k]*(scaling->T), materials->bet[k]*(1/scaling->S), materials->P0[k]*(scaling->S), materials->drho[k]*scaling->rho );
+        printf("alp    = %2.2e 1/T        T0 = %2.2e K         bet = %2.2e 1/Pa       P0 = %2.2e Pa       drho = %2.2e kg/m^3       gs_ref = %2.2e m\n", materials->alp[k]*(1/scaling->T), materials->T0[k]*(scaling->T), materials->bet[k]*(1/scaling->S), materials->P0[k]*(scaling->S), materials->drho[k]*scaling->rho, materials->gs_ref[k]*scaling->L );
         printf("prefactor for power-law: %2.2e\n", materials->pref_pwl[k]);
                  printf("C_end    = %2.2e Pa        Phi_end = %2.2e deg         pls_start = %2.2e        pls_end = %2.2e \n", materials->C_end[k]*scaling->S, materials->phi_end[k]*180/M_PI, materials->pls_start[k],  materials->pls_end[k] );
         printf("eta0_vp   = %2.2e  Pa.s^(1/n)         n_vp   = %2.2e\n", materials->eta_vp[k]* (scaling->S*pow(scaling->t,1.0/materials->n_vp[k])) , materials->n_vp[k]);

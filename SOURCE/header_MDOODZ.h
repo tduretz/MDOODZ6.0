@@ -130,7 +130,7 @@ struct _params {
     int nT, nE, nd, def_maps;
     double Pn, Tmin, Tmax, Emin, Emax, dmin, dmax, PrBG;
     // Surface processes
-    double surf_diff, surf_sedirate, surf_baselev, surf_Winc, surf_Vinc;
+    double surf_diff, surf_sedirate, surf_baselev, surf_Winc, surf_Vinc, surf_erorate, surf_erolev;
     // Initial thermal perturbation
     double therm_pert_x0, therm_pert_z0, therm_pert_dT, therm_pert_rad, cooling_time;
     // For rheological database...
