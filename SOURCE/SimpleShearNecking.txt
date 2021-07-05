@@ -1,5 +1,5 @@
 **** RESTART ****/
-istep =00200
+istep =00110
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -52,7 +52,8 @@ shear_heat      = 1
 adiab_heat      = 1
 isPl_soft       = 0
 surf_processes  = 0
-initial_noise   = 1
+initial_noise   = 0
+IncrementalUpdateGrid = 0
  
 /**** SETUP DEPENDANT ****/
 shear_style     = 1

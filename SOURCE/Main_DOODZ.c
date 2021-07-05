@@ -411,12 +411,11 @@ int main( int nargs, char *args[] ) {
         printf("*************************************\n");
         
         // Write initial output
-#ifndef _VG_
         if ( writer == 1 ) {
             WriteOutputHDF5( &mesh, &particles, &topo, &topo_chain, model, "Output",  materials, scaling );
             if ( model.write_markers == 1 ) WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particles",  materials, scaling );
         }
-#endif
+
         // Set initial stresses and pressure to zero
         //        Initialise1DArrayDouble( particles.X,      particles.Nb_part, 0.0 ); // set X to zero for the first time step
         //        Initialise1DArrayDouble( particles.P,      particles.Nb_part, 0.0 ); // now dynamic pressure...

@@ -1031,6 +1031,10 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
 
     // Output
     *writer                = ReadInt2( fin, "writer",          0 );
+    if (*writer<0 || *writer>1) {
+        printf("'writer' should be set to 1 or 0\n Exiting...\n");
+        exit(1);
+    }
     *writer_step           = ReadInt2( fin, "writer_step",     1 );
     model->write_markers   = ReadInt2( fin, "writer_markers",  0 );
     model->write_debug     = ReadInt2( fin, "writer_debug",    0 );
@@ -1114,7 +1118,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->UnsplitDiffReac = ReadInt2( fin, "UnsplitDiffReac",0 ); // Unsplit diffusion reaction
     model->VolChangeReac   = ReadInt2( fin, "VolChangeReac",  0 ); // Turns on volume change due to reaction if 1
     model->Plith_trick     = ReadInt2( fin, "Plith_trick", 0 );
-    model->IncrementalUpdateGrid     = ReadInt2( fin, "IncrementalUpdateGrid", 1);
+    model->IncrementalUpdateGrid     = ReadInt2( fin, "IncrementalUpdateGrid", 0);
     model->DirectNeighbour           = ReadInt2( fin, "DirectNeighbour", 0);
     model->Reseed          = ReadInt2( fin, "Reseed",          1); // Activates reseeding / particle injection
     model->ConservInterp   = ReadInt2( fin, "ConservInterp",   0); // Activates Taras conservative interpolation
