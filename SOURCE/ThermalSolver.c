@@ -239,25 +239,25 @@ cs_di* TransposeA( cholmod_common *c, double *a, int *ia, int *ja, int n, int nn
   Ac  = cs_di_compress( &A );
 
   printf("Compressed A");
-  printf("Ac.nzmax = %i\n", Ac.nzmax);
-  printf("Ac.nz = %i\n",Ac.nz);
-  printf("Ac.m = %i\n", Ac.m);
-  printf("Ac.n = %i\n", Ac.n);
-  printf("Ac.p = %i\n", Ac.p);
-  printf("Ac.i = %i\n", Ac.i);
-  printf("Ac.x = %f\n", Ac.x);
+  printf("Ac->nzmax = %i\n", Ac->nzmax);
+  printf("Ac->nz = %i\n",Ac->nz);
+  printf("Ac->m = %i\n", Ac->m);
+  printf("Ac->n = %i\n", Ac->n);
+  printf("Ac->p = %i\n", Ac->p);
+  printf("Ac->i = %i\n", Ac->i);
+  printf("Ac->x = %f\n", Ac->x);
 
   cs_di *At;
   At  = cs_di_transpose( Ac, 1 );
 
   printf("Transposed Ac");
-  printf("At.nzmax = %i\n", At.nzmax);
-  printf("At.nz = %i\n",At.nz);
-  printf("At.m = %i\n", At.m);
-  printf("At.n = %i\n", At.n);
-  printf("At.p = %i\n", At.p);
-  printf("At.i = %i\n", At.i);
-  printf("At.x = %f\n", At.x);
+  printf("At->nzmax = %i\n", At->nzmax);
+  printf("At->nz = %i\n",At->nz);
+  printf("At->m = %i\n", At->m);
+  printf("At->n = %i\n", At->n);
+  printf("At->p = %i\n", At->p);
+  printf("At->i = %i\n", At->i);
+  printf("At->x = %f\n", At->x);
 
   DoodzFree( A.p );
   DoodzFree( A.x );
