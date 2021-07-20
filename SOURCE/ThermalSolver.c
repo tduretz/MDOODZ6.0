@@ -191,34 +191,79 @@ void copy_cholmod_to_cs_matrix1( cholmod_sparse* Acm, cs* Ac ) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 cs_di* TransposeA( cholmod_common *c, double *a, int *ia, int *ja, int n, int nnz ) {
+  clock_t t_omp;
 
-    cs_di  A, *Ac;
-    clock_t t_omp;
-    cs_di *At;
+  printf("breaking down TransposeA function\n");
+  printf("a = %f\n", *a);
+  printf("ia = %i\n", *ia);
+  printf("ja = %i\n", *ja);
+  printf("n = %i\n", *n);
+  printf("nnz = %i\n", *nnz);
 
-    // Prepare A
-    A.nzmax = nnz;
-    A.nz    = nnz;
-    A.m     = n;
-    A.n     = A.m;
-    A.p     = DoodzCalloc( A.nzmax, sizeof(int) );
-    A.i     = DoodzCalloc( A.nzmax, sizeof(int) );
-    A.x     = DoodzCalloc( A.nzmax, sizeof(double) );
-    DecompressCSRtoTriplets( A.m, ia, A.i );
-    ArrayEqualArrayI( A.p, ja,  A.nzmax );
-    ArrayEqualArray(  A.x, a,  A.nzmax );
-    Ac  = cs_di_compress( &A );
 
-    cs_di *AAt;
-    At  = cs_di_transpose( Ac, 1 );
 
-    DoodzFree( A.p );
-    DoodzFree( A.x );
-    DoodzFree( A.i );
-    cs_spfree(Ac);
-    // cs_spfree(At);
+  // Prepare A
+  cs_di  A;
+  A.nzmax = nnz;
+  A.nz    = nnz;
+  A.m     = n;
+  A.n     = A.m;
+  A.p     = DoodzCalloc( A.nzmax, sizeof(int) );
+  A.i     = DoodzCalloc( A.nzmax, sizeof(int) );
+  A.x     = DoodzCalloc( A.nzmax, sizeof(double) );
 
-return At;
+
+  printf("Prepared A");
+  printf("A.nzmax = %i\n", A.nzmax);
+  printf("A.nz = %i\n",A.nz);
+  printf("A.m = %i\n", A.m);
+  printf("A.n = %i\n", A.n);
+  printf("A.p = %i\n", A.p);
+  printf("A.i = %i\n", A.i);
+  printf("A.x = %f\n", A.x);
+  
+  DecompressCSRtoTriplets( A.m, ia, A.i );
+  ArrayEqualArrayI( A.p, ja,  A.nzmax );
+  ArrayEqualArray(  A.x, a,  A.nzmax );
+
+  printf("Did something with A");
+  printf("A.nzmax = %i\n", A.nzmax);
+  printf("A.nz = %i\n",A.nz);
+  printf("A.m = %i\n", A.m);
+  printf("A.n = %i\n", A.n);
+  printf("A.p = %i\n", A.p);
+  printf("A.i = %i\n", A.i);
+  printf("A.x = %f\n", A.x);
+
+  cs_di *Ac;
+  Ac  = cs_di_compress( &A );
+
+  printf("Compressed A");
+  printf("Ac.nzmax = %i\n", Ac.nzmax);
+  printf("Ac.nz = %i\n",Ac.nz);
+  printf("Ac.m = %i\n", Ac.m);
+  printf("Ac.n = %i\n", Ac.n);
+  printf("Ac.p = %i\n", Ac.p);
+  printf("Ac.i = %i\n", Ac.i);
+  printf("Ac.x = %f\n", Ac.x);
+
+  cs_di *At;
+  At  = cs_di_transpose( Ac, 1 );
+
+  printf("Transposed Ac");
+  printf("At.nzmax = %i\n", At.nzmax);
+  printf("At.nz = %i\n",At.nz);
+  printf("At.m = %i\n", At.m);
+  printf("At.n = %i\n", At.n);
+  printf("At.p = %i\n", At.p);
+  printf("At.i = %i\n", At.i);
+  printf("At.x = %f\n", At.x);
+
+  DoodzFree( A.p );
+  DoodzFree( A.x );
+  DoodzFree( A.i );
+  cs_spfree(Ac);
+  return At;
 }
 
 
