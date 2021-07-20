@@ -194,9 +194,9 @@ cs_di* TransposeA( cholmod_common *c, double *a, int *ia, int *ja, int n, int nn
   clock_t t_omp;
 
   printf("breaking down TransposeA function\n");
-  printf("a = %f\n", *a);
-  printf("ia = %i\n", *ia);
-  printf("ja = %i\n", *ja);
+  printf("*a = %f\n", *a);
+  printf("*ia = %i\n", *ia);
+  printf("*ja = %i\n", *ja);
   printf("n = %i\n", n);
   printf("nnz = %i\n", nnz);
 
@@ -215,49 +215,73 @@ cs_di* TransposeA( cholmod_common *c, double *a, int *ia, int *ja, int n, int nn
 
   printf("Prepared A");
   printf("A.nzmax = %i // maximum number of entries \n", A.nzmax);
-  printf("A.nz = %i\n // of entries in triplet matrix, -1 for compressed-col",A.nz);
-  printf("A.m = %i\n // number of rows", A.m);
-  printf("A.n = %i\n // number of columns", A.n);
-  printf("A.p = %i\n // column pointers (size n+1) or col indices (size nzmax)", *(A.p));
-  printf("A.i = %i\n // row indices, size nzmax", *(A.i));
-  printf("A.x = %f\n // numerical values, size nzmax", *(A.x));
+  printf("A.nz = %i // of entries in triplet matrix, -1 for compressed-col\n",A.nz);
+  printf("A.m = %i // number of rows\n", A.m);
+  printf("A.n = %i // number of columns\n", A.n);
+  printf("A.p = %i // column pointers (size n+1) or col indices (size nzmax)\n", *(A.p));
+  printf("A.i = %i // row indices, size nzmax\n", *(A.i));
+  printf("A.x = %f // numerical values, size nzmax\n", *(A.x));
   
   DecompressCSRtoTriplets( A.m, ia, A.i );
+  printf("DecompressCSRtoTriplets");
+  printf("A.nzmax = %i // maximum number of entries \n", A.nzmax);
+  printf("A.nz = %i // of entries in triplet matrix, -1 for compressed-col\n",A.nz);
+  printf("A.m = %i // number of rows\n", A.m);
+  printf("A.n = %i // number of columns\n", A.n);
+  printf("A.p = %i // column pointers (size n+1) or col indices (size nzmax)\n", *(A.p));
+  printf("A.i = %i // row indices, size nzmax\n", *(A.i));
+  printf("A.x = %f // numerical values, size nzmax\n", *(A.x));
   ArrayEqualArrayI( A.p, ja,  A.nzmax );
+  printf("ArrayEqualArrayI( A.p, ja,  A.nzmax )");
+  printf("A.nzmax = %i // maximum number of entries \n", A.nzmax);
+  printf("A.nz = %i // of entries in triplet matrix, -1 for compressed-col\n",A.nz);
+  printf("A.m = %i // number of rows\n", A.m);
+  printf("A.n = %i // number of columns\n", A.n);
+  printf("A.p = %i // column pointers (size n+1) or col indices (size nzmax)\n", *(A.p));
+  printf("A.i = %i // row indices, size nzmax\n", *(A.i));
+  printf("A.x = %f // numerical values, size nzmax\n", *(A.x));
   ArrayEqualArray(  A.x, a,  A.nzmax );
+  printf("ArrayEqualArray(  A.x, a,  A.nzmax )");
+  printf("A.nzmax = %i // maximum number of entries \n", A.nzmax);
+  printf("A.nz = %i // of entries in triplet matrix, -1 for compressed-col\n",A.nz);
+  printf("A.m = %i // number of rows\n", A.m);
+  printf("A.n = %i // number of columns\n", A.n);
+  printf("A.p = %i // column pointers (size n+1) or col indices (size nzmax)\n", *(A.p));
+  printf("A.i = %i // row indices, size nzmax\n", *(A.i));
+  printf("A.x = %f // numerical values, size nzmax\n", *(A.x));
 
   printf("Did something with A");
   printf("A.nzmax = %i // maximum number of entries \n", A.nzmax);
-  printf("A.nz = %i\n // of entries in triplet matrix, -1 for compressed-col",A.nz);
-  printf("A.m = %i\n // number of rows", A.m);
-  printf("A.n = %i\n // number of columns", A.n);
-  printf("A.p = %i\n // column pointers (size n+1) or col indices (size nzmax)", *(A.p));
-  printf("A.i = %i\n // row indices, size nzmax", *(A.i));
-  printf("A.x = %f\n // numerical values, size nzmax", *(A.x));
+  printf("A.nz = %i // of entries in triplet matrix, -1 for compressed-col\n",A.nz);
+  printf("A.m = %i // number of rows\n", A.m);
+  printf("A.n = %i // number of columns\n", A.n);
+  printf("A.p = %i // column pointers (size n+1) or col indices (size nzmax)\n", *(A.p));
+  printf("A.i = %i // row indices, size nzmax\n", *(A.i));
+  printf("A.x = %f // numerical values, size nzmax\n", *(A.x));
 
   cs_di *Ac;
   Ac  = cs_di_compress( &A );
 
   printf("Compressed A");
-  printf("Ac->nzmax = %i // maximum number of entries \n", Ac->nzmax);
-  printf("Ac->nz = %i\n // of entries in triplet matrix, -1 for compressed-col", Ac->nz);
-  printf("Ac->m = %i\n // number of rows", Ac->m);
-  printf("Ac->n = %i\n // number of columns", Ac->n);
-  printf("Ac->p = %i\n // column pointers (size n+1) or col indices (size nzmax)", *(Ac->p));
-  printf("Ac->i = %i\n // row indices, size nzmax", *(Ac->i));
-  printf("Ac->x = %f\n // numerical values, size nzmax", *(Ac->x));
+  printf("Ac->nzmax = %i // maximum number of entries\n", Ac->nzmax);
+  printf("Ac->nz = %i // of entries in triplet matrix, -1 for compressed-col\n", Ac->nz);
+  printf("Ac->m = %i // number of rows\n", Ac->m);
+  printf("Ac->n = %i // number of columns\n", Ac->n);
+  printf("Ac->p = %i // column pointers (size n+1) or col indices (size nzmax)\n", *(Ac->p));
+  printf("Ac->i = %i // row indices, size nzmax\n", *(Ac->i));
+  printf("Ac->x = %f // numerical values, size nzmax\n", *(Ac->x));
 
   cs_di *At;
   At  = cs_di_transpose( Ac, 1 );
 
   printf("Transposed Ac");
   printf("At->nzmax = %i // maximum number of entries \n", At->nzmax);
-  printf("At->nz = %i\n // of entries in triplet matrix, -1 for compressed-col",At->nz);
-  printf("At->m = %i\n // number of rows", At->m);
-  printf("At->n = %i\n // number of columns", At->n);
-  printf("At->p = %i\n // column pointers (size n+1) or col indices (size nzmax)", *(At->p));
-  printf("At->i = %i\n // row indices, size nzmax", *(At->i));
-  printf("At->x = %f\n // numerical values, size nzmax", *(At->x));
+  printf("At->nz = %i // of entries in triplet matrix, -1 for compressed-col\n",At->nz);
+  printf("At->m = %i // number of rows\n", At->m);
+  printf("At->n = %i // number of columns\n", At->n);
+  printf("At->p = %i // column pointers (size n+1) or col indices (size nzmax)\n", *(At->p));
+  printf("At->i = %i // row indices, size nzmax\n", *(At->i));
+  printf("At->x = %f // numerical values, size nzmax\n", *(At->x));
 
   DoodzFree( A.p );
   DoodzFree( A.x );
