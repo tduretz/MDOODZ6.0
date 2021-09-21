@@ -839,11 +839,11 @@ int main( int nargs, char *args[] ) {
                     WriteOutputHDF5Particles( &mesh, &particles, &topo, &topo_chain, &topo_ini, &topo_chain_ini, model, "Particles_BeforeSolve", materials, scaling );
                 }
                 
-                // Build discrete system of equations - MATRIX
+                // Build discrete system of equations - Linearised Picard
                 if ( model.decoupled_solve == 0 ) BuildStokesOperator           ( &mesh, model, 0, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, 1 );
                 if ( model.decoupled_solve == 1 ) BuildStokesOperatorDecoupled  ( &mesh, model, 0, mesh.p_corr, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, 1 );
                 
-                
+                // Build discrete system of equations - Jacobian
                 if (model.aniso == 0) {
                     if ( model.Newton          == 1  && model.num_deriv==1) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling );
                     if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
