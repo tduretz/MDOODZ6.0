@@ -268,13 +268,13 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
 
     fread( particles->rho, s3, particles->Nb_part, file);
 
-    fread( particles->ddivth, s3, particles->Nb_part, file);
-    fread( particles->drho,   s3, particles->Nb_part, file);
-    fread( particles->dX,     s3, particles->Nb_part, file);
-    fread( particles->dphi,   s3, particles->Nb_part, file);
-    fread( particles->dd,     s3, particles->Nb_part, file);
-    fread( particles->dP,     s3, particles->Nb_part, file);
-    fread( particles->dT,     s3, particles->Nb_part, file);
+//    fread( particles->ddivth, s3, particles->Nb_part, file);
+//    fread( particles->drho,   s3, particles->Nb_part, file);
+//    fread( particles->dX,     s3, particles->Nb_part, file);
+//    fread( particles->dphi,   s3, particles->Nb_part, file);
+//    fread( particles->dd,     s3, particles->Nb_part, file);
+//    fread( particles->dP,     s3, particles->Nb_part, file);
+//    fread( particles->dT,     s3, particles->Nb_part, file);
     
     fread( mesh->p0_n, s3, (Nx-1)*(Nz-1), file );
     fread( mesh->T0_n, s3, (Nx-1)*(Nz-1), file );
@@ -398,12 +398,12 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
             particles->Tmax[k]/= scaling.T;
             particles->Pmax[k]/= scaling.S;
         }
-        particles->d[k]      /= scaling.L;
-        particles->ddivth[k] /= scaling.E;
-        particles->drho[k]   /= scaling.rho;
-        particles->dd[k]     /= scaling.L;
-        particles->dP[k]     /= scaling.S;
-        particles->dT[k]     /= scaling.T;
+//        particles->d[k]      /= scaling.L;
+//        particles->ddivth[k] /= scaling.E;
+//        particles->drho[k]   /= scaling.rho;
+//        particles->dd[k]     /= scaling.L;
+//        particles->dP[k]     /= scaling.S;
+//        particles->dT[k]     /= scaling.T;
     }
 
     // Grid data
@@ -559,11 +559,11 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             particles->Tmax[k]*= scaling.T;
             particles->Pmax[k]*= scaling.S;
         }
-        particles->ddivth[k] *= scaling.E;
-        particles->drho[k]   *= scaling.rho;
-        particles->dd[k]     *= scaling.L;
-        particles->dP[k]     *= scaling.S;
-        particles->dT[k]     *= scaling.T;
+//        particles->ddivth[k] *= scaling.E;
+//        particles->drho[k]   *= scaling.rho;
+//        particles->dd[k]     *= scaling.L;
+//        particles->dP[k]     *= scaling.S;
+//        particles->dT[k]     *= scaling.T;
     }
 
     // grid data
@@ -766,13 +766,13 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     
     fwrite( particles->rho, s3, particles->Nb_part, file);
 
-    fwrite( particles->ddivth, s3, particles->Nb_part, file);
-    fwrite( particles->drho,   s3, particles->Nb_part, file);
-    fwrite( particles->dX,     s3, particles->Nb_part, file);
-    fwrite( particles->dphi,   s3, particles->Nb_part, file);
-    fwrite( particles->dd,     s3, particles->Nb_part, file);
-    fwrite( particles->dP,     s3, particles->Nb_part, file);
-    fwrite( particles->dT,     s3, particles->Nb_part, file);
+//    fwrite( particles->ddivth, s3, particles->Nb_part, file);
+//    fwrite( particles->drho,   s3, particles->Nb_part, file);
+//    fwrite( particles->dX,     s3, particles->Nb_part, file);
+//    fwrite( particles->dphi,   s3, particles->Nb_part, file);
+//    fwrite( particles->dd,     s3, particles->Nb_part, file);
+//    fwrite( particles->dP,     s3, particles->Nb_part, file);
+//    fwrite( particles->dT,     s3, particles->Nb_part, file);
     
     fwrite( mesh->p0_n, s3, (Nx-1)*(Nz-1), file );
     fwrite( mesh->T0_n, s3, (Nx-1)*(Nz-1), file );
@@ -896,11 +896,11 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
             particles->Tmax[k]/= scaling.T;
             particles->Pmax[k]/= scaling.S;
         }
-        particles->ddivth[k] /= scaling.E;
-        particles->drho[k]   /= scaling.rho;
-        particles->dd[k]     /= scaling.L;
-        particles->dP[k]     /= scaling.S;
-        particles->dT[k]     /= scaling.T;
+//        particles->ddivth[k] /= scaling.E;
+//        particles->drho[k]   /= scaling.rho;
+//        particles->dd[k]     /= scaling.L;
+//        particles->dP[k]     /= scaling.S;
+//        particles->dT[k]     /= scaling.T;
     }
 
     for (k=0; k<Nx; k++) {
@@ -1031,6 +1031,10 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
 
     // Output
     *writer                = ReadInt2( fin, "writer",          0 );
+    if (*writer<0 || *writer>1) {
+        printf("'writer' should be set to 1 or 0\n Exiting...\n");
+        exit(1);
+    }
     *writer_step           = ReadInt2( fin, "writer_step",     1 );
     model->write_markers   = ReadInt2( fin, "writer_markers",  0 );
     model->write_debug     = ReadInt2( fin, "writer_debug",    0 );
@@ -1114,7 +1118,6 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->UnsplitDiffReac = ReadInt2( fin, "UnsplitDiffReac",0 ); // Unsplit diffusion reaction
     model->VolChangeReac   = ReadInt2( fin, "VolChangeReac",  0 ); // Turns on volume change due to reaction if 1
     model->Plith_trick     = ReadInt2( fin, "Plith_trick", 0 );
-    model->IncrementalUpdateGrid     = ReadInt2( fin, "IncrementalUpdateGrid", 1);
     model->DirectNeighbour           = ReadInt2( fin, "DirectNeighbour", 0);
     model->Reseed          = ReadInt2( fin, "Reseed",          1); // Activates reseeding / particle injection
     model->ConservInterp   = ReadInt2( fin, "ConservInterp",   0); // Activates Taras conservative interpolation

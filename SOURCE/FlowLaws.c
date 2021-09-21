@@ -816,8 +816,8 @@ void ReadDataGSE( mat_prop* mat, params* model, int k, int number, scale* scalin
             printf("Calcite paleowattmeter - Austin & Evans (2002); Covey-Crump (1997):\n");
             mat->ppzm[k] = 3.0;
             mat->Kpzm[k] = 2.5e9* pow(10.0,-6.0*mat->ppzm[k]) / (pow(scaling->L, mat->ppzm[k]) / scaling->t);
-            mat->Qpzm[k] = 175.0e3                          / scaling->J;
-            mat->Gpzm[k] = 1                              / (scaling->J * pow(scaling->L, -2.0) );
+            mat->Qpzm[k] = 175.0e3                            / scaling->J;
+            mat->Gpzm[k] = 1                                  / (scaling->J * pow(scaling->L, -2.0) );
             mat->cpzm[k] = M_PI;
             mat->Lpzm[k] = 0.1;
             success      = 1;
@@ -851,8 +851,8 @@ void ReadDataGSE( mat_prop* mat, params* model, int k, int number, scale* scalin
             printf("Olivine  - Thielmann et al., (2015):\n");
             mat->ppzm[k] = 2.0;
             mat->Kpzm[k] = 607.0 * pow(10.0, -6.0*mat->ppzm[k]) / (pow(scaling->L, mat->ppzm[k]) / scaling->t);
-            mat->Qpzm[k] = 200.0e3                            / scaling->J;
-            mat->Gpzm[k] = 0.1                              / (scaling->J * pow(scaling->L, -2.0) );
+            mat->Qpzm[k] = 200.0e3                              / scaling->J;
+            mat->Gpzm[k] = 0.1                                  / (scaling->J * pow(scaling->L, -2.0) );
             mat->cpzm[k] = 1.2197; // = 1/Fr from Rozel's papers
             mat->Lpzm[k] = 0.1;
             success      = 1;
@@ -862,13 +862,24 @@ void ReadDataGSE( mat_prop* mat, params* model, int k, int number, scale* scalin
             printf("Olivine - pyroxene mixture - Thielmann et al., (2015):\n");
             mat->ppzm[k] = 4.0;
             mat->Kpzm[k] = 497075.0 * pow(10, -6*mat->ppzm[k]) / (pow(scaling->L, mat->ppzm[k]) / scaling->t);
-            mat->Qpzm[k] = 300.0e3                            / scaling->J;
-            mat->Gpzm[k] = 0.1                              / (scaling->J * pow(scaling->L, -2.0) );
+            mat->Qpzm[k] = 300.0e3                             / scaling->J;
+            mat->Gpzm[k] = 0.1                                 / (scaling->J * pow(scaling->L, -2.0) );
             mat->cpzm[k] = 1.2197; // = 1/Fr from Rozel's papers
             mat->Lpzm[k] = 0.1;
             success      = 1;
             break;
-
+            
+        case 42 :
+            printf("Olivine - Speciale et al., (2020):\n");
+            mat->ppzm[k] = 3.2;
+            mat->Kpzm[k] = 1800.0 * pow(10, -6*mat->ppzm[k]) / (pow(scaling->L, mat->ppzm[k]) / scaling->t);
+            mat->Qpzm[k] = 620.0e3                           / scaling->J;
+            mat->Vpzm[k] = 5e-6                              / pow(scaling->L,3.0);
+            mat->Gpzm[k] = 1.4                               / (scaling->J * pow(scaling->L, -2.0) );
+            mat->cpzm[k] = 3.1415; // = 1/Fr from Rozel's papers
+            mat->Lpzm[k] = 0.01;
+            success      = 1;
+            break;
     }
     
     // Scaling done above

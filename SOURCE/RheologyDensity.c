@@ -2558,249 +2558,249 @@ firstprivate( model )
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void ComputeIncrementsOnParticles( grid* mesh, markers* particles, params* model, mat_prop* materials, scale *scaling ) {
-
-    int k;
-    double *txxm0, *tzzm0, *txzm0, *nxm0, *nzm0, *dm0, *Xm0, *phim0, *Pm0, *Tm0, *divthm0, *rhom0;
-    int Nx = mesh->Nx;
-    int Nz = mesh->Nz;
-    
-//    CheckSym( mesh->p0_n, 1.0, mesh->Nx-1, mesh->Nz-1, "mesh->p0_n ComputeIncrementsOnParticles", 0, 1  );
-//    CheckSym( mesh->p0_n, 1.0, mesh->Nx-1, mesh->Nz-1, "mesh->p0_n ComputeIncrementsOnParticles", 0, 1  );
-
-
-
-    txxm0   = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-    tzzm0   = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-    txzm0   = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-    dm0     = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-    Xm0     = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-    phim0   = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-    Pm0     = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-    Tm0     = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-    divthm0 = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-    rhom0   = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-
-    // Interpolate old fields to new marker locations
-    Interp_Grid2P_centroids2( *particles, txxm0, mesh, mesh->sxxd0, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
-    Interp_Grid2P_centroids2( *particles, tzzm0, mesh, mesh->szzd0, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
-    Interp_Grid2P(           *particles, txzm0, mesh, mesh->sxz0 , mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type        );
-
-    if ( model->aniso == 1 ) {
-        nxm0  = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-        nzm0  = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-        Interp_Grid2P_centroids2( *particles, nxm0, mesh, mesh->nx0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
-        Interp_Grid2P_centroids2( *particles, nzm0, mesh, mesh->nz0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
-    }
-
-    Interp_Grid2P_centroids2( *particles, dm0, mesh, mesh->d0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
-    Interp_Grid2P_centroids2( *particles, Xm0, mesh, mesh->X0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
-    Interp_Grid2P_centroids2( *particles, phim0, mesh, mesh->phi0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
-    Interp_Grid2P_centroids2( *particles, rhom0, mesh, mesh->rho0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
-    Interp_Grid2P_centroids2( *particles, divthm0, mesh, mesh->divth0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
-    Interp_Grid2P_centroids2( *particles, Pm0, mesh, mesh->p0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
-    Interp_Grid2P_centroids2( *particles, Tm0, mesh, mesh->T0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
-
-    // Compute total changes on markers
-#pragma omp parallel for shared ( particles, txxm0, tzzm0, txzm0, nxm0, nzm0, dm0, Xm0, phim0, Pm0, Tm0, divthm0 ) \
-private ( k )              \
-firstprivate( model, materials )
-    for ( k=0; k<particles->Nb_part; k++ ) {
-
-        if (particles->phase[k] != -1) {
-
-
-            if (model->StressUpdate==0) {
-            particles->dsxxd[k]  =  particles->sxxd[k] - txxm0[k];
-            particles->dszzd[k]  =  particles->szzd[k] - tzzm0[k];
-            }
-            if (model->StressUpdate==1) {
-                particles->dsxxd[k]  =  particles->sxxd[k] - (txxm0[k]-Pm0[k]);
-                particles->dszzd[k]  =  particles->szzd[k] - (tzzm0[k]-Pm0[k]);
-                particles->dsyy[k]   =  particles->syy[k] - ( -(txxm0[k]+tzzm0[k])-Pm0[k]);
-            }
-            particles->dsxz[k]   =  particles->sxz[k]  - txzm0[k];
-            if ( model->aniso == 1 ) particles->dnx[k] = particles->nx[k] - nxm0[k];
-            if ( model->aniso == 1 ) particles->dnz[k] = particles->nz[k] - nzm0[k];
-            particles->dd[k]     =  particles->d[k]     - dm0[k];
-            particles->dX[k]     =  particles->X[k]     - Xm0[k];
-            particles->dphi[k]   =  particles->phi[k]   - phim0[k];
-            particles->dP[k]     =  particles->P[k]     - Pm0[k];
-            particles->dT[k]     =  particles->T[k]     - Tm0[k];
-            // On the fly - compute thermal divergence rate using total dT
-            particles->divth[k]  = materials->alp[particles->phase[k]] * particles->dT[k] / model->dt;
-            particles->ddivth[k] =  particles->divth[k] - divthm0[k];
-            particles->drho[k]   =  particles->rho[k]   - rhom0[k];
-
-        }
-    }
-
-    DoodzFree(txxm0);
-    DoodzFree(tzzm0);
-    DoodzFree(txzm0);
-    DoodzFree(dm0);
-    DoodzFree(Xm0);
-    DoodzFree(phim0);
-    DoodzFree(Tm0);
-    DoodzFree(divthm0);
-    DoodzFree(Pm0);
-    DoodzFree(rhom0);
-
-    if ( model->aniso == 1 ) {
-        DoodzFree(nxm0);
-        DoodzFree(nzm0);
-    }
-
-}
+//void ComputeIncrementsOnParticles( grid* mesh, markers* particles, params* model, mat_prop* materials, scale *scaling ) {
+//
+//    int k;
+//    double *txxm0, *tzzm0, *txzm0, *nxm0, *nzm0, *dm0, *Xm0, *phim0, *Pm0, *Tm0, *divthm0, *rhom0;
+//    int Nx = mesh->Nx;
+//    int Nz = mesh->Nz;
+//
+////    CheckSym( mesh->p0_n, 1.0, mesh->Nx-1, mesh->Nz-1, "mesh->p0_n ComputeIncrementsOnParticles", 0, 1  );
+////    CheckSym( mesh->p0_n, 1.0, mesh->Nx-1, mesh->Nz-1, "mesh->p0_n ComputeIncrementsOnParticles", 0, 1  );
+//
+//
+//
+//    txxm0   = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+//    tzzm0   = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+//    txzm0   = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+//    dm0     = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+//    Xm0     = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+//    phim0   = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+//    Pm0     = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+//    Tm0     = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+//    divthm0 = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+//    rhom0   = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+//
+//    // Interpolate old fields to new marker locations
+//    Interp_Grid2P_centroids2( *particles, txxm0, mesh, mesh->sxxd0, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
+//    Interp_Grid2P_centroids2( *particles, tzzm0, mesh, mesh->szzd0, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
+//    Interp_Grid2P(           *particles, txzm0, mesh, mesh->sxz0 , mesh->xg_coord,  mesh->zg_coord, Nx  , Nz  , mesh->BCg.type        );
+//
+//    if ( model->aniso == 1 ) {
+//        nxm0  = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+//        nzm0  = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+//        Interp_Grid2P_centroids2( *particles, nxm0, mesh, mesh->nx0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
+//        Interp_Grid2P_centroids2( *particles, nzm0, mesh, mesh->nz0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model  );
+//    }
+//
+//    Interp_Grid2P_centroids2( *particles, dm0, mesh, mesh->d0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
+//    Interp_Grid2P_centroids2( *particles, Xm0, mesh, mesh->X0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
+//    Interp_Grid2P_centroids2( *particles, phim0, mesh, mesh->phi0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
+//    Interp_Grid2P_centroids2( *particles, rhom0, mesh, mesh->rho0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
+//    Interp_Grid2P_centroids2( *particles, divthm0, mesh, mesh->divth0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
+//    Interp_Grid2P_centroids2( *particles, Pm0, mesh, mesh->p0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
+//    Interp_Grid2P_centroids2( *particles, Tm0, mesh, mesh->T0_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCp.type, model );
+//
+//    // Compute total changes on markers
+//#pragma omp parallel for shared ( particles, txxm0, tzzm0, txzm0, nxm0, nzm0, dm0, Xm0, phim0, Pm0, Tm0, divthm0 ) \
+//private ( k )              \
+//firstprivate( model, materials )
+//    for ( k=0; k<particles->Nb_part; k++ ) {
+//
+//        if (particles->phase[k] != -1) {
+//
+//
+//            if (model->StressUpdate==0) {
+//            particles->dsxxd[k]  =  particles->sxxd[k] - txxm0[k];
+//            particles->dszzd[k]  =  particles->szzd[k] - tzzm0[k];
+//            }
+//            if (model->StressUpdate==1) {
+//                particles->dsxxd[k]  =  particles->sxxd[k] - (txxm0[k]-Pm0[k]);
+//                particles->dszzd[k]  =  particles->szzd[k] - (tzzm0[k]-Pm0[k]);
+//                particles->dsyy[k]   =  particles->syy[k] - ( -(txxm0[k]+tzzm0[k])-Pm0[k]);
+//            }
+//            particles->dsxz[k]   =  particles->sxz[k]  - txzm0[k];
+//            if ( model->aniso == 1 ) particles->dnx[k] = particles->nx[k] - nxm0[k];
+//            if ( model->aniso == 1 ) particles->dnz[k] = particles->nz[k] - nzm0[k];
+//            particles->dd[k]     =  particles->d[k]     - dm0[k];
+//            particles->dX[k]     =  particles->X[k]     - Xm0[k];
+//            particles->dphi[k]   =  particles->phi[k]   - phim0[k];
+//            particles->dP[k]     =  particles->P[k]     - Pm0[k];
+//            particles->dT[k]     =  particles->T[k]     - Tm0[k];
+//            // On the fly - compute thermal divergence rate using total dT
+//            particles->divth[k]  = materials->alp[particles->phase[k]] * particles->dT[k] / model->dt;
+//            particles->ddivth[k] =  particles->divth[k] - divthm0[k];
+//            particles->drho[k]   =  particles->rho[k]   - rhom0[k];
+//
+//        }
+//    }
+//
+//    DoodzFree(txxm0);
+//    DoodzFree(tzzm0);
+//    DoodzFree(txzm0);
+//    DoodzFree(dm0);
+//    DoodzFree(Xm0);
+//    DoodzFree(phim0);
+//    DoodzFree(Tm0);
+//    DoodzFree(divthm0);
+//    DoodzFree(Pm0);
+//    DoodzFree(rhom0);
+//
+//    if ( model->aniso == 1 ) {
+//        DoodzFree(nxm0);
+//        DoodzFree(nzm0);
+//    }
+//
+//}
 
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* materials, scale *scaling ) {
-
-    int Nx = mesh->Nx;
-    int Nz = mesh->Nz;
-    int Ncx = mesh->Nx-1;
-    int Ncz = mesh->Nz-1;
-    int c0, k1, l, k;
-    int    cent=1, vert=0, prop=1, interp=0;
-
-    double *dP     = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-    P2Mastah( model, *particles, particles->dP,     mesh, dP,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
-    ArrayPlusArray(  mesh->p0_n,     dP,     Ncx*Ncz );
-
-    // Elasticity - interpolate advected/rotated stresses
-    if  ( model->iselastic == 1 ) {
-
-        if (model->StressUpdate==0) {
-            double *dsxxd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-            double *dszzd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-            double *dsxz  = DoodzCalloc ( Nx*Nz,   sizeof(double));
-            P2Mastah( model, *particles, particles->dsxxd,     mesh, dsxxd,  mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
-            P2Mastah( model, *particles, particles->dszzd,     mesh, dszzd,  mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
-            P2Mastah( model, *particles, particles->dsxz,      mesh, dsxz,   mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
-
-            ArrayPlusArray(  mesh->sxxd0,  dsxxd, Ncx*Ncz );
-            ArrayPlusArray(  mesh->szzd0,  dszzd, Ncx*Ncz );
-            ArrayPlusArray(  mesh->sxz0,   dsxz,   Nx*Nz );
-            DoodzFree(dsxxd);
-            DoodzFree(dszzd);
-            DoodzFree(dsxz );
-        }
-        if (model->StressUpdate==1) {
-            double *dsxxd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-            double *dszzd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-            double *dsxz  = DoodzCalloc ( Nx*Nz,   sizeof(double));
-            double *dsyy = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-
-            P2Mastah( model, *particles, particles->dsxxd,     mesh, dsxxd,  mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
-            P2Mastah( model, *particles, particles->dszzd,     mesh, dszzd,  mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
-            P2Mastah( model, *particles, particles->dsxz,      mesh, dsxz,   mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
-            P2Mastah( model, *particles, particles->dsyy,      mesh, dsyy,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
-
-                for ( k1=0; k1<Ncx*Ncz; k1++ ) {
-                    k  = mesh->kp[k1];
-                    l  = mesh->lp[k1];
-                    c0 = k  + l*(Nx-1);
-
-                    if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
-                        dP[c0]         = -1.0/3.0*(dsxxd[c0] + dsyy[c0] + dszzd[c0] );
-                        dsxxd[c0]      =  dP[c0] + dsxxd[c0];
-                        dszzd[c0]      =  dP[c0] + dszzd[c0];
-                    }
-                }
-
-            ArrayPlusArray(  mesh->sxxd0,  dsxxd, Ncx*Ncz );
-            ArrayPlusArray(  mesh->szzd0,  dszzd, Ncx*Ncz );
-            ArrayPlusArray(  mesh->sxz0,   dsxz,   Nx*Nz );
-            DoodzFree(dsxxd);
-            DoodzFree(dszzd);
-            DoodzFree(dsxz );
-            DoodzFree(dsyy );
-        }
-    }
-    
-    // Interpolate to necessary locations for rheological computations...
-    InterpCentroidsToVerticesDouble( mesh->sxxd0, mesh->sxxd0_s, mesh, model );
-    InterpCentroidsToVerticesDouble( mesh->szzd0, mesh->szzd0_s, mesh, model );
-    InterpVerticesToCentroidsDouble( mesh->sxz0_n,  mesh->sxz0,  mesh, model );
-
-    // Director vector
-    if (model->aniso == 1 ) {
-        double *dnx_n = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-        double *dnz_n = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-        double *dnx_s = DoodzCalloc ( Nx*Nz,   sizeof(double));
-        double *dnz_s = DoodzCalloc ( Nx*Nz,   sizeof(double));
-        P2Mastah( model, *particles, particles->dnx,     mesh, dnx_n,  mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
-        P2Mastah( model, *particles, particles->dnz,     mesh, dnz_n,  mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
-        P2Mastah( model, *particles, particles->dnx,     mesh, dnx_s,  mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
-        P2Mastah( model, *particles, particles->dnz,     mesh, dnz_s,  mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
-        ArrayPlusArray(  mesh->nx0_n,  dnx_n, Ncx*Ncz );
-        ArrayPlusArray(  mesh->nx0_s,  dnx_s,   Nx*Nz );
-        ArrayPlusArray(  mesh->nz0_n,  dnz_n, Ncx*Ncz );
-        ArrayPlusArray(  mesh->nz0_s,  dnz_s,   Nx*Nz );
-        NormalizeDirector( mesh, mesh->nx0_n, mesh->nz0_n, mesh->nx0_s, mesh->nz0_s, model );
-        DoodzFree(dnx_n);
-        DoodzFree(dnz_n);
-        DoodzFree(dnx_s);
-        DoodzFree(dnz_s);
-    }
-
-    double *dT     = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-    double *ddivth = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-    double *dX_n   = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-    double *dX_s   = DoodzCalloc (   Nx*Nz, sizeof(double));
-    double *dd     = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-    double *dphi   = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-    double *drho   = DoodzCalloc ( Ncx*Ncz, sizeof(double));
-    
-    P2Mastah( model, *particles, particles->dT,     mesh, dT,     mesh->BCp.type,  1, 0, interp, cent, 1);
-    P2Mastah( model, *particles, particles->ddivth, mesh, ddivth, mesh->BCp.type,  1, 0, interp, cent, 1);
-    P2Mastah( model, *particles, particles->dd,     mesh, dd,     mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
-    P2Mastah( model, *particles, particles->dphi,   mesh, dphi,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
-    P2Mastah( model, *particles, particles->drho,   mesh, drho,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
-    P2Mastah( model, *particles, particles->dX,     mesh, dX_n,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
-    P2Mastah( model, *particles, particles->dX,     mesh, dX_s,   mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
-
-    ArrayPlusArray(  mesh->T0_n,     dT,     Ncx*Ncz );
-    ArrayPlusArray(  mesh->divth0_n, ddivth, Ncx*Ncz );
-    ArrayPlusArray(  mesh->X0_n,     dX_n,   Ncx*Ncz );
-    ArrayPlusArray(  mesh->X0_s,     dX_s,   Nx*Nz );
-    ArrayPlusArray(  mesh->d0_n,     dd,     Ncx*Ncz );
-    ArrayPlusArray(  mesh->phi0_n,   dphi,   Ncx*Ncz );
-    ArrayPlusArray(  mesh->rho0_n,   drho,   Ncx*Ncz );
-
-    if ( model->Plith_trick == 1 ) ArrayPlusArray(  mesh->p0_n,   mesh->p_lith0, Ncx*Ncz ); // Add back lithostatic component
-
-    DoodzFree( dT );
-    DoodzFree( ddivth );
-    DoodzFree( dX_n );
-    DoodzFree( dX_s );
-    DoodzFree( dd );
-    DoodzFree( dphi );
-    DoodzFree( dP );
-    DoodzFree( drho );
-
-//    // Get T and dTdt from previous step from particles
-//    Interp_P2C ( particles, particles.T,     &mesh, mesh.T0_n,    mesh.xg_coord, mesh.zg_coord,  1, 0 );
-//    Interp_P2C ( particles, particles.divth, &mesh, mesh.divth0_n, mesh.xg_coord, mesh.zg_coord,  1, 0 );
+//void UpdateGridFields( grid* mesh, markers* particles, params* model, mat_prop* materials, scale *scaling ) {
 //
-//    Interp_P2C ( particles, particles.X, &mesh, mesh.X0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-//    Interp_P2N ( particles, particles.X, &mesh, mesh.X0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+//    int Nx = mesh->Nx;
+//    int Nz = mesh->Nz;
+//    int Ncx = mesh->Nx-1;
+//    int Ncz = mesh->Nz-1;
+//    int c0, k1, l, k;
+//    int    cent=1, vert=0, prop=1, interp=0;
 //
-//    // Interpolate Grain size
-//    Interp_P2C ( particles,   particles.d, &mesh, mesh.d0_n,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
-//    ArrayEqualArray(  mesh.d_n,  mesh.d0_n, Ncx*Ncz );
+//    double *dP     = DoodzCalloc ( Ncx*Ncz, sizeof(double));
+//    P2Mastah( model, *particles, particles->dP,     mesh, dP,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+//    ArrayPlusArray(  mesh->p0_n,     dP,     Ncx*Ncz );
 //
-//    // Interpolate Melt fraction
-//    Interp_P2C ( particles, particles.phi, &mesh, mesh.phi0_n,  mesh.xg_coord, mesh.zg_coord, 1, 0 );
+//    // Elasticity - interpolate advected/rotated stresses
+//    if  ( model->iselastic == 1 ) {
 //
-//    //-----------------------------------------------------------------------------------------------------------
-//    // Interp P --> p0_n , p0_s
-//    Interp_P2C ( particles, particles.P, &mesh, mesh.p0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
-//    ArrayPlusArray(  mesh.p0_n,   mesh.p_lith0, Ncx*Ncz ); // Add back lithostatic component
-
-
-}
+//        if (model->StressUpdate==0) {
+//            double *dsxxd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
+//            double *dszzd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
+//            double *dsxz  = DoodzCalloc ( Nx*Nz,   sizeof(double));
+//            P2Mastah( model, *particles, particles->dsxxd,     mesh, dsxxd,  mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+//            P2Mastah( model, *particles, particles->dszzd,     mesh, dszzd,  mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+//            P2Mastah( model, *particles, particles->dsxz,      mesh, dsxz,   mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
+//
+//            ArrayPlusArray(  mesh->sxxd0,  dsxxd, Ncx*Ncz );
+//            ArrayPlusArray(  mesh->szzd0,  dszzd, Ncx*Ncz );
+//            ArrayPlusArray(  mesh->sxz0,   dsxz,   Nx*Nz );
+//            DoodzFree(dsxxd);
+//            DoodzFree(dszzd);
+//            DoodzFree(dsxz );
+//        }
+//        if (model->StressUpdate==1) {
+//            double *dsxxd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
+//            double *dszzd = DoodzCalloc ( Ncx*Ncz, sizeof(double));
+//            double *dsxz  = DoodzCalloc ( Nx*Nz,   sizeof(double));
+//            double *dsyy = DoodzCalloc ( Ncx*Ncz, sizeof(double));
+//
+//            P2Mastah( model, *particles, particles->dsxxd,     mesh, dsxxd,  mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+//            P2Mastah( model, *particles, particles->dszzd,     mesh, dszzd,  mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+//            P2Mastah( model, *particles, particles->dsxz,      mesh, dsxz,   mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
+//            P2Mastah( model, *particles, particles->dsyy,      mesh, dsyy,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+//
+//                for ( k1=0; k1<Ncx*Ncz; k1++ ) {
+//                    k  = mesh->kp[k1];
+//                    l  = mesh->lp[k1];
+//                    c0 = k  + l*(Nx-1);
+//
+//                    if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
+//                        dP[c0]         = -1.0/3.0*(dsxxd[c0] + dsyy[c0] + dszzd[c0] );
+//                        dsxxd[c0]      =  dP[c0] + dsxxd[c0];
+//                        dszzd[c0]      =  dP[c0] + dszzd[c0];
+//                    }
+//                }
+//
+//            ArrayPlusArray(  mesh->sxxd0,  dsxxd, Ncx*Ncz );
+//            ArrayPlusArray(  mesh->szzd0,  dszzd, Ncx*Ncz );
+//            ArrayPlusArray(  mesh->sxz0,   dsxz,   Nx*Nz );
+//            DoodzFree(dsxxd);
+//            DoodzFree(dszzd);
+//            DoodzFree(dsxz );
+//            DoodzFree(dsyy );
+//        }
+//    }
+//
+//    // Interpolate to necessary locations for rheological computations...
+//    InterpCentroidsToVerticesDouble( mesh->sxxd0, mesh->sxxd0_s, mesh, model );
+//    InterpCentroidsToVerticesDouble( mesh->szzd0, mesh->szzd0_s, mesh, model );
+//    InterpVerticesToCentroidsDouble( mesh->sxz0_n,  mesh->sxz0,  mesh, model );
+//
+//    // Director vector
+//    if (model->aniso == 1 ) {
+//        double *dnx_n = DoodzCalloc ( Ncx*Ncz, sizeof(double));
+//        double *dnz_n = DoodzCalloc ( Ncx*Ncz, sizeof(double));
+//        double *dnx_s = DoodzCalloc ( Nx*Nz,   sizeof(double));
+//        double *dnz_s = DoodzCalloc ( Nx*Nz,   sizeof(double));
+//        P2Mastah( model, *particles, particles->dnx,     mesh, dnx_n,  mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+//        P2Mastah( model, *particles, particles->dnz,     mesh, dnz_n,  mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+//        P2Mastah( model, *particles, particles->dnx,     mesh, dnx_s,  mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
+//        P2Mastah( model, *particles, particles->dnz,     mesh, dnz_s,  mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
+//        ArrayPlusArray(  mesh->nx0_n,  dnx_n, Ncx*Ncz );
+//        ArrayPlusArray(  mesh->nx0_s,  dnx_s,   Nx*Nz );
+//        ArrayPlusArray(  mesh->nz0_n,  dnz_n, Ncx*Ncz );
+//        ArrayPlusArray(  mesh->nz0_s,  dnz_s,   Nx*Nz );
+//        NormalizeDirector( mesh, mesh->nx0_n, mesh->nz0_n, mesh->nx0_s, mesh->nz0_s, model );
+//        DoodzFree(dnx_n);
+//        DoodzFree(dnz_n);
+//        DoodzFree(dnx_s);
+//        DoodzFree(dnz_s);
+//    }
+//
+//    double *dT     = DoodzCalloc ( Ncx*Ncz, sizeof(double));
+//    double *ddivth = DoodzCalloc ( Ncx*Ncz, sizeof(double));
+//    double *dX_n   = DoodzCalloc ( Ncx*Ncz, sizeof(double));
+//    double *dX_s   = DoodzCalloc (   Nx*Nz, sizeof(double));
+//    double *dd     = DoodzCalloc ( Ncx*Ncz, sizeof(double));
+//    double *dphi   = DoodzCalloc ( Ncx*Ncz, sizeof(double));
+//    double *drho   = DoodzCalloc ( Ncx*Ncz, sizeof(double));
+//
+//    P2Mastah( model, *particles, particles->dT,     mesh, dT,     mesh->BCp.type,  1, 0, interp, cent, 1);
+//    P2Mastah( model, *particles, particles->ddivth, mesh, ddivth, mesh->BCp.type,  1, 0, interp, cent, 1);
+//    P2Mastah( model, *particles, particles->dd,     mesh, dd,     mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+//    P2Mastah( model, *particles, particles->dphi,   mesh, dphi,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+//    P2Mastah( model, *particles, particles->drho,   mesh, drho,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+//    P2Mastah( model, *particles, particles->dX,     mesh, dX_n,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+//    P2Mastah( model, *particles, particles->dX,     mesh, dX_s,   mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
+//
+//    ArrayPlusArray(  mesh->T0_n,     dT,     Ncx*Ncz );
+//    ArrayPlusArray(  mesh->divth0_n, ddivth, Ncx*Ncz );
+//    ArrayPlusArray(  mesh->X0_n,     dX_n,   Ncx*Ncz );
+//    ArrayPlusArray(  mesh->X0_s,     dX_s,   Nx*Nz );
+//    ArrayPlusArray(  mesh->d0_n,     dd,     Ncx*Ncz );
+//    ArrayPlusArray(  mesh->phi0_n,   dphi,   Ncx*Ncz );
+//    ArrayPlusArray(  mesh->rho0_n,   drho,   Ncx*Ncz );
+//
+//    if ( model->Plith_trick == 1 ) ArrayPlusArray(  mesh->p0_n,   mesh->p_lith0, Ncx*Ncz ); // Add back lithostatic component
+//
+//    DoodzFree( dT );
+//    DoodzFree( ddivth );
+//    DoodzFree( dX_n );
+//    DoodzFree( dX_s );
+//    DoodzFree( dd );
+//    DoodzFree( dphi );
+//    DoodzFree( dP );
+//    DoodzFree( drho );
+//
+////    // Get T and dTdt from previous step from particles
+////    Interp_P2C ( particles, particles.T,     &mesh, mesh.T0_n,    mesh.xg_coord, mesh.zg_coord,  1, 0 );
+////    Interp_P2C ( particles, particles.divth, &mesh, mesh.divth0_n, mesh.xg_coord, mesh.zg_coord,  1, 0 );
+////
+////    Interp_P2C ( particles, particles.X, &mesh, mesh.X0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+////    Interp_P2N ( particles, particles.X, &mesh, mesh.X0_s, mesh.xg_coord, mesh.zg_coord, 1, 0, &model );
+////
+////    // Interpolate Grain size
+////    Interp_P2C ( particles,   particles.d, &mesh, mesh.d0_n,   mesh.xg_coord, mesh.zg_coord, 1, 0 );
+////    ArrayEqualArray(  mesh.d_n,  mesh.d0_n, Ncx*Ncz );
+////
+////    // Interpolate Melt fraction
+////    Interp_P2C ( particles, particles.phi, &mesh, mesh.phi0_n,  mesh.xg_coord, mesh.zg_coord, 1, 0 );
+////
+////    //-----------------------------------------------------------------------------------------------------------
+////    // Interp P --> p0_n , p0_s
+////    Interp_P2C ( particles, particles.P, &mesh, mesh.p0_n, mesh.xg_coord, mesh.zg_coord, 1, 0 );
+////    ArrayPlusArray(  mesh.p0_n,   mesh.p_lith0, Ncx*Ncz ); // Add back lithostatic component
+//
+//
+//}

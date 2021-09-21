@@ -242,13 +242,13 @@ void PartAlloc( markers *particles, params* model  ) {
         particles->nz        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     }
     
-    particles->ddivth = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
-    particles->dT     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
-    particles->dP     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
-    particles->dd     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
-    particles->dX     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
-    particles->dphi   = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
-    particles->drho   = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+//    particles->ddivth = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+//    particles->dT     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+//    particles->dP     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+//    particles->dd     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+//    particles->dX     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+//    particles->dphi   = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+//    particles->drho   = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
 }
 
 
@@ -317,13 +317,13 @@ void PartFree( markers *particles, params* model ) {
         DoodzFree(particles->nz);
     }
     
-    DoodzFree(particles->ddivth);
-    DoodzFree(particles->dT);
-    DoodzFree(particles->dP);
-    DoodzFree(particles->dd);
-    DoodzFree(particles->dX);
-    DoodzFree(particles->dphi);
-    DoodzFree(particles->drho);
+//    DoodzFree(particles->ddivth);
+//    DoodzFree(particles->dT);
+//    DoodzFree(particles->dP);
+//    DoodzFree(particles->dd);
+//    DoodzFree(particles->dX);
+//    DoodzFree(particles->dphi);
+//    DoodzFree(particles->drho);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
