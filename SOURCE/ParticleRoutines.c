@@ -2504,14 +2504,14 @@ private ( k, dxm, dzm, j_part, i_part, distance, iSW, iNW, iSE, iNE, sumW, Xp ) 
             distance = (particles.x[k]-X_vect[0]);
             j_part   = ceil((distance/dx)) - 1;
             
-            if (j_part<0) {
-                j_part = 0;
-
-                if (abs(Nx - (Nxg-1))>0) {
-                    printf("Nx = %03d Nxc = %d --- px = %2.2e xg = %2.2e\n", Nx, Nxg-1, particles.x[k], X_vect[j_part]);
-                     exit(89);
-                }
-            }
+//            if (j_part<0) {
+//                j_part = 0;
+//
+//                if (abs(Nx - (Nxg-1))>0) {
+//                    printf("Nx = %03d Nxc = %d --- px = %2.2e xg = %2.2e\n", Nx, Nxg-1, particles.x[k], X_vect[j_part]);
+//                     exit(89);
+//                }
+//            }
 
 
             if (j_part>Nx-2) {

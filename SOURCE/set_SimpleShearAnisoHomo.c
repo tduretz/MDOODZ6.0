@@ -282,13 +282,15 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                     // Free slip S
                     if (l==0 ) { //&& (k>0 && k<NX-1) ) {
                         mesh->BCu.type[c] =  11;
-                        mesh->BCu.val[c]  = -1*model->EpsBG*Lz;
+//                        mesh->BCu.val[c]  = -1*model->EpsBG*Lz;
+                        mesh->BCu.val[c]  =  2.0*model->EpsBG*mesh->zvx_coord[l];
                     }
                     
                     // Free slip N
                     if ( l==mesh->Nz) {// && (k>0 && k<NX-1)) {
                         mesh->BCu.type[c] =  11;
-                        mesh->BCu.val[c]  =  1*model->EpsBG*Lz;
+//                        mesh->BCu.val[c]  =  1*model->EpsBG*Lz;
+                         mesh->BCu.val[c]  = 2.0*model->EpsBG*mesh->zvx_coord[l];
                     }
                     
                 }
