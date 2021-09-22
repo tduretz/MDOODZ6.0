@@ -6,9 +6,9 @@ Welcome to MDOODZ6.0 public repository!
 
 # Quickstart
 
-To reproduce the results of the (submitted) manuscript:
+To reproduce the results of this [paper](https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2021GC009675?af=R).
 
-Check the Documentation
+Check the [Documentation](https://github.com/tduretz/MDOODZ6.0/blob/master/Documentation/MDOODZ_docu.pdf)
 
 Compile: make clean all MODEL=LithoScale OPT=yes OMP=yes
 
