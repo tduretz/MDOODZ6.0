@@ -703,86 +703,122 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
     double nx, nz, deta, d0, d1;
     int aniso_fstrain = model->aniso_fstrain;
     double etae, K, dt = model->dt;
-    int el = model->iselastic;
-
-    if (Jacobian == 0  && model->aniso == 0) {
-
+    int el   = model->iselastic;
+    int comp = model->compressible;
+    
+    //---------------------------------------------------------------------------------------------------------//
+    //--------------------------------- Tangent operator (Picard linearised) ----------------------------------//
+    //---------------------------------------------------------------------------------------------------------//
+    if ( Jacobian==0 ) {
+        
+        printf("Computing isotropic/anisotropic viscosity tensor\n");
+        
         // Loop on cell centers
-#pragma omp parallel for shared( mesh )
+#pragma omp parallel for shared( mesh ) private ( nx, nz, deta, d0, d1, etae )  firstprivate ( aniso_fstrain, el )
         for (k=0; k<Ncx*Ncz; k++) {
-
+            
             if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
-                mesh->D11_n[k] = 2.0*mesh->eta_n[k];
-                mesh->D22_n[k] = 2.0*mesh->eta_n[k];
+                //----------------------------------------------------------//
+                if ( model->aniso == 0 ) {
+                    deta = 0.0; d0   = 0.0; d1   = 0.0;
+                }
+                else {
+                    // Director
+                    nx = mesh->nx0_n[k];
+                    nz = mesh->nz0_n[k];
+                    // See Anisotropy_v2.ipynb
+                    if ( aniso_fstrain  == 0 ) deta =  (mesh->eta_s[k] - mesh->eta_s[k] / mesh->aniso_factor_s[k]);
+                    if ( aniso_fstrain  == 1 ) deta =  (mesh->eta_s[k] - mesh->eta_s[k] / mesh->FS_AR_s[k]);
+                    d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
+                    d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
+                }
+                //----------------------------------------------------------//
+                mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*deta*d0;
+                mesh->D12_n[k] =                      2.0*deta*d0;
+                mesh->D13_n[k] =                      2.0*deta*d1;
+                mesh->D14_n[k] =                      0.0;
+                //----------------------------------------------------------//
+                mesh->D21_n[k] =                      2.0*deta*d0;
+                mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 2.0*deta*d0;
+                mesh->D23_n[k] =                     -2.0*deta*d1;
+                mesh->D24_n[k] =                      0.0;
+                //----------------------------------------------------------//
             }
             else {
-                mesh->D11_n[k] = 0.0;
-                mesh->D22_n[k] = 0.0;
+                //----------------------------------------------------------//
+                mesh->D11_n[k] = 0.0; mesh->D12_n[k] = 0.0; mesh->D13_n[k] = 0.0; mesh->D14_n[k] = 0.0;
+                //----------------------------------------------------------//
+                mesh->D21_n[k] = 0.0; mesh->D22_n[k] = 0.0; mesh->D23_n[k] = 0.0; mesh->D24_n[k] = 0.0;
+                //----------------------------------------------------------//
             }
         }
-
         // Loop on cell vertices
-#pragma omp parallel for shared( mesh )
+#pragma omp parallel for shared( mesh )  private ( nx, nz, deta, d0, d1, etae ) firstprivate ( aniso_fstrain, el )
         for (k=0; k<Nx*Nz; k++) {
-
+            
             if ( mesh->BCg.type[k] != 30 ) {
-                mesh->D33_s[k] = mesh->eta_s[k];
+                //----------------------------------------------------------//
+                if ( model->aniso == 0 ) {
+                    deta = 0.0; d0   = 0.0; d1   = 0.0;
+                }
+                else {
+                    // Director
+                    nx = mesh->nx0_s[k];
+                    nz = mesh->nz0_s[k];
+                    // See Anisotropy_v2.ipynb
+                    if ( aniso_fstrain  == 0 ) deta =  (mesh->eta_s[k] - mesh->eta_s[k] / mesh->aniso_factor_s[k]);
+                    if ( aniso_fstrain  == 1 ) deta =  (mesh->eta_s[k] - mesh->eta_s[k] / mesh->FS_AR_s[k]);
+                    d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
+                    d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
+                }
+                //----------------------------------------------------------//
+                mesh->D31_s[k] =                  2.0*deta*d1;
+                mesh->D32_s[k] =                 -2.0*deta*d1;
+                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*deta*(d0 - 0.5);
+                mesh->D34_s[k] =                  0.0;
+                //----------------------------------------------------------//
             }
             else {
-                mesh->D33_s[k] = 0.0;
+                //----------------------------------------------------------//
+                mesh->D31_s[k] = 0.0; mesh->D32_s[k] = 0.0; mesh->D33_s[k] = 0.0; mesh->D34_s[k] = 0.0;
+                //----------------------------------------------------------//
             }
         }
-
     }
 
-    if (Jacobian == 1  && model->aniso == 0) {
+    //---------------------------------------------------------------------------------------------------------//
+    //--------------------------------- Tangent operator (Newton linearised) ----------------------------------//
+    //---------------------------------------------------------------------------------------------------------//
+    if ( Jacobian==1 && model->aniso==0 ) {
 
         // Loop on cell centers
-#pragma omp parallel for shared( mesh ) private ( etae, K ) firstprivate ( el, dt )
+#pragma omp parallel for shared( mesh ) private ( etae, K ) firstprivate ( el, dt, comp )
         for (k=0; k<Ncx*Ncz; k++) {
 
-            if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
-                switch ( el ) {
-                    case 0:
-                        //----------------------------------------------------------//
-                        mesh->D11_n[k] = 2.0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k]*mesh->exxd[k];
-                        mesh->D12_n[k] =                      2.0*mesh->detadezz_n[k]*mesh->exxd[k];
-                        mesh->D13_n[k] =                      2.0*mesh->detadgxz_n[k]*mesh->exxd[k];
-                        mesh->D14_n[k] =                      2.0*mesh->detadp_n[k]  *mesh->exxd[k];
-                        //----------------------------------------------------------//
-                        mesh->D21_n[k] =                      2.0*mesh->detadexx_n[k]*mesh->ezzd[k];
-                        mesh->D22_n[k] = 2.0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k]*mesh->ezzd[k];
-                        mesh->D23_n[k] =                      2.0*mesh->detadgxz_n[k]*mesh->ezzd[k];
-                        mesh->D24_n[k] =                      2.0*mesh->detadp_n[k]  *mesh->ezzd[k];
-                        //----------------------------------------------------------//
-                        break;
-                    case 1:
-                        etae = model->dt*mesh->mu_n[k];
-                        K    = 1.0/mesh->bet_n[k];
-                        //----------------------------------------------------------//
-                        mesh->D11_n[k] = 2.0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k] * ( mesh->exxd[k] + mesh->sxxd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdexx_n[k];
-                        mesh->D12_n[k] =                      2.0*mesh->detadezz_n[k] * ( mesh->exxd[k] + mesh->sxxd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdezz_n[k];
-                        mesh->D13_n[k] =                      2.0*mesh->detadgxz_n[k] * ( mesh->exxd[k] + mesh->sxxd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdgxz_n[k];
-                        mesh->D14_n[k] =                      2.0*mesh->detadp_n[k]   * ( mesh->exxd[k] + mesh->sxxd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdp_n[k];
-                        //----------------------------------------------------------//
-                        mesh->D21_n[k] =                      2.0*mesh->detadexx_n[k] * ( mesh->ezzd[k] + mesh->szzd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdexx_n[k];
-                        mesh->D22_n[k] = 2.0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k] * ( mesh->ezzd[k] + mesh->szzd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdezz_n[k];
-                        mesh->D23_n[k] =                      2.0*mesh->detadgxz_n[k] * ( mesh->ezzd[k] + mesh->szzd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdgxz_n[k];
-                        mesh->D24_n[k] =                      2.0*mesh->detadp_n[k]   * ( mesh->ezzd[k] + mesh->szzd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdp_n[k];
-                        //----------------------------------------------------------//
-                        break;
-                }
+            if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31 ) {
+                //----------------------------------------------------------//
+                if ( el==1   ) etae      = model->dt*mesh->mu_n[k];
+                else           etae      = mesh->eta_n[k]; // set to arbitrary value to avoid division by 0.0
+                if ( comp==1 ) K         = 1.0/mesh->bet_n[k];
+                else           K         = 0.0;
+                //----------------------------------------------------------//
+                mesh->D11_n[k] = 2.0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k] * ( mesh->exxd[k] + mesh->sxxd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdexx_n[k];
+                mesh->D12_n[k] =                      2.0*mesh->detadezz_n[k] * ( mesh->exxd[k] + mesh->sxxd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdezz_n[k];
+                mesh->D13_n[k] =                      2.0*mesh->detadgxz_n[k] * ( mesh->exxd[k] + mesh->sxxd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdgxz_n[k];
+                mesh->D14_n[k] =                      2.0*mesh->detadp_n[k]   * ( mesh->exxd[k] + mesh->sxxd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdp_n[k];
+                //----------------------------------------------------------//
+                mesh->D21_n[k] =                      2.0*mesh->detadexx_n[k] * ( mesh->ezzd[k] + mesh->szzd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdexx_n[k];
+                mesh->D22_n[k] = 2.0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k] * ( mesh->ezzd[k] + mesh->szzd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdezz_n[k];
+                mesh->D23_n[k] =                      2.0*mesh->detadgxz_n[k] * ( mesh->ezzd[k] + mesh->szzd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdgxz_n[k];
+                mesh->D24_n[k] =                      2.0*mesh->detadp_n[k]   * ( mesh->ezzd[k] + mesh->szzd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdp_n[k];
+                //----------------------------------------------------------//
             }
             else {
-                mesh->D11_n[k] = 0.0;
-                mesh->D12_n[k] = 0.0;
-                mesh->D13_n[k] = 0.0;
-                mesh->D14_n[k] = 0.0;
-
-                mesh->D21_n[k] = 0.0;
-                mesh->D22_n[k] = 0.0;
-                mesh->D23_n[k] = 0.0;
-                mesh->D24_n[k] = 0.0;
+                //----------------------------------------------------------//
+                mesh->D11_n[k] = 0.0; mesh->D12_n[k] = 0.0; mesh->D13_n[k] = 0.0; mesh->D14_n[k] = 0.0;
+                //----------------------------------------------------------//
+                mesh->D21_n[k] = 0.0; mesh->D22_n[k] = 0.0; mesh->D23_n[k] = 0.0; mesh->D24_n[k] = 0.0;
+                //----------------------------------------------------------//
             }
         }
 
@@ -791,111 +827,24 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
         for (k=0; k<Nx*Nz; k++) {
 
             if ( mesh->BCg.type[k] != 30 ) {
-                switch ( el ) {
-                    case 0:
-                        //----------------------------------------------------------//
-                        mesh->D31_s[k] =                  mesh->detadexx_s[k]*2.0*mesh->exz[k];
-                        mesh->D32_s[k] =                  mesh->detadezz_s[k]*2.0*mesh->exz[k];
-                        mesh->D33_s[k] = mesh->eta_s[k] + mesh->detadgxz_s[k]*2.0*mesh->exz[k];
-                        mesh->D34_s[k] =                  mesh->detadp_s[k]  *2.0*mesh->exz[k];
-                        //----------------------------------------------------------//
-                        break;
-                    case 1:
-                        etae = model->dt*mesh->mu_s[k];
-                        //----------------------------------------------------------//
-                        mesh->D31_s[k] =                  mesh->detadexx_s[k]*2.0*mesh->exz[k] + mesh->sxz0[k]*mesh->detadexx_s[k] / etae;
-                        mesh->D32_s[k] =                  mesh->detadezz_s[k]*2.0*mesh->exz[k] + mesh->sxz0[k]*mesh->detadezz_s[k] / etae;
-                        mesh->D33_s[k] = mesh->eta_s[k] + mesh->detadgxz_s[k]*2.0*mesh->exz[k] + mesh->sxz0[k]*mesh->detadgxz_s[k] / etae;
-                        mesh->D34_s[k] =                  mesh->detadp_s[k]  *2.0*mesh->exz[k] + mesh->sxz0[k]*mesh->detadp_s[k]   / etae;
-                        //----------------------------------------------------------//
-                        break;
-                }
-
+                //----------------------------------------------------------//
+                if ( el==1   ) etae      = model->dt*mesh->mu_n[k];
+                else           etae      = mesh->eta_n[k]; // set to arbitrary value to avoid division by 0.0
+                //----------------------------------------------------------//
+                mesh->D31_s[k] =                  2.0*mesh->detadexx_s[k] * ( mesh->exz[k] + mesh->sxz0[k]/etae/2.0);
+                mesh->D32_s[k] =                  2.0*mesh->detadezz_s[k] * ( mesh->exz[k] + mesh->sxz0[k]/etae/2.0);
+                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*mesh->detadgxz_s[k] * ( mesh->exz[k] + mesh->sxz0[k]/etae/2.0);
+                mesh->D34_s[k] =                  2.0*mesh->detadp_s[k]   * ( mesh->exz[k] + mesh->sxz0[k]/etae/2.0);
+                //----------------------------------------------------------//
             }
             else {
-                mesh->D31_s[k] = 0.0;
-                mesh->D32_s[k] = 0.0;
-                mesh->D33_s[k] = 0.0;
-                mesh->D34_s[k] = 0.0;
+                //----------------------------------------------------------//
+                mesh->D31_s[k] = 0.0; mesh->D32_s[k] = 0.0; mesh->D33_s[k] = 0.0; mesh->D34_s[k] = 0.0;
+                //----------------------------------------------------------//
             }
             if (isnan(mesh->D34_s[k])) { printf("EXIT: D34 is NAN!\n"); exit(1); }
             if (isinf(mesh->D34_s[k])) { printf("EXIT: D34 is INF!\n"); exit(1); }
-
         }
-
-    }
-
-    if ( Jacobian == 0 && model->aniso == 1 ) {
-
-        printf("Computing anisotropic viscosity tensor\n");
-
-        // Loop on cell centers
-#pragma omp parallel for shared( mesh ) private ( nx, nz, deta, d0, d1, etae )  firstprivate ( aniso_fstrain, el )
-        for (k=0; k<Ncx*Ncz; k++) {
-
-            // Director
-            nx = mesh->nx0_n[k];
-            nz = mesh->nz0_n[k];
-
-            if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
-                // See Anisotropy_v2.ipynb
-                if ( aniso_fstrain  == 0 ) deta =  (mesh->eta_n[k] - mesh->eta_n[k] / mesh->aniso_factor_n[k]);
-                if ( aniso_fstrain  == 1 ) deta =  (mesh->eta_n[k] - mesh->eta_n[k] / mesh->FS_AR_n[k]);
-                d0   = 2.0*pow(nx, 2.0)*pow(nz, 2.0);
-                d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
-                //                printf("deta = %2.2e d1 = %2.2e\n",deta, d1);
-                mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*deta*d0;
-                mesh->D12_n[k] =                      2.0*deta*d0;
-                mesh->D13_n[k] =                      2.0*deta*d1;
-                mesh->D14_n[k] =                      0.0;
-
-                mesh->D21_n[k] =                      2.0*deta*d0;
-                mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 2.0*deta*d0;
-                mesh->D23_n[k] =                     -2.0*deta*d1;
-                mesh->D24_n[k] =                      0.0;
-            }
-            else {
-                mesh->D11_n[k] = 0.0;
-                mesh->D12_n[k] = 0.0;
-                mesh->D13_n[k] = 0.0;
-                mesh->D14_n[k] = 0.0;
-
-                mesh->D21_n[k] = 0.0;
-                mesh->D22_n[k] = 0.0;
-                mesh->D23_n[k] = 0.0;
-                mesh->D24_n[k] = 0.0;
-            }
-        }
-        // Loop on cell vertices
-#pragma omp parallel for shared( mesh )  private ( nx, nz, deta, d0, d1, etae ) firstprivate ( aniso_fstrain, el )
-        for (k=0; k<Nx*Nz; k++) {
-
-            // Director
-            nx = mesh->nx0_s[k];
-            nz = mesh->nz0_s[k];
-
-            if ( mesh->BCg.type[k] != 30 ) {
-                // See Anisotropy_v2.ipynb
-                if ( aniso_fstrain  == 0 ) deta =  (mesh->eta_s[k] - mesh->eta_s[k] / mesh->aniso_factor_s[k]);
-                if ( aniso_fstrain  == 1 ) deta =  (mesh->eta_s[k] - mesh->eta_s[k] / mesh->FS_AR_s[k]);
-                d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
-                d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
-
-                mesh->D31_s[k] =                  2.0*deta*d1;
-                mesh->D32_s[k] =                 -2.0*deta*d1;
-                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*deta*(d0 - 0.5);
-                mesh->D34_s[k] =                  0.0;
-            }
-            else {
-                mesh->D31_s[k] = 0.0;
-                mesh->D32_s[k] = 0.0;
-                mesh->D33_s[k] = 0.0;
-                mesh->D34_s[k] = 0.0;
-            }
-        }
-    }
-    if (Jacobian == 1  && model->aniso == 1) {
-        printf("\nShould be here some time !!!!!!\n");
     }
 
 }
@@ -982,8 +931,6 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
             mesh->drhodp_n[c0] = 0.0;
         }
         
-        
-
         // Loop on grid nodes
         if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
             
