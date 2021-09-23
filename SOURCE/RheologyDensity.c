@@ -700,11 +700,12 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
     int Nx, Nz, Ncx, Ncz, k;
     Nx = mesh->Nx; Ncx = Nx-1;
     Nz = mesh->Nz; Ncz = Nz-1;
-    double nx, nz, deta, d0, d1;
+    double nx, nz, ani, d0, d1;
     int aniso_fstrain = model->aniso_fstrain;
     double etae, K, dt = model->dt;
     int el   = model->iselastic;
     int comp = model->compressible;
+    double Exx, Ezz, Exz, Gxx, Gzz, Gxz;
     
     //---------------------------------------------------------------------------------------------------------//
     //--------------------------------- Tangent operator (Picard linearised) ----------------------------------//
@@ -714,33 +715,33 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
         printf("Computing isotropic/anisotropic viscosity tensor\n");
         
         // Loop on cell centers
-#pragma omp parallel for shared( mesh ) private ( nx, nz, deta, d0, d1, etae )  firstprivate ( aniso_fstrain, el )
+#pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae )  firstprivate ( model, aniso_fstrain, el )
         for (k=0; k<Ncx*Ncz; k++) {
             
             if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
                 //----------------------------------------------------------//
                 if ( model->aniso == 0 ) {
-                    deta = 0.0; d0   = 0.0; d1   = 0.0;
+                    ani = 0.0; d0   = 0.0; d1   = 0.0;
                 }
                 else {
                     // Director
                     nx = mesh->nx0_n[k];
                     nz = mesh->nz0_n[k];
                     // See Anisotropy_v2.ipynb
-                    if ( aniso_fstrain  == 0 ) deta =  (mesh->eta_s[k] - mesh->eta_s[k] / mesh->aniso_factor_s[k]);
-                    if ( aniso_fstrain  == 1 ) deta =  (mesh->eta_s[k] - mesh->eta_s[k] / mesh->FS_AR_s[k]);
+                    if ( aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_n[k];
+                    if ( aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_n[k];
                     d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
                     d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
                 }
                 //----------------------------------------------------------//
-                mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*deta*d0;
-                mesh->D12_n[k] =                      2.0*deta*d0;
-                mesh->D13_n[k] =                      2.0*deta*d1;
+                mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k];
+                mesh->D12_n[k] =                      2.0*ani*d0*mesh->eta_n[k];
+                mesh->D13_n[k] =                      2.0*ani*d1*mesh->eta_n[k];
                 mesh->D14_n[k] =                      0.0;
                 //----------------------------------------------------------//
-                mesh->D21_n[k] =                      2.0*deta*d0;
-                mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 2.0*deta*d0;
-                mesh->D23_n[k] =                     -2.0*deta*d1;
+                mesh->D21_n[k] =                      2.0*ani*d0*mesh->eta_n[k];
+                mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k];
+                mesh->D23_n[k] =                     -2.0*ani*d1*mesh->eta_n[k];
                 mesh->D24_n[k] =                      0.0;
                 //----------------------------------------------------------//
             }
@@ -753,28 +754,28 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
             }
         }
         // Loop on cell vertices
-#pragma omp parallel for shared( mesh )  private ( nx, nz, deta, d0, d1, etae ) firstprivate ( aniso_fstrain, el )
+#pragma omp parallel for shared( mesh )  private ( nx, nz, ani, d0, d1, etae ) firstprivate ( model, aniso_fstrain, el )
         for (k=0; k<Nx*Nz; k++) {
             
             if ( mesh->BCg.type[k] != 30 ) {
                 //----------------------------------------------------------//
                 if ( model->aniso == 0 ) {
-                    deta = 0.0; d0   = 0.0; d1   = 0.0;
+                    ani = 0.0; d0   = 0.0; d1   = 0.0;
                 }
                 else {
                     // Director
                     nx = mesh->nx0_s[k];
                     nz = mesh->nz0_s[k];
                     // See Anisotropy_v2.ipynb
-                    if ( aniso_fstrain  == 0 ) deta =  (mesh->eta_s[k] - mesh->eta_s[k] / mesh->aniso_factor_s[k]);
-                    if ( aniso_fstrain  == 1 ) deta =  (mesh->eta_s[k] - mesh->eta_s[k] / mesh->FS_AR_s[k]);
+                    if ( aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_s[k];
+                    if ( aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_s[k];
                     d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
                     d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
                 }
                 //----------------------------------------------------------//
-                mesh->D31_s[k] =                  2.0*deta*d1;
-                mesh->D32_s[k] =                 -2.0*deta*d1;
-                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*deta*(d0 - 0.5);
+                mesh->D31_s[k] =                  2.0*ani*d1*mesh->eta_s[k];
+                mesh->D32_s[k] =                 -2.0*ani*d1*mesh->eta_s[k];
+                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*ani*(d0 - 0.5)*mesh->eta_s[k];
                 mesh->D34_s[k] =                  0.0;
                 //----------------------------------------------------------//
             }
@@ -792,7 +793,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
     if ( Jacobian==1 && model->aniso==0 ) {
 
         // Loop on cell centers
-#pragma omp parallel for shared( mesh ) private ( etae, K ) firstprivate ( el, dt, comp )
+#pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae, K ) firstprivate ( model, el, dt, comp, Exx, Ezz, Exz, Gxx, Gzz, Gxz )
         for (k=0; k<Ncx*Ncz; k++) {
 
             if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31 ) {
@@ -802,15 +803,35 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 if ( comp==1 ) K         = 1.0/mesh->bet_n[k];
                 else           K         = 0.0;
                 //----------------------------------------------------------//
-                mesh->D11_n[k] = 2.0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k] * ( mesh->exxd[k] + mesh->sxxd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdexx_n[k];
-                mesh->D12_n[k] =                      2.0*mesh->detadezz_n[k] * ( mesh->exxd[k] + mesh->sxxd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdezz_n[k];
-                mesh->D13_n[k] =                      2.0*mesh->detadgxz_n[k] * ( mesh->exxd[k] + mesh->sxxd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdgxz_n[k];
-                mesh->D14_n[k] =                      2.0*mesh->detadp_n[k]   * ( mesh->exxd[k] + mesh->sxxd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdp_n[k];
+                if ( model->aniso == 0 ) {
+                    ani = 0.0; d0   = 0.0; d1   = 0.0;
+                }
+                else {
+                    // Director
+                    nx = mesh->nx0_n[k];
+                    nz = mesh->nz0_n[k];
+                    // See Anisotropy_v2.ipynb
+                    if ( aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_n[k];
+                    if ( aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_n[k];
+                    d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
+                    d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
+                }
                 //----------------------------------------------------------//
-                mesh->D21_n[k] =                      2.0*mesh->detadexx_n[k] * ( mesh->ezzd[k] + mesh->szzd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdexx_n[k];
-                mesh->D22_n[k] = 2.0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k] * ( mesh->ezzd[k] + mesh->szzd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdezz_n[k];
-                mesh->D23_n[k] =                      2.0*mesh->detadgxz_n[k] * ( mesh->ezzd[k] + mesh->szzd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdgxz_n[k];
-                mesh->D24_n[k] =                      2.0*mesh->detadp_n[k]   * ( mesh->ezzd[k] + mesh->szzd0[k]/etae/2.0 ) - K*dt*mesh->ddivpdp_n[k];
+                Exx = mesh->exxd[k]  + mesh->sxxd0[k] /etae/2.0;
+                Ezz = mesh->ezzd[k]  + mesh->szzd0[k] /etae/2.0;
+                Exz = mesh->exz_n[k] + mesh->sxz0_n[k]/etae/2.0;
+                Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + Exz*ani*d1;
+                Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - Exz*ani*d1;
+                //----------------------------------------------------------//
+                mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k] * Gxx - K*dt*mesh->ddivpdexx_n[k];
+                mesh->D12_n[k] =                      2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k] * Gxx - K*dt*mesh->ddivpdezz_n[k];
+                mesh->D13_n[k] =                      2.0*ani*d1*mesh->eta_n[k] + 2.0*mesh->detadgxz_n[k] * Gxx - K*dt*mesh->ddivpdgxz_n[k];
+                mesh->D14_n[k] =                                                  2.0*mesh->detadp_n[k]   * Exx - K*dt*mesh->ddivpdp_n[k];
+                //----------------------------------------------------------//
+                mesh->D21_n[k] =                      2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k] * Gzz - K*dt*mesh->ddivpdexx_n[k];
+                mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k] * Gzz - K*dt*mesh->ddivpdezz_n[k];
+                mesh->D23_n[k] =                    - 2.0*ani*d1*mesh->eta_n[k] + 2.0*mesh->detadgxz_n[k] * Gzz - K*dt*mesh->ddivpdgxz_n[k];
+                mesh->D24_n[k] =                                                  2.0*mesh->detadp_n[k]   * Ezz - K*dt*mesh->ddivpdp_n[k];
                 //----------------------------------------------------------//
             }
             else {
@@ -823,18 +844,37 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
         }
 
         // Loop on cell vertices
-#pragma omp parallel for shared( mesh )  private ( etae ) firstprivate ( el )
+#pragma omp parallel for shared( mesh )  private ( nx, nz, ani, d0, d1, etae ) firstprivate ( model, el, Exx, Ezz, Exz, Gxx, Gzz, Gxz )
         for (k=0; k<Nx*Nz; k++) {
 
             if ( mesh->BCg.type[k] != 30 ) {
                 //----------------------------------------------------------//
-                if ( el==1   ) etae      = model->dt*mesh->mu_n[k];
-                else           etae      = mesh->eta_n[k]; // set to arbitrary value to avoid division by 0.0
+                if ( el==1   ) etae      = model->dt*mesh->mu_s[k];
+                else           etae      = mesh->eta_s[k]; // set to arbitrary value to avoid division by 0.0
                 //----------------------------------------------------------//
-                mesh->D31_s[k] =                  2.0*mesh->detadexx_s[k] * ( mesh->exz[k] + mesh->sxz0[k]/etae/2.0);
-                mesh->D32_s[k] =                  2.0*mesh->detadezz_s[k] * ( mesh->exz[k] + mesh->sxz0[k]/etae/2.0);
-                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*mesh->detadgxz_s[k] * ( mesh->exz[k] + mesh->sxz0[k]/etae/2.0);
-                mesh->D34_s[k] =                  2.0*mesh->detadp_s[k]   * ( mesh->exz[k] + mesh->sxz0[k]/etae/2.0);
+                if ( model->aniso == 0 ) {
+                    ani = 0.0; d0   = 0.0; d1   = 0.0;
+                }
+                else {
+                    // Director
+                    nx = mesh->nx0_s[k];
+                    nz = mesh->nz0_s[k];
+                    // See Anisotropy_v2.ipynb
+                    if ( aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_s[k];
+                    if ( aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_s[k];
+                    d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
+                    d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
+                }
+                //----------------------------------------------------------//
+                Exx = mesh->exxd_s[k] + mesh->sxxd0_s[k]/etae/2.0;
+                Ezz = mesh->ezzd_s[k] + mesh->szzd0_s[k]/etae/2.0;
+                Exz = mesh->exz[k]    + mesh->sxz0[k]   /etae/2.0;
+                Gxz = 2.0*(Exx*ani*d1 - Exx*ani*d1 + Exz*(ani*(d0 - 0.5) + 0.5) );  // NOT SURE ABOUT THE FACTOR 2
+                //----------------------------------------------------------//
+                mesh->D31_s[k] =                  2.0*ani*d1*mesh->eta_s[k]         + 2.0*mesh->detadexx_s[k] * Gxz;
+                mesh->D32_s[k] =                - 2.0*ani*d1*mesh->eta_s[k]         + 2.0*mesh->detadezz_s[k] * Gxz;
+                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*ani*(d0 - 0.5)*mesh->eta_s[k] + 2.0*mesh->detadgxz_s[k] * Gxz;
+                mesh->D34_s[k] =                                                      2.0*mesh->detadp_s[k]   * Exz;
                 //----------------------------------------------------------//
             }
             else {
