@@ -3,7 +3,7 @@ function Main
 
 clear
 clear all
-close all
+% close all
 clc
 
 DEBUG = 0;
@@ -25,9 +25,9 @@ path = '/Users/imac/REPO_GIT/MDOODZ6.0/SOURCE/'
 cd(path)
 
 % File
-istart = 00;
+istart = 0
 ijump  = 10;
-iend   = 500;
+iend   = 50;
 
 %--------------------------------------------------
 % what do you want to plot:
@@ -540,7 +540,8 @@ for istep=istart:ijump:iend
                 stress = 0;
             end
             %%%%%%%%%%%%%%%%%%%%%
-            figure(90)
+            figure(90),
+            if (istep==0), clf; end
             %%% Stress
             subplot(131), hold on
 %             plot(time, mean(sxxd(:)), 'b.')
@@ -754,6 +755,14 @@ for istep=istart:ijump:iend
             clear VizGrid.ph VizGrid.x VizGrid.z
             
         end
+        
+        figure(91)
+        subplot(311)
+        imagesc(xc_plot,zc_plot,ndx), colorbar, set(gca,'ydir','normal'), axis image
+        subplot(312)
+        imagesc(xc_plot,zc_plot,ndz), colorbar, set(gca,'ydir','normal'), axis image
+        subplot(313)
+        imagesc(xc_plot,zc_plot,sxz), colorbar, set(gca,'ydir','normal'), axis image
         
        
         
