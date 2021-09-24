@@ -62,6 +62,7 @@ int main( int nargs, char *args[] ) {
     int          Nx, Nz, Ncx, Ncz;
     int          Newton, *Newt_on, first_Newton;
     int cent=1, vert=0, prop=1, interp=0, vxnodes=-1, vznodes=-2;
+    FILE        *GNUplotPipe;
     
     double *rx_abs, *rz_abs, *rp_abs, *rx_rel, *rz_rel, *rp_rel;
     
@@ -442,6 +443,8 @@ int main( int nargs, char *args[] ) {
     //------------------------------------------------------------------------------------------------------------------------------//
     
     model.step += 1;
+    
+    if ( model.GNUplot_residuals == 1 ) GNUplotPipe = popen ("gnuplot -persistent", "w");
     
     for (; model.step<=model.Nt; model.step++) {
         
@@ -970,29 +973,21 @@ int main( int nargs, char *args[] ) {
             }
             printf("--------------------------------------------------------------\n");
             
-            
             // plot residuals
             if ( model.GNUplot_residuals == 1 && model.step % writer_step == 0 ) {
                 
-                printf("DOING GNU PLOTTING\n");
-                //        int NumCommands = 3;
-                //        char *GNUplotCommands[] = {"set title sprintf(a)", "set logscale y", "plot 'F_x'"};
+                printf("DOING GNU PLOTTING!\n");
+
+                int NumCommands = 3;
+                char *GNUplotCommands[] = {"set title \"Non-linear residuals\"", "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3"};
+                for (i=0; i<NumCommands; i++) fprintf(GNUplotPipe, "%s \n", GNUplotCommands[i]); //Send commands to gnuplot one by one.
                 
-                int NumCommands = 4;
-                char *GNUplotCommands[] = {"set title \"Non-linear residuals\"", "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3", "plot 'F_x' with linespoints ls 1"};
-                
-                //                char *GNUplotCommands[] = { "set term x11 1 noraise", "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3", "plot 'F_x' with linespoints ls 1"};
-                FILE *temp = fopen("F_x", "w");
-                FILE *GNUplotPipe = popen ("gnuplot -persistent", "w");
+                fprintf(GNUplotPipe, "plot '-' with linespoints linestyle 1\n");
                 for (i=0; i< Nmodel.nit+1; i++) {
-                    fprintf(temp, "%lf %lf \n", (double)i, log10(rx_rel[i])); //Write the data to a temporary file
+                    fprintf(GNUplotPipe, "%lf %lf \n", (double)i, log10(rx_rel[i])); //Write the data to a temporary file
                 }
-                
-                for (i=0; i<NumCommands; i++) {
-                    fprintf(GNUplotPipe, "%s \n", GNUplotCommands[i]); //Send commands to gnuplot one by one.
-                }
-                fclose(temp);
-                pclose(GNUplotPipe);
+                fprintf(GNUplotPipe, "e\n");
+                fflush(GNUplotPipe);
             }
             
         }
@@ -1262,7 +1257,7 @@ int main( int nargs, char *args[] ) {
             }
             model.dt = dt_solve;
         }
-                
+        
         // Update time
         model.time += model.dt;
         
@@ -1329,6 +1324,8 @@ int main( int nargs, char *args[] ) {
     //                                           END TIME LOOP : c'est fini les Doud'series...
     //------------------------------------------------------------------------------------------------------------------------------//
     //------------------------------------------------------------------------------------------------------------------------------//
+    
+    if ( model.GNUplot_residuals == 1) pclose(GNUplotPipe);
     
     //    // Free markers chains
     if ( model.free_surf == 1 )    FreeMarkerChain( &topo,     &topo_chain     );

@@ -704,7 +704,8 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
     int aniso_fstrain = model->aniso_fstrain;
     double etae, K, dt = model->dt;
     int comp = model->compressible;
-    double Exx, Ezz, Exz, Gxx, Gzz, Gxz;
+    double Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz;
+    double two = 2.0;
     
     //---------------------------------------------------------------------------------------------------------//
     //--------------------------------- Tangent operator (Picard linearised) ----------------------------------//
@@ -714,7 +715,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
 //        printf("Computing isotropic/anisotropic viscosity tensor\n");
         
         // Loop on cell centers
-#pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae )  firstprivate ( model )
+#pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae )  firstprivate ( model, two )
         for (k=0; k<Ncx*Ncz; k++) {
             
             if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
@@ -753,7 +754,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
             }
         }
         // Loop on cell vertices
-#pragma omp parallel for shared( mesh )  private ( nx, nz, ani, d0, d1, etae ) firstprivate ( model )
+#pragma omp parallel for shared( mesh )  private ( nx, nz, ani, d0, d1, etae ) firstprivate ( model, two )
         for (k=0; k<Nx*Nz; k++) {
             
             if ( mesh->BCg.type[k] != 30 ) {
@@ -792,7 +793,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
     if ( Jacobian==1 && model->aniso==0 ) {
 
         // Loop on cell centers
-#pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae, K ) firstprivate ( model, dt, comp, Exx, Ezz, Exz, Gxx, Gzz, Gxz )
+#pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae, K ) firstprivate ( model, dt, comp, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, two )
         for (k=0; k<Ncx*Ncz; k++) {
 
             if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31 ) {
@@ -818,10 +819,10 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 //----------------------------------------------------------//
                 Exx = mesh->exxd[k]  + mesh->sxxd0[k] /etae/2.0;
                 Ezz = mesh->ezzd[k]  + mesh->szzd0[k] /etae/2.0;
-                Exz = mesh->exz_n[k] + mesh->sxz0_n[k]/etae/2.0;
-                Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + Exz*ani*d1;
-                Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - Exz*ani*d1;
-                Gxz = 2.0*(Exx*ani*d1 - Exx*ani*d1 + Exz*(ani*(d0 - 0.5) + 0.5) );  // NOT SURE ABOUT THE FACTOR 2
+                gxz = 2.0*(mesh->exz_n[k] + mesh->sxz0_n[k]/etae/2.0);
+                Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
+                Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
+                Gxz = Exx*ani*d1 - Exx*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // NOT SURE ABOUT THE FACTOR 2
                 //----------------------------------------------------------//
                 mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k] * Gxx - K*dt*mesh->ddivpdexx_n[k];
                 mesh->D12_n[k] =                      2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k] * Gxx - K*dt*mesh->ddivpdezz_n[k];
@@ -844,7 +845,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
         }
 
         // Loop on cell vertices
-#pragma omp parallel for shared( mesh )  private ( nx, nz, ani, d0, d1, etae ) firstprivate ( model, el, Exx, Ezz, Exz, Gxx, Gzz, Gxz )
+#pragma omp parallel for shared( mesh )  private ( nx, nz, ani, d0, d1, etae ) firstprivate ( model, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, two )
         for (k=0; k<Nx*Nz; k++) {
 
             if ( mesh->BCg.type[k] != 30 ) {
@@ -868,10 +869,10 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 //----------------------------------------------------------//
                 Exx = mesh->exxd_s[k] + mesh->sxxd0_s[k]/etae/2.0;
                 Ezz = mesh->ezzd_s[k] + mesh->szzd0_s[k]/etae/2.0;
-                Exz = mesh->exz[k]    + mesh->sxz0[k]   /etae/2.0;
-                Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + Exz*ani*d1;
-                Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - Exz*ani*d1;
-                Gxz = 2.0*(Exx*ani*d1 - Exx*ani*d1 + Exz*(ani*(d0 - 0.5) + 0.5) );  // NOT SURE ABOUT THE FACTOR 2
+                gxz = 2.0*(mesh->exz[k]    + mesh->sxz0[k]   /etae/2.0);
+                Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
+                Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
+                Gxz = Exx*ani*d1 - Exx*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // NOT SURE ABOUT THE FACTOR 2
                 //----------------------------------------------------------//
                 mesh->D31_s[k] =                  2.0*ani*d1*mesh->eta_s[k]         + 2.0*mesh->detadexx_s[k] * Gxz;
                 mesh->D32_s[k] =                - 2.0*ani*d1*mesh->eta_s[k]         + 2.0*mesh->detadezz_s[k] * Gxz;
