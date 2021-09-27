@@ -290,11 +290,26 @@ PureShear_pwl.txt
 \end{verbatim}
 
 Power-law exponent of matrix is 30, inclusion is 3.
-Newton solver converges in 7 nonlinear iterations.
-No time dependence, only one time step yields.
+Newton solver converges in 6 nonlinear iterations.
+No time dependence, a single time step.
+
+Can be switched from pure shear (shear\_style$=$0) to periodic simple shear (shear\_style$=$1).
 
 \begin{figure}[ht!]
-\centerline{\includegraphics[height=3.0in]{./Figures/PureShear_pwl_cmaps}}
+\centerline{\includegraphics[height=3.0in]{./Figures/Shear_pwl_Convergence_PS_MDOODZ}}
+\caption{Convergence history in pure shear (x momentum residual).}
+\label{PureShear_pwl_cmaps}
+\end{figure}
+
+\begin{figure}[ht!]
+\centerline{\includegraphics[height=3.0in]{./Figures/Shear_pwl_Convergence_SS_MDOODZ}}
+\caption{Convergence history in simple shear (x momentum residual).}
+\label{PureShear_pwl_cmaps}
+\end{figure}
+
+
+\begin{figure}[ht!]
+\centerline{\includegraphics[height=3.0in]{./Figures/Shear_pwl_cmaps_MDOODZ}}
 \caption{Color maps of strain rate ($\log_{10}$) and stress.}
 \label{PureShear_pwl_cmaps}
 \end{figure}

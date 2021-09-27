@@ -708,7 +708,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
     double etae, K, dt = model->dt;
     int comp = model->compressible;
     double Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz;
-    double two = 2.0;
+    double Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det;
     
     //---------------------------------------------------------------------------------------------------------//
     //--------------------------------- Tangent operator (Picard linearised) ----------------------------------//
@@ -718,7 +718,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
 //        printf("Computing isotropic/anisotropic viscosity tensor\n");
         
         // Loop on cell centers
-#pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae )  firstprivate ( model, two )
+#pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae )  firstprivate ( model )
         for (k=0; k<Ncx*Ncz; k++) {
             
             if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
@@ -757,7 +757,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
             }
         }
         // Loop on cell vertices
-#pragma omp parallel for shared( mesh )  private ( nx, nz, ani, d0, d1, etae ) firstprivate ( model, two )
+#pragma omp parallel for shared( mesh )  private ( nx, nz, ani, d0, d1, etae ) firstprivate ( model )
         for (k=0; k<Nx*Nz; k++) {
             
             if ( mesh->BCg.type[k] != 30 ) {
@@ -796,7 +796,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
     if ( Jacobian==1 && model->aniso==0 ) {
 
         // Loop on cell centers
-#pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae, K ) firstprivate ( model, dt, comp, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, two )
+#pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae, K, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate ( model, dt, comp, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz )
         for (k=0; k<Ncx*Ncz; k++) {
 
             if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31 ) {
@@ -820,9 +820,32 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                     d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
                 }
                 //----------------------------------------------------------//
-                Exx = mesh->exxd[k]  + mesh->sxxd0[k] /etae/2.0;
-                Ezz = mesh->ezzd[k]  + mesh->szzd0[k] /etae/2.0;
-                gxz = 2.0*(mesh->exz_n[k] + mesh->sxz0_n[k]/etae/2.0);
+//                Exx = mesh->exxd[k]  + mesh->sxxd0[k] /etae/2.0;
+//                Ezz = mesh->ezzd[k]  + mesh->szzd0[k] /etae/2.0;
+//                Exz = mesh->exz_n[k] + mesh->sxz0_n[k]/etae/2.0;
+//                gxz = 2.0*Exz;
+                
+                Da11  = 2.0 - 2.0*ani*d0;
+                Da12  = 2.0*ani*d0;
+                Da13  = 2.0*ani*d1;
+                Da22  = 2.0 - 2.0*ani*d0;
+                Da23  =-2.0*ani*d1;
+                Da33  = 1.0  + 2.0*ani*(d0 - 0.5);
+                a11   = Da33 * Da22 - pow(Da23,2);
+                a12   = Da13 * Da23 - Da33 * Da12;
+                a13   = Da12 * Da23 - Da13 * Da22;
+                a22   = Da33 * Da11 - pow(Da13,2);
+                a23   = Da12 * Da13 - Da11 * Da23;
+                a33   = Da11 * Da22 - pow(Da12,2);
+                det   = (Da11 * a11) + (Da12 * a12) + (Da13 * a13);
+                iDa11 = a11/det; iDa12 = a12/det; iDa13 = a13/det;
+                iDa22 = a22/det; iDa23 = a23/det;
+                iDa33 = a33/det;
+                Exx = mesh->exxd[k]      + (iDa11*mesh->sxxd0[k] + iDa12*mesh->szzd0[k] + iDa13*mesh->sxz0_n[k])/etae;
+                Ezz = mesh->ezzd[k]      + (iDa12*mesh->sxxd0[k] + iDa22*mesh->szzd0[k] + iDa23*mesh->sxz0_n[k])/etae;
+                Exz = mesh->exz_n[k] + (iDa13*mesh->sxxd0[k] + iDa23*mesh->szzd0[k] + iDa33*mesh->sxz0_n[k])/2.0/etae;
+                gxz = 2.0*mesh->exz_n[k] + (iDa13*mesh->sxxd0[k] + iDa23*mesh->szzd0[k] + iDa33*mesh->sxz0_n[k])/etae;
+                
                 Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
                 Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
                 Gxz = Exx*ani*d1 - Exx*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // NOT SURE ABOUT THE FACTOR 2
@@ -848,7 +871,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
         }
 
         // Loop on cell vertices
-#pragma omp parallel for shared( mesh )  private ( nx, nz, ani, d0, d1, etae ) firstprivate ( model, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, two )
+#pragma omp parallel for shared( mesh )  private ( nx, nz, ani, d0, d1, etae, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate ( model, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz )
         for (k=0; k<Nx*Nz; k++) {
 
             if ( mesh->BCg.type[k] != 30 ) {
@@ -870,9 +893,32 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                     d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
                 }
                 //----------------------------------------------------------//
-                Exx = mesh->exxd_s[k] + mesh->sxxd0_s[k]/etae/2.0;
-                Ezz = mesh->ezzd_s[k] + mesh->szzd0_s[k]/etae/2.0;
-                gxz = 2.0*(mesh->exz[k]    + mesh->sxz0[k]   /etae/2.0);
+//                Exx = mesh->exxd_s[k] + mesh->sxxd0_s[k]/etae/2.0;
+//                Ezz = mesh->ezzd_s[k] + mesh->szzd0_s[k]/etae/2.0;
+//                Exz = mesh->exz[k]    + mesh->sxz0[k]   /etae/2.0;
+//                gxz = 2.0*Exz;
+                
+                Da11  = 2.0 - 2.0*ani*d0;
+                Da12  = 2.0*ani*d0;
+                Da13  = 2.0*ani*d1;
+                Da22  = 2.0 - 2.0*ani*d0;
+                Da23  =-2.0*ani*d1;
+                Da33  = 1.0  + 2.0*ani*(d0 - 0.5);
+                a11   = Da33 * Da22 - pow(Da23,2);
+                a12   = Da13 * Da23 - Da33 * Da12;
+                a13   = Da12 * Da23 - Da13 * Da22;
+                a22   = Da33 * Da11 - pow(Da13,2);
+                a23   = Da12 * Da13 - Da11 * Da23;
+                a33   = Da11 * Da22 - pow(Da12,2);
+                det   = (Da11 * a11) + (Da12 * a12) + (Da13 * a13);
+                iDa11 = a11/det; iDa12 = a12/det; iDa13 = a13/det;
+                iDa22 = a22/det; iDa23 = a23/det;
+                iDa33 = a33/det;
+                Exx = mesh->exxd_s[k]      + (iDa11*mesh->sxxd0_s[k] + iDa12*mesh->szzd0_s[k] + iDa13*mesh->sxz0[k])/etae;
+                Ezz = mesh->ezzd_s[k]      + (iDa12*mesh->sxxd0_s[k] + iDa22*mesh->szzd0_s[k] + iDa23*mesh->sxz0[k])/etae;
+                Exz = mesh->exz[k] + (iDa13*mesh->sxxd0_s[k] + iDa23*mesh->szzd0_s[k] + iDa33*mesh->sxz0[k])/2.0/etae;
+                gxz = 2.0*mesh->exz[k] + (iDa13*mesh->sxxd0_s[k] + iDa23*mesh->szzd0_s[k] + iDa33*mesh->sxz0[k])/etae;
+                
                 Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
                 Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
                 Gxz = Exx*ani*d1 - Exx*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // NOT SURE ABOUT THE FACTOR 2
@@ -895,6 +941,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
 
 }
 
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -910,6 +957,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
     double OverS;
     double ddivpdexx, ddivpdezz, ddivpdexz, ddivpdp, Pcorr, drhodp, rho;
     double Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, el, etae, ani, d0, d1, nx, nz;
+    double Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det;
 
     Nx = mesh->Nx;
     Nz = mesh->Nz;
@@ -923,7 +971,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
     InterpCentroidsToVerticesDouble( mesh->phi0_n,  mesh->phi0_s,  mesh, model ); // ACHTUNG NOT FRICTION ANGLE
 
     // Evaluate cell center viscosities
-#pragma omp parallel for shared( mesh  ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, dnew, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, detadexx, detadezz, detadexz, detadp, Xreac, OverS, ddivpdexx, ddivpdezz, ddivpdexz, ddivpdp, Pcorr, drhodp, rho, div_el, div_pl, div_r, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, el, etae, ani, d0, d1, nx, nz ) firstprivate( UnsplitDiffReac, materials, scaling, average, model, Ncx, Ncz )
+#pragma omp parallel for shared( mesh  ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, dnew, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, detadexx, detadezz, detadexz, detadp, Xreac, OverS, ddivpdexx, ddivpdezz, ddivpdexz, ddivpdp, Pcorr, drhodp, rho, div_el, div_pl, div_r, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, el, etae, ani, d0, d1, nx, nz, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate( UnsplitDiffReac, materials, scaling, average, model, Ncx, Ncz )
     for ( k1=0; k1<Ncx*Ncz; k1++ ) {
 
         //    for ( l=0; l<Ncz; l++ ) {
@@ -998,10 +1046,32 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
             }
             //----------------------------------------------------------//
-            Exx = mesh->exxd[c0]  + mesh->sxxd0[c0] /etae/2.0;
-            Ezz = mesh->ezzd[c0]  + mesh->szzd0[c0] /etae/2.0;
-            Exz = mesh->exz_n[c0] + mesh->sxz0_n[c0]/etae/2.0;
-            gxz = 2.0*Exz;
+//            Exx = mesh->exxd[c0]  + mesh->sxxd0[c0] /etae/2.0;
+//            Ezz = mesh->ezzd[c0]  + mesh->szzd0[c0] /etae/2.0;
+//            Exz = mesh->exz_n[c0] + mesh->sxz0_n[c0]/etae/2.0;
+//            gxz = 2.0*Exz;
+            
+            Da11  = 2.0 - 2.0*ani*d0;
+            Da12  = 2.0*ani*d0;
+            Da13  = 2.0*ani*d1;
+            Da22  = 2.0 - 2.0*ani*d0;
+            Da23  =-2.0*ani*d1;
+            Da33  = 1.0  + 2.0*ani*(d0 - 0.5);
+            a11   = Da33 * Da22 - pow(Da23,2);
+            a12   = Da13 * Da23 - Da33 * Da12;
+            a13   = Da12 * Da23 - Da13 * Da22;
+            a22   = Da33 * Da11 - pow(Da13,2);
+            a23   = Da12 * Da13 - Da11 * Da23;
+            a33   = Da11 * Da22 - pow(Da12,2);
+            det   = (Da11 * a11) + (Da12 * a12) + (Da13 * a13);
+            iDa11 = a11/det; iDa12 = a12/det; iDa13 = a13/det;
+            iDa22 = a22/det; iDa23 = a23/det;
+            iDa33 = a33/det;
+            Exx = mesh->exxd[c0]      + (iDa11*mesh->sxxd0[c0] + iDa12*mesh->szzd0[c0] + iDa13*mesh->sxz0_n[c0])/etae;
+            Ezz = mesh->ezzd[c0]      + (iDa12*mesh->sxxd0[c0] + iDa22*mesh->szzd0[c0] + iDa23*mesh->sxz0_n[c0])/etae;
+            Exz = mesh->exz_n[c0]     + (iDa13*mesh->sxxd0[c0] + iDa23*mesh->szzd0[c0] + iDa33*mesh->sxz0_n[c0])/2.0/etae;
+            gxz = 2.0*mesh->exz_n[c0] + (iDa13*mesh->sxxd0[c0] + iDa23*mesh->szzd0[c0] + iDa33*mesh->sxz0_n[c0])/etae;
+                        
             Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
             Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
             Gxz = 1.0*(Exx*ani*d1 - Exx*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5) );  // NOT SURE ABOUT THE FACTOR 1.0
@@ -1016,7 +1086,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 cond =  fabs(mesh->phase_perc_n[p][c0])>1.0e-13;
 
                 if ( cond == 1 ) {
-                    eta =  Viscosity( p, mesh->mu_n[c0], mesh->T[c0], mesh->p_in[c0], mesh->d0_n[c0], mesh->phi0_n[c0], mesh->X0_n[c0], Exx, Ezz, Exz, Gxx, Gzz, Gxz, mesh->sxxd0[c0], mesh->szzd0[c0], mesh->sxz0_n[c0], materials    , model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &dnew, mesh->strain_n[c0], mesh->dil_n[c0], mesh->fric_n[c0], mesh->C_n[c0], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_n[c0], &Xreac, &OverS, &ddivpdexx, &ddivpdezz, &ddivpdexz, &ddivpdp, &Pcorr, &drhodp, &rho, mesh->bet_n[c0], mesh->div_u[c0], &div_el, &div_pl, &div_r );
+                    eta =  Viscosity( p, mesh->mu_n[c0], mesh->T[c0], mesh->p_in[c0], mesh->d0_n[c0], mesh->phi0_n[c0], mesh->X0_n[c0], Exx, Ezz, Exz, Gxx, Gzz, Gxz/1.0, mesh->sxxd0[c0], mesh->szzd0[c0], mesh->sxz0_n[c0], materials    , model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &dnew, mesh->strain_n[c0], mesh->dil_n[c0], mesh->fric_n[c0], mesh->C_n[c0], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_n[c0], &Xreac, &OverS, &ddivpdexx, &ddivpdezz, &ddivpdexz, &ddivpdp, &Pcorr, &drhodp, &rho, mesh->bet_n[c0], mesh->div_u[c0], &div_el, &div_pl, &div_r );
                 }
 
                 // ARITHMETIC AVERAGE
@@ -1152,7 +1222,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
 
     // Calculate vertices viscosity
 
-#pragma omp parallel for shared( mesh ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, dnew, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, detadexx, detadezz, detadexz, detadp, Xreac, OverS, ddivpdexx, ddivpdezz, ddivpdexz, ddivpdp, Pcorr, drhodp, rho, div_el, div_pl, div_r, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, el, etae, ani, d0, d1, nx, nz ) firstprivate( UnsplitDiffReac, materials, scaling, average, model, Nx, Nz )
+#pragma omp parallel for shared( mesh ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, dnew, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, detadexx, detadezz, detadexz, detadp, Xreac, OverS, ddivpdexx, ddivpdezz, ddivpdexz, ddivpdp, Pcorr, drhodp, rho, div_el, div_pl, div_r, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, el, etae, ani, d0, d1, nx, nz, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate( UnsplitDiffReac, materials, scaling, average, model, Nx, Nz )
     for ( k1=0; k1<Nx*Nz; k1++ ) {
 
         k  = mesh->kn[k1];
@@ -1192,10 +1262,32 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
             }
             //----------------------------------------------------------//
-            Exx = mesh->exxd_s[c1] + mesh->sxxd0_s[c1]/etae/2.0;
-            Ezz = mesh->ezzd_s[c1] + mesh->szzd0_s[c1]/etae/2.0;
-            Exz = mesh->exz[c1]    + mesh->sxz0[c1]   /etae/2.0;
-            gxz = 2.0*Exz;
+//            Exx = mesh->exxd_s[c1] + mesh->sxxd0_s[c1]/etae/2.0;
+//            Ezz = mesh->ezzd_s[c1] + mesh->szzd0_s[c1]/etae/2.0;
+//            Exz = mesh->exz[c1]    + mesh->sxz0[c1]   /etae/2.0;
+//            gxz = 2.0*Exz;
+            
+            Da11  = 2.0 - 2.0*ani*d0;
+            Da12  = 2.0*ani*d0;
+            Da13  = 2.0*ani*d1;
+            Da22  = 2.0 - 2.0*ani*d0;
+            Da23  =-2.0*ani*d1;
+            Da33  = 1.0  + 2.0*ani*(d0 - 0.5);
+            a11   = Da33 * Da22 - pow(Da23,2);
+            a12   = Da13 * Da23 - Da33 * Da12;
+            a13   = Da12 * Da23 - Da13 * Da22;
+            a22   = Da33 * Da11 - pow(Da13,2);
+            a23   = Da12 * Da13 - Da11 * Da23;
+            a33   = Da11 * Da22 - pow(Da12,2);
+            det   = (Da11 * a11) + (Da12 * a12) + (Da13 * a13);
+            iDa11 = a11/det; iDa12 = a12/det; iDa13 = a13/det;
+            iDa22 = a22/det; iDa23 = a23/det;
+            iDa33 = a33/det;
+            Exx = mesh->exxd_s[c1]  + (iDa11*mesh->sxxd0_s[c1] + iDa12*mesh->szzd0_s[c1] + iDa13*mesh->sxz0[c1])/etae;
+            Ezz = mesh->ezzd_s[c1]  + (iDa12*mesh->sxxd0_s[c1] + iDa22*mesh->szzd0_s[c1] + iDa23*mesh->sxz0[c1])/etae;
+            Exz = mesh->exz[c1]     + (iDa13*mesh->sxxd0_s[c1] + iDa23*mesh->szzd0_s[c1] + iDa33*mesh->sxz0[c1])/2.0/etae;
+            gxz = 2.0*mesh->exz[c1] + (iDa13*mesh->sxxd0_s[c1] + iDa23*mesh->szzd0_s[c1] + iDa33*mesh->sxz0[c1])/etae;
+            
             Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
             Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
             Gxz = Exx*ani*d1 - Exx*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // NOT SURE ABOUT THE FACTOR 1
@@ -1211,7 +1303,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
 
                 if ( cond == 1 ) {
 
-                    eta =  Viscosity( p, mesh->mu_s[c1], mesh->T_s[c1], mesh->P_s[c1], mesh->d0_s[c1], mesh->phi0_s[c1], mesh->X0_s[c1], Exx, Ezz, Exz, Gxx, Gzz, Gxz, mesh->sxxd0_s[c1], mesh->szzd0_s[c1], mesh->sxz0[c1], materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &dnew, mesh->strain_s[c1], mesh->dil_s[c1], mesh->fric_s[c1], mesh->C_s[c1], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_s[c1], &Xreac, &OverS, &ddivpdexx, &ddivpdezz, &ddivpdexz, &ddivpdp, &Pcorr, &drhodp, &rho, mesh->bet_s[c1], mesh->div_u_s[c1], &div_el, &div_pl, &div_r );
+                    eta =  Viscosity( p, mesh->mu_s[c1], mesh->T_s[c1], mesh->P_s[c1], mesh->d0_s[c1], mesh->phi0_s[c1], mesh->X0_s[c1], Exx, Ezz, Exz, Gxx, Gzz, Gxz/1.0, mesh->sxxd0_s[c1], mesh->szzd0_s[c1], mesh->sxz0[c1], materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &dnew, mesh->strain_s[c1], mesh->dil_s[c1], mesh->fric_s[c1], mesh->C_s[c1], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_s[c1], &Xreac, &OverS, &ddivpdexx, &ddivpdezz, &ddivpdexz, &ddivpdp, &Pcorr, &drhodp, &rho, mesh->bet_s[c1], mesh->div_u_s[c1], &div_el, &div_pl, &div_r );
                 }
 
                 if (average ==0) {
