@@ -170,10 +170,17 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         if ( (int)t_exp == 0) F_exp  = 1.0;
         if ( (int)t_exp == 1) F_exp  = 1.0/6.0*pow(2.0,1.0/(ST+n_exp)) * pow(3.0,(ST+n_exp-1.0)/2.0/(ST+n_exp));
         if ( (int)t_exp == 2) F_exp  = 1.0/4.0*pow(2,1.0/(ST+n_exp));
-        B_exp                   = F_exp * pow(E_exp*exp(-Ea_exp/R/T*pow(1.0-gamma,2.0)), -1.0/(ST+n_exp)) * pow(gamma*S_exp, ST/(ST+n_exp));
-        C_exp                   = pow(2.0*f_ani*B_exp, -(ST+n_exp));
+        // old
+//        B_exp                   = F_exp * pow(E_exp*exp(-Ea_exp/R/T*pow(1.0-gamma,2.0)), -1.0/(ST+n_exp)) * pow(gamma*S_exp, ST/(ST+n_exp));
+//        C_exp                   = pow(2.0*f_ani*B_exp, -(ST+n_exp));
+//        // committed in April 2020 - should work without aniso (and no correction)
 //        C_exp = E_exp *exp(-Ea_exp/R/T * pow(1.0-gamma,2.0)) * pow(gamma*S_exp,-ST);  // ajouter Fexp
 //        B_exp = 0.5*pow(C_exp, -1./(n_exp+ST) );
+        // new
+        double Arr_exp = exp(-Ea_exp/R/T*pow(1.0-gamma,2.0));
+        F_exp = pow( pow(2.0,1.0-ST-n_exp) / pow(sqrt(3.0), ST+n_exp+1.0), 1.0/(ST+n_exp));
+        B_exp = F_exp * ( pow(gamma*S_exp, ST/(ST+n_exp)) / pow( E_exp*Arr_exp, 1.0/(ST+n_exp)) );
+        C_exp = pow(2.0*f_ani*B_exp, -(ST+n_exp));
     }
     
     double cos_fric = cos(fric);
