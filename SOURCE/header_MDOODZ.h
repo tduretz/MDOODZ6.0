@@ -124,7 +124,7 @@ struct _params {
     int decoupled_solve, lsolver, diag_scaling, pc_type;
     double penalty, abs_tol_div, rel_tol_div, auto_penalty, compressible, rel_tol_KSP;
     // Non-linear solver
-    double line_search_min, num_deriv, safe_dt_div;
+    double line_search_min, safe_dt_div;
     int    safe_mode, nstagmax;
     // Deformation maps
     int nT, nE, nd, def_maps;

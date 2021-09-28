@@ -779,18 +779,8 @@ int main( int nargs, char *args[] ) {
                 if ( model.decoupled_solve == 1 ) BuildStokesOperatorDecoupled  ( &mesh, model, 0, mesh.p_corr, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, 1 );
                 
                 // Build discrete system of equations - Jacobian
-                if (model.aniso == 0) {
-                    if ( model.Newton          == 1  && model.num_deriv==1) ComputeViscosityDerivatives_FD( &mesh, &materials, &model, Nmodel, &scaling );
-                    if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
-                    if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_corr, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
-                }
-                else {
-                    RheologicalOperators( &mesh, &model, &scaling, 0 );
-                    if ( model.Newton          == 1 ) {
-                        printf("Stiffness matrix assembly --- Anisotropy\n");
-                        BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_corr, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
-                    }
-                }
+                if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
+                if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_corr, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
                 
                 //                MinMaxArrayTag( mesh.detadexx_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "detadexx_n     ", mesh.BCg.type );
                 //                MinMaxArrayTag( mesh.detadezz_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "detadezz_n     ", mesh.BCg.type );

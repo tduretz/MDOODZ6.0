@@ -393,8 +393,7 @@ void InitialiseSolutionFields( grid *mesh, params *model ) {
             if ( mesh->BCp.type[c] != 30 ||  mesh->BCp.type[c] != 31) {
                 if (model->step==0) {
                     // Initial pressure field
-                    if (model->num_deriv==0) mesh->p_in[c]  = 0.0 + model->PrBG;
-                    if (model->num_deriv==1) mesh->p_in[c]  = eps + model->PrBG;
+                    mesh->p_in[c]  = 0.0 + model->PrBG;
                 }
             }
             
