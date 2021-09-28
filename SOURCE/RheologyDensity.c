@@ -112,8 +112,9 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     Gii   = sqrt(1.0/2.0*(Gxx*Gxx + Gzz*Gzz + Gyy*Gyy) + Gxz*Gxz);
     f_ani = Gii/Eii;
 //    printf("%d %2.10e \n", phase, f_ani);
+//    printf("%2.2e %2.2e\n", Eii, Gii);
     if (Eii*scaling->E<1e-30) Eii=1e-30/scaling->E;
-        
+    
     // P corr will be corrected if plasticity feedbacks on pressure (dilation)
     *Pcorr = P;
     
@@ -166,14 +167,15 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         dCgbsdP = -C_gbs*Va_gbs/R/T;
     }
     if ( peierls   == 1 ) {
-        ST                           = Ea_exp/R/T * pow((1.0-gamma),(q-1.0)) * q*gamma;
-        if ( (int)t_exp == 0) F_exp  = 1.0;
-        if ( (int)t_exp == 1) F_exp  = 1.0/6.0*pow(2.0,1.0/(ST+n_exp)) * pow(3.0,(ST+n_exp-1.0)/2.0/(ST+n_exp));
-        if ( (int)t_exp == 2) F_exp  = 1.0/4.0*pow(2,1.0/(ST+n_exp));
+//        ST                           = Ea_exp/R/T * pow((1.0-gamma),(q-1.0)) * q*gamma;
+        ST                           = Ea_exp/R/T * 2.0*gamma*(1-gamma);
+//        if ( (int)t_exp == 0) F_exp  = 1.0;
+//        if ( (int)t_exp == 1) F_exp  = 1.0/6.0*pow(2.0,1.0/(ST+n_exp)) * pow(3.0,(ST+n_exp-1.0)/2.0/(ST+n_exp));
+//        if ( (int)t_exp == 2) F_exp  = 1.0/4.0*pow(2,1.0/(ST+n_exp));
         // old
 //        B_exp                   = F_exp * pow(E_exp*exp(-Ea_exp/R/T*pow(1.0-gamma,2.0)), -1.0/(ST+n_exp)) * pow(gamma*S_exp, ST/(ST+n_exp));
 //        C_exp                   = pow(2.0*f_ani*B_exp, -(ST+n_exp));
-//        // committed in April 2020 - should work without aniso (and no correction)
+        // committed in April 2020 - should work without aniso (and no correction)
 //        C_exp = E_exp *exp(-Ea_exp/R/T * pow(1.0-gamma,2.0)) * pow(gamma*S_exp,-ST);  // ajouter Fexp
 //        B_exp = 0.5*pow(C_exp, -1./(n_exp+ST) );
         // new
@@ -345,10 +347,11 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     eta_lo = 1.0/(ieta_sum);
     
     //------------------------------------------------------------------------//
-    
+//    printf("\n");
     // Initial guess
-    eta_ve                  = 0.5*(eta_up+eta_lo);
-    
+//    eta_ve                  = 0.5*(eta_up+eta_lo);
+    eta_ve = eta_up;
+
     // Local iterations
     for (it=0; it<nitmax; it++) {
         
@@ -366,6 +369,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         // Residual check
         res = fabs(r_eta_ve/Eii);
         if (it==0) res0 = res;
+//        printf("%2.2e\n", res);
         if (res < tol/100) break;
         
         // Analytical derivative of function
@@ -381,6 +385,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     }
     
     if ( it==nitmax-1 && res > tol ) { printf("Visco-Elastic iterations failed!\n"); exit(0);}
+    if ( it>10 ) printf("Warnung: more that 10 local iterations, there might be a problem...\n");
     
     // Recalculate stress components
     Tii                  = 2.0*eta_ve*f_ani*Eii;
@@ -496,8 +501,6 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         
         double Tii_corr= Tii- eta_ve*gdot;
         double Tii_trial=Tii;
-        
-        
         Txx     = 2.0*eta_ve*(Exx - gdot*dQdtxx    );
         Tzz     = 2.0*eta_ve*(Ezz - gdot*dQdtzz    );
         Tyy     = -(Txx+Tzz);
@@ -1053,10 +1056,15 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
             }
             //----------------------------------------------------------//
-//            Exx = mesh->exxd[c0]  + mesh->sxxd0[c0] /etae/2.0;
-//            Ezz = mesh->ezzd[c0]  + mesh->szzd0[c0] /etae/2.0;
-//            Exz = mesh->exz_n[c0] + mesh->sxz0_n[c0]/etae/2.0;
-//            gxz = 2.0*Exz;
+            Exx = mesh->exxd[c0]  + mesh->sxxd0[c0] /etae/2.0;
+            Ezz = mesh->ezzd[c0]  + mesh->szzd0[c0] /etae/2.0;
+            Exz = mesh->exz_n[c0] + mesh->sxz0_n[c0]/etae/2.0;
+            gxz = 2.0*Exz;
+            
+//            double Eii   = sqrt(1.0/2.0*(Exx*Exx + Ezz*Ezz + pow((Exx+Ezz),2) ) + Exz*Exz);
+//            double Gii   = sqrt(1.0/2.0*(Gxx*Gxx + Gzz*Gzz + pow((Gxx+Gzz),2) ) + Gxz*Gxz);
+//            printf("Eii=%2.2e Gii=%2.2e\n", Eii, Gii);
+//            exit(1);
             
             Da11  = 2.0 - 2.0*ani*d0;
             Da12  = 2.0*ani*d0;
@@ -1083,9 +1091,10 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
             Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
             Gxz = 1.0*(Exx*ani*d1 - Exx*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5) );  // NOT SURE ABOUT THE FACTOR 1.0
 
-//            double Eii   = sqrt(1.0/2.0*(Exx*Exx + Ezz*Ezz + pow((Exx+Ezz),2) ) + Exz*Exz);
-//            double Gii   = sqrt(1.0/2.0*(Gxx*Gxx + Gzz*Gzz + pow((Gxx+Gzz),2) ) + Gxz*Gxz);
-//            if (Gii/Eii<.999) printf("Eii=%2.2e Gii=%2.2e\n", Eii, Gii);
+//             Eii   = sqrt(1.0/2.0*(Exx*Exx + Ezz*Ezz + pow((Exx+Ezz),2) ) + Exz*Exz);
+//             Gii   = sqrt(1.0/2.0*(Gxx*Gxx + Gzz*Gzz + pow((Gxx+Gzz),2) ) + Gxz*Gxz);
+//            printf("Eii=%2.2e Gii=%2.2e %2.2e %2.2e %2.2e\n", Eii, Gii, ani, d0, mesh->aniso_factor_n[c0]);
+//            exit(1);
 
             // Loop on phases
             for ( p=0; p<model->Nb_phases; p++) {

@@ -341,7 +341,17 @@ int main( int nargs, char *args[] ) {
             P2Mastah( &model, particles, particles.X,     &mesh, mesh.X0_n , mesh.BCp.type,  1, 0, interp, cent, model.itp_stencil);
             P2Mastah( &model, particles, particles.X,     &mesh, mesh.X0_s , mesh.BCg.type,  1, 0, interp, vert, model.itp_stencil);
             
-            if ( model.aniso == 1 ) InitialiseDirectorVector ( &mesh, &particles, &model, &materials );
+            if ( model.aniso == 1 ) {
+                InitialiseDirectorVector ( &mesh, &particles, &model, &materials );
+                P2Mastah( &model, particles, particles.nx,     &mesh, mesh.nx0_n , mesh.BCp.type,  1, 0, interp, cent, model.itp_stencil);
+                P2Mastah( &model, particles, particles.nz,     &mesh, mesh.nz0_n , mesh.BCp.type,  1, 0, interp, cent, model.itp_stencil);
+                P2Mastah( &model, particles, particles.nx,     &mesh, mesh.nx0_s , mesh.BCg.type,  1, 0, interp, vert, model.itp_stencil);
+                P2Mastah( &model, particles, particles.nz,     &mesh, mesh.nz0_s , mesh.BCg.type,  1, 0, interp, vert, model.itp_stencil);
+                NormalizeDirector( &mesh, mesh.nx0_n, mesh.nz0_n, mesh.nx0_s, mesh.nz0_s, &model );
+                FiniteStrainAspectRatio ( &mesh, scaling, model, &particles );
+                P2Mastah( &model, particles, materials.aniso_factor,     &mesh, mesh.aniso_factor_n , mesh.BCp.type,  0, 0, interp, cent, model.itp_stencil);
+                P2Mastah( &model, particles, materials.aniso_factor,     &mesh, mesh.aniso_factor_s , mesh.BCg.type,  0, 0, interp, vert, model.itp_stencil);
+            }
             //
             printf("*************************************\n");
             printf("******* Initialize viscosity ********\n");
