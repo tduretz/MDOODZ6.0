@@ -1,5 +1,5 @@
 **** RESTART ****/
-istep =00500
+istep =00050
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -20,7 +20,7 @@ T   = 1
 /**** SPACE-TIME ****/
 Nx   = 101
 Nz   = 101
-Nt   = 500
+Nt   = 50
 xmin = -0.5000000
 zmin = -0.5000000
 xmax =  0.5000000
@@ -88,8 +88,8 @@ Slim = 500e9
 alp  = 10.0e-6
 bet  = 1e-11
 drho = 0
-cstv = 1
-pwlv = 0
+cstv = 0
+pwlv = 1
 linv = 0
 gbsv = 0
 expv = 0
@@ -113,8 +113,8 @@ Slim = 500e9
 alp  = 10.0e-6
 bet  = 1e-11
 drho = 0
-cstv = 1
-pwlv = 0
+cstv = 0
+pwlv = 1
 linv = 0
 gbsv = 0
 expv = 0
@@ -138,8 +138,8 @@ Slim = 500e9
 alp  = 10.0e-6
 bet  = 1e-11
 drho = 0
-cstv = 1
-pwlv = 0
+cstv = 0
+pwlv = 1
 linv = 0
 gbsv = 0
 expv = 0

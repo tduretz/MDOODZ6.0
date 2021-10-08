@@ -33,10 +33,6 @@ diag_scaling = 0
 abs_tol_div = 1e-8
 rel_tol_div = 1e-8
 
-/**** ANISOTROPY ****/
-aniso           = 1
-aniso_fstrain   = 0 // finite strain anisotropy activated
-
 /**** SWITCHES ****/
 shear_style     = 0
 ismechanical    = 1
@@ -58,6 +54,10 @@ adiab_heat      = 0
 fstrain         = 1
 advection       = 0
 GNUplot_residuals = 1
+
+/**** ANISOTROPY ****/
+aniso           = 1
+aniso_fstrain   = 0 // finite strain anisotropy activated
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = 1
@@ -93,11 +93,10 @@ gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
 gsel = 0             / grain size evo.
 eta0 = 1
-npwl = 30
+npwl = 3
 Qpwl = 0
-aniso        = 1
 aniso_angle  = 45
-aniso_factor = 2.0
+aniso_factor =2.5
 
 /**** PHASE 2 ****/
 ID   = 1
@@ -121,7 +120,6 @@ gsel = 0             / grain size evo.
 eta0 = 1e1
 npwl = 3
 Qpwl = 0
-aniso        = 0
 aniso_angle  = 45
 aniso_factor = 1
 

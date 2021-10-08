@@ -803,7 +803,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
     //---------------------------------------------------------------------------------------------------------//
     //--------------------------------- Tangent operator (Newton linearised) ----------------------------------//
     //---------------------------------------------------------------------------------------------------------//
-    if ( Jacobian==1 && model->aniso==0 ) {
+    if ( Jacobian==1 ) { 
 
         // Loop on cell centers
 #pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae, K, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate ( model, dt, comp, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz )
