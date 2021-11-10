@@ -8,7 +8,7 @@ CC = /opt/local/bin/gcc-mp-8
 CFLAGS = -std=c99 -D _UMFPACK_ -I ./
 
 ifeq ($(OPT),yes)	
-	CFLAGS += -O3 -ftree-vectorize -funroll-loops
+	CFLAGS += -O3 -ftree-vectorize -funroll-loops -finline -fomit-frame-pointer -march=native
 else
 	CFLAGS += -g -Wall  -O0 -fno-inline -fno-omit-frame-pointer
 endif
@@ -44,7 +44,7 @@ endif
 # Rules
 all: Doodzi_$(MODEL)
 
-FILES = Main_DOODZ.o RheologyParticles.o ChemicalRoutines.o ParticleReseeding.o Solvers.o Routines_BEN.o StokesRoutines.o StokesAssemblyCoupled.o StokesAssemblyDecoupled.o AdvectionRoutines.o RheologyDensity.o HDF5Output.o SparseTools.o ThermalRoutines.o ThermalSolver.o ParticleRoutines.o free_surf.o FlowLaws.o MemoryAllocFree.o InputOutput.o MiscFunctions.o GridRoutines.o
+FILES = Main_DOODZ.o FD_Jacobian.o RheologyParticles.o ChemicalRoutines.o ParticleReseeding.o Solvers.o Routines_BEN.o StokesRoutines.o StokesAssemblyCoupled.o StokesAssemblyDecoupled.o AdvectionRoutines.o RheologyDensity.o HDF5Output.o SparseTools.o ThermalRoutines.o ThermalSolver.o ParticleRoutines.o free_surf.o FlowLaws.o MemoryAllocFree.o InputOutput.o MiscFunctions.o GridRoutines.o
 
 ifeq ($(NEW_INPUT),yes)
         FILES += BC.o

@@ -110,12 +110,10 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     double Tyy, Eyy  = -( Exx  + Ezz  ), Gyy  = -( Gxx  + Gzz  ), Tyy0 = -( Txx0 + Tzz0 ); // definition of deviatoric tensor
     Eii   = sqrt(1.0/2.0*(Exx*Exx + Ezz*Ezz + Eyy*Eyy) + Exz*Exz);
     Gii   = sqrt(1.0/2.0*(Gxx*Gxx + Gzz*Gzz + Gyy*Gyy) + Gxz*Gxz);
-    if (Eii*scaling->E<1e-30) Eii=1e-30/scaling->E;
-    if (Gii*scaling->E<1e-30) Gii=1e-30/scaling->E;
     f_ani = Gii/Eii;
 //    printf("%d %2.10e \n", phase, f_ani);
 //    printf("%2.2e %2.2e\n", Eii, Gii);
-    
+    if (Eii*scaling->E<1e-30) Eii=1e-30/scaling->E;
     
     // P corr will be corrected if plasticity feedbacks on pressure (dilation)
     *Pcorr = P;

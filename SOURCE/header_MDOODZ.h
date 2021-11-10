@@ -600,3 +600,6 @@ void RogerGunther( markers *, params, grid, int, scale );
 void CheckSym( DoodzFP*, double, int, int, char*, int, int );
 void ChemicalDirectSolve( grid*, params, markers*, mat_prop*, double, scale );
 void InitialiseGrainSizeParticles( markers*, mat_prop* );
+
+void ViscosityDerivatives( grid*, mat_prop*, params*, Nparams, scale*);
+

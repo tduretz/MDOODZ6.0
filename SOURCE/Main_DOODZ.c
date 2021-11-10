@@ -670,6 +670,30 @@ int main( int nargs, char *args[] ) {
         
         printf("** Time for particles interpolations I = %lf sec\n",  (double)((double)omp_get_wtime() - t_omp) );
         
+        
+        
+        
+//        struct timespec begin, end;
+//        clock_gettime(CLOCK_REALTIME, &begin);
+//
+//        ViscosityDerivatives( &mesh, &materials, &model, Nmodel, &scaling );
+//
+//        // Stop measuring time and calculate the elapsed time
+//        clock_gettime(CLOCK_REALTIME, &end);
+//        long seconds = end.tv_sec - begin.tv_sec;
+//        long nanoseconds = end.tv_nsec - begin.tv_nsec;
+//        double elapsed = seconds + nanoseconds*1e-9;
+//
+//        printf("** Time for ViscosityDerivatives = %3f sec\n",  elapsed );
+//
+//        exit(0);
+        
+        
+        
+        
+        
+        
+        
         if ( model.ismechanical == 1 ) {
             
             // Allocate and initialise solution and RHS vectors
@@ -779,6 +803,7 @@ int main( int nargs, char *args[] ) {
                 if ( model.decoupled_solve == 1 ) BuildStokesOperatorDecoupled  ( &mesh, model, 0, mesh.p_corr, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, 1 );
                 
                 // Build discrete system of equations - Jacobian
+                ViscosityDerivatives( &mesh, &materials, &model, Nmodel, &scaling );
                 if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
                 if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_corr, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
                 
