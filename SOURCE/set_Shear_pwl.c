@@ -534,29 +534,29 @@ void SetBCs( grid *mesh, params *model, scale scaling, markers* particles, mat_p
                     
                     if (model->shear_style== 0 ) {
                     
-                    // Matching BC nodes SOUTH
-                    if (l==0 ) {
-                        mesh->BCv.type[c] = 0;
-                        mesh->BCv.val[c]  = mesh->zg_coord[l] * model->EpsBG;
-                    }
-                    
-                    // Matching BC nodes NORTH
-                    if (l==mesh->Nz-1 ) {
-                        mesh->BCv.type[c] = 0;
-                        mesh->BCv.val[c]  = mesh->zg_coord[l] * model->EpsBG;
-                    }
-                    
-                    // Non-matching boundary WEST
-                    if ( (k==0) ) {
-                        mesh->BCv.type[c] =   13;
-                        mesh->BCv.val[c]  =   0;
-                    }
-                    
-                    // Non-matching boundary EAST
-                    if ( (k==mesh->Nx) ) {
-                        mesh->BCv.type[c] =   13;
-                        mesh->BCv.val[c]  =   0;
-                    }
+                        // Matching BC nodes SOUTH
+                        if (l==0 ) {
+                            mesh->BCv.type[c] = 0;
+                            mesh->BCv.val[c]  = mesh->zg_coord[l] * model->EpsBG;
+                        }
+                        
+                        // Matching BC nodes NORTH
+                        if (l==mesh->Nz-1 ) {
+                            mesh->BCv.type[c] = 0;
+                            mesh->BCv.val[c]  = mesh->zg_coord[l] * model->EpsBG;
+                        }
+                        
+                        // Non-matching boundary WEST
+                        if ( (k==0) ) {
+                            mesh->BCv.type[c] =   13;
+                            mesh->BCv.val[c]  =   0;
+                        }
+                        
+                        // Non-matching boundary EAST
+                        if ( (k==mesh->Nx) ) {
+                            mesh->BCv.type[c] =   13;
+                            mesh->BCv.val[c]  =   0;
+                        }
                     }
                     
                     

@@ -141,7 +141,7 @@ void Xmomentum_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spars
     if (mesh->BCp.type[iPrE] == -1) inE = 1.0;
 
     double inS=0.0, inN = 0.0;
-    if (mesh->BCg.type[ixyS] != 30 && mesh->BCu.type[ixyS] != 13) inS = 1.0;
+    if (mesh->BCg.type[ixyS] != 30 && mesh->BCu.type[ixyS ] != 13) inS = 1.0;
     if (mesh->BCg.type[c1  ] != 30 && mesh->BCu.type[c1+nx] != 13) inN = 1.0; /// ?????????????????????????
 
     double dx = mesh->dx;
@@ -3111,6 +3111,14 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     double D33S = mesh->D33_s[ixyS];
     double D34S = mesh->D34_s[ixyS];
 //    double D35S = mesh->D35_s[ixyS];
+    
+//    if (l==1) {
+//        printf("D11W=%2.2e D12W=%2.2e D13W=%2.2e, D14W=%2.2e\n", D11W, D12W, D13W, D14W);
+//        printf("D11E=%2.2e D12E=%2.2e D13E=%2.2e, D14E=%2.2e\n", D11E, D12E, D13E, D14E);
+//        printf("D31S=%2.2e D31S=%2.2e D33S=%2.2e, D34S=%2.2e\n", D31S, D32S, D33S, D34S);
+//        printf("D31N=%2.2e D31N=%2.2e D33N=%2.2e, D34N=%2.2e\n", D31N, D32N, D33N, D34N);
+//    }
+    
 //
 //
 //    if ( mesh->BCu.type[iVxN] == 13 ) {D31N = 0.0; D32N = 0.0; D33N = 0.0; D34N = 0.0;}
@@ -3142,7 +3150,7 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
 
     if ( (k>0)  || (k==0 && (mesh->BCv.type[iVzSW] == -1 || mesh->BCv.type[iVzSW] == 0)) ) {
         if (mesh->BCg.type[ixySW] != 30) inSWv = 1.0;   // modify for periodic
-        if (mesh->BCg.type[ixyNW] != 30) inNWv = 1.0;  // modify for periodic
+        if (mesh->BCg.type[ixyNW] != 30) inNWv = 1.0;   // modify for periodic
     }
     if ( (k<nx-1) || (k==nx-1 && (mesh->BCv.type[iVzSE] == -1 || mesh->BCv.type[iVzSE] == 0) ) ) {
         if (mesh->BCg.type[ixySE] != 30) inSEv = 1.0;   // modify for periodic
@@ -3158,6 +3166,9 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     if (wE>1.0) wE = 1.0/wE;
     if (wS>1.0) wS = 1.0/wS;
     if (wN>1.0) wN = 1.0/wN;
+    
+    if (l==1) printf("l1 wW = %2.2e wE = %2.2e wS = %2.2e wE = %2.2e \n", wW, wE, wS, wN);
+    if (l==2) printf("l2 wW = %2.2e wE = %2.2e wS = %2.2e wE = %2.2e \n", wW, wE, wS, wN);
 
     double dx = mesh->dx;
     double dz = mesh->dz;
@@ -3186,7 +3197,7 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
 
     pW  =  -inW*one_dx + (inW*( D14W*dz + dx*(-D34N*inN*wN + D34S*inS*wS))/(dx*dz));
     pE  =   inE*one_dx + (inE*(-D14E*dz + dx*(-D34N*inN*wN + D34S*inS*wS))/(dx*dz));
-    pSW = (D34S*inS*inSWc*wS/dz);
+    pSW =  (D34S*inS*inSWc*wS/dz);
     pSE = ( D34S*inS*inSEc*wS/dz);
     pNW = (-D34N*inN*inNWc*wN/dz);
     pNE = (-D34N*inN*inNEc*wN/dz);

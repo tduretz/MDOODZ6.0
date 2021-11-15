@@ -77,7 +77,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         // INCLUSIONS INCLUSIONS INCLUSIONS
         //----------------------------------
         // Central inclusion
-        if ( 0*pow(particles->x[np],2) + pow(particles->z[np],2) < pow(rad,2) ) {
+        if ( pow(particles->x[np],2) + pow(particles->z[np],2) < pow(rad,2) ) {
                         particles->phase[np] = 0;
         }
 //        // SE inclusion

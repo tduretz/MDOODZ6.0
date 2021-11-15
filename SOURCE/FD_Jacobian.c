@@ -526,7 +526,7 @@ void ViscosityDerivatives( grid *mesh, mat_prop *materials, params *model, Npara
     double ddivpdexx, ddivpdezz, ddivpdexz, ddivpdp, Pcorr, drhodp, rho;
     double Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, el, etae, ani, d0, d1, nx, nz;
     double Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det;
-    double tol = 1e-6;
+    double tol = 1e-5;
 
     Nx = mesh->Nx;
     Nz = mesh->Nz;
@@ -727,6 +727,7 @@ void ViscosityDerivatives( grid *mesh, mat_prop *materials, params *model, Npara
                 // Director
                 nx = mesh->nx0_s[c1];
                 nz = mesh->nz0_s[c1];
+                printf("nx = %2.2e, nz = %2.2e\n", nx, nz );
                 // See Anisotropy_v2.ipynb
                 if ( model->aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_s[c1];
                 if ( model->aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_s[c1];

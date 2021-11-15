@@ -749,12 +749,12 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 //----------------------------------------------------------//
                 mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k];
                 mesh->D12_n[k] =                      2.0*ani*d0*mesh->eta_n[k];
-                mesh->D13_n[k] =                      2.0*ani*d1*mesh->eta_n[k];
+//                mesh->D13_n[k] =                      2.0*ani*d1*mesh->eta_n[k];
                 mesh->D14_n[k] =                      0.0;
                 //----------------------------------------------------------//
                 mesh->D21_n[k] =                      2.0*ani*d0*mesh->eta_n[k];
                 mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k];
-                mesh->D23_n[k] =                     -2.0*ani*d1*mesh->eta_n[k];
+//                mesh->D23_n[k] =                     -2.0*ani*d1*mesh->eta_n[k];
                 mesh->D24_n[k] =                      0.0;
                 //----------------------------------------------------------//
             }
@@ -787,9 +787,9 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 }
                 //----------------------------------------------------------//
                 mesh->D31_s[k] =                  2.0*ani*d1*mesh->eta_s[k];
-                mesh->D32_s[k] =                 -2.0*ani*d1*mesh->eta_s[k];
-                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*ani*(d0 - 0.5)*mesh->eta_s[k];
-                mesh->D34_s[k] =                  0.0;
+//                mesh->D32_s[k] =                 -2.0*ani*d1*mesh->eta_s[k];
+                mesh->D33_s[k] = mesh->eta_s[k];// + 2.0*ani*(d0 - 0.5)*mesh->eta_s[k];
+//                mesh->D34_s[k] =                  0.0;
                 //----------------------------------------------------------//
             }
             else {
@@ -858,17 +858,23 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 
                 Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
                 Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
-                Gxz = Exx*ani*d1 - Exx*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // NOT SURE ABOUT THE FACTOR 2
+                Gxz = Exx*ani*d1 - Ezz*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // NOT SURE ABOUT THE FACTOR 2
+                
+                
+//                Gxx = Exx;
+//                Gzz = Ezz;
+//                Gxz = Exz;
+                
                 //----------------------------------------------------------//
                 mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k] * Gxx - K*dt*mesh->ddivpdexx_n[k];
                 mesh->D12_n[k] =                      2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k] * Gxx - K*dt*mesh->ddivpdezz_n[k];
-                mesh->D13_n[k] =                      2.0*ani*d1*mesh->eta_n[k] + 2.0*mesh->detadgxz_n[k] * Gxx - K*dt*mesh->ddivpdgxz_n[k];
-                mesh->D14_n[k] =                                                  2.0*mesh->detadp_n[k]   * Exx - K*dt*mesh->ddivpdp_n[k];
+//                mesh->D13_n[k] =                      2.0*ani*d1*mesh->eta_n[k] + 2.0*mesh->detadgxz_n[k] * Gxx - K*dt*mesh->ddivpdgxz_n[k];
+//                mesh->D14_n[k] =                                                  2.0*mesh->detadp_n[k]   * Exx - K*dt*mesh->ddivpdp_n[k];
                 //----------------------------------------------------------//
                 mesh->D21_n[k] =                      2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k] * Gzz - K*dt*mesh->ddivpdexx_n[k];
                 mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k] * Gzz - K*dt*mesh->ddivpdezz_n[k];
-                mesh->D23_n[k] =                    - 2.0*ani*d1*mesh->eta_n[k] + 2.0*mesh->detadgxz_n[k] * Gzz - K*dt*mesh->ddivpdgxz_n[k];
-                mesh->D24_n[k] =                                                  2.0*mesh->detadp_n[k]   * Ezz - K*dt*mesh->ddivpdp_n[k];
+//                mesh->D23_n[k] =                    - 2.0*ani*d1*mesh->eta_n[k] + 2.0*mesh->detadgxz_n[k] * Gzz - K*dt*mesh->ddivpdgxz_n[k];
+//                mesh->D24_n[k] =                                                  2.0*mesh->detadp_n[k]   * Ezz - K*dt*mesh->ddivpdp_n[k];
                 //----------------------------------------------------------//
             }
             else {
@@ -931,12 +937,18 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 
                 Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
                 Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
-                Gxz = Exx*ani*d1 - Exx*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // NOT SURE ABOUT THE FACTOR 2
+                Gxz = Exx*ani*d1 - Ezz*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // NOT SURE ABOUT THE FACTOR 2
+                
+                
+//                Gxx = Exx;
+//                Gzz = Ezz;
+//                Gxz = Exz;
+                
                 //----------------------------------------------------------//
                 mesh->D31_s[k] =                  2.0*ani*d1*mesh->eta_s[k]         + 2.0*mesh->detadexx_s[k] * Gxz;
-                mesh->D32_s[k] =                - 2.0*ani*d1*mesh->eta_s[k]         + 2.0*mesh->detadezz_s[k] * Gxz;
-                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*ani*(d0 - 0.5)*mesh->eta_s[k] + 2.0*mesh->detadgxz_s[k] * Gxz;
-                mesh->D34_s[k] =                                                      2.0*mesh->detadp_s[k]   * Exz;
+//                mesh->D32_s[k] =                - 2.0*ani*d1*mesh->eta_s[k]         + 2.0*mesh->detadezz_s[k] * Gxz;
+                mesh->D33_s[k] = mesh->eta_s[k];// + 2.0*ani*(d0 - 0.5)*mesh->eta_s[k] + 2.0*mesh->detadgxz_s[k] * Gxz;
+//                mesh->D34_s[k] =                                                      2.0*mesh->detadp_s[k]   * Exz;
                 //----------------------------------------------------------//
             }
             else {
@@ -1089,8 +1101,12 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                         
             Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
             Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
-            Gxz = Exx*ani*d1 - Exx*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // Gxz = Exz if isotropic
+            Gxz = Exx*ani*d1 - Ezz*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // Gxz = Exz if isotropic
 
+//            Gxx = Exx;
+//            Gzz = Ezz;
+//            Gxz = Exz;
+            
 //             Eii   = sqrt(1.0/2.0*(Exx*Exx + Ezz*Ezz + pow((Exx+Ezz),2) ) + Exz*Exz);
 //             Gii   = sqrt(1.0/2.0*(Gxx*Gxx + Gzz*Gzz + pow((Gxx+Gzz),2) ) + Gxz*Gxz);
 //            printf("Eii=%2.2e Gii=%2.2e %2.2e %2.2e %2.2e\n", Eii, Gii, ani, d0, mesh->aniso_factor_n[c0]);
@@ -1226,11 +1242,18 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
             }
 
 //            // ACHTUNG!!!! THIS IS HARD-CODED
-//            // Anisotropy
-//            if (model->aniso==1) {
-//                mesh->sxxd[c0] =  mesh->D11_n[c0]*mesh->exxd[c0] + mesh->D12_n[c0]*mesh->ezzd[c0] +  2.0*mesh->D13_n[c0]*mesh->exz_n[c0];
-//                mesh->szzd[c0] =  mesh->D21_n[c0]*mesh->exxd[c0] + mesh->D22_n[c0]*mesh->ezzd[c0] +  2.0*mesh->D23_n[c0]*mesh->exz_n[c0];
-//            }
+            // Anisotropy
+            if (model->aniso==1) {
+                double dumxx = mesh->sxxd[c0];
+                double dumzz = mesh->szzd[c0];
+
+//                printf("%2.6e ", mesh->sxxd[c0]);
+//                printf("%2.6e ", mesh->szzd[c0]);
+                mesh->sxxd[c0] =  mesh->D11_n[c0]*mesh->exxd[c0] + mesh->D12_n[c0]*mesh->ezzd[c0] +  2.0*mesh->D13_n[c0]*mesh->exz_n[c0];
+                mesh->szzd[c0] =  mesh->D21_n[c0]*mesh->exxd[c0] + mesh->D22_n[c0]*mesh->ezzd[c0] +  2.0*mesh->D23_n[c0]*mesh->exz_n[c0];
+//                printf("%2.6e %2.2e\n", mesh->szzd[c0], mesh->szzd[c0]-dumzz);
+
+            }
 
         }
     }
@@ -1306,9 +1329,15 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
             Exz = mesh->exz[c1]     + (iDa13*mesh->sxxd0_s[c1] + iDa23*mesh->szzd0_s[c1] + iDa33*mesh->sxz0[c1])/2.0/etae;
             gxz = 2.0*mesh->exz[c1] + (iDa13*mesh->sxxd0_s[c1] + iDa23*mesh->szzd0_s[c1] + iDa33*mesh->sxz0[c1])/etae;
             
+            
+//            mesh->D31_s[c1]*mesh->exxd_s[c1] + mesh->D32_s[c1]*mesh->ezzd_s[c1] + 2.0*mesh->D33_s[c1]*mesh->exz[c1];
             Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
             Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
-            Gxz = Exx*ani*d1 - Exx*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // Gxz = Exz if isotropic
+            Gxz = Exx*ani*d1 - Ezz*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // Gxz = Exz if isotropic
+            
+//            Gxx = Exx;
+//            Gzz = Ezz;
+//            Gxz = Exz;
             
 //            double Eii   = sqrt(1.0/2.0*(Exx*Exx + Ezz*Ezz + pow((Exx+Ezz),2) ) + Exz*Exz);
 //            double Gii   = sqrt(1.0/2.0*(Gxx*Gxx + Gzz*Gzz + pow((Gxx+Gzz),2) ) + Gxz*Gxz);
@@ -1398,11 +1427,14 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
 
             // ACHTUNG!!!! THIS IS HARD-CODED
             // Anisotropy
-//            if (model->aniso==1) {
-//                //                printf("Stress computed from anisotropy");
-//                //                printf("%2.2e %2.2e\n",2.0*mesh->D33_s[c1]*mesh->exz[c1], mesh->sxz[c1]);
-//                mesh->sxz[c1] =  mesh->D31_s[c1]*mesh->exxd_s[c1] + mesh->D32_s[c1]*mesh->ezzd_s[c1] + 2.0*mesh->D33_s[c1]*mesh->exz[c1];
-//            }
+            if (model->aniso==1) {
+                double dum = mesh->sxz[c1];
+                //                printf("Stress computed from anisotropy");
+//                               printf("%2.6e ", dum);
+                mesh->sxz[c1] =  mesh->D31_s[c1]*mesh->exxd_s[c1] + mesh->D32_s[c1]*mesh->ezzd_s[c1] + 2.0*mesh->D33_s[c1]*mesh->exz[c1];
+//                 printf("%2.6e %2.2e\n", mesh->sxz[c1], mesh->sxz[c1]-dum);
+
+            }
 
             // if (mesh->exz_diss[c1]>0.0 && mesh->sxz[c1]<0.0) exit(21);
             // if (mesh->exz_diss[c1]<0.0 && mesh->sxz[c1]>0.0) exit(22);

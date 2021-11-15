@@ -772,7 +772,6 @@ int main( int nargs, char *args[] ) {
                 printf("**********************************************\n");
                 
                 UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
-                
                 RheologicalOperators( &mesh, &model, &scaling, 0 );                               // ??????????? déjà fait dans UpdateNonLinearity
                 NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );    // ??????????? déjà fait dans UpdateNonLinearity
                 
@@ -803,9 +802,10 @@ int main( int nargs, char *args[] ) {
                 if ( model.decoupled_solve == 1 ) BuildStokesOperatorDecoupled  ( &mesh, model, 0, mesh.p_corr, mesh.p_in, mesh.u_in, mesh.v_in, &Stokes, &StokesA, &StokesB, &StokesC, &StokesD, 1 );
                 
                 // Build discrete system of equations - Jacobian
-                ViscosityDerivatives( &mesh, &materials, &model, Nmodel, &scaling );
+//                ViscosityDerivatives( &mesh, &materials, &model, Nmodel, &scaling );
                 if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
                 if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_corr, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
+                    
                 
                 //                MinMaxArrayTag( mesh.detadexx_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "detadexx_n     ", mesh.BCg.type );
                 //                MinMaxArrayTag( mesh.detadezz_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "detadezz_n     ", mesh.BCg.type );
@@ -871,7 +871,6 @@ int main( int nargs, char *args[] ) {
                     break;
                 }
                 
-                
                 // Direct solve
                 t_omp = (double)omp_get_wtime();
                 if ( model.decoupled_solve == 0 ) SolveStokesDefect( &Stokes, &CholmodSolver, &Nmodel, &mesh, &model, &particles, &topo_chain, &topo, materials, scaling );
@@ -899,7 +898,6 @@ int main( int nargs, char *args[] ) {
                             FreeMat( &JacobC );
                             FreeMat( &JacobD );
                         }
-                        
                         break;
                         
                     }

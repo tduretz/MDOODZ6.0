@@ -1,5 +1,5 @@
 **** RESTART ****/
-istep =00050
+istep =00010
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -26,6 +26,7 @@ zmin = -0.5000000
 xmax =  0.5000000
 zmax =  0.5000000 
 dt   = 1e-2
+dt_min       = 1e-10
 Courant      = 0.5
 lsolver      = 0
 penalty      = 1e5
