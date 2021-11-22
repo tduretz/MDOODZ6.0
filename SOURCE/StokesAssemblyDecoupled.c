@@ -3582,12 +3582,12 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
     
     // New stuff
     double inSSW = 0.0, inSSE = 0.0;
-    if (mesh->BCu.type[iVxSSW] == -1) inSSW = 1.0;
-    if (mesh->BCu.type[iVxSSE] == -1) inSSE = 1.0;
+    if (mesh->BCu.type[iVxSSW] == -1 || periodix==1) inSSW = 1.0;
+    if (mesh->BCu.type[iVxSSE] == -1 || periodix==1) inSSE = 1.0;
        
     double inNNW = 0.0, inNNE = 0.0;
-    if (mesh->BCu.type[iVxNNW] == -1) inNNW = 1.0;
-    if (mesh->BCu.type[iVxNNE] == -1) inNNE = 1.0;
+    if (mesh->BCu.type[iVxNNW] == -1 || periodix==1) inNNW = 1.0;
+    if (mesh->BCu.type[iVxNNE] == -1 || periodix==1) inNNE = 1.0;
 
     wE = inN + inS + inNEc + inSEc;
     wW = inN + inS + inNWc + inSWc;
