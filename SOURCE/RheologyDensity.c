@@ -749,12 +749,12 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 //----------------------------------------------------------//
                 mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k];
                 mesh->D12_n[k] =                      2.0*ani*d0*mesh->eta_n[k];
-//                mesh->D13_n[k] =                      2.0*ani*d1*mesh->eta_n[k];
+                mesh->D13_n[k] =                      2.0*ani*d1*mesh->eta_n[k];
                 mesh->D14_n[k] =                      0.0;
                 //----------------------------------------------------------//
                 mesh->D21_n[k] =                      2.0*ani*d0*mesh->eta_n[k];
                 mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k];
-//                mesh->D23_n[k] =                     -2.0*ani*d1*mesh->eta_n[k];
+                mesh->D23_n[k] =                     -2.0*ani*d1*mesh->eta_n[k];
                 mesh->D24_n[k] =                      0.0;
                 //----------------------------------------------------------//
             }
@@ -787,9 +787,9 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 }
                 //----------------------------------------------------------//
                 mesh->D31_s[k] =                  2.0*ani*d1*mesh->eta_s[k];
-//                mesh->D32_s[k] =                 -2.0*ani*d1*mesh->eta_s[k];
-                mesh->D33_s[k] = mesh->eta_s[k];// + 2.0*ani*(d0 - 0.5)*mesh->eta_s[k];
-//                mesh->D34_s[k] =                  0.0;
+                mesh->D32_s[k] =                 -2.0*ani*d1*mesh->eta_s[k];
+                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*ani*(d0 - 0.5)*mesh->eta_s[k];
+                mesh->D34_s[k] =                  0.0;
                 //----------------------------------------------------------//
             }
             else {
@@ -868,12 +868,12 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 //----------------------------------------------------------//
                 mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k] * Gxx - K*dt*mesh->ddivpdexx_n[k];
                 mesh->D12_n[k] =                      2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k] * Gxx - K*dt*mesh->ddivpdezz_n[k];
-//                mesh->D13_n[k] =                      2.0*ani*d1*mesh->eta_n[k] + 2.0*mesh->detadgxz_n[k] * Gxx - K*dt*mesh->ddivpdgxz_n[k];
+                mesh->D13_n[k] =                      2.0*ani*d1*mesh->eta_n[k] + 2.0*mesh->detadgxz_n[k] * Gxx - K*dt*mesh->ddivpdgxz_n[k];
 //                mesh->D14_n[k] =                                                  2.0*mesh->detadp_n[k]   * Exx - K*dt*mesh->ddivpdp_n[k];
                 //----------------------------------------------------------//
                 mesh->D21_n[k] =                      2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k] * Gzz - K*dt*mesh->ddivpdexx_n[k];
                 mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k] * Gzz - K*dt*mesh->ddivpdezz_n[k];
-//                mesh->D23_n[k] =                    - 2.0*ani*d1*mesh->eta_n[k] + 2.0*mesh->detadgxz_n[k] * Gzz - K*dt*mesh->ddivpdgxz_n[k];
+                mesh->D23_n[k] =                    - 2.0*ani*d1*mesh->eta_n[k] + 2.0*mesh->detadgxz_n[k] * Gzz - K*dt*mesh->ddivpdgxz_n[k];
 //                mesh->D24_n[k] =                                                  2.0*mesh->detadp_n[k]   * Ezz - K*dt*mesh->ddivpdp_n[k];
                 //----------------------------------------------------------//
             }
@@ -946,9 +946,9 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 
                 //----------------------------------------------------------//
                 mesh->D31_s[k] =                  2.0*ani*d1*mesh->eta_s[k]         + 2.0*mesh->detadexx_s[k] * Gxz;
-//                mesh->D32_s[k] =                - 2.0*ani*d1*mesh->eta_s[k]         + 2.0*mesh->detadezz_s[k] * Gxz;
-                mesh->D33_s[k] = mesh->eta_s[k];// + 2.0*ani*(d0 - 0.5)*mesh->eta_s[k] + 2.0*mesh->detadgxz_s[k] * Gxz;
-//                mesh->D34_s[k] =                                                      2.0*mesh->detadp_s[k]   * Exz;
+                mesh->D32_s[k] =                - 2.0*ani*d1*mesh->eta_s[k]         + 2.0*mesh->detadezz_s[k] * Gxz;
+                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*ani*(d0 - 0.5)*mesh->eta_s[k] + 2.0*mesh->detadgxz_s[k] * Gxz;
+                mesh->D34_s[k] =                                                      2.0*mesh->detadp_s[k]   * Exz;
                 //----------------------------------------------------------//
             }
             else {

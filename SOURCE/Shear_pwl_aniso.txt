@@ -60,7 +60,7 @@ aniso_fstrain   = 0 // finite strain anisotropy activated
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = 1
-shear_style     = 0
+shear_style     = 1
 user0           = 1     / temperature [°C]
 user1           = 0.05  / inclusion radius [m]
 user2           = 0
