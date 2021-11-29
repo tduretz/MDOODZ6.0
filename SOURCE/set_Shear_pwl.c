@@ -34,9 +34,11 @@ void BuildInitialTopography( surface *topo, markers *topo_chain, params model, g
     
     int k;
     double TopoLevel = 0.0e3/scaling.L; // sets zero initial topography
+    double A = model.zmax/2.0;
+    double s = model.zmax/4.0;
 
     for ( k=0; k<topo_chain->Nb_part; k++ ) {
-        topo_chain->z[k]     = TopoLevel;
+        topo_chain->z[k]     = A*exp(-pow(topo_chain->x[k],2) / 2.0/s/s  );// TopoLevel;
         topo_chain->phase[k] = 0;
     }
     

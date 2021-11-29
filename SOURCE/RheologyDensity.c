@@ -869,12 +869,12 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k] * Gxx - K*dt*mesh->ddivpdexx_n[k];
                 mesh->D12_n[k] =                      2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k] * Gxx - K*dt*mesh->ddivpdezz_n[k];
                 mesh->D13_n[k] =                      2.0*ani*d1*mesh->eta_n[k] + 2.0*mesh->detadgxz_n[k] * Gxx - K*dt*mesh->ddivpdgxz_n[k];
-//                mesh->D14_n[k] =                                                  2.0*mesh->detadp_n[k]   * Exx - K*dt*mesh->ddivpdp_n[k];
+                mesh->D14_n[k] =                                                  2.0*mesh->detadp_n[k]   * Gxx - K*dt*mesh->ddivpdp_n[k];
                 //----------------------------------------------------------//
                 mesh->D21_n[k] =                      2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k] * Gzz - K*dt*mesh->ddivpdexx_n[k];
                 mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k] * Gzz - K*dt*mesh->ddivpdezz_n[k];
                 mesh->D23_n[k] =                    - 2.0*ani*d1*mesh->eta_n[k] + 2.0*mesh->detadgxz_n[k] * Gzz - K*dt*mesh->ddivpdgxz_n[k];
-//                mesh->D24_n[k] =                                                  2.0*mesh->detadp_n[k]   * Ezz - K*dt*mesh->ddivpdp_n[k];
+                mesh->D24_n[k] =                                                  2.0*mesh->detadp_n[k]   * Gzz - K*dt*mesh->ddivpdp_n[k];
                 //----------------------------------------------------------//
             }
             else {
@@ -948,7 +948,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 mesh->D31_s[k] =                  2.0*ani*d1*mesh->eta_s[k]         + 2.0*mesh->detadexx_s[k] * Gxz;
                 mesh->D32_s[k] =                - 2.0*ani*d1*mesh->eta_s[k]         + 2.0*mesh->detadezz_s[k] * Gxz;
                 mesh->D33_s[k] = mesh->eta_s[k] + 2.0*ani*(d0 - 0.5)*mesh->eta_s[k] + 2.0*mesh->detadgxz_s[k] * Gxz;
-                mesh->D34_s[k] =                                                      2.0*mesh->detadp_s[k]   * Exz;
+                mesh->D34_s[k] =                                                      2.0*mesh->detadp_s[k]   * Gxz;
                 //----------------------------------------------------------//
             }
             else {
@@ -1975,11 +1975,9 @@ void  StrainRateComponents( grid* mesh, scale scaling, params* model ) {
         mesh->exz[c1] = 0.0;
 
         if ( mesh->BCg.type[c1] != 30 ) {
-            if (mesh->BCu.type[c1] != 30 && mesh->BCu.type[c1+Nx] != 30) mesh->exz[c1] +=  0.5 * (mesh->u_in[c1+Nx] - mesh->u_in[c1])/dz;
-            if (mesh->BCv.type[c2] != 30 && mesh->BCv.type[c2+1]  != 30) mesh->exz[c1] +=  0.5 * (mesh->v_in[c2+1]  - mesh->v_in[c2])/dx;
-        }
-        else {
-            mesh->exz[c1] = 0.0;
+//            if (mesh->BCu.type[c1] != 30 && mesh->BCu.type[c1+Nx] != 30) mesh->exz[c1] +=  0.5 * (mesh->u_in[c1+Nx] - mesh->u_in[c1])/dz;
+//            if (mesh->BCv.type[c2] != 30 && mesh->BCv.type[c2+1]  != 30) mesh->exz[c1] +=  0.5 * (mesh->v_in[c2+1]  - mesh->v_in[c2])/dx;
+            mesh->exz[c1] =  0.5 * (mesh->u_in[c1+Nx] - mesh->u_in[c1])/dz + 0.5 * (mesh->v_in[c2+1]  - mesh->v_in[c2])/dx;
         }
     }
 
@@ -1993,17 +1991,19 @@ void  StrainRateComponents( grid* mesh, scale scaling, params* model ) {
         c1 = k  + l*(Nx);
         mesh->exz_n[c0] = 0.0;
         sum = 0.0;
+        
+        if ( mesh->BCp.type[c0]      != 30) mesh->exz_n[c0] = 0.25*(mesh->exz[c1] + mesh->exz[c1+1] + mesh->exz[c1+Nx] + mesh->exz[c1+Nx+1]);
 
-        if ( mesh->BCp.type[c0]      != 30 && mesh->BCp.type[c0] != 31) {
-            if (mesh->BCg.type[c1]      != 30 ) { mesh->exz_n[c0] += mesh->exz[c1];      sum++;}
-            if (mesh->BCg.type[c1+1]    != 30 ) { mesh->exz_n[c0] += mesh->exz[c1+1];    sum++;}
-            if (mesh->BCg.type[c1+Nx]   != 30 ) { mesh->exz_n[c0] += mesh->exz[c1+Nx];   sum++;}
-            if (mesh->BCg.type[c1+Nx+1] != 30 ) { mesh->exz_n[c0] += mesh->exz[c1+Nx+1]; sum++;}
-            if (sum>0) mesh->exz_n[c0] /= sum;
-        }
-        else {
-            mesh->exz_n[c0] = 0.0;
-        }
+//        if ( mesh->BCp.type[c0]      != 30 && mesh->BCp.type[c0] != 31) {
+//            if (mesh->BCg.type[c1]      != 30 ) { mesh->exz_n[c0] += mesh->exz[c1];      sum++;}
+//            if (mesh->BCg.type[c1+1]    != 30 ) { mesh->exz_n[c0] += mesh->exz[c1+1];    sum++;}
+//            if (mesh->BCg.type[c1+Nx]   != 30 ) { mesh->exz_n[c0] += mesh->exz[c1+Nx];   sum++;}
+//            if (mesh->BCg.type[c1+Nx+1] != 30 ) { mesh->exz_n[c0] += mesh->exz[c1+Nx+1]; sum++;}
+//            if (sum>0) mesh->exz_n[c0] /= sum;
+//        }
+//        else {
+//            mesh->exz_n[c0] = 0.0;
+//        }
     }
 
     // Interpolate normal strain rate on vertices

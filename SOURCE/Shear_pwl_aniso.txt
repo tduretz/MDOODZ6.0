@@ -16,8 +16,8 @@ V   = 1
 T   = 20
 
 /**** SPACE-TIME ****/
-Nx      = 41
-Nz      = 41
+Nx      = 21
+Nz      = 20
 Nt      = 1
 xmin    = -5.000000e-1
 zmin    = -5.000000e-1
@@ -52,7 +52,7 @@ shear_heat      = 1
 adiab_heat      = 0
 fstrain         = 1
 advection       = 0
-GNUplot_residuals = 1
+GNUplot_residuals = 0
 
 /**** ANISOTROPY ****/
 aniso           = 1
