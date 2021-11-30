@@ -727,7 +727,6 @@ void ViscosityDerivatives( grid *mesh, mat_prop *materials, params *model, Npara
                 // Director
                 nx = mesh->nx0_s[c1];
                 nz = mesh->nz0_s[c1];
-                printf("nx = %2.2e, nz = %2.2e\n", nx, nz );
                 // See Anisotropy_v2.ipynb
                 if ( model->aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_s[c1];
                 if ( model->aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_s[c1];
