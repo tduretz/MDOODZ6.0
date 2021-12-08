@@ -96,7 +96,7 @@ eta0 = 1e0
 npwl = 3.0
 Qpwl = 0
 aniso_angle  = 65
-aniso_factor = 2
+aniso_factor = 1
 
 /**** PHASE 2 ****/
 ID   = 1

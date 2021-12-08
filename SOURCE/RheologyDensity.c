@@ -352,6 +352,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     eta_ve                  = 0.5*(eta_up+eta_lo);
 //    eta_ve = eta_up;
 
+    if (noisy>0) printf("New LI cycle\n");
     // Local iterations
     for (it=0; it<nitmax; it++) {
         
@@ -364,12 +365,12 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         if ( gs          == 1 ) *d1      = exp(log( Kg*exp(-Qg/R/T) *gam/(lambda*(1.0/cg)* Tii *(*Eii_pwl + *Eii_exp + *Eii_gbs + *Eii_pl)*pg))/(1.0+pg));
         if ( diffusion   == 1 ) *Eii_lin = C_lin * pow(Tii, n_lin) * pow(*d1,-m_lin); // !!! gs - dependence !!!
         Eii_vis                          = *Eii_pwl + *Eii_exp + *Eii_lin + *Eii_gbs + *Eii_cst;
-        r_eta_ve                         = Eii - elastic*Tii/(2.0*eta_el) - Eii_vis;
+        r_eta_ve                         = Eii - elastic*Tii/f_ani/(2.0*eta_el) - Eii_vis;
         
         // Residual check
         res = fabs(r_eta_ve/Eii);
         if (it==0) res0 = res;
-//        printf("%2.2e\n", res);
+        if (noisy>0) printf("%d %2.2e %2.2e\n", it, res, res/res0);
         if (res < tol/100) break;
         
         // Analytical derivative of function
@@ -386,6 +387,7 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     
     if ( it==nitmax-1 && res > tol ) { printf("Visco-Elastic iterations failed!\n"); exit(0);}
     if ( it>10 ) printf("Warnung: more that 10 local iterations, there might be a problem...\n");
+    if ( it>10 ) exit(1);
     
     // Recalculate stress components
     Tii                  = 2.0*eta_ve*f_ani*Eii;

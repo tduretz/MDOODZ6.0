@@ -342,7 +342,7 @@ double ViscosityTest( int phase, double G, double T, double P, double d, double 
         if ( gs          == 1 ) *d1      = exp(log( Kg*exp(-Qg/R/T) *gam/(lambda*(1.0/cg)* Tii *(*Eii_pwl + *Eii_exp + *Eii_gbs + *Eii_pl)*pg))/(1.0+pg));
         if ( diffusion   == 1 ) *Eii_lin = C_lin * pow(Tii, n_lin) * pow(*d1,-m_lin); // !!! gs - dependence !!!
         Eii_vis                          = *Eii_pwl + *Eii_exp + *Eii_lin + *Eii_gbs + *Eii_cst;
-        r_eta_ve                         = Eii - elastic*Tii/(2.0*eta_el) - Eii_vis;
+        r_eta_ve                         = Eii - elastic*Tii/f_ani/(2.0*eta_el) - Eii_vis;
         
         // Residual check
         res = fabs(r_eta_ve/Eii);
