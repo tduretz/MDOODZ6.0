@@ -602,4 +602,4 @@ void ChemicalDirectSolve( grid*, params, markers*, mat_prop*, double, scale );
 void InitialiseGrainSizeParticles( markers*, mat_prop* );
 
 void ViscosityDerivatives( grid*, mat_prop*, params*, Nparams, scale*);
-
+double ViscosityConcise( int , double, double, double, double, double, double, double, double, double, double, double, double, double, double, double, mat_prop*, params*, scale*, double*, double*, double*, double*, double*, double*, double*, double*, double* , double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double, double, double, double, double,  double*, double*, double*, double*, double, double, double*, double*, double* );
