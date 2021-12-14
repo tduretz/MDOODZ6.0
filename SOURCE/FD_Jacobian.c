@@ -148,7 +148,7 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
         dCpwldP = -C_pwl*Va_pwl/R/T;
     }
     if ( diffusion == 1 ) {
-        if (m_lin>0.0 && d<1e-13/scaling->L){
+        if (m_lin>0.0 && d<1e-13/scaling->L) {
             printf("Cannot run with grain size dependent viscosity if grain size is set to 0 --> d = %2.2e!!!\n", d*scaling->L);
             exit(1);
         };

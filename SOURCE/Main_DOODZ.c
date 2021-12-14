@@ -852,6 +852,11 @@ int main( int nargs, char *args[] ) {
                 if ( model.write_debug == 1 ) WriteResiduals( mesh, model, Nmodel, scaling );
                 
                 // if pass --> clear matrix break
+//                printf("Nmodel.resx = %2.2e\n", Nmodel.resx);
+//                printf("Nmodel.resz = %2.2e\n", Nmodel.resz);
+//                printf("Nmodel.resp = %2.2e\n", Nmodel.resp);
+//                printf( "Tolerances: abs_tol_u = %2.2e - rel_tol_u = %2.2e --- abs_tol_p = %2.2e - rel_tol_p = %2.2e\n", Nmodel.abs_tol_u, Nmodel.rel_tol_u, Nmodel.abs_tol_p, Nmodel.rel_tol_p);
+
                 if ( (Nmodel.resx < Nmodel.abs_tol_u || Nmodel.resx/Nmodel.resx0 < Nmodel.rel_tol_u) && (Nmodel.resz < Nmodel.abs_tol_u || Nmodel.resz/Nmodel.resz0 < Nmodel.rel_tol_u) && (Nmodel.resp < Nmodel.abs_tol_p || Nmodel.resp/Nmodel.resp0 < Nmodel.rel_tol_p) ) {
                     
                     printf( "Non-linear solver converged to abs_tol_u = %2.2e abs_tol_p = %2.2e rel_tol_u = %2.2e rel_tol_p = %2.2e\n", Nmodel.abs_tol_u, Nmodel.abs_tol_p, Nmodel.rel_tol_u, Nmodel.rel_tol_p );
