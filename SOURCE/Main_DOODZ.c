@@ -776,6 +776,7 @@ int main( int nargs, char *args[] ) {
                 NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );    // ??????????? déjà fait dans UpdateNonLinearity
                 
                 if ( model.noisy == 1 ) {
+                    MinMaxArrayTag( mesh.p_in,      scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "p_in      ", mesh.BCp.type );
                     MinMaxArrayTag( mesh.exxd,      scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "exxd      ", mesh.BCp.type );
                     MinMaxArrayTag( mesh.ezzd,      scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "ezzd      ", mesh.BCp.type );
                     MinMaxArrayTag( mesh.exz,       scaling.E, (mesh.Nx-0)*(mesh.Nz-0), "exz       ", mesh.BCg.type );

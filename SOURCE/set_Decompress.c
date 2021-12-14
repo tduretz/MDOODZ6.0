@@ -57,7 +57,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double Lz = (double) (model.zmax - model.zmin) ;
     double T_init = (model.user0 + zeroC)/scaling.T;
     double P_init = model.user1/scaling.S;
-    double radius = model.PrBG;
+    double radius = model.user2/scaling.L;
     double X, Z, xc = 0.0, zc = 0.0;
 
     // Loop on particles

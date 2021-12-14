@@ -442,6 +442,14 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
     /*----------------------------------------------------*/
     /*----------------------------------------------------*/
     
+    double inv_eta_diss = 0.0;
+    if (peierls    == 1)  inv_eta_diss += (1.0/eta_exp);
+    if (dislocation== 1)  inv_eta_diss += (1.0/eta_pwl);
+    if (diffusion  == 1)  inv_eta_diss += (1.0/eta_lin);
+    if (constant   == 1)  inv_eta_diss += (1.0/eta_cst);
+    if (is_pl      == 1)  inv_eta_diss += (1.0/eta_vep);
+    eta        = 1.0/(inv_eta_diss);//Tii/2.0/Eii_vis;
+    
     // Viscosity limiter
     if( *etaVE > maxEta ) {
         *etaVE = maxEta;
@@ -455,6 +463,8 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
     *Txx       = Tii/f_ani/Eii*Gxx;
     *Tzz       = Tii/f_ani/Eii*Gzz;
     *Txz       = Tii/f_ani/Eii*Gxz;
+    
+    return eta;
     
 }
 
@@ -532,7 +542,7 @@ void ViscosityDerivatives( grid *mesh, mat_prop *materials, params *model, Npara
     double Pcorr, rho;
     double Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, el, etae, ani, d0, d1, nx, nz;
     double Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det;
-    double tol = 1e-5;
+    double tol = 1e-7;
 
     Nx = mesh->Nx;
     Nz = mesh->Nz;
