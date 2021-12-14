@@ -340,6 +340,7 @@ void RemeshMarkerChain( markers *topo_chain, surface *topo, params model, scale 
                         if (recycle==1) NewInd                = reuse[ii];
                         if (recycle==1) ii++;
                         if (  ii>=nout) recycle=0;
+                        // Local x coordinate:  1.0*dx/4.0/res
                         topo_chain->x[NewInd] = model.xmin + k*dx/res + dx/4.0/res;
                         // Index of the coarse grid column
                         distance        = (topo_chain->x[NewInd]-model.xmin-dx/2.0);
@@ -353,7 +354,9 @@ void RemeshMarkerChain( markers *topo_chain, surface *topo, params model, scale 
                         if (recycle==0) topo_chain->Nb_part++;
                         if (recycle==1) NewInd                = reuse[ii];
                         if (recycle==1) ii++;
-                        if (  ii>=nout) recycle=0;                        topo_chain->x[NewInd] = model.xmin + k*dx/res + 3.0*dx/4.0/res;
+                        if (  ii>=nout) recycle=0;
+                        // Local x coordinate:  3.0*dx/4.0/res
+                        topo_chain->x[NewInd] = model.xmin + k*dx/res + 3.0*dx/4.0/res;
                         // Index of the coarse grid column
                         distance        = (topo_chain->x[NewInd]-model.xmin-dx/2.0);
                         in              = ceil((distance/dx)+0.5) - 1;

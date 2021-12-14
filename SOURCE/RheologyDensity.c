@@ -1876,7 +1876,7 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
 void  StrainRateComponents( grid* mesh, scale scaling, params* model ) {
 
     int k, l, c0, c1, c2, Nx, Nz, Ncx, Ncz, k1;
-    double dx, dz;
+    double dx, dz, Ezzt = model->DivBG/3.0;
 
     Nx = mesh->Nx;
     Nz = mesh->Nz;
@@ -1885,7 +1885,7 @@ void  StrainRateComponents( grid* mesh, scale scaling, params* model ) {
     dx = mesh->dx;
     dz = mesh->dz;
 
-#pragma omp parallel for shared( mesh ) private( k, k1, l, c0, c1, c2  ) firstprivate( dx, dz, Nx, Ncx, Ncz )
+#pragma omp parallel for shared( mesh ) private( k, k1, l, c0, c1, c2  ) firstprivate( dx, dz, Nx, Ncx, Ncz, Ezzt )
     for ( k1=0; k1<Ncx*Ncz; k1++ ) {
         k  = mesh->kp[k1];
         l  = mesh->lp[k1];
@@ -1896,7 +1896,7 @@ void  StrainRateComponents( grid* mesh, scale scaling, params* model ) {
         if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
 
             // Velocity divergence
-            mesh->div_u[c0] = (mesh->u_in[c1+1+Nx] - mesh->u_in[c1+Nx])/dx + (mesh->v_in[c2+Nx+1+1] - mesh->v_in[c2+1])/dz;
+            mesh->div_u[c0] = (mesh->u_in[c1+1+Nx] - mesh->u_in[c1+Nx])/dx + (mesh->v_in[c2+Nx+1+1] - mesh->v_in[c2+1])/dz + Ezzt;
 
             // Normal strain rates
             mesh->exxd[c0]  = (mesh->u_in[c1+1+Nx]     - mesh->u_in[c1+Nx] )/dx - 1.0/3.0*mesh->div_u[c0];

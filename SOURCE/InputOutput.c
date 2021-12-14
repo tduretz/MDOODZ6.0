@@ -1117,7 +1117,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->UnsplitDiffReac = ReadInt2( fin, "UnsplitDiffReac",0 ); // Unsplit diffusion reaction
     model->VolChangeReac   = ReadInt2( fin, "VolChangeReac",  0 ); // Turns on volume change due to reaction if 1
     model->Plith_trick     = ReadInt2( fin, "Plith_trick", 0 );
-    model->DirectNeighbour           = ReadInt2( fin, "DirectNeighbour", 0);
+    model->DirectNeighbour = ReadInt2( fin, "DirectNeighbour", 0);
     model->Reseed          = ReadInt2( fin, "Reseed",          1); // Activates reseeding / particle injection
     model->ConservInterp   = ReadInt2( fin, "ConservInterp",   0); // Activates Taras conservative interpolation
     model->SmoothSoftening = ReadInt2( fin, "SmoothSoftening", 1); // Activates smooth explicit kinematic softening function
@@ -1128,6 +1128,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
 
     // Setup dependant
     model->EpsBG           = ReadDou2( fin, "EpsBG",           0.0 ) / scaling->E;
+    model->DivBG           = ReadDou2( fin, "DivBG",           0.0 ) / scaling->E;
     model->PrBG            = ReadDou2( fin, "PrBG",            0.0 ) / scaling->S;
     // Anisotropy
 //    model->director_angle  = ReadDou2( fin, "director_angle",  0.0 )  * M_PI/ 180.0;
