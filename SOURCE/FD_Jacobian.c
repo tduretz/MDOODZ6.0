@@ -42,7 +42,7 @@
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-double ViscosityConcise( int phase, double G, double T, double P, double d, double phi, double X0, double Exx, double Ezz, double Exz, double Gxx, double Gzz, double Gxz, double Txx0, double Tzz0, double Txz0, mat_prop* materials, params *model, scale *scaling, double *Txx, double *Tzz, double *Txz, double* etaVE, double* VEcoeff, double* Eii_el, double* Eii_pl, double* Eii_pwl, double* Eii_exp , double* Eii_lin, double* Eii_gbs, double* Eii_cst, double* Exx_el, double* Ezz_el, double* Exz_el, double* Exx_diss, double* Ezz_diss, double* Exz_diss, double *d1, double strain_acc, double dil, double fric, double C, double P0,  double *X1, double *OverS, double *Pcorr, double *rho, double beta, double div, double *div_el, double *div_pl, double *div_r ) {
+double ViscosityConcise( int phase, double G, double T, double P, double d, double phi, double X0, double Exx, double Ezz, double Exz, double Gxx, double Gzz, double Gxz, double Txx0, double Tzz0, double Txz0, mat_prop* materials, params *model, scale *scaling, double *Txx, double *Tzz, double *Txz, double* etaVE, double* VEcoeff, double* Eii_el, double* Eii_pl, double* Eii_pwl, double* Eii_exp , double* Eii_lin, double* Eii_gbs, double* Eii_cst, double* Exx_el, double* Ezz_el, double* Exz_el, double* Exx_diss, double* Ezz_diss, double* Exz_diss, double *d1, double strain_acc, double dil, double fric, double C, double P0,  double *X1, double *OverS, double *Pcorr, double *rho, double beta, double div, double *div_el, double *div_pl, double *div_r, int post_process ) {
     
     // General paramaters
     double eta=0.0, R=materials->R, dt=model->dt;
@@ -73,6 +73,7 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
     double pg = materials->ppzm[phase], Kg = materials->Kpzm[phase], Qg = materials->Qpzm[phase], gam = materials->Gpzm[phase], cg = materials->cpzm[phase], lambda = materials->Lpzm[phase];
     double eta_vp0 = materials->eta_vp[phase], n_vp = materials->n_vp[phase], eta_vp;
     double K = 1.0/beta, dQdP=0.0;
+    int    dens_mod = materials->density_model[phase];
 
     double F_trial0 = F_trial;
     double dFdgdot, divp=0.0, Pc = P, dummy;
@@ -111,10 +112,9 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
     f_ani = Gii/Eii;
     if (Eii*scaling->E<1e-30) Eii=1e-30/scaling->E;
     
-    printf("E --> %2.2e %2.2e %2.2e\n", Exx, Ezz, Eyy); // if (fabs(Eyy)>1e-6)
-//      printf("T --> %2.2e %2.2e %2.2e\n", *Txx, *Tzz, -(*Txx)-(*Tzz)); // if (fabs( -(*Txx)-(*Tzz))>1e-6)
-
-      
+//    printf("E --> %2.2e %2.2e %2.2e\n", Exx, Ezz, Eyy); // if (fabs(Eyy)>1e-6)
+//    if (fabs(Eyy)>1e-11) exit(1);
+    
     
     // P corr will be corrected if plasticity feedbacks on pressure (dilation)
     *Pcorr = P;
@@ -349,6 +349,7 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
         
         // Residual check
         res = fabs(r_eta_ve/Eii);
+        if (noisy>0 ) printf("%02d Visco-Elastic iterations It., F = %2.2e Frel = %2.2e\n", it, res, res/res0);
         if (it==0) res0 = res;
         if (res < tol/100) break;
         
@@ -411,7 +412,7 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
             
             // Residual check
             res = fabs(F_trial);
-            if (noisy>0 ) printf("%02d Visco-Plastic iterations It., tens = %d F = %2.2e Frel = %2.2e --- n_vp = %2.2e, eta_vp = %2.2e\n", it, tens, res, res/F_trial0, n_vp, eta_vp*scaling->eta);
+            if (noisy>0 ) printf("%02d Viscoplastic iterations It., tens = %d F = %2.2e Frel = %2.2e --- n_vp = %2.2e, eta_vp = %2.2e\n", it, tens, res, res/F_trial0, n_vp, eta_vp*scaling->eta);
             if ( res < tol || res/F_trial0 < tol ) break;
             dFdgdot  = - eta_ve - eta_vp/n_vp - K*dt*sin_fric*sin_dil;
             gdot    -= F_trial / dFdgdot;
@@ -430,8 +431,15 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
         *rho         = rho_ref * exp(1.0/K * Pc - alpha * T);
     }
     else {
-        rho_ref      = rho1;
-        *rho         = rho_ref * exp(1.0/K * Pc - alpha * T );
+        if ( dens_mod == 3 ) {
+            // Stendard EOS
+            rho_ref      = rho1;
+            *rho         = rho_ref * exp(1.0/K * Pc - alpha * T );
+        }
+        if ( dens_mod == 4 ) {
+            // Read from Data base
+            // EvalRho()
+        }
     }
 
     if (is_pl == 0) {
@@ -447,13 +455,49 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
     /*----------------------------------------------------*/
     /*----------------------------------------------------*/
     
-    double inv_eta_diss = 0.0;
-    if (peierls    == 1)  inv_eta_diss += (1.0/eta_exp);
-    if (dislocation== 1)  inv_eta_diss += (1.0/eta_pwl);
-    if (diffusion  == 1)  inv_eta_diss += (1.0/eta_lin);
-    if (constant   == 1)  inv_eta_diss += (1.0/eta_cst);
-    if (is_pl      == 1)  inv_eta_diss += (1.0/eta_vep);
-    eta        = 1.0/(inv_eta_diss);//Tii/2.0/Eii_vis;
+    // Deviatoric stress
+    *Txx       = Tii/f_ani/Eii*Gxx;
+    *Tzz       = Tii/f_ani/Eii*Gzz;
+    *Txz       = Tii/f_ani/Eii*Gxz;
+    
+    
+    //-------- Post-Processing
+    if ( post_process == 1) {
+
+        // Strain rates: VEP partitioning
+        eta_pwl  = pow(2.0*C_pwl,-1.0) * pow(Tii, 1.0-n_pwl);
+        *Exx_el =  (double)elastic*( *Txx-Txx0)/2.0/eta_el;
+        *Ezz_el =  (double)elastic*( *Tzz-Tzz0)/2.0/eta_el;
+        *Exz_el =  (double)elastic*( *Txz-Txz0)/2.0/eta_el;
+        Exx_pl = gdot*dQdtxx;
+        Ezz_pl = gdot*dQdtzz;
+        Exz_pl = gdot*dQdtxz/2.0;
+        Exx_pwl = *Txx/2.0/eta_pwl;
+        Ezz_pwl = *Tzz/2.0/eta_pwl;
+        Exz_pwl = *Txz/2.0/eta_pwl;
+        
+        // Compute dissipative strain rate components
+        *Exx_diss =  Exx_pl + Exx_lin +  Exx_pwl + Exx_exp + Exx_gbs + Exx_cst;
+        *Ezz_diss =  Ezz_pl + Ezz_lin +  Ezz_pwl + Ezz_exp + Ezz_gbs + Ezz_cst;
+        *Exz_diss =  Exz_pl + Exz_lin +  Exz_pwl + Exz_exp + Exz_gbs + Exz_cst;
+        *Eii_el   = (double)elastic*fabs(Tii-Tii0)/2.0/eta_el;
+        *Eii_pwl  =  Tii/2.0/eta_pwl;
+        
+        // Partitioning of volumetric strain
+        *div_pl  = divp;
+        *div_el  = - (Pc - P0) / (K*dt);
+        *div_r   = divr;
+        
+        double inv_eta_diss = 0.0;
+        if (peierls    == 1)  inv_eta_diss += (1.0/eta_exp);
+        if (dislocation== 1)  inv_eta_diss += (1.0/eta_pwl);
+        if (diffusion  == 1)  inv_eta_diss += (1.0/eta_lin);
+        if (constant   == 1)  inv_eta_diss += (1.0/eta_cst);
+        if (is_pl      == 1)  inv_eta_diss += (1.0/eta_vep);
+        eta        = 1.0/(inv_eta_diss);//Tii/2.0/Eii_vis;
+    }
+    
+    //-------- Post-Processing
     
     // Viscosity limiter
     if( *etaVE > maxEta ) {
@@ -464,11 +508,9 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
         *etaVE = minEta;
     }
     
-    // Deviatoric stress
-    *Txx       = Tii/f_ani/Eii*Gxx;
-    *Tzz       = Tii/f_ani/Eii*Gzz;
-    *Txz       = Tii/f_ani/Eii*Gxz;
 //    printf("e --> %2.2e %2.2e %2.2e\n", Exx, Ezz, Eyy); // if (fabs(Eyy)>1e-6)
+//    printf("T --> %2.2e %2.2e %2.2e\n", *Txx, *Tzz, -(*Txx)-(*Tzz)); // if (fabs( -(*Txx)-(*Tzz))>1e-6)
+
 
   
     return eta;
@@ -500,7 +542,7 @@ void PhaseRheologyLoop( int centroid, double sign, double denom, double Exx, dou
         cond =  fabs(vol[p][c0])>1.0e-13;
 
         if ( cond == 1 ) {
-            ViscosityConcise( p, G[c0], T[c0], P, gs0[c0], phi0[c0], X0[c0], Exx, Ezz, Exz, Gxx, Gzz, Gxz, txx0[c0], tzz0[c0], txz0[c0], materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &dnew, strain[c0], dil[c0], fric[c0], C[c0], P0[c0], &Xreac, &OverS, &Pcorr, &rho, beta[c0], div[c0], &div_el, &div_pl, &div_r );
+            ViscosityConcise( p, G[c0], T[c0], P, gs0[c0], phi0[c0], X0[c0], Exx, Ezz, Exz, Gxx, Gzz, Gxz, txx0[c0], tzz0[c0], txz0[c0], materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &dnew, strain[c0], dil[c0], fric[c0], C[c0], P0[c0], &Xreac, &OverS, &Pcorr, &rho, beta[c0], div[c0], &div_el, &div_pl, &div_r, 0 );
         }
         
         if ( model->eta_avg == 0) { // ARITHMETIC AVERAGE
@@ -579,6 +621,7 @@ void ViscosityDerivatives( grid *mesh, mat_prop *materials, params *model, Npara
         mesh->ddivpdgxz_n[c0]      = 0.0;
         mesh->detadp_n[c0]         = 0.0;
         mesh->ddivpdp_n[c0]        = 0.0;
+        mesh->drhodp_n[c0]         = 0.0;
 
         // Loop on grid nodes
         if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31 ) {
@@ -628,10 +671,12 @@ void ViscosityDerivatives( grid *mesh, mat_prop *materials, params *model, Npara
             double Exz_ref   = mesh->exz_n[c0]     + (iDa13*mesh->sxxd0[c0] + iDa23*mesh->szzd0[c0] + iDa33*mesh->sxz0_n[c0])/2.0/etae;
             double P_ref     = mesh->p_in[c0];
             double gxz_ref   = 2.0*Exz_ref;
-            double pert_xx   = tol*fabs(Exx_ref) + tol/1e3;
-            double pert_zz   = tol*fabs(Ezz_ref) + tol/1e3;
-            double pert_xz   = tol*fabs(Exz_ref) + tol/1e3;
-            double pert_p    = tol*fabs(P_ref)   + tol/1e3;
+            double pert_xx   = tol*fabs(Exx_ref) + tol/1e10;
+            double pert_zz   = tol*fabs(Ezz_ref) + tol/1e10;
+            double pert_xz   = tol*fabs(Exz_ref) + tol/1e10;
+            double pert_p    = tol*fabs(P_ref)   + tol/1e10;
+            
+//            printf("exxd %2.2e ezzd %2.2e eyyd %2.2e \n", Exx_ref, Ezz_ref, - Exx_ref - Ezz_ref);
             
             //----------------------------------------------------------------------------------------------------------------------------------------------------//
             
@@ -720,7 +765,6 @@ void ViscosityDerivatives( grid *mesh, mat_prop *materials, params *model, Npara
                               mesh->strain_n, mesh->dil_n, mesh->fric_n, mesh->C_n,
                               model, materials, scaling,
                               mesh->detadp_n, mesh->ddivpdp_n, mesh->drhodp_n, mesh->eta_n );
-      
         }
     }
 
@@ -783,10 +827,10 @@ void ViscosityDerivatives( grid *mesh, mat_prop *materials, params *model, Npara
             double Exz_ref = mesh->exz[c1]     + (iDa13*mesh->sxxd0_s[c1] + iDa23*mesh->szzd0_s[c1] + iDa33*mesh->sxz0[c1])/2.0/etae;
             double P_ref     = mesh->P_s[c1];
             double gxz_ref   = 2.0*Exz_ref;
-            double pert_xx   = tol*fabs(Exx_ref) + tol/1e3;
-            double pert_zz   = tol*fabs(Ezz_ref) + tol/1e3;
-            double pert_xz   = tol*fabs(Exz_ref) + tol/1e3;
-            double pert_p    = tol*fabs(P_ref)   + tol/1e3;
+            double pert_xx   = tol*fabs(Exx_ref) + tol/1e10;
+            double pert_zz   = tol*fabs(Ezz_ref) + tol/1e10;
+            double pert_xz   = tol*fabs(Exz_ref) + tol/1e10;
+            double pert_p    = tol*fabs(P_ref)   + tol/1e10;
 
             //----------------------------------------------------------------------------------------------------------------------------------------------------//
 

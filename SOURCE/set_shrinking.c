@@ -112,7 +112,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
             if (particles->phase[np]==5 || particles->phase[np]==4) particles->phase[np] = 2;
         }
         //==================================================================
-                // 1ere elliptical inclusion
+        // 1ere elliptical inclusion
         double rad=0.25/scaling.L;
         double X,Xn,Z,Zn, xc=0.0, zc=0.0, la= 1.00*rad, sa = 1.00*rad, theta=(30.0)*M_PI/180.0;
         xc=0.0;

@@ -58,7 +58,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double T_init = (model.user0 + zeroC)/scaling.T;
     double P_init = model.user1/scaling.S;
     double radius = model.user2/scaling.L;
-    double X, Z, xc = 0.0, zc = 0.0;
+    double X, Z, Xn, Zn, xc = 0.0, zc = 0.0, sa=radius/2.0, la=radius*2.0, theta=-30.0*M_PI/180.0;
 
     // Loop on particles
     for( np=0; np<particles->Nb_part; np++ ) {
@@ -77,9 +77,9 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     
         // ------------------------- //
         // DRAW INCLUSION 
-        if (X*X + Z*Z < radius*radius) {
-            particles->phase[np] = 1;
-        }
+        Xn = X*cos(theta) - Z*sin(theta);
+        Zn = X*sin(theta) + Z*cos(theta);
+        if ( pow(Xn/la,2) + pow(Zn/sa,2) - 1 < 0 ) particles->phase[np] = 1;
         
         // SANITY CHECK
         if (particles->phase[np] > model.Nb_phases) {

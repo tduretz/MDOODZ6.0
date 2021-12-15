@@ -1,10 +1,10 @@
 /**** RESTART ****/
-istep = 00001
+istep = 00010
 irestart = 0
 
 /**** OUTPUT FILES ****/
 writer          = 1
-writer_step     = 1
+writer_step     = 5
 writer_markers  = 0
 writer_debug    = 0
 writer_energies = 0
@@ -18,7 +18,7 @@ T   = 600
 /**** SPACE-TIME ****/
 Nx      = 101
 Nz      = 101
-Nt      = 1
+Nt      = 10
 xmin    = -2.500000e-3
 zmin    = -2.500000e-3
 xmax    =  2.500000e-3
@@ -39,7 +39,7 @@ isperiodic_x    = 0
 ispureshear_ALE = 1
 isinertial      = 0
 isthermal       = 0
-line_search     = 1
+line_search     = 0
 free_surf       = 0
 free_surf_stab  = 0
 eqn_state       = 0
@@ -49,15 +49,16 @@ shear_heat      = 1
 adiab_heat      = 0
 fstrain         = 1
 advection       = 0
-GNUplot_residuals = 1 
+GNUplot_residuals = 0 
 
 /**** SETUP DEPENDANT ****/
+oop             = 1     / non zeros total Eyy
 compressible    = 1
 shear_style     = 0
 iselastic       = 1
 EpsBG           = 1e-25
 DivBG           = 1e-15
-PrBG            = 0.5e9  / pressure [Pa]
+PrBG            = 0.1e9  / pressure [Pa]
 user0           = 600    / temperature [°C]
 user1           = 0
 user2           = 0.2e-3 / inclusion radius [m]

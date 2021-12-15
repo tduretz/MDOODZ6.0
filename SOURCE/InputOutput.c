@@ -1116,11 +1116,13 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->NoReturn        = ReadInt2( fin, "NoReturn",       0 ); // Turns off retrogression if 1.0
     model->UnsplitDiffReac = ReadInt2( fin, "UnsplitDiffReac",0 ); // Unsplit diffusion reaction
     model->VolChangeReac   = ReadInt2( fin, "VolChangeReac",  0 ); // Turns on volume change due to reaction if 1
-    model->Plith_trick     = ReadInt2( fin, "Plith_trick", 0 );
+    model->Plith_trick     = ReadInt2( fin, "Plith_trick",    0 );
     model->DirectNeighbour = ReadInt2( fin, "DirectNeighbour", 0);
     model->Reseed          = ReadInt2( fin, "Reseed",          1); // Activates reseeding / particle injection
     model->ConservInterp   = ReadInt2( fin, "ConservInterp",   0); // Activates Taras conservative interpolation
     model->SmoothSoftening = ReadInt2( fin, "SmoothSoftening", 1); // Activates smooth explicit kinematic softening function
+    model->oop             = ReadInt2( fin, "oop",             0); // Out-of-plane strain 
+
 
     if ( model->shear_style == 1 ) model->isperiodic_x  = 1;
     if ( model->shear_style == 0 ) model->isperiodic_x  = 0;
