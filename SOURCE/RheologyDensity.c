@@ -855,13 +855,12 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 iDa33 = a33/det;
                 Exx = mesh->exxd[k]      + (iDa11*mesh->sxxd0[k] + iDa12*mesh->szzd0[k] + iDa13*mesh->sxz0_n[k])/etae;
                 Ezz = mesh->ezzd[k]      + (iDa12*mesh->sxxd0[k] + iDa22*mesh->szzd0[k] + iDa23*mesh->sxz0_n[k])/etae;
-                Exz = mesh->exz_n[k] + (iDa13*mesh->sxxd0[k] + iDa23*mesh->szzd0[k] + iDa33*mesh->sxz0_n[k])/2.0/etae;
+                Exz = mesh->exz_n[k]     + (iDa13*mesh->sxxd0[k] + iDa23*mesh->szzd0[k] + iDa33*mesh->sxz0_n[k])/etae/2.0;
                 gxz = 2.0*mesh->exz_n[k] + (iDa13*mesh->sxxd0[k] + iDa23*mesh->szzd0[k] + iDa33*mesh->sxz0_n[k])/etae;
                 
                 Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
                 Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
                 Gxz = Exx*ani*d1 - Ezz*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // NOT SURE ABOUT THE FACTOR 2
-                
                 
 //                Gxx = Exx;
 //                Gzz = Ezz;
@@ -932,9 +931,9 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
                 iDa11 = a11/det; iDa12 = a12/det; iDa13 = a13/det;
                 iDa22 = a22/det; iDa23 = a23/det;
                 iDa33 = a33/det;
-                Exx = mesh->exxd_s[k]      + (iDa11*mesh->sxxd0_s[k] + iDa12*mesh->szzd0_s[k] + iDa13*mesh->sxz0[k])/etae;
-                Ezz = mesh->ezzd_s[k]      + (iDa12*mesh->sxxd0_s[k] + iDa22*mesh->szzd0_s[k] + iDa23*mesh->sxz0[k])/etae;
-                Exz = mesh->exz[k] + (iDa13*mesh->sxxd0_s[k] + iDa23*mesh->szzd0_s[k] + iDa33*mesh->sxz0[k])/2.0/etae;
+                Exx = mesh->exxd_s[k]  + (iDa11*mesh->sxxd0_s[k] + iDa12*mesh->szzd0_s[k] + iDa13*mesh->sxz0[k])/etae;
+                Ezz = mesh->ezzd_s[k]  + (iDa12*mesh->sxxd0_s[k] + iDa22*mesh->szzd0_s[k] + iDa23*mesh->sxz0[k])/etae;
+                Exz = mesh->exz[k]     + (iDa13*mesh->sxxd0_s[k] + iDa23*mesh->szzd0_s[k] + iDa33*mesh->sxz0[k])/etae/2.0;
                 gxz = 2.0*mesh->exz[k] + (iDa13*mesh->sxxd0_s[k] + iDa23*mesh->szzd0_s[k] + iDa33*mesh->sxz0[k])/etae;
                 
                 Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
@@ -1873,10 +1872,12 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 // Strain rate
-void  StrainRateComponents( grid* mesh, scale scaling, params* model ) {
+void StrainRateComponents( grid* mesh, scale scaling, params* model ) {
 
     int k, l, c0, c1, c2, Nx, Nz, Ncx, Ncz, k1;
-    double dx, dz, Ezzt = model->DivBG/3.0;
+    double dx, dz;//, Eyyt = 0.0*model->DivBG/3.0;
+    double dvxdx, dvydy, dvzdz;
+    double oop = 1.0;
 
     Nx = mesh->Nx;
     Nz = mesh->Nz;
@@ -1885,7 +1886,7 @@ void  StrainRateComponents( grid* mesh, scale scaling, params* model ) {
     dx = mesh->dx;
     dz = mesh->dz;
 
-#pragma omp parallel for shared( mesh ) private( k, k1, l, c0, c1, c2  ) firstprivate( dx, dz, Nx, Ncx, Ncz, Ezzt )
+#pragma omp parallel for shared( mesh ) private( k, k1, l, c0, c1, c2, dvxdx, dvydy, dvzdz  ) firstprivate( dx, dz, Nx, Ncx, Ncz, oop )
     for ( k1=0; k1<Ncx*Ncz; k1++ ) {
         k  = mesh->kp[k1];
         l  = mesh->lp[k1];
@@ -1895,12 +1896,18 @@ void  StrainRateComponents( grid* mesh, scale scaling, params* model ) {
 
         if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
 
+            // Velocity gradients - Total normal strain rates
+            dvxdx = (mesh->u_in[c1+1+Nx]   - mesh->u_in[c1+Nx])/dx;
+            dvzdz = (mesh->v_in[c2+Nx+1+1] - mesh->v_in[c2+1] )/dz;
+            dvydy = oop*0.5*( dvxdx + dvzdz );
+            
             // Velocity divergence
-            mesh->div_u[c0] = (mesh->u_in[c1+1+Nx] - mesh->u_in[c1+Nx])/dx + (mesh->v_in[c2+Nx+1+1] - mesh->v_in[c2+1])/dz + Ezzt;
+            mesh->div_u[c0] = dvxdx + dvzdz + dvydy;
 
             // Normal strain rates
-            mesh->exxd[c0]  = (mesh->u_in[c1+1+Nx]     - mesh->u_in[c1+Nx] )/dx - 1.0/3.0*mesh->div_u[c0];
-            mesh->ezzd[c0]  = (mesh->v_in[c2+1+(Nx+1)] - mesh->v_in[c2+1]  )/dz - 1.0/3.0*mesh->div_u[c0];
+            mesh->exxd[c0]  = dvxdx - 1.0/3.0*mesh->div_u[c0];
+            mesh->ezzd[c0]  = dvzdz - 1.0/3.0*mesh->div_u[c0];
+//            printf("exxd %2.2e eyyd %2.2e %2.2e \n", mesh->exxd[c0], - mesh->exxd[c0] - mesh->ezzd[c0], dvydy - 1.0/3.0*mesh->div_u[c0]);
         }
         else {
             mesh->div_u[c0] = 0.0;

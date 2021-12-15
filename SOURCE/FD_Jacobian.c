@@ -111,6 +111,11 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
     f_ani = Gii/Eii;
     if (Eii*scaling->E<1e-30) Eii=1e-30/scaling->E;
     
+    printf("E --> %2.2e %2.2e %2.2e\n", Exx, Ezz, Eyy); // if (fabs(Eyy)>1e-6)
+//      printf("T --> %2.2e %2.2e %2.2e\n", *Txx, *Tzz, -(*Txx)-(*Tzz)); // if (fabs( -(*Txx)-(*Tzz))>1e-6)
+
+      
+    
     // P corr will be corrected if plasticity feedbacks on pressure (dilation)
     *Pcorr = P;
     
@@ -463,7 +468,9 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
     *Txx       = Tii/f_ani/Eii*Gxx;
     *Tzz       = Tii/f_ani/Eii*Gzz;
     *Txz       = Tii/f_ani/Eii*Gxz;
-    
+//    printf("e --> %2.2e %2.2e %2.2e\n", Exx, Ezz, Eyy); // if (fabs(Eyy)>1e-6)
+
+  
     return eta;
     
 }
