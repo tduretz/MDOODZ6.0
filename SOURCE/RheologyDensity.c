@@ -105,8 +105,8 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
     int phase_two    = materials->phase_two[phase];
     int constant_mix = materials->phase_mix[phase];
     int mix_avg      = model->diffuse_avg;
-    double ndis1, Adis1, Qdis1, rho1;
-    double ndis2, Adis2, Qdis2, rho2;
+    double ndis1, Adis1, Qdis1, rho1= materials->rho[phase];
+    double ndis2, Adis2, Qdis2, rho2= materials->rho[phase];
     int ProgressiveReaction = materials->reac_soft[phase], NoReturn = model->NoReturn;
     int StaticReaction = model->diffuse_X==1;
     double tau_kin = materials->tau_kin[phase], Pr = materials->Pr[phase], dPr = materials->dPr[phase];
