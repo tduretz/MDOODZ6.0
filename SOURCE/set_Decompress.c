@@ -60,6 +60,9 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double radius = model.user2/scaling.L;
     double X, Z, Xn, Zn, xc = 0.0, zc = 0.0, sa=radius/2.0, la=radius*2.0, theta=-30.0*M_PI/180.0;
 
+    // Fixed random seed
+    srand(69);
+    
     // Loop on particles
     for( np=0; np<particles->Nb_part; np++ ) {
         
@@ -72,6 +75,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         particles->rho[np]   = 0;
         particles->T[np]     = T_init;
         particles->P[np]     = P_init;
+        particles->noise[np] = ((double)rand() / (double)RAND_MAX) - 0.5;
         X = particles->x[np]-xc;
         Z = particles->z[np]-zc;
     

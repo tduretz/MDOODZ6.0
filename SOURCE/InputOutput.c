@@ -213,6 +213,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
     fread( particles->Vz,   s3, particles->Nb_part, file);
     fread( particles->phi,  s3, particles->Nb_part, file);
     fread( particles->X  ,  s3, particles->Nb_part, file);
+    fread( particles->noise, s3, particles->Nb_part, file);
     fread( particles->phase, s1, particles->Nb_part, file);
 
     if (model->iselastic == 1) {
@@ -713,6 +714,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     fwrite( particles->Vz,    s3, particles->Nb_part, file);
     fwrite( particles->phi,   s3, particles->Nb_part, file);
     fwrite( particles->X  ,   s3, particles->Nb_part, file);
+    fwrite( particles->noise, s3, particles->Nb_part, file);
     fwrite( particles->phase, s1, particles->Nb_part, file);
 
     if (model.iselastic == 1) {
@@ -1122,6 +1124,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->ConservInterp   = ReadInt2( fin, "ConservInterp",   0); // Activates Taras conservative interpolation
     model->SmoothSoftening = ReadInt2( fin, "SmoothSoftening", 1); // Activates smooth explicit kinematic softening function
     model->oop             = ReadInt2( fin, "oop",             0); // Out-of-plane strain 
+    model->noise_bg        = ReadInt2( fin, "noise_bg",        0); // Background noise generated on the particles --> mesh (used for cohesion)
 
 
     if ( model->shear_style == 1 ) model->isperiodic_x  = 1;
@@ -1302,7 +1305,81 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     }
 
     materials->R = Rg / (scaling->J/scaling->T);
-
+    
+    //------------------------------------------------------------------------------------------------------------------------------//
+    // PHASE DIAGRAM INFO - simple density model == 4 --- for quartz/coesite study
+    //------------------------------------------------------------------------------------------------------------------------------//
+    
+    model->PD1DnP  = DoodzCalloc( model->Nb_phases, sizeof(int));
+    model->PD1Drho = DoodzCalloc( model->Nb_phases, sizeof(double*));
+    model->PD1Dmin = DoodzCalloc( model->Nb_phases, sizeof(double));
+    model->PD1Dmax = DoodzCalloc( model->Nb_phases, sizeof(double));
+    
+    for ( k=0; k<materials->Nb_phases; k++) {
+    
+        if ( materials->density_model[k] == 4 ) {
+     
+            printf("Phase #%d has density_model %d, so:\n", k, materials->density_model[k]);
+            printf("Loading 1D diagram for coesite quartz only baby...\n");
+        
+            model->PD1DnP[k]         = 10000;
+            model->PD1Dmin[k]        = 1e5/scaling->S;
+            model->PD1Dmax[k]        = 1e10/scaling->S;
+            model->PD1Drho[k] = DoodzCalloc( model->PD1DnP[k], sizeof(double));
+            char *fname = "PHASE_DIAGRAMS/QuartzCoesite600C.bin";
+            if ( fopen(fname, "rb") != NULL ) {
+                FILE* read = fopen(fname, "rb");
+                fread ( model->PD1Drho[k],     sizeof(double), model->PD1DnP[k] , read);
+                fclose(read);
+                
+                double p[model->PD1DnP[k]];
+                double dP = ( model->PD1Dmax[k] - model->PD1Dmin[k]) / (model->PD1DnP[k] -1);
+                p[0] =  model->PD1Dmin[k];
+                
+                // Dimensionalize
+                for (int i=0; i<model->PD1DnP[k]; i++) {
+                    model->PD1Drho[k][i] /= scaling->rho;
+                    if (i>0) p[i] = p[i-1] + dP;
+                }
+                
+                // Apply some diffusion...
+                double *rho0   = DoodzCalloc( model->PD1DnP[k], sizeof(double));
+                double Kdiff   = 1e0, qxW, qxE;
+                double dt_exp  =  dP*dP/Kdiff/2.1;
+                int    n_steps = 50;
+                
+                for (int it=0; it<n_steps; it++) {
+                    ArrayEqualArray( rho0, model->PD1Drho[k], model->PD1DnP[k]);
+                    for (int ix = 1; ix<model->PD1DnP[k]-1; ix++) {
+                        qxW = - Kdiff*(rho0[ix] - rho0[ix-1])/dP;
+                        qxE = - Kdiff*(rho0[ix+1] - rho0[ix])/dP;
+                        model->PD1Drho[k][ix] = rho0[ix] - dt_exp*(qxE - qxW)/dP;
+                    }
+                }
+                DoodzFree(rho0);
+                
+//                //-------- In situ VISU for debugging: do not delete ------------------------//
+//                FILE        *GNUplotPipe;
+//                GNUplotPipe = popen ("gnuplot -persistent", "w");
+//                int NumCommands = 2;
+//                char *GNUplotCommands[] = { "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3"};
+//                for (int i=0; i<NumCommands; i++) fprintf(GNUplotPipe, "%s \n", GNUplotCommands[i]); //Send commands to gnuplot one by one.
+//
+//                fprintf(GNUplotPipe, "plot '-' with lines linestyle 1\n");
+//                for (int i=0; i<model->PD1DnP[k]; i++) {
+//                    fprintf(GNUplotPipe, "%lf %lf \n", p[i]*scaling->S, model->PD1Drho[k][i]*scaling->rho); //Write the data to a temporary file
+//                }
+//                fprintf(GNUplotPipe, "e\n");
+//                fflush(GNUplotPipe);
+                //-------- In situ VISU for debugging: do not delete ------------------------//
+            }
+            else {
+                printf("Cannot open file %s, check if the file exists in the current location !\n Exiting", fname);
+                exit(1);
+            }
+        }
+    }
+        
     //------------------------------------------------------------------------------------------------------------------------------//
     // PHASE DIAGRAM INFO
     //------------------------------------------------------------------------------------------------------------------------------//

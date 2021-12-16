@@ -201,6 +201,9 @@ int main( int nargs, char *args[] ) {
             P2Mastah( &model, particles, materials.eta0, &mesh, mesh.eta_s, mesh.BCg.type,  0, 0, interp, vert, model.itp_stencil);
             P2Mastah( &model, particles, materials.eta0, &mesh, mesh.eta_n, mesh.BCp.type,  0, 0, interp, cent, model.itp_stencil);
             
+            P2Mastah( &model, particles, particles.noise, &mesh, mesh.noise_s, mesh.BCg.type,  1, 0, interp, vert, model.itp_stencil);
+            P2Mastah( &model, particles, particles.noise, &mesh, mesh.noise_n, mesh.BCp.type,  1, 0, interp, cent, model.itp_stencil);
+            
             P2Mastah( &model, particles, particles.T,  &mesh, mesh.T , mesh.BCp.type,  1, 0, interp, cent, 1);
             P2Mastah( &model, particles, materials.Cv, &mesh, mesh.Cv, mesh.BCp.type,  0, 0, interp, cent, 1);
             
@@ -255,16 +258,7 @@ int main( int nargs, char *args[] ) {
             Interp_Grid2P_centroids2( particles, particles.T,    &mesh, mesh.T, mesh.xvz_coord,  mesh.zvx_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type, &model );
             ArrayEqualArray( mesh.T0_n, mesh.T, (mesh.Nx-1)*(mesh.Nz-1) );
             
-            
             //--------------------------------------------------------------------------------------------------------
-            
-            //            // TO BE DELETED !!!!!!!!!!!!!!!!!!!!!!!!!!!
-            //            // Lithostatic pressure for initial visco-plastic viscosity field
-            //            ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 0 ); // set last argument to 0 - assumes reference density - wrong in md4.5
-            //            MinMaxArrayTag( mesh.p_lith,       scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P initial ", mesh.BCp.type );
-            //            MinMaxArrayTag( mesh.rho_n,       scaling.rho,   (mesh.Nx-1)*(mesh.Nz-1), "rho initial ", mesh.BCp.type );
-            //
-            //            // TO BE DELETED !!!!!!!!!!!!!!!!!!!!!!!!!!!
             
             printf("*************************************\n");
             printf("******** Initialize pressure ********\n");
@@ -571,6 +565,9 @@ int main( int nargs, char *args[] ) {
             
             P2Mastah( &model, particles, particles.X,     &mesh, mesh.X0_n , mesh.BCp.type,  1, 0, interp, cent, model.itp_stencil);
             P2Mastah( &model, particles, particles.X,     &mesh, mesh.X0_s , mesh.BCg.type,  1, 0, interp, vert, model.itp_stencil);
+            
+            P2Mastah( &model, particles, particles.noise, &mesh, mesh.noise_s, mesh.BCg.type,  1, 0, interp, vert, model.itp_stencil);
+            P2Mastah( &model, particles, particles.noise, &mesh, mesh.noise_n, mesh.BCp.type,  1, 0, interp, cent, model.itp_stencil);
             
             // Diffuse rheological contrasts
             //            if (model.diffuse_X == 1) {
@@ -1384,6 +1381,16 @@ int main( int nargs, char *args[] ) {
     DoodzFree( rz_rel );
     DoodzFree( rp_rel );
     DoodzFree( Newt_on );
+    
+    // just for the quartz-coesite case
+    for ( int k=0; k<model.Nb_phases; k++) {
+        
+        if ( materials.density_model[k] == 4 ) {
+            printf("Unloading 1D diagram for coesite quartz only baby...\n");
+
+        }
+        
+    }
     
     printf("\n********************************************************\n");
     printf("************* Ending MDOODZ 6.0 simulation *************\n");

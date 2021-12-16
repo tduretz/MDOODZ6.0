@@ -206,6 +206,7 @@ void PartAlloc( markers *particles, params* model  ) {
     particles->d          = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->phi        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->X          = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
+    particles->noise      = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
 
     particles->strain     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->strain_el  = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
@@ -283,6 +284,7 @@ void PartFree( markers *particles, params* model ) {
     DoodzFree(particles->d);
     DoodzFree(particles->phi);
     DoodzFree(particles->X);
+    DoodzFree(particles->noise);
 
     DoodzFree(particles->strain);
     DoodzFree(particles->strain_el);
@@ -646,8 +648,10 @@ void GridAlloc ( grid* mesh, params* model ) {
     // reaction
     mesh->X0_n       = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->X_n        = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
+    mesh->noise_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->X0_s       = DoodzCalloc ((Nx)*(Nz),sizeof(double));
     mesh->X_s        = DoodzCalloc ((Nx)*(Nz),sizeof(double));
+    mesh->noise_s    = DoodzCalloc ((Nx)*(Nz),sizeof(double));
 
     mesh->OverS_n    = DoodzCalloc ((Nx-1)*(Nz-1),sizeof(double));
     mesh->OverS_s    = DoodzCalloc ((Nx)*(Nz),sizeof(double));

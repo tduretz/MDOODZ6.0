@@ -74,6 +74,7 @@ struct _p_markers {
     double *Fxx, *Fxz, *Fzx, *Fzz, *dnx, *dnz, *nx, *nz;
     double *T0, *P0, *x0, *z0, *Tmax, *Pmax, *divth;
     double *dsxxd, *dszzd, *dsxz;
+    double *noise;
 //    double *ddivth, *dT, *dP, *dd, *dphi, *dX, *drho;
 };
 
@@ -137,8 +138,9 @@ struct _params {
     int    force_act_vol_ast;
     double act_vol_dis_ast, act_vol_dif_ast;
     // Phase diagrams
-    int    isPD, num_PD, *PDMnT, *PDMnP;
+    int    isPD, num_PD, *PDMnT, *PDMnP, *PD1DnP;
     double **PDMrho, *PDMTmin, *PDMTmax, *PDMPmin, *PDMPmax;
+    double **PD1Drho,*PD1Dmin, *PD1Dmax;
     // Visualisation
     int rec_T_P_x_z, delete_breakpoints, GNUplot_residuals;
     // Boundary conditions type
@@ -150,7 +152,7 @@ struct _params {
     // For Pips
     int ProgReac, NoReturn, VolChangeReac, Plith_trick, UnsplitDiffReac;
     // Anisotropy
-    int aniso, aniso_fstrain, oop;
+    int aniso, aniso_fstrain, oop, noise_bg;
 };
 
 // Nparams contains numerical parameters of the non-linear solver
@@ -216,6 +218,7 @@ struct _grid {
     double *exz_n_el, *exz_n_diss, *exz_n_pl, *Wdiss, *Wel, *Wtot;
     double *kc_x, *kc_z;
     double *FreeSurfW_s, *FreeSurfW_n;
+    double *noise_n, *noise_s;
 };
 
 // Contains information needed for the direct solver

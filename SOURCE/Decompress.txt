@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00010
+istep = 00090
 irestart = 0
 
 /**** OUTPUT FILES ****/
@@ -18,7 +18,7 @@ T   = 600
 /**** SPACE-TIME ****/
 Nx      = 101
 Nz      = 101
-Nt      = 10
+Nt      = 00
 xmin    = -2.500000e-3
 zmin    = -2.500000e-3
 xmax    =  2.500000e-3
@@ -52,13 +52,14 @@ advection       = 0
 GNUplot_residuals = 0 
 
 /**** SETUP DEPENDANT ****/
+noise_bg        = 1     / noise beau-gosse
 oop             = 1     / non zeros total Eyy
 compressible    = 1
 shear_style     = 0
 iselastic       = 1
 EpsBG           = 1e-25
 DivBG           = 1e-15
-PrBG            = 0.1e9  / pressure [Pa]
+PrBG            = 3.5e9  / pressure [Pa]
 user0           = 600    / temperature [°C]
 user1           = 0
 user2           = 0.2e-3 / inclusion radius [m]
@@ -121,6 +122,7 @@ npwl = 1
 Qpwl = 0
 eta_vp = 1e20
 n_vp   = 1.0
+density_model = 4
 
 /**** DEFMAPS ****/
 nT    =    51      / Temperature resolutin []
@@ -140,8 +142,10 @@ Nz_part  = 4
 min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
-Newton  = 1 
-nit_max = 10
+Newton        = 1 
+Picard2Newton = 1
+Pic2NewtCond  = 2e-1
+nit_max  = 20
 rel_tol_KSP = 1e-4
 abs_tol_u   = 1e-11
 abs_tol_p   = 1e-11
