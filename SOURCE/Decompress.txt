@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00030
+istep = 00001
 irestart = 0
 
 /**** INPUT FILE ****/
@@ -7,7 +7,7 @@ input_file = GarnetCoesite.bin
 
 /**** OUTPUT FILES ****/
 writer          = 1
-writer_step     = 10
+writer_step     = 1
 writer_markers  = 0
 writer_debug    = 0
 writer_energies = 0
@@ -19,9 +19,9 @@ V   = 1e-18
 T   = 600
 
 /**** SPACE-TIME ****/
-Nx      = 101
-Nz      = 101
-Nt      = 200
+Nx      = 81
+Nz      = 81
+Nt      = 1
 xmin    = -2.500000e-3
 zmin    = -2.500000e-3
 xmax    =  2.500000e-3
@@ -42,7 +42,7 @@ isperiodic_x    = 0
 ispureshear_ALE = 1
 isinertial      = 0
 isthermal       = 0
-line_search     = 1
+line_search     = 0
 free_surf       = 0
 free_surf_stab  = 0
 eqn_state       = 0
@@ -52,7 +52,7 @@ shear_heat      = 1
 adiab_heat      = 0
 fstrain         = 1
 advection       = 0
-GNUplot_residuals = 0 
+GNUplot_residuals = 1 
 
 /**** SETUP DEPENDANT ****/
 VolChangeReac   = 1
@@ -176,10 +176,10 @@ Nz_part  = 4
 min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
-Newton        = 1 
+Newton        = 0
 Picard2Newton = 1
-Pic2NewtCond  = 0.8
-nit_max  = 20
+Pic2NewtCond  = 1e-1
+nit_max  = 101
 rel_tol_KSP = 1e-4
 abs_tol_u   = 1e-11
 abs_tol_p   = 1e-11

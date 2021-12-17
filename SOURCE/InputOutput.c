@@ -1342,11 +1342,17 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
                     if (i>0) p[i] = p[i-1] + dP;
                 }
                 
+                // // FAKE
+                // model->PD1Drho[k][0] = materials->rho[k];
+                // for (int i=1; i<model->PD1DnP[k]; i++) {
+                //     model->PD1Drho[k][i] = materials->rho[k] * exp( p[i]*materials->bet[k] - materials->alp[k]*873.0/scaling->T);
+                // }
+                
                 // Apply some diffusion...
                 double *rho0   = DoodzCalloc( model->PD1DnP[k], sizeof(double));
                 double Kdiff   = 1e0, qxW, qxE;
                 double dt_exp  =  dP*dP/Kdiff/2.1;
-                int    n_steps = 50;
+                int    n_steps = 200;
                 
                 for (int it=0; it<n_steps; it++) {
                     ArrayEqualArray( rho0, model->PD1Drho[k], model->PD1DnP[k]);
@@ -1357,21 +1363,23 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
                     }
                 }
                 DoodzFree(rho0);
+
+                // printf("%2.2e\n", model->PD1Drho[k][0]*scaling->rho); exit(1);
                 
-//                //-------- In situ VISU for debugging: do not delete ------------------------//
-//                FILE        *GNUplotPipe;
-//                GNUplotPipe = popen ("gnuplot -persistent", "w");
-//                int NumCommands = 2;
-//                char *GNUplotCommands[] = { "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3"};
-//                for (int i=0; i<NumCommands; i++) fprintf(GNUplotPipe, "%s \n", GNUplotCommands[i]); //Send commands to gnuplot one by one.
-//
-//                fprintf(GNUplotPipe, "plot '-' with lines linestyle 1\n");
-//                for (int i=0; i<model->PD1DnP[k]; i++) {
-//                    fprintf(GNUplotPipe, "%lf %lf \n", p[i]*scaling->S, model->PD1Drho[k][i]*scaling->rho); //Write the data to a temporary file
-//                }
-//                fprintf(GNUplotPipe, "e\n");
-//                fflush(GNUplotPipe);
-                //-------- In situ VISU for debugging: do not delete ------------------------//
+            //    //-------- In situ VISU for debugging: do not delete ------------------------//
+            //    FILE        *GNUplotPipe;
+            //    GNUplotPipe = popen ("gnuplot -persistent", "w");
+            //    int NumCommands = 2;
+            //    char *GNUplotCommands[] = { "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5", "set pointintervalbox 3"};
+            //    for (int i=0; i<NumCommands; i++) fprintf(GNUplotPipe, "%s \n", GNUplotCommands[i]); //Send commands to gnuplot one by one.
+
+            //    fprintf(GNUplotPipe, "plot '-' with lines linestyle 1\n");
+            //    for (int i=0; i<model->PD1DnP[k]; i++) {
+            //        fprintf(GNUplotPipe, "%lf %lf \n", p[i]*scaling->S, model->PD1Drho[k][i]*scaling->rho); //Write the data to a temporary file
+            //    }
+            //    fprintf(GNUplotPipe, "e\n");
+            //    fflush(GNUplotPipe);
+            //     //-------- In situ VISU for debugging: do not delete ------------------------//
             }
             else {
                 printf("Cannot open file %s, check if the file exists in the current location !\n Exiting", fname);
@@ -1574,7 +1582,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     Nmodel->let_res_grow    = ReadInt2( fin, "let_res_grow",  0 );
     Nmodel->Pic2NewtCond    = ReadDou2( fin, "Pic2NewtCond", 1e-1 );
     Nmodel->nit_Pic_max     = ReadInt2( fin, "nit_Pic_max", 10 );
-    
+    if (model->Newton==0) Nmodel->Picard2Newton = 0;
     
     model->rel_tol_KSP      = ReadDou2( fin, "rel_tol_KSP", 1e-4 );
     Nmodel->nit_max         = ReadInt2( fin, "nit_max", 1 );

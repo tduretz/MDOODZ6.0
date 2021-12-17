@@ -397,26 +397,26 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
 
     printf("---- Line search for decoupled Stokes equations ----\n");
 
-    int ix, kk, k, cc;
+    int kk, k, cc;
     int nx= model->Nx, nz=model->Nz, ncx=nx-1, ncz=nz-1, nzvx=nz+1, nxvz=nx+1;
     double *rx, *rz, *rp, alpha, *alphav, dalpha, minx;
     double *u, *v, *p;
     Nparams residuals;
     clock_t  t_omp;
     int success = 0, niter=0, nitermax=1;
-    double minalpha[nitermax], maxalpha[nitermax], frac = 1.0;
-    int ntry[nitermax];
+    double minalpha, maxalpha, frac = 1.0;
+    int ntry;
     double min_step = model->line_search_min;
 
     Nmodel->stagnated = 0;
     residuals.nit = Nmodel->nit;
 
-    ntry[0]     = 6;
-    minalpha[0] = -2.5;
-    maxalpha[0] = -min_step;
+    ntry     = 6;
+    minalpha = -2.5;
+    maxalpha = -min_step;
 
-    if (model->Newton==1) minalpha[0] = -1.0;
-    if (model->Newton==0) maxalpha[0] = -0.0;
+    if (model->Newton==1) minalpha = -1.0;
+    if (model->Newton==0) maxalpha = -0.0;
 
     //    ntry[0]     = 11;
     //    minalpha[0] = -2.25;
@@ -440,20 +440,17 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
     ArrayEqualArray( v, mesh->v_in, nxvz*nz );
     ArrayEqualArray( p, mesh->p_in, ncx*ncz );
 
-    // Do line search iterations
-    while ( success == 0 && niter < nitermax ) {
-
         // allocate array
-        alphav = DoodzMalloc( ntry[niter]*sizeof(double) );
-        rx     = DoodzMalloc( ntry[niter]*sizeof(double) );
-        rz     = DoodzMalloc( ntry[niter]*sizeof(double) );
-        rp     = DoodzMalloc( ntry[niter]*sizeof(double) );
+        alphav = DoodzMalloc( ntry*sizeof(double) );
+        rx     = DoodzMalloc( ntry*sizeof(double) );
+        rz     = DoodzMalloc( ntry*sizeof(double) );
+        rp     = DoodzMalloc( ntry*sizeof(double) );
 
-        alpha    = maxalpha[niter];
-        dalpha   = fabs(maxalpha[niter]-minalpha[niter])/(ntry[niter]-1);
+        alpha    = maxalpha;
+        dalpha   = fabs(maxalpha-minalpha)/(ntry-1);
 
         // Search for optimal relaxation parameters
-        for( kk=0; kk<ntry[niter]; kk++ ) {
+        for( kk=0; kk<ntry; kk++ ) {
 
             // Update alpha
             if (kk>0) alpha -= dalpha;
@@ -536,7 +533,8 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
         ixz    = 0;
         ix     = 0;
         iz     = 0;
-        for( k=1; k<ntry[niter]; k++ ) {
+        ixzp   = 0;
+        for( k=1; k<ntry; k++ ) {
             fxzp = sqrt( pow( rx[k],2 ) + pow( rz[k],2 ) + pow( rp[k],2 ) );
             fxz  = sqrt( pow( rx[k],2 ) + pow( rz[k],2 ) );
             fx   = rx[k];
@@ -563,7 +561,8 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
         fxzp  = sqrt( pow( rx[ixzp],2 ) + pow( rz[ixzp],2 ) + pow( rp[ixzp],2 ) );
         fxzp0 = sqrt( pow(Nmodel->resx_f, 2) + pow( Nmodel->resz_f, 2) +  pow(Nmodel->resp_f, 2) );
         
-//        printf( "%2.2e %2.2e\n", fxzp, fxzp0);
+        printf( "%2.2e\n", fxzp);
+        printf( "%2.2e\n", fxzp0);
         
         if ( fxzp < frac*fxzp0   ) { //|| rp[ix]<frac*Nmodel->resp
             alpha = alphav[ixzp];
@@ -590,8 +589,6 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
         DoodzFree(rz);
         DoodzFree(rp);
         DoodzFree(alphav);
-        niter++;
-    }
 
     if ( fabs(alpha)<1e-13 || success == 0 ) {
         printf( "Found minimum of the function -- cannot iterate further down\n" );

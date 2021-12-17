@@ -46,18 +46,18 @@ double ItpRho( double P, params* model, int k ) {
     
     int NP = model->PD1DnP[k], iP;
     double rho = 0.0, dstP, dP = ( model->PD1Dmax[k] - model->PD1Dmin[k]) / (NP -1);
-    double Pgrid = P, PW, percP;
+    double Pgrid = P, PW, wW;
     if (Pgrid<model->PD1Dmin[k]) Pgrid = model->PD1Dmin[k] + 0.01*dP;
     if (Pgrid>model->PD1Dmax[k]) Pgrid = model->PD1Dmax[k] - 0.01*dP;
     // Find index of minimum/west pressure node
     dstP = ( Pgrid - model->PD1Dmin[k] );
-    iP   = ceil( dstP/dP  - 0.0 ) - 1;
-    // Calculate Weighting coefficients for linear interpolant
-    PW    = (model->PD1Dmin[k] + iP*dP);
-    percP = 1.0 - (Pgrid - PW )/dP;
+    iP   = ceil( dstP/dP ) - 1;
+    // Calculate weighting coefficients for linear interpolant
+    PW   = (model->PD1Dmin[k] + iP*dP);
+    dstP = Pgrid - PW;
+    wW   = 1.0 - dstP/dP;
     // Interpolate from 2 neighbours
-    rho   = (1.0-percP) * model->PD1Drho[k][iP] + percP * model->PD1Drho[k][iP+1];
-    
+    rho   = wW * model->PD1Drho[k][iP] + (1.0-wW) * model->PD1Drho[k][iP+1];
     return rho;
 }
 
@@ -97,7 +97,6 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
     double eta_vp0 = materials->eta_vp[phase], n_vp = materials->n_vp[phase], eta_vp;
     double K = 1.0/beta, dQdP=0.0;
     int    dens_mod = materials->density_model[phase];
-
     double F_trial0 = F_trial;
     double dFdgdot, divp=0.0, Pc = P, dummy;
     
@@ -162,7 +161,7 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
     //    if ( model->gz<0.0 && P<0.0     ) { P = 0.0; printf("Aie aie aie P < 0 !!!\n"); exit(122);}
     
     // Visco-plastic limit
-    if ( elastic==0                 ) { G = 1e1; K = 1e1; dil = 0.0;};
+    if ( elastic==0                 ) { G = 1e1; dil = 0.0;}; //K = 1e1;
     
     // Zero C limit
     if ( T< zeroC/scaling->T        ) T = zeroC/scaling->T;
@@ -458,11 +457,12 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
             // Standard EOS
             rho_ref      = rho1;
             *rho         = rho_ref * exp(P/K - alpha*T );
+//            printf("mode 3 - P = %2.2e and rho = %03lf - K = %2.2e - beta = %2.2e\n", P*scaling->S, *rho*scaling->rho, K*scaling->S, beta*(1/scaling->S));
         }
         if ( dens_mod == 4 ) {
             // Read from Data base
             *rho         = ItpRho( P, model, phase );
-//            printf("P = %2.2e and rho = %03lf\n", P*scaling->S, *rho*scaling->rho);
+//            printf("mode 4 - P = %2.2e and rho = %03lf\n", P*scaling->S, *rho*scaling->rho);
         }
     }
 
@@ -1011,12 +1011,16 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 
                 // Volume changes
                 if ( model->VolChangeReac == 1 ) {
-                    if ( cond == 1 ) mesh->rho_n[c0]       += mesh->phase_perc_n[p][c0] * rho;
+                    if ( cond == 1 ) mesh->rho_n[c0]       += mesh->phase_perc_n[p][c0] * (rho);
                 }
                 
             }
 
             mesh->d_n[c0]          = 1.0/mesh->d_n[c0];
+
+                // if ( model->VolChangeReac == 1 ) {
+                //     if ( cond == 1 )  mesh->rho_n[c0]      = 1.0/(mesh->rho_n[c0]); 
+                // }
 
             // HARMONIC AVERAGE
             if (average == 1) {
@@ -1025,6 +1029,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 mesh->sxz_n[c0]      = 1.0/mesh->sxz_n[c0];
                 mesh->eta_n[c0]      = 1.0/mesh->eta_n[c0];
                 mesh->eta_phys_n[c0] = 1.0/mesh->eta_phys_n[c0];
+
                 if (isinf (mesh->eta_phys_n[c0]) ) {
                     printf("Inf: Problem on cell centers:\n");
                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_n[p][c0]);

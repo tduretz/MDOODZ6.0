@@ -359,6 +359,10 @@ int main( int nargs, char *args[] ) {
             Interp_Grid2P_centroids2( particles, particles.P,    &mesh, mesh.p_in, mesh.xvz_coord,  mesh.zvx_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
             Interp_Grid2P_centroids2( particles, particles.T,    &mesh, mesh.T,    mesh.xvz_coord,  mesh.zvx_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCt.type, &model );
             NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
+            MinMaxArrayTag( mesh.rho_s,      scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s     ", mesh.BCg.type );
+            MinMaxArrayTag( mesh.rho_n,      scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n     ", mesh.BCp.type );
+            Interp_Grid2P_centroids( particles, particles.rho, &mesh, mesh.rho_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
+            ArrayEqualArray( mesh.rho0_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
         } // end of no_markers --- debug
         else {
             
@@ -372,6 +376,9 @@ int main( int nargs, char *args[] ) {
             SetBCs( &mesh, &model, scaling , &particles, &materials, &topo);
             ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 1 );
             NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
+            Interp_Grid2P_centroids( particles, particles.rho, &mesh, mesh.rho_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
+            ArrayEqualArray( mesh.rho0_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
+
         }
         
         printf("Number of phases : %d\n", model.Nb_phases);
@@ -746,6 +753,7 @@ int main( int nargs, char *args[] ) {
             
             int Nmax_picard = Nmodel.nit_max;
             
+            // If Picard 2 Newton is activated: force initial Newton step
             if ( Newton == 1 && Nmodel.Picard2Newton == 1 ) {
                 model.Newton = 0;
                 first_Newton = 1;
@@ -754,7 +762,7 @@ int main( int nargs, char *args[] ) {
             while ( Nmodel.nit <= Nmax_picard && nstag<model.nstagmax) {
                 
                 if ( Nmodel.nit > 0 && Nmodel.Picard2Newton == 1 ) {
-                    if ( rx_rel[Nmodel.nit-1] < Nmodel.Pic2NewtCond || rz_rel[Nmodel.nit-1] < Nmodel.Pic2NewtCond || Nmodel.nit>= Nmodel.nit_Pic_max) {
+                    if ( rx_rel[Nmodel.nit-1] < Nmodel.Pic2NewtCond || rz_rel[Nmodel.nit-1] < Nmodel.Pic2NewtCond || rp_rel[Nmodel.nit-1] < Nmodel.Pic2NewtCond || Nmodel.nit>= Nmodel.nit_Pic_max) {
                         if ( first_Newton == 1 ) cholmod_free_factor ( &CholmodSolver.Lfact, &CholmodSolver.c);
                         if ( first_Newton == 1 ) CholmodSolver.Analyze = 1;
                         if ( first_Newton == 0 ) CholmodSolver.Analyze = 0;
@@ -989,8 +997,8 @@ int main( int nargs, char *args[] ) {
             if (Nmodel.nit< Nmodel.nit_max)  nit = Nmodel.nit;
             if (Nmodel.Picard2Newton == 1 )  printf("Picard 2 Newton is activated with condition: %2.2e\n", Nmodel.Pic2NewtCond);
             for (i=0; i<=nit; i++) {
-                if (Newt_on[i] == 0) printf("Picard it. %02d: |Fx abs.| = %2.2e - |Fz abs.| = %2.2e --- |Fx rel.| = %2.2e - |Fz rel.| = %2.2e\n", i, rx_abs[i], rz_abs[i], rx_rel[i], rz_rel[i]);
-                if (Newt_on[i] == 1) printf("Newton it. %02d: |Fx abs.| = %2.2e - |Fz abs.| = %2.2e --- |Fx rel.| = %2.2e - |Fz rel.| = %2.2e\n", i, rx_abs[i], rz_abs[i], rx_rel[i], rz_rel[i]);
+                if (Newt_on[i] == 0) printf("Pic. it. %02d: abs: |Fx| = %2.2e - |Fz| = %2.2e - |Fp| = %2.2e --- rel: |Fx| = %2.2e - |Fz| = %2.2e - |Fp| = %2.2e\n", i, rx_abs[i], rz_abs[i], rp_abs[i], rx_rel[i], rz_rel[i], rp_rel[i]);
+                if (Newt_on[i] == 1) printf("New. it. %02d: abs: |Fx| = %2.2e - |Fz| = %2.2e - |Fp| = %2.2e --- rel: |Fx| = %2.2e - |Fz| = %2.2e - |Fp| = %2.2e\n", i, rx_abs[i], rz_abs[i], rp_abs[i], rx_rel[i], rz_rel[i], rp_rel[i]);
                 if (i == Nmodel.nit_max && model.safe_mode == 1) {
                     printf("Exit: Max iteration reached: Nmodel.nit_max = %02d! Check what you wanna do now...\n",Nmodel.nit_max);
                     if ( (Nmodel.resx < Nmodel.abs_tol_u) && (Nmodel.resz < Nmodel.abs_tol_u) && (Nmodel.resp < Nmodel.abs_tol_p) ) {}
@@ -1387,10 +1395,13 @@ int main( int nargs, char *args[] ) {
         
         if ( materials.density_model[k] == 4 ) {
             printf("Unloading 1D diagram for coesite quartz only baby...\n");
-
+            DoodzFree(model.PD1Drho[k]);
         }
-        
     }
+    DoodzFree(model.PD1DnP);
+    DoodzFree(model.PD1Drho);
+    DoodzFree(model.PD1Dmin);
+    DoodzFree(model.PD1Dmax);
     
     printf("\n********************************************************\n");
     printf("************* Ending MDOODZ 6.0 simulation *************\n");

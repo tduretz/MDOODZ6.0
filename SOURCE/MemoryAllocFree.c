@@ -943,7 +943,9 @@ void GridFree( grid* mesh, params* model ) {
 
     // reac
     DoodzFree(mesh->X_n);
+    DoodzFree(mesh->noise_n);
     DoodzFree(mesh->X_s);
+    DoodzFree(mesh->noise_s);
     DoodzFree(mesh->X0_n);
     DoodzFree(mesh->X0_s);
     DoodzFree(mesh->p0_n);

@@ -82,7 +82,8 @@ void PhaseRheologyLoop( int centroid, double sign, double denom, double Exx, dou
             if ( cond == 1 ) ddivpdE[c0]     += sign*vol[p][c0] * div_pl/(denom);
         }
         if (centroid == 2) { // if centroid and pressure is varied compute drhodp
-            if ( cond == 1 ) drhodP[c0]     += sign*vol[p][c0] * rho/(denom);
+            // if (p==2) printf("phase = %d, P = %2.10e, perturbed rho = %2.10e --- denom = %2.2e \n", p, P, rho, denom);
+            if ( cond == 1 ) drhodP[c0]      += sign*vol[p][c0] * rho/(denom);
         }
     }
     
@@ -286,6 +287,10 @@ void ViscosityDerivatives( grid *mesh, mat_prop *materials, params *model, Npara
                               mesh->strain_n, mesh->dil_n, mesh->fric_n, mesh->C_n,
                               model, materials, scaling,
                               mesh->detadp_n, mesh->ddivpdp_n, mesh->drhodp_n, mesh->eta_n );
+            // if ( mesh->drhodp_n[c0]<0.0 ) {
+            //     printf("%2.2e\n", mesh->drhodp_n[c0]);
+            //     exit(1);
+            // }
         }
     }
 
