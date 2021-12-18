@@ -95,7 +95,7 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
     int gs = materials->gs[phase];
     double pg = materials->ppzm[phase], Kg = materials->Kpzm[phase], Qg = materials->Qpzm[phase], gam = materials->Gpzm[phase], cg = materials->cpzm[phase], lambda = materials->Lpzm[phase];
     double eta_vp0 = materials->eta_vp[phase], n_vp = materials->n_vp[phase], eta_vp;
-    double K = 1.0/beta, dQdP=0.0;
+    double dQdP=0.0, K = 1.0/materials->bet[phase];//1.0/beta;
     int    dens_mod = materials->density_model[phase];
     double F_trial0 = F_trial;
     double dFdgdot, divp=0.0, Pc = P, dummy;
@@ -1012,15 +1012,18 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 // Volume changes
                 if ( model->VolChangeReac == 1 ) {
                     if ( cond == 1 ) mesh->rho_n[c0]       += mesh->phase_perc_n[p][c0] * (rho);
+                    // if ( cond == 1 ) mesh->rho_n[c0]       += mesh->phase_perc_n[p][c0] * 1.0/(rho);
+                    // if ( cond == 1 ) mesh->rho_n[c0]       += mesh->phase_perc_n[p][c0] * log(rho);
                 }
                 
             }
 
             mesh->d_n[c0]          = 1.0/mesh->d_n[c0];
 
-                // if ( model->VolChangeReac == 1 ) {
-                //     if ( cond == 1 )  mesh->rho_n[c0]      = 1.0/(mesh->rho_n[c0]); 
-                // }
+            if ( model->VolChangeReac == 1 ) {
+                // mesh->rho_n[c0]      = 1.0/(mesh->rho_n[c0]); 
+                // mesh->rho_n[c0]      = exp(mesh->rho_n[c0]); 
+            }
 
             // HARMONIC AVERAGE
             if (average == 1) {
@@ -1537,7 +1540,7 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
     int    phase_diag;
     double rho0, T0, alpha, P0, beta, drho, Tgrid, Pgrid, dT, dP;
     double percT, percP;
-    double rhonew, rhop, epsi = 1e-13;
+    double rhonew, rhoold, rhopold, rhop, epsi = 1e-13;
 
     int iT, iP, NT, NP, iSW, iSE, iNW, iNE;
     double dstT, dstP;
@@ -1547,9 +1550,10 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
     Nz = mesh->Nz; Ncz = Nz-1;
 
 
-#pragma omp parallel for shared(mesh,materials) private( NT, NP, iT, iP, TW, PW, iSW, iSE, iNW, iNE, phase_diag, dT, dP, Tgrid, Pgrid, c0, p, rhonew, rho0, alpha, beta, T0, P0, rhop, drho, percT, percP) firstprivate(Ncx, Ncz, model, epsi)
+#pragma omp parallel for shared(mesh,materials) private( NT, NP, iT, iP, TW, PW, iSW, iSE, iNW, iNE, phase_diag, dT, dP, Tgrid, Pgrid, c0, p, rhonew, rhoold, rho0, alpha, beta, T0, P0, rhop, rhopold, drho, percT, percP) firstprivate(Ncx, Ncz, model, epsi)
     for ( c0=0; c0<Ncx*Ncz; c0++ ) {
         rhonew = 0.0;
+        rhoold = 0.0;
         // Loop on phases
         for ( p=0; p<model->Nb_phases; p++) {
 
@@ -1564,14 +1568,16 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
                 // T and P dependent density based on EOS
                 if ( materials->density_model[p] == 1 ) {
 
-                    rho0   = materials->rho [p];
-                    drho   = materials->drho[p];
-                    T0     = materials->T0 [p];
-                    alpha  = materials->alp[p];
-                    P0     = materials->P0 [p];
-                    beta   = materials->bet[p];
-                    rhop   = (1.0 -  alpha * (mesh->T[c0] - T0) ) * (1.0 +  beta * (mesh->p_in[c0] - P0) ); // EOS general
-                    rhop   = ((1.0-mesh->X_n[c0])*rho0 + mesh->X_n[c0]*(rho0+drho))*rhop; // Average density based on X
+                    rho0    = materials->rho [p];
+                    drho    = materials->drho[p];
+                    T0      = materials->T0 [p];
+                    alpha   = materials->alp[p];
+                    P0      = materials->P0 [p];
+                    beta    = materials->bet[p];
+                    rhop    = (1.0 -  alpha * (mesh->T[c0] - T0) ) * (1.0 +  beta * (mesh->p_in[c0] - P0) ); // EOS general
+                    rhop    = ((1.0-mesh->X_n[c0])*rho0 + mesh->X_n[c0]*(rho0+drho))*rhop; // Average density based on X
+                    rhopold = (1.0 -  alpha * (mesh->T[c0] - T0) ) * (1.0 +  beta * (mesh->p0_n[c0] - P0) ); // EOS general
+                    rhopold = ((1.0-mesh->X_n[c0])*rho0 + mesh->X_n[c0]*(rho0+drho))*rhopold; // Average density based on X
                 }
 
                 // T and P dependent density based on phase diagrams
@@ -1613,22 +1619,34 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
                     rhop +=  (1.0-percT)* (    percP) * model->PDMrho[phase_diag][iNW];
                     rhop +=  (    percT)* (    percP) * model->PDMrho[phase_diag][iNE];
 
+                    if (model->compressible==1) {
+                        printf("ACHTUNG!!!! Combination of P-T phase diagrams and compressibility not finalised\n Still need to compute demsity f(p_old)\n Seems like it's right time to add it now");
+                        exit(1);
+                    }
                 }
 
                 // P-T dependent density
                 if ( materials->density_model[p] == 3 ) {
+                    rho0    = materials->rho[p];
+                    beta    = materials->bet[p];
+                    alpha   = materials->alp[p];
+                    rhop    = rho0*exp(beta * mesh->p_in[c0] - alpha * mesh->T[c0]);
+                    rhopold = rho0*exp(beta * mesh->p0_n[c0] - alpha * mesh->T[c0]);
+                }
 
-                    rho0   = materials->rho[p];
-                    beta   = materials->bet[p];
-                    alpha  = materials->alp[p];
-                    rhop   = rho0*exp(beta * mesh->p_in[c0] - alpha * mesh->T[c0]);
+                // P dependent density read from the 1D table
+                if ( materials->density_model[p] == 4 ) {
+                    rhop    = ItpRho( mesh->p_in[c0], model, p );
+                    rhopold = ItpRho( mesh->p0_n[c0], model, p );
                 }
 
                 // Average density base on phase density and phase volume fraction
                 if ( mesh->BCp.type[c0] != 30 ) rhonew += mesh->phase_perc_n[p][c0] * rhop;
+                if ( mesh->BCp.type[c0] != 30 ) rhoold += mesh->phase_perc_n[p][c0] * rhopold;
             }
         }
         mesh->rho_n[c0]   = rhonew;
+        mesh->rho0_n[c0]  = rhoold;
     }
 
     InterpCentroidsToVerticesDouble( mesh->rho_n, mesh->rho_s, mesh, model );

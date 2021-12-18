@@ -1,5 +1,5 @@
 /**** RESTART ****/
-istep = 00001
+istep = 00010
 irestart = 0
 
 /**** INPUT FILE ****/
@@ -21,7 +21,7 @@ T   = 600
 /**** SPACE-TIME ****/
 Nx      = 81
 Nz      = 81
-Nt      = 1
+Nt      = 10
 xmin    = -2.500000e-3
 zmin    = -2.500000e-3
 xmax    =  2.500000e-3
@@ -55,6 +55,7 @@ advection       = 0
 GNUplot_residuals = 1 
 
 /**** SETUP DEPENDANT ****/
+eta_avg         = 0
 VolChangeReac   = 1
 noise_bg        = 1     / noise beau-gosse
 oop             = 1     / non zeros total Eyy
@@ -65,8 +66,8 @@ EpsBG           = 1e-25
 DivBG           = 1e-15
 PrBG            = 3.5e9  / pressure [Pa]
 user0           = 600    / temperature [°C]
-user1           = 0
-user2           = 0.2e-3 / inclusion radius [m]
+user1           = 1      / 1: fancy set up --- 0: simple inclusion
+user2           = 0.5e-3 / inclusion radius [m]
 user3           = 0
 user4           = 0
 
@@ -107,7 +108,7 @@ density_model = 3
 /**** PHASE 1 ****/
 ID   = 1
 rho  = 3577.00 / inclusion 1 - garnet
-mu   = 9e10
+mu   = 6e10 /9e10
 Cv   = 1050
 k    = 2.5
 Qr   = 0
@@ -119,7 +120,7 @@ alp  = 10.0e-6
 bet  = 5.8824e-12
 drho = 0
 cstv = 0             / constant visc law
-pwlv = 20            / disloc. creep
+pwlv = 21 /20            / disloc. creep
 linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
@@ -146,7 +147,7 @@ alp  = 10.0e-6
 bet  = 1e-10
 drho = 0
 cstv = 0             / constant visc law
-pwlv = 27            / disloc. creep
+pwlv = 21 /27            / disloc. creep
 linv = 0             / diff. creep
 gbsv = 0             / grain boundary sliding
 expv = 0             / peierls creep
@@ -156,7 +157,7 @@ npwl = 1
 Qpwl = 0
 eta_vp = 1e20
 n_vp   = 1.0
-density_model = 3
+density_model = 4
 
 /**** DEFMAPS ****/
 nT    =    51      / Temperature resolutin []
@@ -176,14 +177,14 @@ Nz_part  = 4
 min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
-Newton        = 0
+Newton        = 1
 Picard2Newton = 1
 Pic2NewtCond  = 1e-1
 nit_max  = 101
 rel_tol_KSP = 1e-4
 abs_tol_u   = 1e-11
 abs_tol_p   = 1e-11
-abs_tol_div = 1e-11
-rel_tol_div = 1e-11
+abs_tol_div = 1e-9
+rel_tol_div = 1e-9
 mineta  = 1e17
 maxeta  = 1e25
