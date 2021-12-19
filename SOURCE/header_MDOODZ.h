@@ -66,7 +66,7 @@ struct _mat_prop {
 typedef struct _p_markers markers;
 struct _p_markers {
 	int    Nx_part, Nz_part, Nb_part, Nb_part_max, min_part_cell, Nb_part_ini;
-	DoodzFP *x, *z, *Vx, *Vz, *P, *sxxd, *szzd, *sxz, *progress, *rho, *T, *d, *phi, *X, *syy, *dsyy;
+	DoodzFP *x, *z, *Vx, *Vz, *P, *sxxd, *szzd, *sxz, *progress, *T, *d, *phi, *X, *syy, *dsyy;
     DoodzFP *strain, *strain_el, *strain_pl, *strain_pwl, *strain_exp, *strain_lin, *strain_gbs;
 	int    *phase, *generation;
     markers* marker_chain;
@@ -110,7 +110,7 @@ struct _params {
 	int Nx, Nz, Nt, step, nit, Newton, noisy;
 	int eta_avg, itp_stencil;
     double nexp_radial_basis;
-	int ismechanical, isperiodic_x, isinertial, iselastic, isnonnewtonian, isthermal, ispureshear_ale, free_surf, eqn_state, write_markers, write_debug, write_energies, no_markers;
+	int ismechanical, isperiodic_x, isinertial, iselastic, isnonnewtonian, isthermal, ispureshear_ale, free_surf, write_markers, write_debug, write_energies, no_markers;
     double free_surf_stab;
     int dt_constant, RK, line_search, thermal_eq, subgrid_diff, adiab_heat, shear_heat, advection, fstrain, ConservInterp;
     int surf_processes, cpc, surf_remesh, loc_iter, therm_pert, surf_ised1, surf_ised2, MantleID, topografix, Reseed, SmoothSoftening;
@@ -597,8 +597,6 @@ void ExpandCentroidArray( double*, double*, grid*, params* );
 void ComputeIncrementsOnParticles( grid*, markers*, params*, mat_prop*, scale* );
 void UpdateGridFields( grid*, markers*, params*, mat_prop*, scale* );
 
-
-
 void RogerGunther( markers *, params, grid, int, scale );
 void CheckSym( DoodzFP*, double, int, int, char*, int, int );
 void ChemicalDirectSolve( grid*, params, markers*, mat_prop*, double, scale );
@@ -606,3 +604,4 @@ void InitialiseGrainSizeParticles( markers*, mat_prop* );
 
 void ViscosityDerivatives( grid*, mat_prop*, params*, Nparams, scale*);
 double ViscosityConcise( int , double, double, double, double, double, double, double, double, double, double, double, double, double, double, double, mat_prop*, params*, scale*, double*, double*, double*, double*, double*, double*, double*, double*, double* , double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double, double, double, double, double,  double*, double*, double*, double*, double, double, double*, double*, double*, int );
+double EvaluateDensity( int, double, double, double, params*, mat_prop* );

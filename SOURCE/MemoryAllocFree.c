@@ -201,7 +201,6 @@ void PartAlloc( markers *particles, params* model  ) {
     particles->progress   = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
 
     particles->divth      = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
-    particles->rho        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->T          = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->d          = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
     particles->phi        = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
@@ -249,7 +248,6 @@ void PartAlloc( markers *particles, params* model  ) {
 //    particles->dd     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
 //    particles->dX     = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
 //    particles->dphi   = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
-//    particles->drho   = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
 }
 
 
@@ -279,7 +277,6 @@ void PartFree( markers *particles, params* model ) {
     DoodzFree(particles->generation);
 
     DoodzFree(particles->divth);
-    DoodzFree(particles->rho);
     DoodzFree(particles->T);
     DoodzFree(particles->d);
     DoodzFree(particles->phi);
@@ -325,7 +322,6 @@ void PartFree( markers *particles, params* model ) {
 //    DoodzFree(particles->dd);
 //    DoodzFree(particles->dX);
 //    DoodzFree(particles->dphi);
-//    DoodzFree(particles->drho);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/

@@ -94,7 +94,6 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         particles->phase[np] = 0;                                               // same phase number everywhere
         particles->d[np]     = 0;                                               // same grain size everywhere
         particles->phi[np]   = 0.0;                                             // zero porosity everywhere
-        particles->rho[np]   = 0;
         particles->T[np]     = T_init;
         particles->P[np]     = P_init;
         particles->noise[np] = ((double)rand() / (double)RAND_MAX) - 0.5;
@@ -132,14 +131,6 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
             exit(144);
         }
 
-        //--------------------------//
-        // DENSITY
-        if ( model.eqn_state > 0 ) {
-            particles->rho[np] = materials->rho[particles->phase[np]] * (1 -  materials->alp[particles->phase[np]] * (T_init - materials->T0[particles->phase[np]]) );
-        }
-        else {
-            particles->rho[np] = materials->rho[particles->phase[np]];
-        }
         //--------------------------//
     }
     MinMaxArray(particles->Vx, scaling.V, particles->Nb_part, "Vxp init" );

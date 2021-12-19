@@ -193,7 +193,6 @@ void AddPartSed( markers *particles, mat_prop materials, markers *topo_chain, su
                 
                 particles->phi[new_ind]           =  0.0;
                 particles->X[new_ind]             =  0.0;
-                particles->rho[new_ind]           =  0.0;
                 particles->sxxd[new_ind]          =  0.0;
                 particles->sxz[new_ind]           =  0.0;
                 

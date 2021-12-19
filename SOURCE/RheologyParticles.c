@@ -769,33 +769,33 @@ void UpdateMaxPT ( scale scaling, params model, markers *particles ) {
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-void UpdateParticleDensity( grid* mesh, scale scaling, params model, markers* particles, mat_prop* materials ) {
+// void UpdateParticleDensity( grid* mesh, scale scaling, params model, markers* particles, mat_prop* materials ) {
     
-    DoodzFP *rho_inc_mark, *rho_inc_grid;
-    int Nx, Nz, Ncx, Ncz, k;
-    Nx = mesh->Nx; Ncx = Nx-1;
-    Nz = mesh->Nz; Ncz = Nz-1;
+//     DoodzFP *rho_inc_mark, *rho_inc_grid;
+//     int Nx, Nz, Ncx, Ncz, k;
+//     Nx = mesh->Nx; Ncx = Nx-1;
+//     Nz = mesh->Nz; Ncz = Nz-1;
     
-    rho_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
-    rho_inc_grid = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
+//     rho_inc_mark = DoodzCalloc(particles->Nb_part, sizeof(DoodzFP));
+//     rho_inc_grid = DoodzCalloc(Ncx*Ncz, sizeof(DoodzFP));
     
-    //    Interp_Grid2P_centroids2( *particles, particles->rho, mesh, mesh->rho_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
+//     //    Interp_Grid2P_centroids2( *particles, particles->rho, mesh, mesh->rho_n, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
     
     
-    for (k=0;k<Ncx*Ncz;k++) {
-        rho_inc_grid[k] = 0.0;
-        if (mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) rho_inc_grid[k] = mesh->rho_n[k] - mesh->rho0_n[k];
-    }
+//     for (k=0;k<Ncx*Ncz;k++) {
+//         rho_inc_grid[k] = 0.0;
+//         if (mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) rho_inc_grid[k] = mesh->rho_n[k] - mesh->rho0_n[k];
+//     }
     
-    // Interp increments to particles
-    Interp_Grid2P_centroids2( *particles, rho_inc_mark, mesh, rho_inc_grid, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
+//     // Interp increments to particles
+//     Interp_Grid2P_centroids2( *particles, rho_inc_mark, mesh, rho_inc_grid, mesh->xvz_coord,  mesh->zvx_coord, Nx-1, Nz-1, mesh->BCt.type, &model  );
     
-    // Increment temperature on particles
-    ArrayPlusArray( particles->rho, rho_inc_mark, particles->Nb_part );
+//     // Increment temperature on particles
+//     ArrayPlusArray( particles->rho, rho_inc_mark, particles->Nb_part );
     
-    DoodzFree(rho_inc_grid);
-    DoodzFree(rho_inc_mark);
-}
+//     DoodzFree(rho_inc_grid);
+//     DoodzFree(rho_inc_mark);
+// }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/

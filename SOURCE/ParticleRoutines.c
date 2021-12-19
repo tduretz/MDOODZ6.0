@@ -680,13 +680,11 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
    
 //    //    particles->generation[new_ind]    = particles->generation[min_index];
     if ( DirectNeighbour == 1 ) {
-        particles->rho[new_ind]           = particles->rho[min_index];
         particles->sxxd[new_ind]          = particles->sxxd[min_index];
         particles->szzd[new_ind]          = particles->szzd[min_index];
         particles->sxz[new_ind]           = particles->sxz[min_index];
     }
     else {
-        particles->rho[new_ind]           = Centers2Particle( particles, mesh->rho_n,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
         particles->sxxd[new_ind]          = Centers2Particle( particles, mesh->sxxd,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
         particles->szzd[new_ind]          = Centers2Particle( particles, mesh->szzd,     mesh->xvz_coord, mesh->zvx_coord, mesh->Nx-1, mesh->Nz-1, mesh->BCp.type, mesh->dx, mesh->dz, new_ind, model->isperiodic_x );
         particles->sxz[new_ind]           = Vertices2Particle( particles, mesh->sxz,     mesh->xg_coord,  mesh->zg_coord,  mesh->Nx-0, mesh->Nz-0, mesh->BCg.type, mesh->dx, mesh->dz, new_ind );
@@ -704,7 +702,6 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
 //    particles->dd[new_ind]            = particles->dd[min_index];
 //    particles->dphi[new_ind]          = particles->dphi[min_index];
 //    particles->dX[new_ind]            = particles->dX[min_index];
-//    particles->drho[new_ind]          = particles->drho[min_index];
     
     if (model->fstrain == 1) {
         // do not set default to 0 beause then it can not accumulate, better to identify which markers are new and start to accumulate as we do for the general case (fxx=fyy=1, fxz=fzx=0).
@@ -756,7 +753,6 @@ void AssignMarkerProperties (markers* particles, int new_ind, int min_index, par
 //    printf("%2.6e\n", particles->phi[new_ind]           );
 //    printf("%2.6e\n", particles->X[new_ind]             );
 //    printf("%d\n", particles->generation[new_ind]    );
-//    printf("%2.6e\n", particles->rho[new_ind]           );
 //}
 //
 ///*--------------------------------------------------------------------------------------------------------------------*/

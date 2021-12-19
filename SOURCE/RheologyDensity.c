@@ -61,6 +61,49 @@ double ItpRho( double P, params* model, int k ) {
     return rho;
 }
 
+double ItpRho2D( double Tgrid, double Pgrid, int p, params *model, mat_prop *materials) {
+
+    double rho, dstT, dstP, dT, dP, TW, PW;
+    double percT, percP;
+    int NT, NP, iT, iP, iSW, iSE, iNW, iNE, phase_diag;
+
+    // Identify current phase diagram
+    phase_diag = materials->phase_diagram[p];
+    // Determine T and P increments in the current phase diagram
+    NT         = model->PDMnT[phase_diag];
+    NP         = model->PDMnP[phase_diag];
+    dT         = (model->PDMTmax[phase_diag] - model->PDMTmin[phase_diag])/(NT-1.0);
+    dP         = (model->PDMPmax[phase_diag] - model->PDMPmin[phase_diag])/(NP-1.0);
+    // Pressure and temperature + correct to remain within the database bounds
+    if (Tgrid<model->PDMTmin[phase_diag]) Tgrid = model->PDMTmin[phase_diag] + 0.01*dT;
+    if (Tgrid>model->PDMTmax[phase_diag]) Tgrid = model->PDMTmax[phase_diag] - 0.01*dT;
+    if (Pgrid<model->PDMPmin[phase_diag]) Pgrid = model->PDMPmin[phase_diag] + 0.01*dP;
+    if (Pgrid>model->PDMPmax[phase_diag]) Pgrid = model->PDMPmax[phase_diag] - 0.01*dP;
+    // Find index of minimum/west temperature node
+    dstT = ( Tgrid - model->PDMTmin[phase_diag] );
+    iT   = ceil( dstT/dT - 0.0 ) - 1;
+    // Find index of minimum/west pressure node
+    dstP = ( Pgrid - model->PDMPmin[phase_diag] );
+    iP   = ceil( dstP/dP  - 0.0 ) - 1;
+    // Calculate Weighting coefficients for bilinear interpolant
+    TW    = (model->PDMTmin[phase_diag] + iT*dT);
+    PW    = (model->PDMPmin[phase_diag] + iP*dP);
+    percT = 1.0 - (Tgrid - TW )/dT;
+    percP = 1.0 - (Pgrid - PW )/dP;
+    // Indices of neigbours
+    iSW   = iT + iP*NT;
+    iSE   = iT + iP*NT+1;
+    iNW   = iT + (iP+1)*NT;
+    iNE   = iT + (iP+1)*NT+1;
+    // Interpolate from 4 neighbours
+    rho  = 0.0;
+    rho +=  (1.0-percT)* (1.0-percP) * model->PDMrho[phase_diag][iSW];
+    rho +=  (    percT)* (1.0-percP) * model->PDMrho[phase_diag][iSE];
+    rho +=  (1.0-percT)* (    percP) * model->PDMrho[phase_diag][iNW];
+    rho +=  (    percT)* (    percP) * model->PDMrho[phase_diag][iNE];
+    return rho;
+}
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -453,17 +496,7 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
         *rho         = rho_ref * exp(P/K - alpha*T);  // ?? Pc ou P, je pense P
     }
     else {
-        if ( dens_mod == 3 ) {
-            // Standard EOS
-            rho_ref      = rho1;
-            *rho         = rho_ref * exp(P/K - alpha*T );
-//            printf("mode 3 - P = %2.2e and rho = %03lf - K = %2.2e - beta = %2.2e\n", P*scaling->S, *rho*scaling->rho, K*scaling->S, beta*(1/scaling->S));
-        }
-        if ( dens_mod == 4 ) {
-            // Read from Data base
-            *rho         = ItpRho( P, model, phase );
-//            printf("mode 4 - P = %2.2e and rho = %03lf\n", P*scaling->S, *rho*scaling->rho);
-        }
+        *rho         = EvaluateDensity( phase, T, P, X, model, materials );
     }
 
     if (is_pl == 0) {
@@ -1533,125 +1566,84 @@ void ShearModCompExpGrid( grid* mesh, mat_prop materials, params model, scale sc
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+double EvaluateDensity( int p, double T, double P, double X, params *model, mat_prop *materials ) {
+
+    double rho, rho0, drho, T0, alpha, P0, beta;
+
+    // T and P dependent density based on EOS
+    if ( materials->density_model[p] == 0 ) {
+        rho0   = materials->rho[p];
+        rho    = rho0;
+    }
+
+    // T and P dependent density based on EOS
+    if ( materials->density_model[p] == 1 ) {
+        rho0    = materials->rho[p];
+        drho    = materials->drho[p];
+        T0      = materials->T0 [p];
+        alpha   = materials->alp[p];
+        P0      = materials->P0 [p];
+        beta    = materials->bet[p];
+        rho     = (1.0 -  alpha * (T - T0) ) * (1.0 +  beta * (P - P0) ); // EOS general
+        rho     = ((1.0-X)*rho0 + X*(rho0+drho))*rho; // Average density based on X
+    }
+
+    // T and P dependent density based on phase diagrams
+    if ( materials->density_model[p] == 2 ) {
+        rho    = ItpRho2D( T, P, p, model, materials);
+    }
+
+    // P-T dependent density
+    if ( materials->density_model[p] == 3 ) {
+        rho0    = materials->rho[p];
+        beta    = materials->bet[p];
+        alpha   = materials->alp[p];
+        rho     = rho0*exp(beta * P - alpha * T);
+    }
+
+    // P dependent density read from the 1D table
+    if ( materials->density_model[p] == 4 ) {
+        rho     = ItpRho( P, model, p );
+    }
+    return rho;
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 // MD6
 void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params *model, scale *scaling ) {
 
-    int k, p, c0, Nx, Nz, Ncx, Ncz;
+    int k, p, c0, Ncx=mesh->Nx-1, Ncz=mesh->Nz-1;
     int    phase_diag;
-    double rho0, T0, alpha, P0, beta, drho, Tgrid, Pgrid, dT, dP;
-    double percT, percP;
-    double rhonew, rhoold, rhopold, rhop, epsi = 1e-13;
+    double rho, rhoold, epsi = 1e-13;
+    printf("Update density fields on mesh\n");
 
-    int iT, iP, NT, NP, iSW, iSE, iNW, iNE;
-    double dstT, dstP;
-    double PW, TW;
-
-    Nx = mesh->Nx; Ncx = Nx-1;
-    Nz = mesh->Nz; Ncz = Nz-1;
-
-
-#pragma omp parallel for shared(mesh,materials) private( NT, NP, iT, iP, TW, PW, iSW, iSE, iNW, iNE, phase_diag, dT, dP, Tgrid, Pgrid, c0, p, rhonew, rhoold, rho0, alpha, beta, T0, P0, rhop, rhopold, drho, percT, percP) firstprivate(Ncx, Ncz, model, epsi)
+#pragma omp parallel for shared( mesh, materials ) private( rho, rhoold) firstprivate(Ncx, Ncz, model, epsi)
     for ( c0=0; c0<Ncx*Ncz; c0++ ) {
-        rhonew = 0.0;
-        rhoold = 0.0;
+
+        // Initialise
+        mesh->rho_n[c0]  = 0.0;
+        mesh->rho0_n[c0] = 0.0;
+
         // Loop on phases
         for ( p=0; p<model->Nb_phases; p++) {
 
             if ( fabs(mesh->phase_perc_n[p][c0])>epsi) {
 
-                // T and P dependent density based on EOS
-                if ( materials->density_model[p] == 0 ) {
-                    rho0   = materials->rho [p];
-                    rhop   = rho0;
-                }
-
-                // T and P dependent density based on EOS
-                if ( materials->density_model[p] == 1 ) {
-
-                    rho0    = materials->rho [p];
-                    drho    = materials->drho[p];
-                    T0      = materials->T0 [p];
-                    alpha   = materials->alp[p];
-                    P0      = materials->P0 [p];
-                    beta    = materials->bet[p];
-                    rhop    = (1.0 -  alpha * (mesh->T[c0] - T0) ) * (1.0 +  beta * (mesh->p_in[c0] - P0) ); // EOS general
-                    rhop    = ((1.0-mesh->X_n[c0])*rho0 + mesh->X_n[c0]*(rho0+drho))*rhop; // Average density based on X
-                    rhopold = (1.0 -  alpha * (mesh->T[c0] - T0) ) * (1.0 +  beta * (mesh->p0_n[c0] - P0) ); // EOS general
-                    rhopold = ((1.0-mesh->X_n[c0])*rho0 + mesh->X_n[c0]*(rho0+drho))*rhopold; // Average density based on X
-                }
-
-                // T and P dependent density based on phase diagrams
-                if ( materials->density_model[p] == 2 ) {
-                    // Identify current phase diagram
-                    phase_diag = materials->phase_diagram[p];
-                    // Determine T and P increments in the current phase diagram
-                    NT         = model->PDMnT[phase_diag];
-                    NP         = model->PDMnP[phase_diag];
-                    dT         = (model->PDMTmax[phase_diag] - model->PDMTmin[phase_diag])/(NT-1.0);
-                    dP         = (model->PDMPmax[phase_diag] - model->PDMPmin[phase_diag])/(NP-1.0);
-                    // Pressure and temperature + correct to remain within the database bounds
-                    Tgrid      = mesh->T[c0];
-                    Pgrid      = mesh->p_in[c0];
-                    if (Tgrid<model->PDMTmin[phase_diag]) Tgrid = model->PDMTmin[phase_diag] + 0.01*dT;
-                    if (Tgrid>model->PDMTmax[phase_diag]) Tgrid = model->PDMTmax[phase_diag] - 0.01*dT;
-                    if (Pgrid<model->PDMPmin[phase_diag]) Pgrid = model->PDMPmin[phase_diag] + 0.01*dP;
-                    if (Pgrid>model->PDMPmax[phase_diag]) Pgrid = model->PDMPmax[phase_diag] - 0.01*dP;
-                    // Find index of minimum/west temperature node
-                    dstT = ( Tgrid - model->PDMTmin[phase_diag] );
-                    iT   = ceil( dstT/dT - 0.0 ) - 1;
-                    // Find index of minimum/west pressure node
-                    dstP = ( Pgrid - model->PDMPmin[phase_diag] );
-                    iP   = ceil( dstP/dP  - 0.0 ) - 1;
-                    // Calculate Weighting coefficients for bilinear interpolant
-                    TW    = (model->PDMTmin[phase_diag] + iT*dT);
-                    PW    = (model->PDMPmin[phase_diag] + iP*dP);
-                    percT = 1.0 - (Tgrid - TW )/dT;
-                    percP = 1.0 - (Pgrid - PW )/dP;
-                    // Indices of neigbours
-                    iSW   = iT + iP*NT;
-                    iSE   = iT + iP*NT+1;
-                    iNW   = iT + (iP+1)*NT;
-                    iNE   = iT + (iP+1)*NT+1;
-                    // Interpolate from 4 neighbours
-                    rhop  = 0.0;
-                    rhop +=  (1.0-percT)* (1.0-percP) * model->PDMrho[phase_diag][iSW];
-                    rhop +=  (    percT)* (1.0-percP) * model->PDMrho[phase_diag][iSE];
-                    rhop +=  (1.0-percT)* (    percP) * model->PDMrho[phase_diag][iNW];
-                    rhop +=  (    percT)* (    percP) * model->PDMrho[phase_diag][iNE];
-
-                    if (model->compressible==1) {
-                        printf("ACHTUNG!!!! Combination of P-T phase diagrams and compressibility not finalised\n Still need to compute demsity f(p_old)\n Seems like it's right time to add it now");
-                        exit(1);
-                    }
-                }
-
-                // P-T dependent density
-                if ( materials->density_model[p] == 3 ) {
-                    rho0    = materials->rho[p];
-                    beta    = materials->bet[p];
-                    alpha   = materials->alp[p];
-                    rhop    = rho0*exp(beta * mesh->p_in[c0] - alpha * mesh->T[c0]);
-                    rhopold = rho0*exp(beta * mesh->p0_n[c0] - alpha * mesh->T[c0]);
-                }
-
-                // P dependent density read from the 1D table
-                if ( materials->density_model[p] == 4 ) {
-                    rhop    = ItpRho( mesh->p_in[c0], model, p );
-                    rhopold = ItpRho( mesh->p0_n[c0], model, p );
-                }
+                // Call density evaluation
+                rho    = EvaluateDensity( p, mesh->T[c0], mesh->p_in[c0], mesh->X_n[c0], model, materials );
+                rhoold = EvaluateDensity( p, mesh->T[c0], mesh->p0_n[c0], mesh->X_n[c0], model, materials );
 
                 // Average density base on phase density and phase volume fraction
-                if ( mesh->BCp.type[c0] != 30 ) rhonew += mesh->phase_perc_n[p][c0] * rhop;
-                if ( mesh->BCp.type[c0] != 30 ) rhoold += mesh->phase_perc_n[p][c0] * rhopold;
+                if ( mesh->BCp.type[c0] != 30 ) mesh->rho_n[c0]  += mesh->phase_perc_n[p][c0] * rho;
+                if ( mesh->BCp.type[c0] != 30 ) mesh->rho0_n[c0] += mesh->phase_perc_n[p][c0] * rhoold;
             }
         }
-        mesh->rho_n[c0]   = rhonew;
-        mesh->rho0_n[c0]  = rhoold;
     }
-
+    // Interpolate to vertices
     InterpCentroidsToVerticesDouble( mesh->rho_n, mesh->rho_s, mesh, model );
-
-    printf("Updated density fields:\n");
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/

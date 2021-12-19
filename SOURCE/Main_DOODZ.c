@@ -380,7 +380,6 @@ int main( int nargs, char *args[] ) {
             SetBCs( &mesh, &model, scaling , &particles, &materials, &topo);
             ComputeLithostaticPressure( &mesh, &model, materials.rho[0], scaling, 1 );
             NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );
-            Interp_Grid2P_centroids( particles, particles.rho, &mesh, mesh.rho_n, mesh.xc_coord,  mesh.zc_coord,  mesh.Nx-1, mesh.Nz-1, mesh.BCp.type, &model );
             ArrayEqualArray( mesh.rho0_n, mesh.rho_n, (mesh.Nx-1)*(mesh.Nz-1) );
 
         }
@@ -637,7 +636,6 @@ int main( int nargs, char *args[] ) {
         // Min/Max interpolated fields
         if ( model.noisy == 1 ) {
             MinMaxArray(particles.sxxd, scaling.S, particles.Nb_part, "sxxd part  ");
-            MinMaxArray(particles.rho, scaling.rho, particles.Nb_part, "rho part  ");
             MinMaxArray(particles.T,   scaling.T,   particles.Nb_part, "T part    ");
             MinMaxArrayTag( mesh.p0_n,         scaling.S,    (mesh.Nx-1)*(mesh.Nz-1),   "p0_n",   mesh.BCp.type );
             MinMaxArrayTag( mesh.sxz0,     scaling.S,   (mesh.Nx)*(mesh.Nz),     "sxz0    ", mesh.BCg.type );
@@ -1061,11 +1059,7 @@ int main( int nargs, char *args[] ) {
         MinMaxArrayTag( mesh.d0_n   , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d0", mesh.BCp.type );
         MinMaxArrayTag( mesh.d_n    , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d ", mesh.BCp.type );
         MinMaxArrayPart( particles.d, scaling.L, particles.Nb_part, "d on markers", particles.phase ) ;
-        
-        // Update density on the particles
-        UpdateParticleDensity( &mesh, scaling, model, &particles, &materials );
-        MinMaxArrayPart( particles.rho, scaling.rho, particles.Nb_part, "rho on markers", particles.phase ) ;
-        
+                
         // Update phi on the particles
         UpdateParticlePhi( &mesh, scaling, model, &particles, &materials );
         
