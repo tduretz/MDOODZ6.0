@@ -82,12 +82,6 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         //if ( particles->z[np] < -HLit                               )  particles->phase[np] = 3;
         //if ( pow( particles->z[np] - z_seed, 2 ) + pow( particles->x[np] - x_seed, 2 ) < Rad*Rad )  { particles->phase[np] = 0; };
        
-        
-        
-        //--------------------------//
-        // DENSITY --- Will be overriden
-        particles->rho[np] = materials->rho[particles->phase[np]];
-        
         //--------------------------//
         // SANITY CHECK
         if (particles->phase[np] > model.Nb_phases) {
