@@ -561,9 +561,6 @@ double LineSearchDecoupled( SparseMat *Stokes, SparseMat *StokesA, SparseMat *St
         fxzp  = sqrt( pow( rx[ixzp],2 ) + pow( rz[ixzp],2 ) + pow( rp[ixzp],2 ) );
         fxzp0 = sqrt( pow(Nmodel->resx_f, 2) + pow( Nmodel->resz_f, 2) +  pow(Nmodel->resp_f, 2) );
         
-        printf( "%2.2e\n", fxzp);
-        printf( "%2.2e\n", fxzp0);
-        
         if ( fxzp < frac*fxzp0   ) { //|| rp[ix]<frac*Nmodel->resp
             alpha = alphav[ixzp];
             success = 1;

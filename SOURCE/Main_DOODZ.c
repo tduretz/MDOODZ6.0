@@ -389,7 +389,8 @@ int main( int nargs, char *args[] ) {
             MinMaxArrayTag( mesh.d0_n,       scaling.L,   (mesh.Nx-1)*(mesh.Nz-1), "d0        ", mesh.BCp.type );
             MinMaxArrayTag( mesh.d_n,        scaling.L,   (mesh.Nx-1)*(mesh.Nz-1), "d         ", mesh.BCp.type );
             MinMaxArrayTag( mesh.p_lith,     scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P litho   ", mesh.BCp.type );
-            MinMaxArrayTag( mesh.p_in,       scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P initial ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.p0_n,       scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P old     ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.p_in,       scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P         ", mesh.BCp.type );
             MinMaxArrayTag( mesh.T,          scaling.T,   (mesh.Nx-1)*(mesh.Nz-1), "T         ", mesh.BCp.type );
             MinMaxArrayTag( mesh.mu_s,       scaling.S,   (mesh.Nx-0)*(mesh.Nz-0), "mu_s      ", mesh.BCg.type );
             MinMaxArrayTag( mesh.mu_n,       scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "mu_n      ", mesh.BCp.type );
@@ -626,6 +627,7 @@ int main( int nargs, char *args[] ) {
             InterpCentroidsToVerticesDouble( mesh.szzd0, mesh.szzd0_s, &mesh, &model );
             InterpVerticesToCentroidsDouble( mesh.sxz0_n,  mesh.sxz0,  &mesh, &model );
             
+            UpdateDensity( &mesh, &particles, &materials, &model, &scaling );
             ShearModCompExpGrid( &mesh, materials, model, scaling );
             CohesionFrictionDilationGrid( &mesh, &particles, materials, model, scaling );
             // Detect compressible cells
@@ -694,12 +696,7 @@ int main( int nargs, char *args[] ) {
 //        printf("** Time for ViscosityDerivatives = %3f sec\n",  elapsed );
 //
 //        exit(0);
-        
-        
-        
-        
-        
-        
+    
         
         if ( model.ismechanical == 1 ) {
             
@@ -787,7 +784,9 @@ int main( int nargs, char *args[] ) {
 
 
                 if ( model.noisy == 1 ) {
-                    MinMaxArrayTag( mesh.p_in,      scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "p_in      ", mesh.BCp.type );
+                    MinMaxArrayTag( mesh.p0_n,      scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "P old     ", mesh.BCp.type );
+                    MinMaxArrayTag( mesh.p_in,      scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "P         ", mesh.BCp.type );
+                    MinMaxArrayTag( mesh.div_u,     scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "div       ", mesh.BCp.type );
                     MinMaxArrayTag( mesh.exxd,      scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "exxd      ", mesh.BCp.type );
                     MinMaxArrayTag( mesh.ezzd,      scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "ezzd      ", mesh.BCp.type );
                     MinMaxArrayTag( mesh.exz,       scaling.E, (mesh.Nx-0)*(mesh.Nz-0), "exz       ", mesh.BCg.type );
@@ -1014,7 +1013,7 @@ int main( int nargs, char *args[] ) {
             printf("--------------------------------------------------------------\n");
             
             // plot residuals
-            if ( model.GNUplot_residuals == 1 && model.step % writer_step == 0 ) {
+            if ( model.GNUplot_residuals == 1 ) { // && model.step % writer_step == 0 
                 
                 printf("DOING GNU PLOTTING!\n");
 
@@ -1029,7 +1028,7 @@ int main( int nargs, char *args[] ) {
                 fprintf(GNUplotPipe, "e\n");
                 fflush(GNUplotPipe);
             }
-            
+        
         }
         
         //------------------------------------------------------------------------------------------------------------------------------//

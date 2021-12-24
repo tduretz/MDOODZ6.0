@@ -138,7 +138,7 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
     int gs = materials->gs[phase];
     double pg = materials->ppzm[phase], Kg = materials->Kpzm[phase], Qg = materials->Qpzm[phase], gam = materials->Gpzm[phase], cg = materials->cpzm[phase], lambda = materials->Lpzm[phase];
     double eta_vp0 = materials->eta_vp[phase], n_vp = materials->n_vp[phase], eta_vp;
-    double dQdP=0.0, K = 1.0/materials->bet[phase];//1.0/beta;
+    double dQdP=0.0, K = 1.0/beta; //1.0/materials->bet[phase];
     int    dens_mod = materials->density_model[phase];
     double F_trial0 = F_trial;
     double dFdgdot, divp=0.0, Pc = P, dummy;
@@ -461,6 +461,11 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
         dQdP     = -sin_dil; //printf("%2.2e %2.2e\n", dQdP, K*scaling->S);
         res0     = F_trial;
         F_trial0 = F_trial;
+
+        // printf("YIELDDDDDDDD\n");
+
+        // noisy = 2;
+        // exit(1);
         
         // Return mapping --> find plastic multiplier rate (gdot)
         for (it=0; it<nitmax; it++) {
@@ -485,7 +490,9 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
         }
         if ( it==nitmax-1 && (res > tol || res/F_trial0 > tol)  ) { printf("Visco-Plastic iterations failed!\n"); exit(0);}
         
+        *Pcorr  = Pc;
         eta_vep = Tiic / (2.0*Eii);
+        Tii     = Tiic;
     }
     
     
@@ -515,8 +522,7 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
     // Deviatoric stress
     *Txx       = Tii/f_ani/Eii*Gxx;
     *Tzz       = Tii/f_ani/Eii*Gzz;
-    *Txz       = Tii/f_ani/Eii*Gxz;
-    
+    *Txz       = Tii/f_ani/Eii*Gxz; 
     
     //-------- Post-Processing
     if ( post_process == 1) {
@@ -539,6 +545,7 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
         *Exz_diss =  Exz_pl + Exz_lin +  Exz_pwl + Exz_exp + Exz_gbs + Exz_cst;
         *Eii_el   = (double)elastic*fabs(Tii-Tii0)/2.0/eta_el;
         *Eii_pwl  =  Tii/2.0/eta_pwl;
+        *Eii_pl = gdot/2.0;
         
         // Partitioning of volumetric strain
         *div_pl  = divp;
@@ -571,276 +578,13 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
 //    printf("e --> %2.2e %2.2e %2.2e\n", Exx, Ezz, Eyy); // if (fabs(Eyy)>1e-6)
 //    printf("T --> %2.2e %2.2e %2.2e\n", *Txx, *Tzz, -(*Txx)-(*Tzz)); // if (fabs( -(*Txx)-(*Tzz))>1e-6)
 
-
-  
     return eta;
     
 }
 
-
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
-
-void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobian ) {
-
-    int Nx, Nz, Ncx, Ncz, k;
-    Nx = mesh->Nx; Ncx = Nx-1;
-    Nz = mesh->Nz; Ncz = Nz-1;
-    double nx, nz, ani, d0, d1;
-    int aniso_fstrain = model->aniso_fstrain;
-    double etae, K, dt = model->dt;
-    int comp = model->compressible;
-    double Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz;
-    double Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det;
-    
-    //---------------------------------------------------------------------------------------------------------//
-    //--------------------------------- Tangent operator (Picard linearised) ----------------------------------//
-    //---------------------------------------------------------------------------------------------------------//
-    if ( Jacobian==0 ) {
-        
-//        printf("Computing isotropic/anisotropic viscosity tensor\n");
-        
-        // Loop on cell centers
-#pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae )  firstprivate ( model )
-        for (k=0; k<Ncx*Ncz; k++) {
-            
-            if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
-                //----------------------------------------------------------//
-                if ( model->aniso == 0 ) {
-                    ani = 0.0; d0   = 0.0; d1   = 0.0;
-                }
-                else {
-                    // Director
-                    nx = mesh->nx0_n[k];
-                    nz = mesh->nz0_n[k];
-                    // See Anisotropy_v2.ipynb
-                    if ( model->aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_n[k];
-                    if ( model->aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_n[k];
-                    d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
-                    d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
-                }
-                //----------------------------------------------------------//
-                mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k];
-                mesh->D12_n[k] =                      2.0*ani*d0*mesh->eta_n[k];
-                mesh->D13_n[k] =                      2.0*ani*d1*mesh->eta_n[k];
-                mesh->D14_n[k] =                      0.0;
-                //----------------------------------------------------------//
-                mesh->D21_n[k] =                      2.0*ani*d0*mesh->eta_n[k];
-                mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k];
-                mesh->D23_n[k] =                     -2.0*ani*d1*mesh->eta_n[k];
-                mesh->D24_n[k] =                      0.0;
-                //----------------------------------------------------------//
-            }
-            else {
-                //----------------------------------------------------------//
-                mesh->D11_n[k] = 0.0; mesh->D12_n[k] = 0.0; mesh->D13_n[k] = 0.0; mesh->D14_n[k] = 0.0;
-                //----------------------------------------------------------//
-                mesh->D21_n[k] = 0.0; mesh->D22_n[k] = 0.0; mesh->D23_n[k] = 0.0; mesh->D24_n[k] = 0.0;
-                //----------------------------------------------------------//
-            }
-        }
-        // Loop on cell vertices
-#pragma omp parallel for shared( mesh )  private ( nx, nz, ani, d0, d1, etae ) firstprivate ( model )
-        for (k=0; k<Nx*Nz; k++) {
-            
-            if ( mesh->BCg.type[k] != 30 ) {
-                //----------------------------------------------------------//
-                if ( model->aniso == 0 ) {
-                    ani = 0.0; d0   = 0.0; d1   = 0.0;
-                }
-                else {
-                    // Director
-                    nx = mesh->nx0_s[k];
-                    nz = mesh->nz0_s[k];
-                    // See Anisotropy_v2.ipynb
-                    if ( model->aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_s[k];
-                    if ( model->aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_s[k];
-                    d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
-                    d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
-                }
-                //----------------------------------------------------------//
-                mesh->D31_s[k] =                  2.0*ani*d1*mesh->eta_s[k];
-                mesh->D32_s[k] =                 -2.0*ani*d1*mesh->eta_s[k];
-                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*ani*(d0 - 0.5)*mesh->eta_s[k];
-                mesh->D34_s[k] =                  0.0;
-                //----------------------------------------------------------//
-            }
-            else {
-                //----------------------------------------------------------//
-                mesh->D31_s[k] = 0.0; mesh->D32_s[k] = 0.0; mesh->D33_s[k] = 0.0; mesh->D34_s[k] = 0.0;
-                //----------------------------------------------------------//
-            }
-        }
-    }
-
-    //---------------------------------------------------------------------------------------------------------//
-    //--------------------------------- Tangent operator (Newton linearised) ----------------------------------//
-    //---------------------------------------------------------------------------------------------------------//
-    if ( Jacobian==1 ) { 
-
-        // Loop on cell centers
-#pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae, K, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate ( model, dt, comp, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz )
-        for (k=0; k<Ncx*Ncz; k++) {
-
-            if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31 ) {
-                //----------------------------------------------------------//
-                if ( model->iselastic==1 ) etae      = model->dt*mesh->mu_n[k];
-                else                       etae      = 1.0; // set to arbitrary value to avoid division by 0.0
-                if ( comp==1 ) K         = 1.0/mesh->bet_n[k];
-                else           K         = 0.0;
-                //----------------------------------------------------------//
-                if ( model->aniso == 0 ) {
-                    ani = 0.0; d0   = 0.0; d1   = 0.0;
-                }
-                else {
-                    // Director
-                    nx = mesh->nx0_n[k];
-                    nz = mesh->nz0_n[k];
-                    // See Anisotropy_v2.ipynb
-                    if ( model->aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_n[k];
-                    if ( model->aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_n[k];
-                    d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
-                    d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
-                }
-                //----------------------------------------------------------//
-//                Exx = mesh->exxd[k]  + mesh->sxxd0[k] /etae/2.0;
-//                Ezz = mesh->ezzd[k]  + mesh->szzd0[k] /etae/2.0;
-//                Exz = mesh->exz_n[k] + mesh->sxz0_n[k]/etae/2.0;
-//                gxz = 2.0*Exz;
-                
-                Da11  = 2.0 - 2.0*ani*d0;
-                Da12  = 2.0*ani*d0;
-                Da13  = 2.0*ani*d1;
-                Da22  = 2.0 - 2.0*ani*d0;
-                Da23  =-2.0*ani*d1;
-                Da33  = 1.0  + 2.0*ani*(d0 - 0.5);
-                a11   = Da33 * Da22 - pow(Da23,2);
-                a12   = Da13 * Da23 - Da33 * Da12;
-                a13   = Da12 * Da23 - Da13 * Da22;
-                a22   = Da33 * Da11 - pow(Da13,2);
-                a23   = Da12 * Da13 - Da11 * Da23;
-                a33   = Da11 * Da22 - pow(Da12,2);
-                det   = (Da11 * a11) + (Da12 * a12) + (Da13 * a13);
-                iDa11 = a11/det; iDa12 = a12/det; iDa13 = a13/det;
-                iDa22 = a22/det; iDa23 = a23/det;
-                iDa33 = a33/det;
-                Exx = mesh->exxd[k]      + (iDa11*mesh->sxxd0[k] + iDa12*mesh->szzd0[k] + iDa13*mesh->sxz0_n[k])/etae;
-                Ezz = mesh->ezzd[k]      + (iDa12*mesh->sxxd0[k] + iDa22*mesh->szzd0[k] + iDa23*mesh->sxz0_n[k])/etae;
-                Exz = mesh->exz_n[k]     + (iDa13*mesh->sxxd0[k] + iDa23*mesh->szzd0[k] + iDa33*mesh->sxz0_n[k])/etae/2.0;
-                gxz = 2.0*mesh->exz_n[k] + (iDa13*mesh->sxxd0[k] + iDa23*mesh->szzd0[k] + iDa33*mesh->sxz0_n[k])/etae;
-                
-                Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
-                Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
-                Gxz = Exx*ani*d1 - Ezz*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // NOT SURE ABOUT THE FACTOR 2
-                
-//                Gxx = Exx;
-//                Gzz = Ezz;
-//                Gxz = Exz;
-                
-                //----------------------------------------------------------//
-                mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k] * Gxx - K*dt*mesh->ddivpdexx_n[k];
-                mesh->D12_n[k] =                      2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k] * Gxx - K*dt*mesh->ddivpdezz_n[k];
-                mesh->D13_n[k] =                      2.0*ani*d1*mesh->eta_n[k] + 2.0*mesh->detadgxz_n[k] * Gxx - K*dt*mesh->ddivpdgxz_n[k];
-                mesh->D14_n[k] =                                                  2.0*mesh->detadp_n[k]   * Gxx - K*dt*mesh->ddivpdp_n[k];
-                //----------------------------------------------------------//
-                mesh->D21_n[k] =                      2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k] * Gzz - K*dt*mesh->ddivpdexx_n[k];
-                mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k] * Gzz - K*dt*mesh->ddivpdezz_n[k];
-                mesh->D23_n[k] =                    - 2.0*ani*d1*mesh->eta_n[k] + 2.0*mesh->detadgxz_n[k] * Gzz - K*dt*mesh->ddivpdgxz_n[k];
-                mesh->D24_n[k] =                                                  2.0*mesh->detadp_n[k]   * Gzz - K*dt*mesh->ddivpdp_n[k];
-                //----------------------------------------------------------//
-            }
-            else {
-                //----------------------------------------------------------//
-                mesh->D11_n[k] = 0.0; mesh->D12_n[k] = 0.0; mesh->D13_n[k] = 0.0; mesh->D14_n[k] = 0.0;
-                //----------------------------------------------------------//
-                mesh->D21_n[k] = 0.0; mesh->D22_n[k] = 0.0; mesh->D23_n[k] = 0.0; mesh->D24_n[k] = 0.0;
-                //----------------------------------------------------------//
-            }
-        }
-
-        // Loop on cell vertices
-#pragma omp parallel for shared( mesh )  private ( nx, nz, ani, d0, d1, etae, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate ( model, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz )
-        for (k=0; k<Nx*Nz; k++) {
-
-            if ( mesh->BCg.type[k] != 30 ) {
-                //----------------------------------------------------------//
-                if ( model->iselastic==1 ) etae      = model->dt*mesh->mu_s[k];
-                else                       etae      = 1.0; // set to arbitrary value to avoid division by 0.0
-                //----------------------------------------------------------//
-                if ( model->aniso == 0 ) {
-                    ani = 0.0; d0   = 0.0; d1   = 0.0;
-                }
-                else {
-                    // Director
-                    nx = mesh->nx0_s[k];
-                    nz = mesh->nz0_s[k];
-                    // See Anisotropy_v2.ipynb
-                    if ( model->aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_s[k];
-                    if ( model->aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_s[k];
-                    d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
-                    d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
-                }
-                //----------------------------------------------------------//
-//                Exx = mesh->exxd_s[k] + mesh->sxxd0_s[k]/etae/2.0;
-//                Ezz = mesh->ezzd_s[k] + mesh->szzd0_s[k]/etae/2.0;
-//                Exz = mesh->exz[k]    + mesh->sxz0[k]   /etae/2.0;
-//                gxz = 2.0*Exz;
-                
-                Da11  = 2.0 - 2.0*ani*d0;
-                Da12  = 2.0*ani*d0;
-                Da13  = 2.0*ani*d1;
-                Da22  = 2.0 - 2.0*ani*d0;
-                Da23  =-2.0*ani*d1;
-                Da33  = 1.0  + 2.0*ani*(d0 - 0.5);
-                a11   = Da33 * Da22 - pow(Da23,2);
-                a12   = Da13 * Da23 - Da33 * Da12;
-                a13   = Da12 * Da23 - Da13 * Da22;
-                a22   = Da33 * Da11 - pow(Da13,2);
-                a23   = Da12 * Da13 - Da11 * Da23;
-                a33   = Da11 * Da22 - pow(Da12,2);
-                det   = (Da11 * a11) + (Da12 * a12) + (Da13 * a13);
-                iDa11 = a11/det; iDa12 = a12/det; iDa13 = a13/det;
-                iDa22 = a22/det; iDa23 = a23/det;
-                iDa33 = a33/det;
-                Exx = mesh->exxd_s[k]  + (iDa11*mesh->sxxd0_s[k] + iDa12*mesh->szzd0_s[k] + iDa13*mesh->sxz0[k])/etae;
-                Ezz = mesh->ezzd_s[k]  + (iDa12*mesh->sxxd0_s[k] + iDa22*mesh->szzd0_s[k] + iDa23*mesh->sxz0[k])/etae;
-                Exz = mesh->exz[k]     + (iDa13*mesh->sxxd0_s[k] + iDa23*mesh->szzd0_s[k] + iDa33*mesh->sxz0[k])/etae/2.0;
-                gxz = 2.0*mesh->exz[k] + (iDa13*mesh->sxxd0_s[k] + iDa23*mesh->szzd0_s[k] + iDa33*mesh->sxz0[k])/etae;
-                
-                Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
-                Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
-                Gxz = Exx*ani*d1 - Ezz*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // NOT SURE ABOUT THE FACTOR 2
-                
-                
-//                Gxx = Exx;
-//                Gzz = Ezz;
-//                Gxz = Exz;
-                
-                //----------------------------------------------------------//
-                mesh->D31_s[k] =                  2.0*ani*d1*mesh->eta_s[k]         + 2.0*mesh->detadexx_s[k] * Gxz;
-                mesh->D32_s[k] =                - 2.0*ani*d1*mesh->eta_s[k]         + 2.0*mesh->detadezz_s[k] * Gxz;
-                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*ani*(d0 - 0.5)*mesh->eta_s[k] + 2.0*mesh->detadgxz_s[k] * Gxz;
-                mesh->D34_s[k] =                                                      2.0*mesh->detadp_s[k]   * Gxz;
-                //----------------------------------------------------------//
-            }
-            else {
-                //----------------------------------------------------------//
-                mesh->D31_s[k] = 0.0; mesh->D32_s[k] = 0.0; mesh->D33_s[k] = 0.0; mesh->D34_s[k] = 0.0;
-                //----------------------------------------------------------//
-            }
-            if (isnan(mesh->D34_s[k])) { printf("EXIT: D34 is NAN!\n"); exit(1); }
-            if (isinf(mesh->D34_s[k])) { printf("EXIT: D34 is INF!\n"); exit(1); }
-        }
-    }
-
-}
-
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
-/*--------------------------------------------------------------------------------------------------------------------*/
-
 void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, Nparams Nmodel, scale *scaling ) {
 
     int p, k, l, Nx, Nz, Ncx, Ncz, c0, c1, k1, cond;
@@ -983,9 +727,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                                 
                 cond =  fabs(mesh->phase_perc_n[p][c0])>1.0e-13;
 
-                if ( cond == 1 ) {
-//                    eta =  Viscosity( p, mesh->mu_n[c0], mesh->T[c0], mesh->p_in[c0], mesh->d0_n[c0], mesh->phi0_n[c0], mesh->X0_n[c0], Exx, Ezz, Exz, Gxx, Gzz, Gxz, mesh->sxxd0[c0], mesh->szzd0[c0], mesh->sxz0_n[c0], materials    , model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &dnew, mesh->strain_n[c0], mesh->dil_n[c0], mesh->fric_n[c0], mesh->C_n[c0], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_n[c0], &Xreac, &OverS, &ddivpdexx, &ddivpdezz, &ddivpdexz, &ddivpdp, &Pcorr, &drhodp, &rho, mesh->bet_n[c0], mesh->div_u[c0], &div_el, &div_pl, &div_r );
-                    
+                if ( cond == 1 ) {                    
                     eta =  ViscosityConcise( p, mesh->mu_n[c0], mesh->T[c0], mesh->p_in[c0], mesh->d0_n[c0], mesh->phi0_n[c0], mesh->X0_n[c0], Exx, Ezz, Exz, Gxx, Gzz, Gxz, mesh->sxxd0[c0], mesh->szzd0[c0], mesh->sxz0_n[c0], materials    , model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &dnew, mesh->strain_n[c0], mesh->dil_n[c0], mesh->fric_n[c0], mesh->C_n[c0], mesh->p0_n[c0], &Xreac, &OverS, &Pcorr, &rho, mesh->bet_n[c0], mesh->div_u[c0], &div_el, &div_pl, &div_r, 1 );
                 }
 
@@ -1265,6 +1007,263 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
 
         }
     }
+}
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobian ) {
+
+    int Nx, Nz, Ncx, Ncz, k;
+    Nx = mesh->Nx; Ncx = Nx-1;
+    Nz = mesh->Nz; Ncz = Nz-1;
+    double nx, nz, ani, d0, d1;
+    int aniso_fstrain = model->aniso_fstrain;
+    double etae, K, dt = model->dt;
+    int comp = model->compressible;
+    double Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz;
+    double Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det;
+    
+    //---------------------------------------------------------------------------------------------------------//
+    //--------------------------------- Tangent operator (Picard linearised) ----------------------------------//
+    //---------------------------------------------------------------------------------------------------------//
+    if ( Jacobian==0 ) {
+        
+//        printf("Computing isotropic/anisotropic viscosity tensor\n");
+        
+        // Loop on cell centers
+#pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae )  firstprivate ( model )
+        for (k=0; k<Ncx*Ncz; k++) {
+            
+            if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
+                //----------------------------------------------------------//
+                if ( model->aniso == 0 ) {
+                    ani = 0.0; d0   = 0.0; d1   = 0.0;
+                }
+                else {
+                    // Director
+                    nx = mesh->nx0_n[k];
+                    nz = mesh->nz0_n[k];
+                    // See Anisotropy_v2.ipynb
+                    if ( model->aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_n[k];
+                    if ( model->aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_n[k];
+                    d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
+                    d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
+                }
+                //----------------------------------------------------------//
+                mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k];
+                mesh->D12_n[k] =                      2.0*ani*d0*mesh->eta_n[k];
+                mesh->D13_n[k] =                      2.0*ani*d1*mesh->eta_n[k];
+                mesh->D14_n[k] =                      0.0;
+                //----------------------------------------------------------//
+                mesh->D21_n[k] =                      2.0*ani*d0*mesh->eta_n[k];
+                mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k];
+                mesh->D23_n[k] =                     -2.0*ani*d1*mesh->eta_n[k];
+                mesh->D24_n[k] =                      0.0;
+                //----------------------------------------------------------//
+            }
+            else {
+                //----------------------------------------------------------//
+                mesh->D11_n[k] = 0.0; mesh->D12_n[k] = 0.0; mesh->D13_n[k] = 0.0; mesh->D14_n[k] = 0.0;
+                //----------------------------------------------------------//
+                mesh->D21_n[k] = 0.0; mesh->D22_n[k] = 0.0; mesh->D23_n[k] = 0.0; mesh->D24_n[k] = 0.0;
+                //----------------------------------------------------------//
+            }
+        }
+        // Loop on cell vertices
+#pragma omp parallel for shared( mesh )  private ( nx, nz, ani, d0, d1, etae ) firstprivate ( model )
+        for (k=0; k<Nx*Nz; k++) {
+            
+            if ( mesh->BCg.type[k] != 30 ) {
+                //----------------------------------------------------------//
+                if ( model->aniso == 0 ) {
+                    ani = 0.0; d0   = 0.0; d1   = 0.0;
+                }
+                else {
+                    // Director
+                    nx = mesh->nx0_s[k];
+                    nz = mesh->nz0_s[k];
+                    // See Anisotropy_v2.ipynb
+                    if ( model->aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_s[k];
+                    if ( model->aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_s[k];
+                    d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
+                    d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
+                }
+                //----------------------------------------------------------//
+                mesh->D31_s[k] =                  2.0*ani*d1*mesh->eta_s[k];
+                mesh->D32_s[k] =                 -2.0*ani*d1*mesh->eta_s[k];
+                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*ani*(d0 - 0.5)*mesh->eta_s[k];
+                mesh->D34_s[k] =                  0.0;
+                //----------------------------------------------------------//
+            }
+            else {
+                //----------------------------------------------------------//
+                mesh->D31_s[k] = 0.0; mesh->D32_s[k] = 0.0; mesh->D33_s[k] = 0.0; mesh->D34_s[k] = 0.0;
+                //----------------------------------------------------------//
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------------------------------//
+    //--------------------------------- Tangent operator (Newton linearised) ----------------------------------//
+    //---------------------------------------------------------------------------------------------------------//
+    if ( Jacobian==1 ) { 
+
+        // Loop on cell centers
+#pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae, K, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate ( model, dt, comp, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz )
+        for (k=0; k<Ncx*Ncz; k++) {
+
+            if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31 ) {
+                //----------------------------------------------------------//
+                if ( model->iselastic==1 ) etae      = model->dt*mesh->mu_n[k];
+                else                       etae      = 1.0; // set to arbitrary value to avoid division by 0.0
+                if ( comp==1 ) K         = 1.0/mesh->bet_n[k];
+                else           K         = 0.0;
+                //----------------------------------------------------------//
+                if ( model->aniso == 0 ) {
+                    ani = 0.0; d0   = 0.0; d1   = 0.0;
+                }
+                else {
+                    // Director
+                    nx = mesh->nx0_n[k];
+                    nz = mesh->nz0_n[k];
+                    // See Anisotropy_v2.ipynb
+                    if ( model->aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_n[k];
+                    if ( model->aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_n[k];
+                    d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
+                    d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
+                }
+                //----------------------------------------------------------//
+//                Exx = mesh->exxd[k]  + mesh->sxxd0[k] /etae/2.0;
+//                Ezz = mesh->ezzd[k]  + mesh->szzd0[k] /etae/2.0;
+//                Exz = mesh->exz_n[k] + mesh->sxz0_n[k]/etae/2.0;
+//                gxz = 2.0*Exz;
+                
+                Da11  = 2.0 - 2.0*ani*d0;
+                Da12  = 2.0*ani*d0;
+                Da13  = 2.0*ani*d1;
+                Da22  = 2.0 - 2.0*ani*d0;
+                Da23  =-2.0*ani*d1;
+                Da33  = 1.0  + 2.0*ani*(d0 - 0.5);
+                a11   = Da33 * Da22 - pow(Da23,2);
+                a12   = Da13 * Da23 - Da33 * Da12;
+                a13   = Da12 * Da23 - Da13 * Da22;
+                a22   = Da33 * Da11 - pow(Da13,2);
+                a23   = Da12 * Da13 - Da11 * Da23;
+                a33   = Da11 * Da22 - pow(Da12,2);
+                det   = (Da11 * a11) + (Da12 * a12) + (Da13 * a13);
+                iDa11 = a11/det; iDa12 = a12/det; iDa13 = a13/det;
+                iDa22 = a22/det; iDa23 = a23/det;
+                iDa33 = a33/det;
+                Exx = mesh->exxd[k]      + (iDa11*mesh->sxxd0[k] + iDa12*mesh->szzd0[k] + iDa13*mesh->sxz0_n[k])/etae;
+                Ezz = mesh->ezzd[k]      + (iDa12*mesh->sxxd0[k] + iDa22*mesh->szzd0[k] + iDa23*mesh->sxz0_n[k])/etae;
+                Exz = mesh->exz_n[k]     + (iDa13*mesh->sxxd0[k] + iDa23*mesh->szzd0[k] + iDa33*mesh->sxz0_n[k])/etae/2.0;
+                gxz = 2.0*mesh->exz_n[k] + (iDa13*mesh->sxxd0[k] + iDa23*mesh->szzd0[k] + iDa33*mesh->sxz0_n[k])/etae;
+                
+                Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
+                Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
+                Gxz = Exx*ani*d1 - Ezz*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // NOT SURE ABOUT THE FACTOR 2
+                
+//                Gxx = Exx;
+//                Gzz = Ezz;
+//                Gxz = Exz;
+                
+                //----------------------------------------------------------//
+                mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k] * Gxx - K*dt*mesh->ddivpdexx_n[k];
+                mesh->D12_n[k] =                      2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k] * Gxx - K*dt*mesh->ddivpdezz_n[k];
+                mesh->D13_n[k] =                      2.0*ani*d1*mesh->eta_n[k] + 2.0*mesh->detadgxz_n[k] * Gxx - K*dt*mesh->ddivpdgxz_n[k];
+                mesh->D14_n[k] =                                                  2.0*mesh->detadp_n[k]   * Gxx - K*dt*mesh->ddivpdp_n[k];
+                //----------------------------------------------------------//
+                mesh->D21_n[k] =                      2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k] * Gzz - K*dt*mesh->ddivpdexx_n[k];
+                mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k] * Gzz - K*dt*mesh->ddivpdezz_n[k];
+                mesh->D23_n[k] =                    - 2.0*ani*d1*mesh->eta_n[k] + 2.0*mesh->detadgxz_n[k] * Gzz - K*dt*mesh->ddivpdgxz_n[k];
+                mesh->D24_n[k] =                                                  2.0*mesh->detadp_n[k]   * Gzz - K*dt*mesh->ddivpdp_n[k];
+                //----------------------------------------------------------//
+            }
+            else {
+                //----------------------------------------------------------//
+                mesh->D11_n[k] = 0.0; mesh->D12_n[k] = 0.0; mesh->D13_n[k] = 0.0; mesh->D14_n[k] = 0.0;
+                //----------------------------------------------------------//
+                mesh->D21_n[k] = 0.0; mesh->D22_n[k] = 0.0; mesh->D23_n[k] = 0.0; mesh->D24_n[k] = 0.0;
+                //----------------------------------------------------------//
+            }
+        }
+
+        // Loop on cell vertices
+#pragma omp parallel for shared( mesh )  private ( nx, nz, ani, d0, d1, etae, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate ( model, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz )
+        for (k=0; k<Nx*Nz; k++) {
+
+            if ( mesh->BCg.type[k] != 30 ) {
+                //----------------------------------------------------------//
+                if ( model->iselastic==1 ) etae      = model->dt*mesh->mu_s[k];
+                else                       etae      = 1.0; // set to arbitrary value to avoid division by 0.0
+                //----------------------------------------------------------//
+                if ( model->aniso == 0 ) {
+                    ani = 0.0; d0   = 0.0; d1   = 0.0;
+                }
+                else {
+                    // Director
+                    nx = mesh->nx0_s[k];
+                    nz = mesh->nz0_s[k];
+                    // See Anisotropy_v2.ipynb
+                    if ( model->aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_s[k];
+                    if ( model->aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_s[k];
+                    d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
+                    d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
+                }
+                //----------------------------------------------------------//
+//                Exx = mesh->exxd_s[k] + mesh->sxxd0_s[k]/etae/2.0;
+//                Ezz = mesh->ezzd_s[k] + mesh->szzd0_s[k]/etae/2.0;
+//                Exz = mesh->exz[k]    + mesh->sxz0[k]   /etae/2.0;
+//                gxz = 2.0*Exz;
+                
+                Da11  = 2.0 - 2.0*ani*d0;
+                Da12  = 2.0*ani*d0;
+                Da13  = 2.0*ani*d1;
+                Da22  = 2.0 - 2.0*ani*d0;
+                Da23  =-2.0*ani*d1;
+                Da33  = 1.0  + 2.0*ani*(d0 - 0.5);
+                a11   = Da33 * Da22 - pow(Da23,2);
+                a12   = Da13 * Da23 - Da33 * Da12;
+                a13   = Da12 * Da23 - Da13 * Da22;
+                a22   = Da33 * Da11 - pow(Da13,2);
+                a23   = Da12 * Da13 - Da11 * Da23;
+                a33   = Da11 * Da22 - pow(Da12,2);
+                det   = (Da11 * a11) + (Da12 * a12) + (Da13 * a13);
+                iDa11 = a11/det; iDa12 = a12/det; iDa13 = a13/det;
+                iDa22 = a22/det; iDa23 = a23/det;
+                iDa33 = a33/det;
+                Exx = mesh->exxd_s[k]  + (iDa11*mesh->sxxd0_s[k] + iDa12*mesh->szzd0_s[k] + iDa13*mesh->sxz0[k])/etae;
+                Ezz = mesh->ezzd_s[k]  + (iDa12*mesh->sxxd0_s[k] + iDa22*mesh->szzd0_s[k] + iDa23*mesh->sxz0[k])/etae;
+                Exz = mesh->exz[k]     + (iDa13*mesh->sxxd0_s[k] + iDa23*mesh->szzd0_s[k] + iDa33*mesh->sxz0[k])/etae/2.0;
+                gxz = 2.0*mesh->exz[k] + (iDa13*mesh->sxxd0_s[k] + iDa23*mesh->szzd0_s[k] + iDa33*mesh->sxz0[k])/etae;
+                
+                Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
+                Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
+                Gxz = Exx*ani*d1 - Ezz*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // NOT SURE ABOUT THE FACTOR 2
+                
+                
+//                Gxx = Exx;
+//                Gzz = Ezz;
+//                Gxz = Exz;
+                
+                //----------------------------------------------------------//
+                mesh->D31_s[k] =                  2.0*ani*d1*mesh->eta_s[k]         + 2.0*mesh->detadexx_s[k] * Gxz;
+                mesh->D32_s[k] =                - 2.0*ani*d1*mesh->eta_s[k]         + 2.0*mesh->detadezz_s[k] * Gxz;
+                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*ani*(d0 - 0.5)*mesh->eta_s[k] + 2.0*mesh->detadgxz_s[k] * Gxz;
+                mesh->D34_s[k] =                                                      2.0*mesh->detadp_s[k]   * Gxz;
+                //----------------------------------------------------------//
+            }
+            else {
+                //----------------------------------------------------------//
+                mesh->D31_s[k] = 0.0; mesh->D32_s[k] = 0.0; mesh->D33_s[k] = 0.0; mesh->D34_s[k] = 0.0;
+                //----------------------------------------------------------//
+            }
+            if (isnan(mesh->D34_s[k])) { printf("EXIT: D34 is NAN!\n"); exit(1); }
+            if (isinf(mesh->D34_s[k])) { printf("EXIT: D34 is INF!\n"); exit(1); }
+        }
+    }
+
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -1598,7 +1597,7 @@ double EvaluateDensity( int p, double T, double P, double X, params *model, mat_
         rho0    = materials->rho[p];
         beta    = materials->bet[p];
         alpha   = materials->alp[p];
-        rho     = rho0*exp(beta * P - alpha * T);
+        rho     = rho0*exp(beta * P); //  - alpha * T
     }
 
     // P dependent density read from the 1D table
@@ -2037,10 +2036,12 @@ firstprivate( model )
 
 }
 
+#define Old 0
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
-
+#if 0
 double Viscosity( int phase, double G, double T, double P, double d, double phi, double X0, double Exx, double Ezz, double Exz, double Gxx, double Gzz, double Gxz, double Txx0, double Tzz0, double Txz0, mat_prop* materials, params *model, scale *scaling, double *txxn, double *tzzn, double *txzn, double* etaVE, double* VEcoeff, double* Eii_el, double* Eii_pl, double* Eii_pwl, double* Eii_exp , double* Eii_lin, double* Eii_gbs, double* Eii_cst, double* Exx_el, double* Ezz_el, double* Exz_el, double* Exx_diss, double* Ezz_diss, double* Exz_diss, double *d1, double strain_acc, double dil, double fric, double C, double *detadexx, double *detadezz, double *detadexz, double *detadp, double P0,  double *X1, double *OverS, double *ddivpdexx, double *ddivpdezz, double *ddivpdexz, double *ddivpdp, double *Pcorr, double *drhodp, double *rho, double beta, double div, double *div_el, double *div_pl, double *div_r ) {
     
     // General paramaters
@@ -2110,10 +2111,12 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     double Tyy, Eyy  = -( Exx  + Ezz  ), Gyy  = -( Gxx  + Gzz  ), Tyy0 = -( Txx0 + Tzz0 ); // definition of deviatoric tensor
     Eii   = sqrt(1.0/2.0*(Exx*Exx + Ezz*Ezz + Eyy*Eyy) + Exz*Exz);
     Gii   = sqrt(1.0/2.0*(Gxx*Gxx + Gzz*Gzz + Gyy*Gyy) + Gxz*Gxz);
+    if (Eii*scaling->E<1e-30) Eii=1e-30/scaling->E;
+    if (Gii*scaling->E<1e-30) Gii=1e-30/scaling->E;
     f_ani = Gii/Eii;
 //    printf("%d %2.10e \n", phase, f_ani);
 //    printf("%2.2e %2.2e\n", Eii, Gii);
-    if (Eii*scaling->E<1e-30) Eii=1e-30/scaling->E;
+    
     
     // P corr will be corrected if plasticity feedbacks on pressure (dilation)
     *Pcorr = P;
@@ -2349,10 +2352,9 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     //------------------------------------------------------------------------//
 //    printf("\n");
     // Initial guess
-    eta_ve                  = 0.5*(eta_up+eta_lo);
-//    eta_ve = eta_up;
+//    eta_ve                  = 0.5*(eta_up+eta_lo);
+    eta_ve = eta_up;
 
-    if (noisy>0) printf("New LI cycle\n");
     // Local iterations
     for (it=0; it<nitmax; it++) {
         
@@ -2365,12 +2367,12 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
         if ( gs          == 1 ) *d1      = exp(log( Kg*exp(-Qg/R/T) *gam/(lambda*(1.0/cg)* Tii *(*Eii_pwl + *Eii_exp + *Eii_gbs + *Eii_pl)*pg))/(1.0+pg));
         if ( diffusion   == 1 ) *Eii_lin = C_lin * pow(Tii, n_lin) * pow(*d1,-m_lin); // !!! gs - dependence !!!
         Eii_vis                          = *Eii_pwl + *Eii_exp + *Eii_lin + *Eii_gbs + *Eii_cst;
-        r_eta_ve                         = Eii - elastic*Tii/f_ani/(2.0*eta_el) - Eii_vis;
+        r_eta_ve                         = Eii - elastic*Tii/(2.0*eta_el) - Eii_vis;
         
         // Residual check
         res = fabs(r_eta_ve/Eii);
         if (it==0) res0 = res;
-        if (noisy>0) printf("%d %2.2e %2.2e\n", it, res, res/res0);
+//        printf("%2.2e\n", res);
         if (res < tol/100) break;
         
         // Analytical derivative of function
@@ -2387,7 +2389,6 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     
     if ( it==nitmax-1 && res > tol ) { printf("Visco-Elastic iterations failed!\n"); exit(0);}
     if ( it>10 ) printf("Warnung: more that 10 local iterations, there might be a problem...\n");
-    if ( it>10 ) exit(1);
     
     // Recalculate stress components
     Tii                  = 2.0*eta_ve*f_ani*Eii;
@@ -2706,6 +2707,1575 @@ double Viscosity( int phase, double G, double T, double P, double d, double phi,
     return eta;
 }
 
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
+
+
+void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, Nparams Nmodel, scale *scaling ) {
+
+    int p, k, l, Nx, Nz, Ncx, Ncz, c0, c1, k1, cond;
+    double eta, txx1, tzz1, txz1, Pn, Tn, etaVE, VEcoeff=0.0, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, dnew, div_el, div_pl, div_r;
+    double exx_pwl, exz_pwl, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss;
+    int average = model->eta_avg, UnsplitDiffReac = model->UnsplitDiffReac;
+    double detadexx, detadezz, detadexz, detadp;
+    double Xreac;
+    double OverS;
+    double ddivpdexx, ddivpdezz, ddivpdexz, ddivpdp, Pcorr, drhodp, rho;
+    double Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, el, etae, ani, d0, d1, nx, nz;
+    double Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det;
+
+    Nx = mesh->Nx;
+    Nz = mesh->Nz;
+    Ncx = Nx-1;
+    Ncz = Nz-1;
+
+    InterpCentroidsToVerticesDouble( mesh->div_u,   mesh->div_u_s, mesh, model );
+    InterpCentroidsToVerticesDouble( mesh->T,       mesh->T_s,     mesh, model );
+    InterpCentroidsToVerticesDouble( mesh->p_in,    mesh->P_s,     mesh, model );
+    InterpCentroidsToVerticesDouble( mesh->d0_n,    mesh->d0_s,    mesh, model );
+    InterpCentroidsToVerticesDouble( mesh->phi0_n,  mesh->phi0_s,  mesh, model ); // ACHTUNG NOT FRICTION ANGLE
+
+    // Evaluate cell center viscosities
+#pragma omp parallel for shared( mesh  ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, dnew, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, detadexx, detadezz, detadexz, detadp, Xreac, OverS, ddivpdexx, ddivpdezz, ddivpdexz, ddivpdp, Pcorr, drhodp, rho, div_el, div_pl, div_r, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, el, etae, ani, d0, d1, nx, nz, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate( UnsplitDiffReac, materials, scaling, average, model, Ncx, Ncz )
+    for ( k1=0; k1<Ncx*Ncz; k1++ ) {
+
+        //    for ( l=0; l<Ncz; l++ ) {
+        //        for ( k=0; k<Ncx; k++ ) {
+
+        k      = mesh->kp[k1];
+        l      = mesh->lp[k1];
+        c0     = k  + l*(Ncx);
+
+        mesh->eta_n[c0]       = 0.0;
+        mesh->eta_phys_n[c0]  = 0.0;
+        mesh->VE_n[c0]        = 0.0;
+        mesh->sxxd[c0]        = 0.0;
+        mesh->szzd[c0]        = 0.0;
+        mesh->sxz_n[c0]       = 0.0;
+        mesh->eII_el[c0]      = 0.0;
+        mesh->eII_pl[c0]      = 0.0;
+        mesh->eII_pwl[c0]     = 0.0;
+        mesh->eII_exp[c0]     = 0.0;
+        mesh->eII_lin[c0]     = 0.0;
+        mesh->eII_gbs[c0]     = 0.0;
+        mesh->eII_cst[c0]     = 0.0;
+        mesh->d_n[c0]         = 0.0;
+        mesh->exx_el[c0]      = 0.0;
+        mesh->exx_diss[c0]    = 0.0;
+        mesh->ezz_el[c0]      = 0.0;
+        mesh->ezz_diss[c0]    = 0.0;
+        mesh->detadexx_n[c0]  = 0.0;
+        mesh->detadezz_n[c0]  = 0.0;
+        mesh->detadgxz_n[c0]  = 0.0;
+        mesh->detadp_n[c0]    = 0.0;
+        mesh->ddivpdexx_n[c0] = 0.0;
+        mesh->ddivpdezz_n[c0] = 0.0;
+        mesh->ddivpdgxz_n[c0] = 0.0;
+        mesh->ddivpdp_n[c0]   = 0.0;
+        mesh->p_corr[c0]      = 0.0;                // Achtung baby
+        mesh->div_u_el[c0]    = 0.0;
+        mesh->div_u_pl[c0]    = 0.0;
+        mesh->div_u_r[c0]     = 0.0;
+        mesh->Wtot[c0]        = 0.0;
+        mesh->Wel[c0]         = 0.0;
+        mesh->Wdiss[c0]       = 0.0;
+        //        X                     =  mesh->Xreac_n[c0]; // Save X first
+        //        if (model->ProgReac==1) mesh->Xreac_n[c0]    = 0.0;
+        if ( UnsplitDiffReac == 0 ) mesh->X_n[c0]        = 0.0;
+        mesh->OverS_n[c0]    = 0.0;
+        
+        
+        if ( model->VolChangeReac == 1 ) {
+            mesh->rho_n[c0]  = 0.0;
+            mesh->drhodp_n[c0] = 0.0;
+        }
+        
+        // Loop on grid nodes
+        if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31 ) {
+            
+            //----------------------------------------------------------//
+            if ( model->iselastic==1 ) etae      = model->dt*mesh->mu_n[c0];
+            else                       etae      = 1.0; // set to arbitrary value to avoid division by 0.0
+            //----------------------------------------------------------//
+            if ( model->aniso == 0 ) {
+                ani = 0.0; d0   = 0.0; d1   = 0.0;
+            }
+            else {
+                // Director
+                nx = mesh->nx0_n[c0];
+                nz = mesh->nz0_n[c0];
+                // See Anisotropy_v2.ipynb
+                if ( model->aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_n[c0];
+                if ( model->aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_n[c0];
+                d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
+                d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
+            }
+            //----------------------------------------------------------//
+            Exx = mesh->exxd[c0]  + mesh->sxxd0[c0] /etae/2.0;
+            Ezz = mesh->ezzd[c0]  + mesh->szzd0[c0] /etae/2.0;
+            Exz = mesh->exz_n[c0] + mesh->sxz0_n[c0]/etae/2.0;
+            gxz = 2.0*Exz;
+            
+//            double Eii   = sqrt(1.0/2.0*(Exx*Exx + Ezz*Ezz + pow((Exx+Ezz),2) ) + Exz*Exz);
+//            double Gii   = sqrt(1.0/2.0*(Gxx*Gxx + Gzz*Gzz + pow((Gxx+Gzz),2) ) + Gxz*Gxz);
+//            printf("Eii=%2.2e Gii=%2.2e\n", Eii, Gii);
+//            exit(1);
+            
+            Da11  = 2.0 - 2.0*ani*d0;
+            Da12  = 2.0*ani*d0;
+            Da13  = 2.0*ani*d1;
+            Da22  = 2.0 - 2.0*ani*d0;
+            Da23  =-2.0*ani*d1;
+            Da33  = 1.0  + 2.0*ani*(d0 - 0.5);
+            a11   = Da33 * Da22 - pow(Da23,2);
+            a12   = Da13 * Da23 - Da33 * Da12;
+            a13   = Da12 * Da23 - Da13 * Da22;
+            a22   = Da33 * Da11 - pow(Da13,2);
+            a23   = Da12 * Da13 - Da11 * Da23;
+            a33   = Da11 * Da22 - pow(Da12,2);
+            det   = (Da11 * a11) + (Da12 * a12) + (Da13 * a13);
+            iDa11 = a11/det; iDa12 = a12/det; iDa13 = a13/det;
+            iDa22 = a22/det; iDa23 = a23/det;
+            iDa33 = a33/det;
+            Exx = mesh->exxd[c0]      + (iDa11*mesh->sxxd0[c0] + iDa12*mesh->szzd0[c0] + iDa13*mesh->sxz0_n[c0])/etae;
+            Ezz = mesh->ezzd[c0]      + (iDa12*mesh->sxxd0[c0] + iDa22*mesh->szzd0[c0] + iDa23*mesh->sxz0_n[c0])/etae;
+            Exz = mesh->exz_n[c0]     + (iDa13*mesh->sxxd0[c0] + iDa23*mesh->szzd0[c0] + iDa33*mesh->sxz0_n[c0])/2.0/etae;
+            gxz = 2.0*mesh->exz_n[c0] + (iDa13*mesh->sxxd0[c0] + iDa23*mesh->szzd0[c0] + iDa33*mesh->sxz0_n[c0])/etae;
+                        
+            Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
+            Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
+            Gxz = Exx*ani*d1 - Exx*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // Gxz = Exz if isotropic
+
+//             Eii   = sqrt(1.0/2.0*(Exx*Exx + Ezz*Ezz + pow((Exx+Ezz),2) ) + Exz*Exz);
+//             Gii   = sqrt(1.0/2.0*(Gxx*Gxx + Gzz*Gzz + pow((Gxx+Gzz),2) ) + Gxz*Gxz);
+//            printf("Eii=%2.2e Gii=%2.2e %2.2e %2.2e %2.2e\n", Eii, Gii, ani, d0, mesh->aniso_factor_n[c0]);
+//            exit(1);
+            
+//            printf("%2.2e %2.2e\n", Gxz, Exz );
+
+            // Loop on phases
+            for ( p=0; p<model->Nb_phases; p++) {
+                                
+                cond =  fabs(mesh->phase_perc_n[p][c0])>1.0e-13;
+
+                if ( cond == 1 ) {
+                    eta =  Viscosity( p, mesh->mu_n[c0], mesh->T[c0], mesh->p_in[c0], mesh->d0_n[c0], mesh->phi0_n[c0], mesh->X0_n[c0], Exx, Ezz, Exz, Gxx, Gzz, Gxz, mesh->sxxd0[c0], mesh->szzd0[c0], mesh->sxz0_n[c0], materials    , model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &dnew, mesh->strain_n[c0], mesh->dil_n[c0], mesh->fric_n[c0], mesh->C_n[c0], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_n[c0], &Xreac, &OverS, &ddivpdexx, &ddivpdezz, &ddivpdexz, &ddivpdp, &Pcorr, &drhodp, &rho, mesh->bet_n[c0], mesh->div_u[c0], &div_el, &div_pl, &div_r );
+                }
+
+                // ARITHMETIC AVERAGE
+                if (average == 0) {
+                    if ( cond == 1 ) mesh->eta_n[c0]       += mesh->phase_perc_n[p][c0] * etaVE;
+                    if ( cond == 1 ) mesh->eta_phys_n[c0]  += mesh->phase_perc_n[p][c0] * eta;
+                    if ( cond == 1 ) mesh->detadexx_n[c0]  += mesh->phase_perc_n[p][c0] * detadexx;
+                    if ( cond == 1 ) mesh->detadezz_n[c0]  += mesh->phase_perc_n[p][c0] * detadezz;
+                    if ( cond == 1 ) mesh->detadgxz_n[c0]  += mesh->phase_perc_n[p][c0] * detadexz/2.0;
+                    if ( cond == 1 ) mesh->detadp_n[c0]    += mesh->phase_perc_n[p][c0] * detadp;
+                }
+                if (average == 0 || average == 2 ) {
+                    if ( cond == 1 ) mesh->sxxd[c0]   += mesh->phase_perc_n[p][c0] * txx1;
+                    if ( cond == 1 ) mesh->szzd[c0]   += mesh->phase_perc_n[p][c0] * tzz1;
+                    if ( cond == 1 ) mesh->sxz_n[c0]  += mesh->phase_perc_n[p][c0] * txz1;
+                }
+                if ( cond == 1 ) mesh->VE_n[c0]       += mesh->phase_perc_n[p][c0] * VEcoeff;
+                if ( cond == 1 ) mesh->eII_el[c0]     += mesh->phase_perc_n[p][c0] * eII_el;
+                if ( cond == 1 ) mesh->eII_pl[c0]     += mesh->phase_perc_n[p][c0] * eII_pl;
+                if ( cond == 1 ) mesh->eII_pwl[c0]    += mesh->phase_perc_n[p][c0] * eII_pwl;
+                if ( cond == 1 ) mesh->eII_exp[c0]    += mesh->phase_perc_n[p][c0] * eII_exp;
+                if ( cond == 1 ) mesh->eII_lin[c0]    += mesh->phase_perc_n[p][c0] * eII_lin;
+                if ( cond == 1 ) mesh->eII_gbs[c0]    += mesh->phase_perc_n[p][c0] * eII_gbs;
+                if ( cond == 1 ) mesh->eII_cst[c0]    += mesh->phase_perc_n[p][c0] * eII_cst;
+                if ( cond == 1 ) mesh->d_n[c0]        += mesh->phase_perc_n[p][c0] * 1.0/dnew;
+
+                if ( cond == 1 ) mesh->exx_el[c0]     += mesh->phase_perc_n[p][c0] * exx_el;
+                if ( cond == 1 ) mesh->exx_diss[c0]   += mesh->phase_perc_n[p][c0] * exx_diss;
+                if ( cond == 1 ) mesh->ezz_el[c0]     += mesh->phase_perc_n[p][c0] * ezz_el;
+                if ( cond == 1 ) mesh->ezz_diss[c0]   += mesh->phase_perc_n[p][c0] * ezz_diss;
+                if ( cond == 1 ) mesh->Wtot[c0]       += mesh->phase_perc_n[p][c0] * ( txx1*mesh->exxd[c0] + tzz1*mesh->ezzd[c0] + (txx1+tzz1)*(mesh->exxd[c0]+mesh->ezzd[c0]) + 2.0*txz1*mesh->exz_n[c0] );
+                if ( cond == 1 ) mesh->Wdiss[c0]      += mesh->phase_perc_n[p][c0] * ( txx1*exx_diss + tzz1*ezz_diss + (txx1+tzz1)*(exx_diss+ezz_diss) + 2.0*txz1*exz_diss );
+                if ( cond == 1 ) mesh->Wel[c0]        += mesh->phase_perc_n[p][c0] * ( txx1*exx_el + tzz1*ezz_el + (txx1+tzz1)*(exx_el+ezz_el) + 2.0*txz1*exz_el );
+                
+                if (cond == 1 && mesh->Wdiss[c0]<0.0) {printf("negative dissipation: you crazy! --> Wdiss = %2.2e\n", mesh->Wdiss[c0]*scaling->S*scaling->E); }
+
+                if ( cond == 1 ) mesh->ddivpdexx_n[c0] += mesh->phase_perc_n[p][c0] * ddivpdexx;
+                if ( cond == 1 ) mesh->ddivpdezz_n[c0] += mesh->phase_perc_n[p][c0] * ddivpdezz;
+                if ( cond == 1 ) mesh->ddivpdgxz_n[c0] += mesh->phase_perc_n[p][c0] * ddivpdexz/2.0;
+                if ( cond == 1 ) mesh->ddivpdp_n[c0]   += mesh->phase_perc_n[p][c0] * ddivpdp;
+                if ( cond == 1 ) mesh->p_corr[c0]      += mesh->phase_perc_n[p][c0] * Pcorr;
+                if ( cond == 1 ) mesh->div_u_el[c0]    += mesh->phase_perc_n[p][c0] * div_el;
+                if ( cond == 1 ) mesh->div_u_pl[c0]    += mesh->phase_perc_n[p][c0] * div_pl;
+                if ( cond == 1 ) mesh->div_u_r[c0]     += mesh->phase_perc_n[p][c0] * div_r;
+
+                if ( cond == 1 && UnsplitDiffReac == 0) mesh->X_n[c0]         += mesh->phase_perc_n[p][c0] * Xreac;
+                if ( cond == 1 ) mesh->OverS_n[c0]     += mesh->phase_perc_n[p][c0] * OverS;
+
+                // HARMONIC AVERAGE
+                if (average == 1) {
+                    if ( cond == 1 ) mesh->sxxd[c0]       += mesh->phase_perc_n[p][c0] * 1.0/txx1;
+                    if ( cond == 1 ) mesh->szzd[c0]       += mesh->phase_perc_n[p][c0] * 1.0/tzz1;
+                    if ( cond == 1 ) mesh->sxz_n[c0]      += mesh->phase_perc_n[p][c0] * 1.0/txz1;
+                    if ( cond == 1 ) mesh->eta_n[c0]      += mesh->phase_perc_n[p][c0] * 1.0/etaVE;
+                    if ( cond == 1 ) mesh->eta_phys_n[c0] += mesh->phase_perc_n[p][c0] * 1.0/eta;
+                    if ( cond == 1 ) mesh->detadexx_n[c0] += mesh->phase_perc_n[p][c0] * detadexx     / pow(etaVE,2.0);
+                    if ( cond == 1 ) mesh->detadezz_n[c0] += mesh->phase_perc_n[p][c0] * detadezz     / pow(etaVE,2.0);
+                    if ( cond == 1 ) mesh->detadgxz_n[c0] += mesh->phase_perc_n[p][c0] * detadexz/2.0 / pow(etaVE,2.0);
+                    if ( cond == 1 ) mesh->detadp_n[c0]   += mesh->phase_perc_n[p][c0] * detadp       / pow(etaVE,2.0);
+                }
+
+                // GEOMETRIC AVERAGE
+                if (average == 2) {
+                    if ( cond == 1 ) mesh->eta_n[c0]      += mesh->phase_perc_n[p][c0] * log(etaVE);
+                    if ( cond == 1 ) mesh->eta_phys_n[c0] += mesh->phase_perc_n[p][c0] * log(eta);
+                    if ( cond == 1 ) mesh->detadexx_n[c0] += mesh->phase_perc_n[p][c0] * detadexx     / etaVE;
+                    if ( cond == 1 ) mesh->detadezz_n[c0] += mesh->phase_perc_n[p][c0] * detadezz     / etaVE;
+                    if ( cond == 1 ) mesh->detadgxz_n[c0] += mesh->phase_perc_n[p][c0] * detadexz/2.0 / etaVE;
+                    if ( cond == 1 ) mesh->detadp_n[c0]   += mesh->phase_perc_n[p][c0] * detadp       / etaVE;
+                }
+                
+                // Volume changes
+                if ( model->VolChangeReac == 1 ) {
+                    if ( cond == 1 ) mesh->rho_n[c0]       += mesh->phase_perc_n[p][c0] * rho;
+                    if ( cond == 1 ) mesh->drhodp_n[c0]    += mesh->phase_perc_n[p][c0] * drhodp;
+                }
+                
+            }
+
+            mesh->d_n[c0]          = 1.0/mesh->d_n[c0];
+
+            // HARMONIC AVERAGE
+            if (average == 1) {
+                mesh->sxxd[c0]       = 1.0/mesh->sxxd[c0];
+                mesh->szzd[c0]       = 1.0/mesh->szzd[c0];
+                mesh->sxz_n[c0]      = 1.0/mesh->sxz_n[c0];
+                mesh->eta_n[c0]      = 1.0/mesh->eta_n[c0];
+                mesh->eta_phys_n[c0] = 1.0/mesh->eta_phys_n[c0];
+                mesh->detadexx_n[c0] *= pow(mesh->eta_n[c0],2.0);
+                mesh->detadezz_n[c0] *= pow(mesh->eta_n[c0],2.0);
+                mesh->detadgxz_n[c0] *= pow(mesh->eta_n[c0],2.0);
+                mesh->detadp_n[c0]   *= pow(mesh->eta_n[c0],2.0);
+                if (isinf (mesh->eta_phys_n[c0]) ) {
+                    printf("Inf: Problem on cell centers:\n");
+                    for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_n[p][c0]);
+                    printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e\n", eta, mesh->mu_n[c0], mesh->T[c0], mesh->p_in[c0], mesh->d0_n[c0], mesh->phi_n[c0], mesh->exxd[c0], mesh->exz_n[c0], mesh->sxxd0[c0], mesh->sxz0_n[c0]);
+                    printf("flag %d nb part cell = %d cell index = %d\n", mesh->BCp.type[c0],mesh->nb_part_cell[c0], c0);
+                    printf("x=%2.2e z=%2.2e\n", mesh->xc_coord[k]*scaling->L/1000.0, mesh->zc_coord[l]*scaling->L/1000.0);
+                    exit(1);
+                }
+                if (isnan (mesh->eta_phys_n[c0]) ) {
+                    printf("NaN: Problem on cell centers:\n");
+                    printf("ProgReac %d\n", model->ProgReac);
+                    for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_n[p][c0]);
+                    printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e\n", eta, mesh->mu_n[c0], mesh->T[c0], mesh->p_in[c0], mesh->d0_n[c0], mesh->phi_n[c0], mesh->exxd[c0], mesh->exz_n[c0], mesh->sxxd0[c0], mesh->sxz0_n[c0]);
+                    printf("flag %d nb part cell = %d cell index = %d\n", mesh->BCp.type[c0],mesh->nb_part_cell[c0], c0);
+                    printf("x=%2.2e z=%2.2e\n", mesh->xc_coord[k]*scaling->L/1000.0, mesh->zc_coord[l]*scaling->L/1000.0);
+                    exit(1);
+                }
+            }
+            // GEOMETRIC AVERAGE
+            if (average == 2) {
+                mesh->eta_n[c0]      = exp(mesh->eta_n[c0]);
+                mesh->eta_phys_n[c0] = exp(mesh->eta_phys_n[c0]);
+                mesh->detadexx_n[c0] *= mesh->eta_n[c0];
+                mesh->detadezz_n[c0] *= mesh->eta_n[c0];
+                mesh->detadgxz_n[c0] *= mesh->eta_n[c0];
+                mesh->detadp_n[c0]   *= mesh->eta_n[c0];
+            }
+
+//            // ACHTUNG!!!! THIS IS HARD-CODED
+//            // Anisotropy
+//            if (model->aniso==1) {
+//                mesh->sxxd[c0] =  mesh->D11_n[c0]*mesh->exxd[c0] + mesh->D12_n[c0]*mesh->ezzd[c0] +  2.0*mesh->D13_n[c0]*mesh->exz_n[c0];
+//                mesh->szzd[c0] =  mesh->D21_n[c0]*mesh->exxd[c0] + mesh->D22_n[c0]*mesh->ezzd[c0] +  2.0*mesh->D23_n[c0]*mesh->exz_n[c0];
+//            }
+
+        }
+    }
+   // printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+   // printf("Cell centrer rheology updated\n");
+   // printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+
+    // Calculate vertices viscosity
+
+#pragma omp parallel for shared( mesh ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, dnew, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, detadexx, detadezz, detadexz, detadp, Xreac, OverS, ddivpdexx, ddivpdezz, ddivpdexz, ddivpdp, Pcorr, drhodp, rho, div_el, div_pl, div_r, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, el, etae, ani, d0, d1, nx, nz, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate( UnsplitDiffReac, materials, scaling, average, model, Nx, Nz )
+    for ( k1=0; k1<Nx*Nz; k1++ ) {
+
+        k  = mesh->kn[k1];
+        l  = mesh->ln[k1];
+        c1 = k + l*Nx;
+
+        mesh->VE_s[c1]       = 0.0;
+        mesh->sxz[c1]        = 0.0;
+        mesh->eta_phys_s[c1] = 0.0;
+        mesh->eta_s[c1]      = 0.0;
+        mesh->exz_el[c1]     = 0.0;
+        mesh->exz_diss[c1]   = 0.0;
+        mesh->detadexx_s[c1] = 0.0;
+        mesh->detadezz_s[c1] = 0.0;
+        mesh->detadgxz_s[c1] = 0.0;
+        mesh->detadp_s[c1]   = 0.0;
+        if (UnsplitDiffReac == 0) mesh->X_s[c1]        = 0.0;
+        //        X                    = mesh->Xreac_s[c1];
+        mesh->OverS_s[c1]    = 0.0;
+
+        if ( mesh->BCg.type[c1] != 30 ) {
+            
+            if ( model->iselastic==1   ) etae      = model->dt*mesh->mu_s[c1];
+            else           etae      = 1.0; // set to arbitrary value to avoid division by 0.0
+            //----------------------------------------------------------//
+            if ( model->aniso == 0 ) {
+                ani = 0.0; d0   = 0.0; d1   = 0.0;
+            }
+            else {
+                // Director
+                nx = mesh->nx0_s[c1];
+                nz = mesh->nz0_s[c1];
+                // See Anisotropy_v2.ipynb
+                if ( model->aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_s[c1];
+                if ( model->aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_s[c1];
+                d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
+                d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
+            }
+            //----------------------------------------------------------//
+//            Exx = mesh->exxd_s[c1] + mesh->sxxd0_s[c1]/etae/2.0;
+//            Ezz = mesh->ezzd_s[c1] + mesh->szzd0_s[c1]/etae/2.0;
+//            Exz = mesh->exz[c1]    + mesh->sxz0[c1]   /etae/2.0;
+//            gxz = 2.0*Exz;
+            
+            Da11  = 2.0 - 2.0*ani*d0;
+            Da12  = 2.0*ani*d0;
+            Da13  = 2.0*ani*d1;
+            Da22  = 2.0 - 2.0*ani*d0;
+            Da23  =-2.0*ani*d1;
+            Da33  = 1.0  + 2.0*ani*(d0 - 0.5);
+            a11   = Da33 * Da22 - pow(Da23,2);
+            a12   = Da13 * Da23 - Da33 * Da12;
+            a13   = Da12 * Da23 - Da13 * Da22;
+            a22   = Da33 * Da11 - pow(Da13,2);
+            a23   = Da12 * Da13 - Da11 * Da23;
+            a33   = Da11 * Da22 - pow(Da12,2);
+            det   = (Da11 * a11) + (Da12 * a12) + (Da13 * a13);
+            iDa11 = a11/det; iDa12 = a12/det; iDa13 = a13/det;
+            iDa22 = a22/det; iDa23 = a23/det;
+            iDa33 = a33/det;
+            Exx = mesh->exxd_s[c1]  + (iDa11*mesh->sxxd0_s[c1] + iDa12*mesh->szzd0_s[c1] + iDa13*mesh->sxz0[c1])/etae;
+            Ezz = mesh->ezzd_s[c1]  + (iDa12*mesh->sxxd0_s[c1] + iDa22*mesh->szzd0_s[c1] + iDa23*mesh->sxz0[c1])/etae;
+            Exz = mesh->exz[c1]     + (iDa13*mesh->sxxd0_s[c1] + iDa23*mesh->szzd0_s[c1] + iDa33*mesh->sxz0[c1])/2.0/etae;
+            gxz = 2.0*mesh->exz[c1] + (iDa13*mesh->sxxd0_s[c1] + iDa23*mesh->szzd0_s[c1] + iDa33*mesh->sxz0[c1])/etae;
+            
+            Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
+            Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
+            Gxz = Exx*ani*d1 - Exx*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // Gxz = Exz if isotropic
+            
+//            double Eii   = sqrt(1.0/2.0*(Exx*Exx + Ezz*Ezz + pow((Exx+Ezz),2) ) + Exz*Exz);
+//            double Gii   = sqrt(1.0/2.0*(Gxx*Gxx + Gzz*Gzz + pow((Gxx+Gzz),2) ) + Gxz*Gxz);
+//            if (Gii/Eii<.999) printf("Eii=%2.2e Gii=%2.2e\n", Eii, Gii);
+        
+            // Loop on phases
+            for ( p=0; p<model->Nb_phases; p++) {
+
+                cond = fabs(mesh->phase_perc_s[p][c1])>1.0e-13;
+
+                if ( cond == 1 ) {
+
+                    eta =  Viscosity( p, mesh->mu_s[c1], mesh->T_s[c1], mesh->P_s[c1], mesh->d0_s[c1], mesh->phi0_s[c1], mesh->X0_s[c1], Exx, Ezz, Exz, Gxx, Gzz, Gxz, mesh->sxxd0_s[c1], mesh->szzd0_s[c1], mesh->sxz0[c1], materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &dnew, mesh->strain_s[c1], mesh->dil_s[c1], mesh->fric_s[c1], mesh->C_s[c1], &detadexx, &detadezz, &detadexz, &detadp, mesh->p0_s[c1], &Xreac, &OverS, &ddivpdexx, &ddivpdezz, &ddivpdexz, &ddivpdp, &Pcorr, &drhodp, &rho, mesh->bet_s[c1], mesh->div_u_s[c1], &div_el, &div_pl, &div_r );
+                }
+
+                if (average ==0) {
+                    if ( cond == 1 ) mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] * etaVE;
+                    if ( cond == 1 ) mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] * eta;
+                    if ( cond == 1 ) mesh->detadexx_s[c1] += mesh->phase_perc_s[p][c1] * detadexx;
+                    if ( cond == 1 ) mesh->detadezz_s[c1] += mesh->phase_perc_s[p][c1] * detadezz;
+                    if ( cond == 1 ) mesh->detadgxz_s[c1] += mesh->phase_perc_s[p][c1] * detadexz/2.0;
+                    if ( cond == 1 ) mesh->detadp_s[c1]   += mesh->phase_perc_s[p][c1] * detadp;
+                }
+
+                if (average ==0 || average==2) {
+                    if ( cond == 1 ) mesh->sxz[c1]    += mesh->phase_perc_s[p][c1] * txz1;
+//                    printf("p=%d txz1=%2.6e exz=%2.6e Gxz=%2.6e\n", p, txz1, Exz, Gxz);
+                }
+                if ( cond == 1 ) mesh->VE_s[c1]       += mesh->phase_perc_s[p][c1] * VEcoeff;
+                if ( cond == 1 ) mesh->exz_el[c1]     += mesh->phase_perc_s[p][c1] * exz_el;
+                if ( cond == 1 ) mesh->exz_diss[c1]   += mesh->phase_perc_s[p][c1] * exz_diss;
+                if ( cond == 1 ) mesh->OverS_s[c1]    += mesh->phase_perc_s[p][c1] * OverS;
+                if ( cond == 1 && UnsplitDiffReac == 0) mesh->X_s[c1]        += mesh->phase_perc_s[p][c1] * Xreac;
+
+                if (average == 1) {
+                    if ( cond == 1 ) mesh->sxz[c1]        += mesh->phase_perc_s[p][c1] * 1.0/txz1;
+                    if ( cond == 1 ) mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] * 1.0/etaVE;
+                    if ( cond == 1 ) mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] * 1.0/eta;
+                    if ( cond == 1 ) mesh->detadexx_s[c1] += mesh->phase_perc_s[p][c1] * detadexx      / pow(etaVE,2.0);
+                    if ( cond == 1 ) mesh->detadezz_s[c1] += mesh->phase_perc_s[p][c1] * detadezz      / pow(etaVE,2.0);
+                    if ( cond == 1 ) mesh->detadgxz_s[c1] += mesh->phase_perc_s[p][c1] * detadexz/2.0  / pow(etaVE,2.0);
+                    if ( cond == 1 ) mesh->detadp_s[c1]   += mesh->phase_perc_s[p][c1] * detadp        / pow(etaVE,2.0);
+                }
+                if (average == 2) {
+                    if ( cond == 1 ) mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] * log(etaVE);
+                    if ( cond == 1 ) mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] * log(eta);
+                    if ( cond == 1 ) mesh->detadexx_s[c1] += mesh->phase_perc_s[p][c1] * detadexx      / etaVE;
+                    if ( cond == 1 ) mesh->detadezz_s[c1] += mesh->phase_perc_s[p][c1] * detadezz      / etaVE;
+                    if ( cond == 1 ) mesh->detadgxz_s[c1] += mesh->phase_perc_s[p][c1] * detadexz/2.0  / etaVE;
+                    if ( cond == 1 ) mesh->detadp_s[c1]   += mesh->phase_perc_s[p][c1] * detadp        / etaVE;
+                    //                    if ( cond == 1  ) mesh->sxz[c1] += mesh->phase_perc_s[p][c1]        *  log(txz1);
+                }
+            }
+            // HARMONIC AVERAGE
+            if (average == 1) {
+                mesh->sxz[c1]        = 1.0/mesh->sxz[c1];
+                mesh->eta_s[c1]      = 1.0/mesh->eta_s[c1];
+                mesh->eta_phys_s[c1] = 1.0/mesh->eta_phys_s[c1];
+                mesh->detadexx_s[c1] *= pow(mesh->eta_s[c1],2.0);
+                mesh->detadezz_s[c1] *= pow(mesh->eta_s[c1],2.0);
+                mesh->detadgxz_s[c1] *= pow(mesh->eta_s[c1],2.0);
+                mesh->detadp_s[c1]   *= pow(mesh->eta_s[c1],2.0);
+                if (isinf (mesh->eta_phys_s[c1]) ) {
+                    printf("Inf: Problem on cell vertices:\n");
+                    for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_s[p][c1]);
+                    printf("%2.2e %2.2e %2.2e %2.2e %2.2e \n", mesh->mu_s[c1], mesh->exxd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->sxz0[c1]);
+                    printf("x=%2.2e z=%2.2e\n", mesh->xg_coord[k]*scaling->L/1000, mesh->zg_coord[l]*scaling->L/1000);
+                    exit(1);
+                }
+                if (isnan (mesh->eta_phys_s[c1]) ) {
+                    printf("Nan: Problem on cell vertices:\n");
+                    for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_s[p][c1]);
+                    printf("%2.2e %2.2e %2.2e %2.2e %2.2e \n", mesh->mu_s[c1],  mesh->exxd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->sxz0[c1]);
+                    printf("x=%2.2e z=%2.2e\n", mesh->xg_coord[k]*scaling->L/1000, mesh->zg_coord[l]*scaling->L/1000);
+                    exit(1);
+                }
+            }
+            // GEOMETRIC AVERAGE
+            if (average == 2) {
+                mesh->eta_s[c1]       = exp(mesh->eta_s[c1]);
+                mesh->eta_phys_s[c1]  = exp(mesh->eta_phys_s[c1]);
+                mesh->detadexx_s[c1] *= mesh->eta_s[c1];
+                mesh->detadezz_s[c1] *= mesh->eta_s[c1];
+                mesh->detadgxz_s[c1] *= mesh->eta_s[c1];
+                mesh->detadp_s[c1]   *= mesh->eta_s[c1];
+            }
+
+            // ACHTUNG!!!! THIS IS HARD-CODED
+            // Anisotropy
+//            if (model->aniso==1) {
+//                //                printf("Stress computed from anisotropy");
+//                //                printf("%2.2e %2.2e\n",2.0*mesh->D33_s[c1]*mesh->exz[c1], mesh->sxz[c1]);
+//                mesh->sxz[c1] =  mesh->D31_s[c1]*mesh->exxd_s[c1] + mesh->D32_s[c1]*mesh->ezzd_s[c1] + 2.0*mesh->D33_s[c1]*mesh->exz[c1];
+//            }
+
+            // if (mesh->exz_diss[c1]>0.0 && mesh->sxz[c1]<0.0) exit(21);
+            // if (mesh->exz_diss[c1]<0.0 && mesh->sxz[c1]>0.0) exit(22);
+
+
+        }
+    }
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobian ) {
+
+    int Nx, Nz, Ncx, Ncz, k;
+    Nx = mesh->Nx; Ncx = Nx-1;
+    Nz = mesh->Nz; Ncz = Nz-1;
+    double nx, nz, ani, d0, d1;
+    int aniso_fstrain = model->aniso_fstrain;
+    double etae, K, dt = model->dt;
+    int comp = model->compressible;
+    double Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz;
+    double Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det;
+    
+    //---------------------------------------------------------------------------------------------------------//
+    //--------------------------------- Tangent operator (Picard linearised) ----------------------------------//
+    //---------------------------------------------------------------------------------------------------------//
+    if ( Jacobian==0 ) {
+        
+//        printf("Computing isotropic/anisotropic viscosity tensor\n");
+        
+        // Loop on cell centers
+#pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae )  firstprivate ( model )
+        for (k=0; k<Ncx*Ncz; k++) {
+            
+            if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
+                //----------------------------------------------------------//
+                if ( model->aniso == 0 ) {
+                    ani = 0.0; d0   = 0.0; d1   = 0.0;
+                }
+                else {
+                    // Director
+                    nx = mesh->nx0_n[k];
+                    nz = mesh->nz0_n[k];
+                    // See Anisotropy_v2.ipynb
+                    if ( model->aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_n[k];
+                    if ( model->aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_n[k];
+                    d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
+                    d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
+                }
+                //----------------------------------------------------------//
+                mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k];
+                mesh->D12_n[k] =                      2.0*ani*d0*mesh->eta_n[k];
+                mesh->D13_n[k] =                      2.0*ani*d1*mesh->eta_n[k];
+                mesh->D14_n[k] =                      0.0;
+                //----------------------------------------------------------//
+                mesh->D21_n[k] =                      2.0*ani*d0*mesh->eta_n[k];
+                mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k];
+                mesh->D23_n[k] =                     -2.0*ani*d1*mesh->eta_n[k];
+                mesh->D24_n[k] =                      0.0;
+                //----------------------------------------------------------//
+            }
+            else {
+                //----------------------------------------------------------//
+                mesh->D11_n[k] = 0.0; mesh->D12_n[k] = 0.0; mesh->D13_n[k] = 0.0; mesh->D14_n[k] = 0.0;
+                //----------------------------------------------------------//
+                mesh->D21_n[k] = 0.0; mesh->D22_n[k] = 0.0; mesh->D23_n[k] = 0.0; mesh->D24_n[k] = 0.0;
+                //----------------------------------------------------------//
+            }
+        }
+        // Loop on cell vertices
+#pragma omp parallel for shared( mesh )  private ( nx, nz, ani, d0, d1, etae ) firstprivate ( model )
+        for (k=0; k<Nx*Nz; k++) {
+            
+            if ( mesh->BCg.type[k] != 30 ) {
+                //----------------------------------------------------------//
+                if ( model->aniso == 0 ) {
+                    ani = 0.0; d0   = 0.0; d1   = 0.0;
+                }
+                else {
+                    // Director
+                    nx = mesh->nx0_s[k];
+                    nz = mesh->nz0_s[k];
+                    // See Anisotropy_v2.ipynb
+                    if ( model->aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_s[k];
+                    if ( model->aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_s[k];
+                    d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
+                    d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
+                }
+                //----------------------------------------------------------//
+                mesh->D31_s[k] =                  2.0*ani*d1*mesh->eta_s[k];
+                mesh->D32_s[k] =                 -2.0*ani*d1*mesh->eta_s[k];
+                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*ani*(d0 - 0.5)*mesh->eta_s[k];
+                mesh->D34_s[k] =                  0.0;
+                //----------------------------------------------------------//
+            }
+            else {
+                //----------------------------------------------------------//
+                mesh->D31_s[k] = 0.0; mesh->D32_s[k] = 0.0; mesh->D33_s[k] = 0.0; mesh->D34_s[k] = 0.0;
+                //----------------------------------------------------------//
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------------------------------//
+    //--------------------------------- Tangent operator (Newton linearised) ----------------------------------//
+    //---------------------------------------------------------------------------------------------------------//
+    if ( Jacobian==1 ) { 
+
+        // Loop on cell centers
+#pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae, K, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate ( model, dt, comp, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz )
+        for (k=0; k<Ncx*Ncz; k++) {
+
+            if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31 ) {
+                //----------------------------------------------------------//
+                if ( model->iselastic==1 ) etae      = model->dt*mesh->mu_n[k];
+                else                       etae      = 1.0; // set to arbitrary value to avoid division by 0.0
+                if ( comp==1 ) K         = 1.0/mesh->bet_n[k];
+                else           K         = 0.0;
+                //----------------------------------------------------------//
+                if ( model->aniso == 0 ) {
+                    ani = 0.0; d0   = 0.0; d1   = 0.0;
+                }
+                else {
+                    // Director
+                    nx = mesh->nx0_n[k];
+                    nz = mesh->nz0_n[k];
+                    // See Anisotropy_v2.ipynb
+                    if ( model->aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_n[k];
+                    if ( model->aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_n[k];
+                    d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
+                    d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
+                }
+                //----------------------------------------------------------//
+//                Exx = mesh->exxd[k]  + mesh->sxxd0[k] /etae/2.0;
+//                Ezz = mesh->ezzd[k]  + mesh->szzd0[k] /etae/2.0;
+//                Exz = mesh->exz_n[k] + mesh->sxz0_n[k]/etae/2.0;
+//                gxz = 2.0*Exz;
+                
+                Da11  = 2.0 - 2.0*ani*d0;
+                Da12  = 2.0*ani*d0;
+                Da13  = 2.0*ani*d1;
+                Da22  = 2.0 - 2.0*ani*d0;
+                Da23  =-2.0*ani*d1;
+                Da33  = 1.0  + 2.0*ani*(d0 - 0.5);
+                a11   = Da33 * Da22 - pow(Da23,2);
+                a12   = Da13 * Da23 - Da33 * Da12;
+                a13   = Da12 * Da23 - Da13 * Da22;
+                a22   = Da33 * Da11 - pow(Da13,2);
+                a23   = Da12 * Da13 - Da11 * Da23;
+                a33   = Da11 * Da22 - pow(Da12,2);
+                det   = (Da11 * a11) + (Da12 * a12) + (Da13 * a13);
+                iDa11 = a11/det; iDa12 = a12/det; iDa13 = a13/det;
+                iDa22 = a22/det; iDa23 = a23/det;
+                iDa33 = a33/det;
+                Exx = mesh->exxd[k]      + (iDa11*mesh->sxxd0[k] + iDa12*mesh->szzd0[k] + iDa13*mesh->sxz0_n[k])/etae;
+                Ezz = mesh->ezzd[k]      + (iDa12*mesh->sxxd0[k] + iDa22*mesh->szzd0[k] + iDa23*mesh->sxz0_n[k])/etae;
+                Exz = mesh->exz_n[k] + (iDa13*mesh->sxxd0[k] + iDa23*mesh->szzd0[k] + iDa33*mesh->sxz0_n[k])/2.0/etae;
+                gxz = 2.0*mesh->exz_n[k] + (iDa13*mesh->sxxd0[k] + iDa23*mesh->szzd0[k] + iDa33*mesh->sxz0_n[k])/etae;
+                
+                Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
+                Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
+                Gxz = Exx*ani*d1 - Exx*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // NOT SURE ABOUT THE FACTOR 2
+                //----------------------------------------------------------//
+                mesh->D11_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k] * Gxx - K*dt*mesh->ddivpdexx_n[k];
+                mesh->D12_n[k] =                      2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k] * Gxx - K*dt*mesh->ddivpdezz_n[k];
+                mesh->D13_n[k] =                      2.0*ani*d1*mesh->eta_n[k] + 2.0*mesh->detadgxz_n[k] * Gxx - K*dt*mesh->ddivpdgxz_n[k];
+                mesh->D14_n[k] =                                                  2.0*mesh->detadp_n[k]   * Exx - K*dt*mesh->ddivpdp_n[k];
+                //----------------------------------------------------------//
+                mesh->D21_n[k] =                      2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadexx_n[k] * Gzz - K*dt*mesh->ddivpdexx_n[k];
+                mesh->D22_n[k] = 2.0*mesh->eta_n[k] - 2.0*ani*d0*mesh->eta_n[k] + 2.0*mesh->detadezz_n[k] * Gzz - K*dt*mesh->ddivpdezz_n[k];
+                mesh->D23_n[k] =                    - 2.0*ani*d1*mesh->eta_n[k] + 2.0*mesh->detadgxz_n[k] * Gzz - K*dt*mesh->ddivpdgxz_n[k];
+                mesh->D24_n[k] =                                                  2.0*mesh->detadp_n[k]   * Ezz - K*dt*mesh->ddivpdp_n[k];
+                //----------------------------------------------------------//
+            }
+            else {
+                //----------------------------------------------------------//
+                mesh->D11_n[k] = 0.0; mesh->D12_n[k] = 0.0; mesh->D13_n[k] = 0.0; mesh->D14_n[k] = 0.0;
+                //----------------------------------------------------------//
+                mesh->D21_n[k] = 0.0; mesh->D22_n[k] = 0.0; mesh->D23_n[k] = 0.0; mesh->D24_n[k] = 0.0;
+                //----------------------------------------------------------//
+            }
+        }
+
+        // Loop on cell vertices
+#pragma omp parallel for shared( mesh )  private ( nx, nz, ani, d0, d1, etae, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate ( model, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz )
+        for (k=0; k<Nx*Nz; k++) {
+
+            if ( mesh->BCg.type[k] != 30 ) {
+                //----------------------------------------------------------//
+                if ( model->iselastic==1 ) etae      = model->dt*mesh->mu_s[k];
+                else                       etae      = 1.0; // set to arbitrary value to avoid division by 0.0
+                //----------------------------------------------------------//
+                if ( model->aniso == 0 ) {
+                    ani = 0.0; d0   = 0.0; d1   = 0.0;
+                }
+                else {
+                    // Director
+                    nx = mesh->nx0_s[k];
+                    nz = mesh->nz0_s[k];
+                    // See Anisotropy_v2.ipynb
+                    if ( model->aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_s[k];
+                    if ( model->aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_s[k];
+                    d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
+                    d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
+                }
+                //----------------------------------------------------------//
+//                Exx = mesh->exxd_s[k] + mesh->sxxd0_s[k]/etae/2.0;
+//                Ezz = mesh->ezzd_s[k] + mesh->szzd0_s[k]/etae/2.0;
+//                Exz = mesh->exz[k]    + mesh->sxz0[k]   /etae/2.0;
+//                gxz = 2.0*Exz;
+                
+                Da11  = 2.0 - 2.0*ani*d0;
+                Da12  = 2.0*ani*d0;
+                Da13  = 2.0*ani*d1;
+                Da22  = 2.0 - 2.0*ani*d0;
+                Da23  =-2.0*ani*d1;
+                Da33  = 1.0  + 2.0*ani*(d0 - 0.5);
+                a11   = Da33 * Da22 - pow(Da23,2);
+                a12   = Da13 * Da23 - Da33 * Da12;
+                a13   = Da12 * Da23 - Da13 * Da22;
+                a22   = Da33 * Da11 - pow(Da13,2);
+                a23   = Da12 * Da13 - Da11 * Da23;
+                a33   = Da11 * Da22 - pow(Da12,2);
+                det   = (Da11 * a11) + (Da12 * a12) + (Da13 * a13);
+                iDa11 = a11/det; iDa12 = a12/det; iDa13 = a13/det;
+                iDa22 = a22/det; iDa23 = a23/det;
+                iDa33 = a33/det;
+                Exx = mesh->exxd_s[k]      + (iDa11*mesh->sxxd0_s[k] + iDa12*mesh->szzd0_s[k] + iDa13*mesh->sxz0[k])/etae;
+                Ezz = mesh->ezzd_s[k]      + (iDa12*mesh->sxxd0_s[k] + iDa22*mesh->szzd0_s[k] + iDa23*mesh->sxz0[k])/etae;
+                Exz = mesh->exz[k] + (iDa13*mesh->sxxd0_s[k] + iDa23*mesh->szzd0_s[k] + iDa33*mesh->sxz0[k])/2.0/etae;
+                gxz = 2.0*mesh->exz[k] + (iDa13*mesh->sxxd0_s[k] + iDa23*mesh->szzd0_s[k] + iDa33*mesh->sxz0[k])/etae;
+                
+                Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
+                Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
+                Gxz = Exx*ani*d1 - Exx*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // NOT SURE ABOUT THE FACTOR 2
+                //----------------------------------------------------------//
+                mesh->D31_s[k] =                  2.0*ani*d1*mesh->eta_s[k]         + 2.0*mesh->detadexx_s[k] * Gxz;
+                mesh->D32_s[k] =                - 2.0*ani*d1*mesh->eta_s[k]         + 2.0*mesh->detadezz_s[k] * Gxz;
+                mesh->D33_s[k] = mesh->eta_s[k] + 2.0*ani*(d0 - 0.5)*mesh->eta_s[k] + 2.0*mesh->detadgxz_s[k] * Gxz;
+                mesh->D34_s[k] =                                                      2.0*mesh->detadp_s[k]   * Exz;
+                //----------------------------------------------------------//
+            }
+            else {
+                //----------------------------------------------------------//
+                mesh->D31_s[k] = 0.0; mesh->D32_s[k] = 0.0; mesh->D33_s[k] = 0.0; mesh->D34_s[k] = 0.0;
+                //----------------------------------------------------------//
+            }
+            if (isnan(mesh->D34_s[k])) { printf("EXIT: D34 is NAN!\n"); exit(1); }
+            if (isinf(mesh->D34_s[k])) { printf("EXIT: D34 is INF!\n"); exit(1); }
+        }
+    }
+
+}
+
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+void CohesionFrictionDilationGrid( grid* mesh, markers* particles, mat_prop materials, params model, scale scaling ) {
+
+    int p, k, l, Nx, Nz, Ncx, Ncz, c0, c1;
+    int average = 0;
+    double fric, dil, C, strain_acc, fric0, dil0, C0, mu_strain;
+    double dstrain, dfric, dcoh, ddil, *strain_pl;
+    int SmoothSoftening = 1;
+    int    cent=1, vert=0, prop=1, interp=0;
+
+    Nx = mesh->Nx;
+    Nz = mesh->Nz;
+    Ncx = Nx-1;
+    Ncz = Nz-1;
+
+    // Plastic strain
+    strain_pl  = DoodzCalloc((model.Nx-1)*(model.Nz-1), sizeof(double));
+    P2Mastah( &model, *particles,  particles->strain_pl,     mesh, strain_pl,   mesh->BCp.type,  1, 0, interp, cent, model.itp_stencil);
+
+    // Calculate cell centers cohesion and friction
+#pragma omp parallel for shared( mesh, strain_pl ) private( p, c0, strain_acc, fric, dil, C, fric0, dil0, C0, dstrain, ddil, dcoh, dfric, mu_strain ) firstprivate( model, materials, average, Ncx, Ncz )
+    for ( c0=0; c0<Ncx*Ncz; c0++ ) {
+
+        // First - initialize to 0
+        mesh->fric_n[c0] = 0.0;
+        mesh->dil_n[c0]  = 0.0;
+        mesh->C_n[c0]    = 0.0;
+
+        // Compute only if below free surface
+        if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
+
+            // Retrieve accumulated plastic strain
+            strain_acc = strain_pl[c0];
+
+            // Loop on phases
+            for ( p=0; p<model.Nb_phases; p++) {
+
+                fric = materials.phi[p];
+                dil  = materials.psi[p];
+                C    = materials.C[p];
+
+                // Apply strain softening
+                dstrain   = materials.pls_end[p] - materials.pls_start[p];
+                
+                if ( SmoothSoftening == 1) {
+                
+                    mu_strain = 0.5*(materials.pls_end[p] + materials.pls_start[p]);
+
+                    if (materials.phi_soft[p] == 1) {
+                        dfric     = materials.phi[p]     - materials.phi_end[p];
+                        fric      = materials.phi[p]     - dfric/2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.phi_end[p];
+                        fric0     = materials.phi[p]     - dfric/2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.phi_end[p];
+                        fric      = fric * dfric / fric0 + materials.phi_end[p];
+                    }
+
+                    if (materials.psi_soft[p] == 1) {
+                        ddil      = materials.psi[p]     - materials.psi_end[p];
+                        dil       = materials.psi[p]     - ddil /2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.psi_end[p];
+                        dil0      = materials.psi[p]     - ddil /2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.psi_end[p];
+                        dil       = dil * ddil  / dil0  + materials.psi_end[p];
+                    }
+
+                    if (materials.coh_soft[p] == 1) {
+                        dcoh      = materials.C[p]       - materials.C_end[p];
+                        C         = materials.C[p]       - dcoh /2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.C_end[p];
+                        C0        = materials.C[p]       - dcoh /2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.C_end[p];
+                        C         = C * dcoh / C0 + materials.C_end[p];
+                    }
+                }
+                // Pieciewise linear function
+                else {
+                    
+                    // If we are below the lower strain limit
+                    if (strain_acc < materials.pls_start[p]) {
+                        if (materials.phi_soft[p] == 1) fric = materials.phi[p];
+                        if (materials.psi_soft[p] == 1) dil  = materials.psi[p];
+                        if (materials.coh_soft[p] == 1) C    = materials.C[p];
+                    }
+                    // If we are above the upper strain limit
+                    if (strain_acc >= materials.pls_end[p]) {
+                        if (materials.phi_soft[p] == 1) fric = materials.phi_end[p];
+                        if (materials.psi_soft[p] == 1) dil  = materials.psi_end[p];
+                        if (materials.coh_soft[p] == 1) C    = materials.C_end[p];
+                    }
+                    // If we are in the softening strain range
+                    if (strain_acc >= materials.pls_start[p] && strain_acc < materials.pls_end[p] ) {
+                        if (materials.phi_soft[p] == 1) fric = materials.phi[p] + (materials.phi_end[p] - materials.phi[p]) / (materials.pls_end[p] - materials.pls_start[p]) *  strain_acc;
+                        if (materials.psi_soft[p] == 1) dil  = materials.psi[p] + (materials.psi_end[p] - materials.psi[p]) / (materials.pls_end[p] - materials.pls_start[p]) *  strain_acc;
+                        if (materials.coh_soft[p] == 1) C    = materials.C[p]   + (materials.C_end[p]   - materials.C[p]  ) / (materials.pls_end[p] - materials.pls_start[p]) *  strain_acc;
+                    }
+                    
+                }
+
+                // Arithmetic
+                if (average ==0) {
+                    mesh->fric_n[c0] += mesh->phase_perc_n[p][c0] * fric;
+                    mesh->dil_n[c0]  += mesh->phase_perc_n[p][c0] * dil;
+                    mesh->C_n[c0]    += mesh->phase_perc_n[p][c0] * C;
+                }
+                // Harmonic
+                if (average == 1) {
+                    mesh->fric_n[c0] += mesh->phase_perc_n[p][c0] *  1.0/fric;
+                    mesh->dil_n[c0]  += mesh->phase_perc_n[p][c0] *  1.0/dil;
+                    mesh->C_n[c0]    += mesh->phase_perc_n[p][c0] *  1.0/C;
+                }
+                // Geometric
+                if (average == 2) {
+                    mesh->fric_n[c0] += mesh->phase_perc_n[p][c0] *  log(fric);
+                    mesh->dil_n[c0]  += mesh->phase_perc_n[p][c0] *  log(dil);
+                    mesh->C_n[c0]    += mesh->phase_perc_n[p][c0] *  log(C);
+
+                }
+            }
+            // Post-process for geometric/harmonic averages
+            if ( average==1 ) mesh->fric_n[c0] = 1.0/mesh->fric_n[c0];
+            if ( average==2 ) mesh->fric_n[c0] = exp(mesh->fric_n[c0]);
+            if ( average==1 ) mesh->dil_n[c0]  = 1.0/mesh->dil_n[c0];
+            if ( average==2 ) mesh->dil_n[c0]  = exp(mesh->dil_n[c0]);
+            if ( average==1 ) mesh->C_n[c0]    = 1.0/mesh->C_n[c0];
+            if ( average==2 ) mesh->C_n[c0]    = exp(mesh->C_n[c0]);
+
+        }
+    }
+
+    // Freedom
+    DoodzFree( strain_pl );
+
+    // Plastic strain
+    strain_pl  = DoodzCalloc((model.Nx-0)*(model.Nz-0), sizeof(double));
+    Interp_P2N ( *particles,  particles->strain_pl, mesh, strain_pl, mesh->xg_coord, mesh->zg_coord, 1, 0, &model );
+
+#pragma omp parallel for shared( mesh, strain_pl ) private( p, c1, strain_acc, fric, dil, C, fric0, dil0, C0, dstrain, ddil, dcoh, dfric, mu_strain ) firstprivate( model, materials, average, Nx, Nz )
+    // Calculate vertices cohesion and friction
+    for ( c1=0; c1<Nx*Nz; c1++ ) {
+
+        // First - initialize to 0
+        mesh->fric_s[c1] = 0.0;
+        mesh->dil_s[c1]  = 0.0;
+        mesh->C_s[c1]    = 0.0;
+
+        // Compute only if below free surface
+        if ( mesh->BCg.type[c1] != 30 ) {
+
+            // Retrieve accumulated plastic strain
+            strain_acc = strain_pl[c1];
+
+            // Loop on phases
+            for ( p=0; p<model.Nb_phases; p++) {
+
+                fric = materials.phi[p];
+                dil  = materials.psi[p];
+                C    = materials.C[p];
+
+                // Apply strain softening
+                dstrain   = materials.pls_end[p] - materials.pls_start[p];
+                
+                // Smooth function
+                if ( SmoothSoftening == 1) {
+                    
+                    mu_strain = 0.5*(materials.pls_end[p] + materials.pls_start[p]);
+
+                    if (materials.phi_soft[p] == 1) {
+                        dfric     = materials.phi[p]     - materials.phi_end[p];
+                        fric      = materials.phi[p]     - dfric/2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.phi_end[p];
+                        fric0     = materials.phi[p]     - dfric/2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.phi_end[p];
+                        fric      = fric * dfric / fric0 + materials.phi_end[p];
+                    }
+
+                    if (materials.psi_soft[p] == 1) {
+                        ddil      = materials.psi[p]     - materials.psi_end[p];
+                        dil       = materials.psi[p]     - ddil /2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.psi_end[p];
+                        dil0      = materials.psi[p]     - ddil /2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.psi_end[p];
+                        dil       = dil * ddil  / dil0  + materials.psi_end[p];
+                    }
+
+                    if (materials.coh_soft[p] == 1) {
+                        dcoh      = materials.C[p]       - materials.C_end[p];
+                        C         = materials.C[p]       - dcoh /2.0 *erfc( -(strain_acc - mu_strain) / dstrain ) - materials.C_end[p];
+                        C0        = materials.C[p]       - dcoh /2.0 *erfc( -(       0.0 - mu_strain) / dstrain ) - materials.C_end[p];
+                        C         = C * dcoh / C0 + materials.C_end[p];
+                    }
+                }
+                // Pieciewise linear function
+                else {
+                    
+                    // If we are below the lower strain limit
+                    if (strain_acc < materials.pls_start[p]) {
+                        if (materials.phi_soft[p] == 1) fric = materials.phi[p];
+                        if (materials.psi_soft[p] == 1) dil  = materials.psi[p];
+                        if (materials.coh_soft[p] == 1) C    = materials.C[p];
+                    }
+                    // If we are above the upper strain limit
+                    if (strain_acc >= materials.pls_end[p]) {
+                        if (materials.phi_soft[p] == 1) fric = materials.phi_end[p];
+                        if (materials.psi_soft[p] == 1) dil  = materials.psi_end[p];
+                        if (materials.coh_soft[p] == 1) C    = materials.C_end[p];
+                    }
+                    // If we are in the softening strain range
+                    if (strain_acc >= materials.pls_start[p] && strain_acc < materials.pls_end[p] ) {
+                        if (materials.phi_soft[p] == 1) fric = materials.phi[p] + (materials.phi_end[p] - materials.phi[p]) / (materials.pls_end[p] - materials.pls_start[p]) *  strain_acc;
+                        if (materials.psi_soft[p] == 1) dil  = materials.psi[p] + (materials.psi_end[p] - materials.psi[p]) / (materials.pls_end[p] - materials.pls_start[p]) *  strain_acc;
+                        if (materials.coh_soft[p] == 1) C    = materials.C[p]   + (materials.C_end[p]   - materials.C[p]  ) / (materials.pls_end[p] - materials.pls_start[p]) *  strain_acc;
+                    }
+                    
+                }
+            
+
+                // Arithmetic
+                if (average == 0) {
+                    mesh->fric_s[c1] += mesh->phase_perc_s[p][c1] * fric;
+                    mesh->dil_s[c1]  += mesh->phase_perc_s[p][c1] * dil;
+                    mesh->C_s[c1]    += mesh->phase_perc_s[p][c1] * C;
+                }
+                // Harmonic
+                if (average == 1) {
+                    mesh->fric_s[c1] += mesh->phase_perc_s[p][c1] *  1.0/fric;
+                    mesh->dil_s[c1]  += mesh->phase_perc_s[p][c1] *  1.0/dil;
+                    mesh->C_s[c1]    += mesh->phase_perc_s[p][c1] *  1.0/C;
+                }
+                // Geometric
+                if (average == 2) {
+                    mesh->fric_s[c1] += mesh->phase_perc_s[p][c1] *  log(fric);
+                    mesh->dil_s[c1]  += mesh->phase_perc_s[p][c1] *  log(dil);
+                    mesh->C_s[c1]    += mesh->phase_perc_s[p][c1] *  log(C);
+                }
+            }
+            // Post-process for geometric/harmonic averages
+            if ( average==1 ) mesh->fric_s[c1] = 1.0/mesh->fric_s[c1];
+            if ( average==2 ) mesh->fric_s[c1] = exp(mesh->fric_s[c1]);
+            if ( average==1 ) mesh->dil_s[c1]  = 1.0/mesh->dil_s[c1];
+            if ( average==2 ) mesh->dil_s[c1]  = exp(mesh->dil_s[c1]);
+            if ( average==1 ) mesh->C_s[c1]    = 1.0/mesh->C_s[c1];
+            if ( average==2 ) mesh->C_s[c1]    = exp(mesh->C_s[c1]);
+        }
+    }
+
+    // Freedom
+    DoodzFree( strain_pl );
+
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+void ShearModCompExpGrid( grid* mesh, mat_prop materials, params model, scale scaling ) {
+
+    int p, k, l, Nx, Nz, Ncx, Ncz, c0, c1;
+    int average = 1;//%model.eta_avg; // SHOULD NOT BE ALLOWED TO BE ELSE THAN 1
+
+    Nx = mesh->Nx;
+    Nz = mesh->Nz;
+    Ncx = Nx-1;
+    Ncz = Nz-1;
+
+    // Calculate cell centers shear modulus
+    for ( l=0; l<Ncz; l++ ) {
+        for ( k=0; k<Ncx; k++ ) {
+
+            // Cell center index
+            c0 = k  + l*(Ncx);
+
+            // First - initialize to 0
+            mesh->mu_n[c0]  = 0.0;
+            mesh->bet_n[c0] = 0.0;
+            mesh->alp[c0]   = 0.0;
+
+            // Compute only if below free surface
+            if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
+
+                // Loop on phases
+                for ( p=0; p<model.Nb_phases; p++) {
+
+                    // Arithmetic
+                    if (average == 0) {
+                        mesh->mu_n[c0]  += mesh->phase_perc_n[p][c0] * materials.mu[p];
+                        mesh->bet_n[c0] += mesh->phase_perc_n[p][c0] * materials.bet[p];
+                    }
+                    // Harmonic
+                    if (average == 1) {
+                        mesh->mu_n[c0]  += mesh->phase_perc_n[p][c0] *  1.0/materials.mu[p];
+                        mesh->bet_n[c0] += mesh->phase_perc_n[p][c0] *  1.0/materials.bet[p];
+                    }
+                    // Geometric
+                    if (average == 2) {
+                        mesh->mu_n[c0]  += mesh->phase_perc_n[p][c0] *  log(materials.mu[p]);
+                        mesh->bet_n[c0] += mesh->phase_perc_n[p][c0] *  log(materials.bet[p]);
+                    }
+
+                    // Standard arithmetic interpolation
+                    mesh->alp  [c0] += mesh->phase_perc_n[p][c0] * materials.alp[p];
+
+                }
+                // Post-process for geometric/harmonic averages
+                if ( average==1 ) mesh->mu_n[c0] = 1.0/mesh->mu_n[c0];
+                if ( average==2 ) mesh->mu_n[c0] = exp(mesh->mu_n[c0]);
+                if ( average==1 ) mesh->bet_n[c0] = 1.0/mesh->bet_n[c0];
+                if ( average==2 ) mesh->bet_n[c0] = exp(mesh->bet_n[c0]);
+
+            }
+        }
+    }
+
+
+    // Calculate vertices shear modulus
+    for ( l=0; l<Nz; l++ ) {
+        for ( k=0; k<Nx; k++ ) {
+
+            // Vertex index
+            c1 = k + l*Nx;
+
+            // First - initialize to 0
+            mesh->mu_s[c1]  = 0.0;
+            mesh->bet_s[c1] = 0.0;
+
+            // Compute only if below free surface
+            if ( mesh->BCg.type[c1] != 30 ) {
+
+                // Loop on phases
+                for ( p=0; p<model.Nb_phases; p++) {
+
+                    // Arithmetic
+                    if (average == 0) {
+                        mesh->mu_s[c1]  += mesh->phase_perc_s[p][c1] * materials.mu[p];
+                        mesh->bet_s[c1] += mesh->phase_perc_s[p][c1] * materials.bet[p];
+                    }
+                    // Harmonic
+                    if (average == 1) {
+                        mesh->mu_s[c1]  += mesh->phase_perc_s[p][c1] *  1.0/materials.mu[p];
+                        mesh->bet_s[c1] += mesh->phase_perc_s[p][c1] *  1.0/materials.bet[p];
+                    }
+                    // Geometric
+                    if (average == 2) {
+                        mesh->mu_s[c1]  += mesh->phase_perc_s[p][c1] *  log(materials.mu[p]);
+                        mesh->bet_s[c1] += mesh->phase_perc_s[p][c1] *  log(materials.bet[p]);
+                    }
+
+                }
+
+                if ( isinf(1.0/mesh->mu_s[c1]) ) {
+                    printf("Aaaaargh...!! %2.2e %2.2e ----> ShearModulusCompressibilityExpansivityGrid\n", mesh->phase_perc_s[0][c1], mesh->phase_perc_s[1][c1]);
+                }
+
+                // Post-process for geometric/harmonic averages
+                if ( average==1 ) mesh->mu_s[c1]  = 1.0/mesh->mu_s[c1];
+                if ( average==2 ) mesh->mu_s[c1]  = exp(mesh->mu_s[c1]);
+                if ( average==1 ) mesh->bet_s[c1] = 1.0/mesh->bet_s[c1];
+                if ( average==2 ) mesh->bet_s[c1] = exp(mesh->bet_s[c1]);
+            }
+        }
+    }
+
+    // Periodic
+    double av;
+    if (model.isperiodic_x==1) {
+        for( l=0; l<Nz; l++) {
+            c1 = l*Nx + Nx-1;
+            av = 0.5*(mesh->mu_s[c1] + mesh->mu_s[l*Nx]);
+            mesh->mu_s[c1] = av; mesh->mu_s[l*Nx] = av;
+            av = 0.5*(mesh->bet_s[c1] + mesh->bet_s[l*Nx]);
+            mesh->bet_s[c1] = av; mesh->bet_s[l*Nx] = av;
+        }
+    }
+
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+// MD6
+void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params *model, scale *scaling ) {
+
+    int k, p, c0, Nx, Nz, Ncx, Ncz;
+    int    phase_diag;
+    double rho0, T0, alpha, P0, beta, drho, Tgrid, Pgrid, dT, dP;
+    double percT, percP;
+    double rhonew, rhop, epsi = 1e-13;
+
+    int iT, iP, NT, NP, iSW, iSE, iNW, iNE;
+    double dstT, dstP;
+    double PW, TW;
+
+    Nx = mesh->Nx; Ncx = Nx-1;
+    Nz = mesh->Nz; Ncz = Nz-1;
+
+
+#pragma omp parallel for shared(mesh,materials) private( NT, NP, iT, iP, TW, PW, iSW, iSE, iNW, iNE, phase_diag, dT, dP, Tgrid, Pgrid, c0, p, rhonew, rho0, alpha, beta, T0, P0, rhop, drho, percT, percP) firstprivate(Ncx, Ncz, model, epsi)
+    for ( c0=0; c0<Ncx*Ncz; c0++ ) {
+        rhonew = 0.0;
+        // Loop on phases
+        for ( p=0; p<model->Nb_phases; p++) {
+
+            if ( fabs(mesh->phase_perc_n[p][c0])>epsi) {
+
+                // T and P dependent density based on EOS
+                if ( materials->density_model[p] == 0 ) {
+                    rho0   = materials->rho [p];
+                    rhop   = rho0;
+                }
+
+                // T and P dependent density based on EOS
+                if ( materials->density_model[p] == 1 ) {
+
+                    rho0   = materials->rho [p];
+                    drho   = materials->drho[p];
+                    T0     = materials->T0 [p];
+                    alpha  = materials->alp[p];
+                    P0     = materials->P0 [p];
+                    beta   = materials->bet[p];
+                    rhop   = (1.0 -  alpha * (mesh->T[c0] - T0) ) * (1.0 +  beta * (mesh->p_in[c0] - P0) ); // EOS general
+                    rhop   = ((1.0-mesh->X_n[c0])*rho0 + mesh->X_n[c0]*(rho0+drho))*rhop; // Average density based on X
+                }
+
+                // T and P dependent density based on phase diagrams
+                if ( materials->density_model[p] == 2 ) {
+                    // Identify current phase diagram
+                    phase_diag = materials->phase_diagram[p];
+                    // Determine T and P increments in the current phase diagram
+                    NT         = model->PDMnT[phase_diag];
+                    NP         = model->PDMnP[phase_diag];
+                    dT         = (model->PDMTmax[phase_diag] - model->PDMTmin[phase_diag])/(NT-1.0);
+                    dP         = (model->PDMPmax[phase_diag] - model->PDMPmin[phase_diag])/(NP-1.0);
+                    // Pressure and temperature + correct to remain within the database bounds
+                    Tgrid      = mesh->T[c0];
+                    Pgrid      = mesh->p_in[c0];
+                    if (Tgrid<model->PDMTmin[phase_diag]) Tgrid = model->PDMTmin[phase_diag] + 0.01*dT;
+                    if (Tgrid>model->PDMTmax[phase_diag]) Tgrid = model->PDMTmax[phase_diag] - 0.01*dT;
+                    if (Pgrid<model->PDMPmin[phase_diag]) Pgrid = model->PDMPmin[phase_diag] + 0.01*dP;
+                    if (Pgrid>model->PDMPmax[phase_diag]) Pgrid = model->PDMPmax[phase_diag] - 0.01*dP;
+                    // Find index of minimum/west temperature node
+                    dstT = ( Tgrid - model->PDMTmin[phase_diag] );
+                    iT   = ceil( dstT/dT - 0.0 ) - 1;
+                    // Find index of minimum/west pressure node
+                    dstP = ( Pgrid - model->PDMPmin[phase_diag] );
+                    iP   = ceil( dstP/dP  - 0.0 ) - 1;
+                    // Calculate Weighting coeeficients fo bilinear interpolant
+                    TW    = (model->PDMTmin[phase_diag] + iT*dT);
+                    PW    = (model->PDMPmin[phase_diag] + iP*dP);
+                    percT = 1.0 - (Tgrid - TW )/dT;
+                    percP = 1.0 - (Pgrid - PW )/dP;
+                    // Indices of neigbours
+                    iSW   = iT + iP*NT;
+                    iSE   = iT + iP*NT+1;
+                    iNW   = iT + (iP+1)*NT;
+                    iNE   = iT + (iP+1)*NT+1;
+                    // Interpolate from 4 neighbours
+                    rhop  = 0.0;
+                    rhop +=  (1.0-percT)* (1.0-percP) * model->PDMrho[phase_diag][iSW];
+                    rhop +=  (    percT)* (1.0-percP) * model->PDMrho[phase_diag][iSE];
+                    rhop +=  (1.0-percT)* (    percP) * model->PDMrho[phase_diag][iNW];
+                    rhop +=  (    percT)* (    percP) * model->PDMrho[phase_diag][iNE];
+
+                }
+
+                // P-T dependent density
+                if ( materials->density_model[p] == 3 ) {
+
+                    rho0   = materials->rho[p];
+                    beta   = materials->bet[p];
+                    alpha  = materials->alp[p];
+                    rhop   = rho0*exp(beta * mesh->p_in[c0] - alpha * mesh->T[c0]);
+                }
+
+                // Average density base on phase density and phase volume fraction
+                if ( mesh->BCp.type[c0] != 30 ) rhonew += mesh->phase_perc_n[p][c0] * rhop;
+            }
+        }
+        mesh->rho_n[c0]   = rhonew;
+    }
+
+    InterpCentroidsToVerticesDouble( mesh->rho_n, mesh->rho_s, mesh, model );
+
+    printf("Updated density fields:\n");
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+// Strain rate
+void  StrainRateComponents( grid* mesh, scale scaling, params* model ) {
+
+    int k, l, c0, c1, c2, Nx, Nz, Ncx, Ncz, k1;
+    double dx, dz;
+
+    Nx = mesh->Nx;
+    Nz = mesh->Nz;
+    Ncx = Nx-1;
+    Ncz = Nz-1;
+    dx = mesh->dx;
+    dz = mesh->dz;
+
+#pragma omp parallel for shared( mesh ) private( k, k1, l, c0, c1, c2  ) firstprivate( dx, dz, Nx, Ncx, Ncz )
+    for ( k1=0; k1<Ncx*Ncz; k1++ ) {
+        k  = mesh->kp[k1];
+        l  = mesh->lp[k1];
+        c0 = k  + l*(Nx-1);
+        c1 = k  + l*(Nx);
+        c2 = k  + l*(Nx+1);
+
+        if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31) {
+
+            // Velocity divergence
+            mesh->div_u[c0] = (mesh->u_in[c1+1+Nx] - mesh->u_in[c1+Nx])/dx + (mesh->v_in[c2+Nx+1+1] - mesh->v_in[c2+1])/dz;
+
+            // Normal strain rates
+            mesh->exxd[c0]  = (mesh->u_in[c1+1+Nx]     - mesh->u_in[c1+Nx] )/dx - 1.0/3.0*mesh->div_u[c0];
+            mesh->ezzd[c0]  = (mesh->v_in[c2+1+(Nx+1)] - mesh->v_in[c2+1]  )/dz - 1.0/3.0*mesh->div_u[c0];
+        }
+        else {
+            mesh->div_u[c0] = 0.0;
+            mesh->exxd[c0]  = 0.0;
+            mesh->ezzd[c0]  = 0.0;
+        }
+    }
+
+    // Shear components we only calculate sxz because sxz = szx (stress tensor symmetry)
+#pragma omp parallel for shared( mesh ) private( k, k1, l, c1, c2  ) firstprivate( dx, dz, Nx, Nz )
+    for ( k1=0; k1<Nx*Nz; k1++ ) {
+        k  = mesh->kn[k1];
+        l  = mesh->ln[k1];
+        c1 = k  + l*(Nx);
+        c2 = k  + l*(Nx+1);
+        mesh->exz[c1] = 0.0;
+
+        if ( mesh->BCg.type[c1] != 30 ) {
+            if (mesh->BCu.type[c1] != 30 && mesh->BCu.type[c1+Nx] != 30) mesh->exz[c1] +=  0.5 * (mesh->u_in[c1+Nx] - mesh->u_in[c1])/dz;
+            if (mesh->BCv.type[c2] != 30 && mesh->BCv.type[c2+1]  != 30) mesh->exz[c1] +=  0.5 * (mesh->v_in[c2+1]  - mesh->v_in[c2])/dx;
+        }
+        else {
+            mesh->exz[c1] = 0.0;
+        }
+    }
+
+    double sum=0.0;
+#pragma omp parallel for shared( mesh ) private( k, k1, l, c0, c1, sum ) firstprivate( Nx, Ncx, Ncz )
+    for ( k1=0; k1<Ncx*Ncz; k1++ ) {
+
+        k  = mesh->kp[k1];
+        l  = mesh->lp[k1];
+        c0 = k  + l*(Nx-1);
+        c1 = k  + l*(Nx);
+        mesh->exz_n[c0] = 0.0;
+        sum = 0.0;
+
+        if ( mesh->BCp.type[c0]      != 30 && mesh->BCp.type[c0] != 31) {
+            if (mesh->BCg.type[c1]      != 30 ) { mesh->exz_n[c0] += mesh->exz[c1];      sum++;}
+            if (mesh->BCg.type[c1+1]    != 30 ) { mesh->exz_n[c0] += mesh->exz[c1+1];    sum++;}
+            if (mesh->BCg.type[c1+Nx]   != 30 ) { mesh->exz_n[c0] += mesh->exz[c1+Nx];   sum++;}
+            if (mesh->BCg.type[c1+Nx+1] != 30 ) { mesh->exz_n[c0] += mesh->exz[c1+Nx+1]; sum++;}
+            if (sum>0) mesh->exz_n[c0] /= sum;
+        }
+        else {
+            mesh->exz_n[c0] = 0.0;
+        }
+    }
+
+    // Interpolate normal strain rate on vertices
+    InterpCentroidsToVerticesDouble( mesh->exxd, mesh->exxd_s, mesh, model );
+    InterpCentroidsToVerticesDouble( mesh->ezzd, mesh->ezzd_s, mesh, model );
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+void GenerateDeformationMaps( grid* mesh, mat_prop *materials, params *model, Nparams Nmodel, scale *scaling ) {
+
+    // This functions generates deformation maps and writem to disk
+
+    //Definition of parameters and allocation of memory
+    int nT = model->nT, nE = model->nE, nd = model->nd, ix, iy, iz;
+    double stepT, stepE, stepd;
+    double Tmin = model->Tmin;
+    double Tmax = model->Tmax;
+    double Emin = model->Emin;
+    double Emax = model->Emax;
+    double dmin = model->dmin;
+    double dmax = model->dmax;
+
+    double *T, *E, *d, *dlog, *Elog, gs_ref;
+    double txx1, tzz1, txz1, etaVE, VEcoeff, eII_el=0.0, eII_pl=0.0, eII_pwl=0.0, eII_exp=0.0, eII_lin=0.0, eII_gbs=0.0, eII_cst=0.0, d1;
+    double exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, div_el, div_pl, div_r;
+    double Pn = model->Pn , eta;
+    int    *dom_mech, ind, mech, loud=0, k;
+    double *stress, *visco, t_omp;
+    double detadexx, detadezz, detadexz, detadp;
+    double Xreac;
+    double OverS;
+    double ddivpdexx, ddivpdezz, ddivpdexz, ddivpdp, Pcorr, drhodp, rho;
+
+    T    = malloc(nT*sizeof(double));
+    Elog = malloc(nE*sizeof(double));
+    E    = malloc(nE*sizeof(double));
+    dlog = malloc(nd*sizeof(double));
+    d    = malloc(nd*sizeof(double));
+
+    //Initialization of arrays
+    stepT = (Tmax-Tmin)/(nT-1);
+    stepE = (Emax-Emin)/(nE-1);
+    stepd = (dmax-dmin)/(nd-1);
+
+    // Temperature vector
+    for ( ix=0; ix<nT; ix++) {
+        if (ix==0) T[ix] = Tmin;
+        else       T[ix] = T[ix-1] + stepT;
+    }
+    // Strain rate vector
+    for ( iy=0; iy<nE; iy++) {
+        if (iy==0) Elog[iy] = Emin;
+        else       Elog[iy] = Elog[iy-1] + stepE;
+        E[iy] = pow(10.0,Elog[iy])/scaling->E;
+    }
+    // Grain size vector
+    for (iz=0; iz<nd; iz++) {
+        if (iz==0) dlog[iz] = dmin;
+        else       dlog[iz] = dlog[iz-1] + stepd;
+        d[iz] = pow(10.0,dlog[iz])/scaling->L;
+    }
+
+    double Flin, Fgbs, Fpwl, texp;
+
+    // Loop on all phases
+    for (k=0;k<model->Nb_phases; k++) {
+
+        printf("Generating deformation map of phase %2d\n", k);
+
+        // Save real values
+        Flin   = materials->Flin[k];
+        Fgbs   = materials->Fgbs[k];
+        Fpwl   = materials->Fpwl[k];
+        texp   = materials->texp[k];
+        gs_ref = materials->gs_ref[k];
+
+        // Set no correction for deformation maps
+        materials->Flin[k]   = 1.0;
+        materials->Fgbs[k]   = 1.0;
+        materials->Fpwl[k]   = 1.0;
+        materials->texp[k]   = 0.0;
+
+        // Allocate maps
+        dom_mech = malloc(nT*nE*nd*sizeof(int));
+        stress   = malloc(nT*nE*nd*sizeof(double));
+        visco    = malloc(nT*nE*nd*sizeof(double));
+
+        t_omp = (double)omp_get_wtime();
+
+        // Boucles spatiales 2D pour créations des carte de déformation
+
+        for ( iz=0; iz<nd; iz++) {
+
+            // Force grain size
+            materials->gs_ref[k] = d[iz];
+
+            for ( ix=0; ix<nT; ix++) {
+                for ( iy=0; iy<nE; iy++) {
+
+                    // Evaluate viscosity and stress
+                    eta =  Viscosity( k, 0.0, T[ix], Pn, d[iz], 0.0, 0.0, E[iy], E[iy], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss,  &d1, 0.0, materials->psi[k], materials->phi[k], materials->C[k], &detadexx, &detadezz, &detadexz, &detadp, 0.0, &Xreac, &OverS, &ddivpdexx, &ddivpdezz, &ddivpdexz, &ddivpdp, &Pcorr, &drhodp, &rho, 0.0, 0.0, &div_el, &div_pl, &div_r  );
+
+                    //                    if(k==0 && eII_exp*scaling->E>1e-17)printf("eII_exp = %2.2e eII_pwl = %2.2e \n", eII_exp*scaling->E, eII_pwl*scaling->E);
+
+                    // Select mechanism
+                    if (eII_pwl>eII_el && eII_pwl>eII_pl  && eII_pwl>eII_exp && eII_pwl>eII_lin && eII_pwl>eII_gbs && eII_pwl>eII_cst) mech = 1; // dislocation
+                    if (eII_lin>eII_el && eII_lin>eII_pl  && eII_lin>eII_exp && eII_lin>eII_pwl && eII_lin>eII_gbs && eII_lin>eII_cst) mech = 2; // diffusion
+                    if (eII_gbs>eII_el && eII_gbs>eII_pl  && eII_gbs>eII_lin && eII_gbs>eII_pwl && eII_gbs>eII_exp && eII_gbs>eII_cst) mech = 3; // gbs
+                    if (eII_exp>eII_el && eII_exp>eII_pl  && eII_exp>eII_lin && eII_exp>eII_pwl && eII_exp>eII_gbs && eII_exp>eII_cst) mech = 4; // peierls
+                    if (eII_pl >eII_el && eII_pl >eII_pwl && eII_pl >eII_exp && eII_pl >eII_lin && eII_pl >eII_gbs && eII_pl >eII_cst) mech = 5; // plastic
+                    if (eII_cst>eII_pl && eII_cst>eII_pwl && eII_cst>eII_exp && eII_cst>eII_lin && eII_cst>eII_gbs && eII_cst>eII_el ) mech = 6; // constant viscosity
+                    if (eII_el >eII_pl && eII_el >eII_pwl && eII_el >eII_exp && eII_el >eII_lin && eII_el >eII_gbs && eII_el >eII_cst) mech = 7; // elastic
+
+                    // Global index for 3D matrix flattened in a 1D vector
+                    ind           = ix + iy*nT + iz*nE*nT;
+                    dom_mech[ind] = mech;
+                    stress[ind]   = txx1;
+                    visco[ind]    = eta;
+                }
+            }
+        }
+
+        printf("** Deformation map %2d ---> %lf sec\n", k, (double)((double)omp_get_wtime() - t_omp));
+
+
+        // Print deformation maps to screen
+        if (loud ==1) {
+            for ( iz=0; iz<nd; iz++) {
+                printf("GS = %2.2e\n", d[iz]*scaling->L);
+                for ( ix=0; ix<nT; ix++) {
+                    if (ix==0) printf("           ");
+                    printf("%2.2lf ", T[ix]*scaling->T);
+                }
+                printf("\n");
+                for ( iy=0; iy<nE; iy++) {
+                    printf("%2.2e   ", E[iy]*scaling->E);
+                    for ( ix=0; ix<nT; ix++) {
+                        ind = ix + iy*nT + iz*nd*nT;
+
+                        printf("%6d ", dom_mech[ind] );
+
+                    }
+                    printf("\n");
+                }
+                printf("\n");
+            }
+        }
+
+        // Print deformation maps to file
+
+        char *filename;
+        asprintf( &filename, "DefMap%02d.gzip.h5", k );
+        double *CT, *Cd, *CE, *Cstress, *Cvisco;
+
+        CT = DoodzMalloc( sizeof(double)*nT);
+        ArrayEqualArray( CT, T, nT );
+        //        DoubleToFloat( T, CT, nT );
+        ScaleBackD( CT, scaling->T, nT );
+
+        CE = DoodzMalloc( sizeof(double)*nE);
+        ArrayEqualArray( CE, E, nE );
+        //        DoubleToFloat( E, CE, nE );
+        ScaleBackD( CE, scaling->E, nE );
+
+        Cd = DoodzMalloc( sizeof(double)*nd);
+        ArrayEqualArray( Cd, d, nd );
+        //        DoubleToFloat( d, Cd, nd );
+        ScaleBackD( Cd, scaling->L, nd );
+
+        Cstress = DoodzMalloc( sizeof(double)*nT*nE*nd);
+        ArrayEqualArray( Cstress, stress, nT*nE*nd );
+        //        DoubleToFloat( stress, Cstress, nT*nE*nd );
+        ScaleBackD( Cstress, scaling->S, nT*nE*nd );
+
+        Cvisco= DoodzMalloc( sizeof(double)*nT*nE*nd);
+        ArrayEqualArray( Cvisco, visco, nT*nE*nd );
+        //        DoubleToFloat( visco, Cvisco, nT*nE*nd );
+        ScaleBackD( Cvisco, scaling->eta, nT*nE*nd );
+
+        // Fill in DD data structure
+        double params[3];
+        params[0] = nT;
+        params[1] = nE;
+        params[2] = nd;
+
+        // Send data to file
+        create_output_hdf5( filename );
+        AddGroup_to_hdf5( filename, "model" );
+        AddGroup_to_hdf5( filename, "arrays" );
+
+        AddFieldToGroup_generic( _TRUE_, filename, "model", "params" , 'd',  3, params,  1 );
+        AddFieldToGroup_generic( _TRUE_, filename, "arrays", "T"     , 'd', nT, CT,  1 );
+        AddFieldToGroup_generic( _TRUE_, filename, "arrays", "E"     , 'd', nE, CE,  1 );
+        AddFieldToGroup_generic( _TRUE_, filename, "arrays", "d"     , 'd', nd, Cd,  1 );
+        AddFieldToGroup_generic( _TRUE_, filename, "arrays", "stress", 'd', nT*nE*nd, Cstress,  1 );
+        AddFieldToGroup_generic( _TRUE_, filename, "arrays", "visco" , 'd', nT*nE*nd, Cvisco,  1 );
+        AddFieldToGroup_generic( _TRUE_, filename, "arrays", "map"   , 'i', nT*nE*nd, dom_mech,  1 );
+
+
+        free(filename);
+        DoodzFree(CT);
+        DoodzFree(CE);
+        DoodzFree(Cd);
+        DoodzFree(Cstress);
+        DoodzFree(Cvisco);
+
+        // Free memory 1
+        free(dom_mech);
+        free(stress);
+        free(visco);
+
+        // Set no correction for deformation maps
+        materials->Flin[k]   = Flin;
+        materials->Fgbs[k]   = Fgbs;
+        materials->Fpwl[k]   = Fpwl;
+        materials->texp[k]   = texp;
+        materials->gs_ref[k] = gs_ref;
+    }
+    // Free memory 2
+    free(T);
+    free(E);
+    free(d);
+    free(dlog);
+    free(Elog);
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+void InitialiseDirectorVector (grid* mesh, markers* particles, params* model, mat_prop* materials ) {
+    
+    int    cent=1, vert=0, prop=1, interp=0;
+    int k;
+    double angle, norm;
+
+#pragma omp parallel for shared( particles ) private( angle, norm )
+    for (k=0; k<particles->Nb_part; k++) {
+
+        if ( particles->phase[k] != -1 ) {
+
+            // Set up director vector
+            angle             = materials->aniso_angle[particles->phase[k]];
+            particles->nx[k]  = cos(angle);
+            particles->nz[k]  = sin(angle);
+            norm              = sqrt(particles->nx[k]*particles->nx[k] + particles->nz[k]*particles->nz[k]);
+            particles->nx[k] /= norm;
+            particles->nz[k] /= norm;
+        }
+    }
+
+    P2Mastah( model, *particles, particles->nx,     mesh, mesh->nx0_n,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+    P2Mastah( model, *particles, particles->nz,     mesh, mesh->nz0_n,   mesh->BCp.type,  1, 0, interp, cent, model->itp_stencil);
+    P2Mastah( model, *particles, particles->nx,     mesh, mesh->nx0_s,   mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
+    P2Mastah( model, *particles, particles->nz,     mesh, mesh->nz0_s,   mesh->BCg.type,  1, 0, interp, vert, model->itp_stencil);
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+void NormalizeDirector( grid* mesh, DoodzFP* nx_n, DoodzFP* nz_n, DoodzFP* nx_s, DoodzFP* nz_s, params *model ) {
+
+    int Nx, Nz, k;
+    double nx, nz, norm;
+    Nx = model->Nx;
+    Nz = model->Nz;
+
+#pragma omp parallel for shared ( mesh, nx_n, nz_n ) \
+private ( k, nx, nz, norm )              \
+firstprivate( model )
+    for ( k=0; k<(Nx-1)*(Nz-1); k++ ) {
+        if (mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31) {
+            nx            = nx_n[k];
+            nz            = nz_n[k];
+            norm          = sqrt(nx*nx + nz*nz);
+            nx            = nx/norm;
+            nz            = nz/norm;
+            nx_n[k]       = nx;
+            nz_n[k]       = nz;
+        }
+    }
+
+#pragma omp parallel for shared ( mesh, nx_s, nz_s ) \
+private ( k, nx, nz, norm )              \
+firstprivate( model )
+    for ( k=0; k<Nx*Nz; k++ ) {
+        if (mesh->BCg.type[k] != 30) {
+            nx            = nx_s[k];
+            nz            = nz_s[k];
+            norm          = sqrt(nx*nx + nz*nz);
+            nx            = nx/norm;
+            nz            = nz/norm;
+            nx_s[k]       = nx;
+            nz_s[k]       = nz;
+        }
+    }
+
+}
+#endif

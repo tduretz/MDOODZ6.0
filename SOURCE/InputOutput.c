@@ -272,13 +272,13 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
     fread( mesh->d0_n, s3, (Nx-1)*(Nz-1), file );
     fread( mesh->phi0_n, s3, (Nx-1)*(Nz-1), file );
     fread( mesh->rho0_n, s3, (Nx-1)*(Nz-1), file );
-    fread( mesh->sxxd0, s3, (Nx-1)*(Nz-1), file );
-    fread( mesh->szzd0, s3, (Nx-1)*(Nz-1), file );
+    fread( mesh->sxxd, s3, (Nx-1)*(Nz-1), file );
+    fread( mesh->szzd, s3, (Nx-1)*(Nz-1), file );
     if (model->aniso == 1) fread( mesh->nx0_n, s3, (Nx-1)*(Nz-1), file );
     if (model->aniso == 1) fread( mesh->nz0_n, s3, (Nx-1)*(Nz-1), file );
 
     fread( mesh->X0_s, s3, (Nx)*(Nz),     file );
-    fread( mesh->sxz0, s3, (Nx)*(Nz),     file );
+    fread( mesh->sxz, s3, (Nx)*(Nz),     file );
     if (model->aniso == 1) fread( mesh->nx0_s, s3, (Nx)*(Nz),     file );
     if (model->aniso == 1) fread( mesh->nz0_s, s3, (Nx)*(Nz),     file );
 
@@ -422,8 +422,8 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
             mesh->d0_n[c]      /= scaling.L;
             mesh->phi0_n[c]    /= 1.0;
             mesh->rho0_n[c]    /= scaling.rho;
-            mesh->sxxd0[c]     /= scaling.S;
-            mesh->szzd0[c]     /= scaling.S;
+            mesh->sxxd[c]      /= scaling.S;
+            mesh->szzd[c]      /= scaling.S;
             if (model->aniso == 1) mesh->nx0_n[c]     /= 1.0;
             if (model->aniso == 1) mesh->nz0_n[c]     /= 1.0;
         }
@@ -437,7 +437,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
             mesh->VE_s[c] /= 1.0;
             
             mesh->X0_s[c]      /= 1.0;
-            mesh->sxz0[c]      /= scaling.S;
+            mesh->sxz[c]       /= scaling.S;
             if (model->aniso == 1) mesh->nx0_s[c]     /= 1.0;
             if (model->aniso == 1) mesh->nz0_s[c]     /= 1.0;
         }

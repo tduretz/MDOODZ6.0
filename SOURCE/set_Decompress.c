@@ -79,11 +79,11 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         fread( ph_hr, sizeof(char), nb_elems, fid);
         fclose(fid);
     }
-     // image properties
-        int nx_hr = 1922, nz_hr = 1922, ix, iz;
-        double dx_hr = (model.xmax - model.xmin)/(nx_hr-1.0);
-        double dz_hr = (model.zmax - model.zmin)/(nz_hr-1.0);
-        double dstx, dstz;
+    // image properties
+    int nx_hr = 1922, nz_hr = 1922, ix, iz;
+    double dx_hr = (model.xmax - model.xmin)/(nx_hr-1.0);
+    double dz_hr = (model.zmax - model.zmin)/(nz_hr-1.0);
+    double dstx, dstz;
     
     // Loop on particles
     for( np=0; np<particles->Nb_part; np++ ) {
@@ -114,15 +114,13 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     //        printf("%d\n", (int)ph_hr[ix + iz*(nx_hr-1)]);
             particles->phase[np] = (int)ph_hr[ix + iz*(nx_hr-1)];
         }
-        else {
-    
-        // ------------------------- //
-        // DRAW INCLUSION
-        X  = particles->x[np]-xc;
-        Z  = particles->z[np]-zc;
-        Xn = X*cos(theta) - Z*sin(theta);
-        Zn = X*sin(theta) + Z*cos(theta);
-        if ( pow(Xn/la,2) + pow(Zn/sa,2) - 1 < 0 ) particles->phase[np] = 1;
+        if (setup==0) {
+            // DRAW INCLUSION
+            X  = particles->x[np]-xc;
+            Z  = particles->z[np]-zc;
+            Xn = X*cos(theta) - Z*sin(theta);
+            Zn = X*sin(theta) + Z*cos(theta);
+            if ( pow(Xn/la,2) + pow(Zn/sa,2) - 1 < 0 ) particles->phase[np] = 1;
         }
         
         // SANITY CHECK
@@ -136,7 +134,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     MinMaxArray(particles->Vx, scaling.V, particles->Nb_part, "Vxp init" );
     MinMaxArray(particles->Vz, scaling.V, particles->Nb_part, "Vzp init" );
     MinMaxArray(particles->T, scaling.T, particles->Nb_part, "Tp init" );
-    DoodzFree(ph_hr);
+    if (setup==1) DoodzFree(ph_hr);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/

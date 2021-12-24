@@ -2286,8 +2286,8 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
             if (mesh->comp_cells[k]==1 && vol_change == 0 ) ((double*)D1cm0->x)[i]  = mesh->bet_n[k] / model.dt * celvol * matD->d[i]*matD->d[i];
             if (mesh->comp_cells[k]==1 && vol_change == 1 ) ((double*)D1cm0->x)[i]  = mesh->drhodp_n[k] / (mesh->rho_n[k]*model.dt) * celvol * matD->d[i]*matD->d[i];
             if (mesh->drhodp_n[k]<0.0) {
-                printf("mesh->drhodp_n = %2.2e --- mesh->rho_n = %2.2e\n", mesh->drhodp_n[k], mesh->rho_n[k]);
-                exit(1);
+                printf("mesh->drhodp_n = %2.2e --- mesh->rho_n = %2.2e\n", mesh->drhodp_n[k]*scaling.rho/scaling.S, mesh->rho_n[k]*scaling.rho);
+            //     exit(1);
             }
             // Here Dcm0 is the inverse of the pressure block - This relates to numerics in this incompressible case (penalty) or physics in the compressible case (dt/Beta)
             if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i]  *= penalty;
