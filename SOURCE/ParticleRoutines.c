@@ -648,6 +648,7 @@ reduction(+:npW,npE )
 void AssignMarkerProperties (markers* particles, int new_ind, int min_index, params *model, grid* mesh, int DirectNeighbour ) {
     
     particles->phase[new_ind]         = particles->phase[min_index];
+    particles->dual[new_ind]          = particles->dual[min_index];
     if (particles->phase[min_index]==-1) {printf("AssignMarkerProperties\n" ); exit(99);}
     particles->Vx[new_ind]            = particles->Vx[min_index];
     particles->Vz[new_ind]            = particles->Vz[min_index];
@@ -777,6 +778,7 @@ void PartInit( markers *particles, params* model ) {
 
         // phase structure
         particles->phase[k]      = 0.0;
+        particles->dual[k]       = 0.0;
         particles->strain[k]     = 0.0;
         particles->strain_el[k]  = 0.0;
         particles->strain_pl[k]  = 0.0;

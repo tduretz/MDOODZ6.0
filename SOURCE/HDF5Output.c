@@ -278,7 +278,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     for (k=1; k<nzviz; k++) zviz[k] = zviz[k-1] + mesh->dz/res_fact;
     compo  = DoodzMalloc( sizeof(char)*(nxviz-1)*(nzviz-1));
     // Closest point interpolation: marker phase --> visual nodes
-    Interp_Phase2VizGrid ( *particles, particles->phase, mesh, compo, xviz, zviz, nxviz, nzviz, model, *topo );
+    Interp_Phase2VizGrid ( *particles, particles->dual, mesh, compo, xviz, zviz, nxviz, nzviz, model, *topo );
 
     // ---------------------------------------------------------
     // Genrate phase map with double resolution
@@ -294,7 +294,7 @@ void WriteOutputHDF5( grid *mesh, markers *particles, surface *topo, markers* to
     
     compo_hr  = DoodzMalloc( sizeof(char)*(nxviz_hr-1)*(nzviz_hr-1));
     // Closest point interpolation: marker phase --> visual nodes
-    Interp_Phase2VizGrid ( *particles, particles->phase, mesh, compo_hr, xviz_hr, zviz_hr, nxviz_hr, nzviz_hr, model, *topo );
+    Interp_Phase2VizGrid ( *particles, particles->dual, mesh, compo_hr, xviz_hr, zviz_hr, nxviz_hr, nzviz_hr, model, *topo );
     // ---------------------------------------------------------
     // Smooth rheological contrasts
     if (model.diffuse_X) P2Mastah( &model, *particles, particles->X,     mesh, mesh->X_n,   mesh->BCp.type,  1, 0, interp, cent, model.itp_stencil);

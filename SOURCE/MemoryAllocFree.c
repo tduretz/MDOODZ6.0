@@ -198,6 +198,7 @@ void PartAlloc( markers *particles, params* model  ) {
 
     particles->phase      = DoodzCalloc( particles->Nb_part_max,sizeof(int));
     particles->generation = DoodzCalloc( particles->Nb_part_max,sizeof(int));
+    particles->dual       = DoodzCalloc( particles->Nb_part_max,sizeof(int));
     particles->progress   = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
 
     particles->divth      = DoodzCalloc( particles->Nb_part_max,sizeof(DoodzFP));
@@ -274,6 +275,7 @@ void PartFree( markers *particles, params* model ) {
     
     DoodzFree(particles->phase);
     DoodzFree(particles->progress);
+    DoodzFree(particles->dual);
     DoodzFree(particles->generation);
 
     DoodzFree(particles->divth);

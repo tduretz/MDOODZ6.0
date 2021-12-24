@@ -68,7 +68,7 @@ struct _p_markers {
 	int    Nx_part, Nz_part, Nb_part, Nb_part_max, min_part_cell, Nb_part_ini;
 	DoodzFP *x, *z, *Vx, *Vz, *P, *sxxd, *szzd, *sxz, *progress, *T, *d, *phi, *X, *syy, *dsyy;
     DoodzFP *strain, *strain_el, *strain_pl, *strain_pwl, *strain_exp, *strain_lin, *strain_gbs;
-	int    *phase, *generation;
+	int    *phase, *generation, *dual;
     markers* marker_chain;
     int    *intag;
     double *Fxx, *Fxz, *Fzx, *Fzz, *dnx, *dnz, *nx, *nz;

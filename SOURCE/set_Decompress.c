@@ -60,6 +60,7 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
     double setup  = (int)model.user1;
     double radius = model.user2/scaling.L;
     double X, Z, Xn, Zn, xc = 0.0, zc = 0.0, sa=radius/2.0, la=radius*2.0, theta=-30.0*M_PI/180.0;
+    double Ax, Az;
 
     // Fixed random seed
     srand(69);
@@ -129,13 +130,32 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
             exit(144);
         }
 
+        // SET DEFAULT DUAL PHASE NUMBER
+        particles->dual[np] = particles->phase[np];
+
         //--------------------------//
     }
+
+    // Generate checkerboard
+    for ( np=0; np<particles->Nb_part; np++ ) {
+            Ax = cos( 6.0*2.0*M_PI*particles->x[np] / Lx  );
+            Az = sin( 6.0*2.0*M_PI*particles->z[np] / Lz  );
+
+            if (Az<0.0 && Ax<0.0  && particles->dual[np]==1 ) {
+                particles->dual[np] = model.Nb_phases + particles->phase[np]; 
+            }
+
+            if (Az>0.0 && Ax>0.0  && particles->dual[np]==1 ) {
+                particles->dual[np] = model.Nb_phases + particles->phase[np]; 
+            }
+    }
+
     MinMaxArray(particles->Vx, scaling.V, particles->Nb_part, "Vxp init" );
     MinMaxArray(particles->Vz, scaling.V, particles->Nb_part, "Vzp init" );
     MinMaxArray(particles->T, scaling.T, particles->Nb_part, "Tp init" );
     if (setup==1) DoodzFree(ph_hr);
 }
+
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/

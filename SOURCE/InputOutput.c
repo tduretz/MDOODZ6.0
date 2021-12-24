@@ -91,6 +91,8 @@ void LoadIniParticles( char* name, markers* particles, grid* mesh, markers *topo
     //fread( particles->phi,  s3, particles->Nb_part, file);
     //fread( particles->X  ,  s3, particles->Nb_part, file);
     fread( particles->phase, s1, particles->Nb_part, file);
+    fread( particles->dual, s1, particles->Nb_part, file);
+
     fclose(file);
     free(name);
     //---------------------------------------------------------------------------------------------------------//
@@ -215,6 +217,7 @@ void LoadBreakpointParticles( markers *particles, grid* mesh, markers *topo_chai
     fread( particles->X  ,  s3, particles->Nb_part, file);
     fread( particles->noise, s3, particles->Nb_part, file);
     fread( particles->phase, s1, particles->Nb_part, file);
+    fread( particles->dual, s1, particles->Nb_part, file);
 
     if (model->iselastic == 1) {
         fread( particles->sxxd,   s3, particles->Nb_part, file );
@@ -695,6 +698,7 @@ void MakeBreakpointParticles( markers *particles,  grid* mesh, markers *topo_cha
     fwrite( particles->X  ,   s3, particles->Nb_part, file);
     fwrite( particles->noise, s3, particles->Nb_part, file);
     fwrite( particles->phase, s1, particles->Nb_part, file);
+    fwrite( particles->dual,  s1, particles->Nb_part, file);
 
     if (model.iselastic == 1) {
         fwrite( particles->sxxd,   s3, particles->Nb_part, file );
