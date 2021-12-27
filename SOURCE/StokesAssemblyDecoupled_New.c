@@ -804,20 +804,24 @@ void AddCoeff3( int* J, double*A, int eqn, int jeq, int *nnzc, double coeff, int
 
 void Continuity_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesC, SparseMat *StokesD, int Assemble, int lev, int stab, int comp, double om, int sign, params model, double one_dx, double one_dz, double one_dx_dx, double one_dz_dz, double one_dx_dz, double celvol, grid* mesh, int ith, int c1, int c2, int c3, int nx, int ncx, int nxvz, int eqn, double* u, double* v, double* p, int **JtempC, double **AtempC, int *nnzc2C, int **JtempD, double **AtempD, int *nnzc2D, int i, int j ) {
     
-    double pc=0.0, uW=0.0, uE=0.0, vN=0.0, vS=0.0, oop_fact = 1.0, comp_fact = 0.0;
+    double pc=0.0, uW=0.0, uE=0.0, vN=0.0, vS=0.0, fact = 1.0;
+    if (model.oop==1) {
+        fact = 3.0/2.0;
+    }
     
-    // Non-zero out-of-plane strain
-    if ( model.oop == 1 ) oop_fact = 3.0/2.0;
-
     // Compressibility
-    if ( comp == 1 ) comp_fact = 1.0;
-    pc = comp_fact*mesh->bet_n[c2]/model.dt;
+    if ( comp == 0 ) {
+        pc = 0.0;
+    }
+    else {
+        pc = mesh->bet_n[c2]/model.dt;
+    }
     
     // div u
-    if ( mesh->BCu.type[c1     ] != 13 ) uW = -one_dx * oop_fact;
-    if ( mesh->BCu.type[c1+1   ] != 13 ) uE =  one_dx * oop_fact;
-    if ( mesh->BCv.type[c3     ] != 13 ) vS = -one_dz * oop_fact;
-    if ( mesh->BCv.type[c3+nxvz] != 13 ) vN =  one_dz * oop_fact;
+    if ( mesh->BCu.type[c1     ] != 13 ) uW = -one_dx * fact;
+    if ( mesh->BCu.type[c1+1   ] != 13 ) uE =  one_dx * fact;
+    if ( mesh->BCv.type[c3     ] != 13 ) vS = -one_dz * fact;
+    if ( mesh->BCv.type[c3+nxvz] != 13 ) vN =  one_dz * fact;
     
     // Stencil assembly / residual
     if ( Assemble == 1 ) {
@@ -834,13 +838,14 @@ void Continuity_InnerNodesDecoupled( SparseMat *Stokes, SparseMat *StokesC, Spar
         //        dlnrhodt = (log(rhoc) - log(rhoc0)) /dt;
         //        if comp==1, fp = -divc - dlnrhodt; resnlp = norm(fp(:))/length(fp); end
         //                                               = beta*(p - p0)/dt + div(v)
-    //    if ( model.VolChangeReac == 0 ) StokesC->F[eqn] =                      pc*p[c2] + uW*u[c1] + uE*u[c1+1] + vS*v[c3] + vN*v[c3+nxvz];
-    //    //                                               = d(ln(rho))/dt + div(v)
-    //    if ( model.VolChangeReac == 1 ) StokesC->F[eqn] = log(mesh->rho_n[c2])/model.dt + uW*u[c1] + uE*u[c1+1] + vS*v[c3] + vN*v[c3+nxvz];
-    //    StokesC->F[eqn] -= StokesC->b[eqn];
+//        if ( model.VolChangeReac == 0 ) StokesC->F[eqn] =                      pc*p[c2] + uW*u[c1] + uE*u[c1+1] + vS*v[c3] + vN*v[c3+nxvz];
+//        //                                               = d(ln(rho))/dt + div(v)
+//        if ( model.VolChangeReac == 1 ) StokesC->F[eqn] = log(mesh->rho_n[c2])/model.dt + uW*u[c1] + uE*u[c1+1] + vS*v[c3] + vN*v[c3+nxvz];
+//        StokesC->F[eqn] -= StokesC->b[eqn];
         
-        if ( model.VolChangeReac == 0 )  StokesC->F[eqn] = comp_fact*mesh->bet_n[c2]*(mesh->p_in[c2] -  mesh->p0_n[c2] ) / model.dt + mesh->div_u[c2];
-        if ( model.VolChangeReac == 1 )  StokesC->F[eqn] = comp_fact*( log(mesh->rho_n[c2]) -  log(mesh->rho0_n[c2]) ) / model.dt + mesh->div_u[c2];
+        if ( model.VolChangeReac == 0 )  StokesC->F[eqn] = mesh->bet_n[c2]*(mesh->p_in[eqn] -  mesh->p0_n[eqn] ) / model.dt + mesh->div_u[eqn];
+        if ( model.VolChangeReac == 1 )  StokesC->F[eqn] =   ( log(mesh->rho_n[eqn]) -  log(mesh->rho0_n[eqn]) ) / model.dt + mesh->div_u[eqn];
+
         StokesC->F[eqn] *= celvol;
         StokesD->F[eqn] = StokesC->F[eqn] ;
 //        printf("fp = %2.2e p = %2.2e p0 = %2.2e, div = %2.2e, div = %2.2e, rp = %2.2e\n",  StokesD->F[eqn], mesh->p_in[eqn],  mesh->p0_n[eqn], uW*u[c1] + uE*u[c1+1] + vS*v[c3] + vN*v[c3+nxvz], mesh->div_u[eqn], mesh->bet_n[c2]/model.dt*(mesh->p_in[eqn] -  mesh->p0_n[eqn]) + mesh->div_u[eqn] );

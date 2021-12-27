@@ -74,7 +74,7 @@ struct _p_markers {
     double *Fxx, *Fxz, *Fzx, *Fzz, *dnx, *dnz, *nx, *nz;
     double *T0, *P0, *x0, *z0, *Tmax, *Pmax, *divth;
     double *dsxxd, *dszzd, *dsxz;
-    double *noise;
+    double *noise, *rho;
 //    double *ddivth, *dT, *dP, *dd, *dphi, *dX, *drho;
 };
 
@@ -153,6 +153,7 @@ struct _params {
     int ProgReac, NoReturn, VolChangeReac, Plith_trick, UnsplitDiffReac;
     // Anisotropy
     int aniso, aniso_fstrain, oop, noise_bg;
+    int eqn_state;
 };
 
 // Nparams contains numerical parameters of the non-linear solver

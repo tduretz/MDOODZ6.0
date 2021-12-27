@@ -61,6 +61,7 @@ void BuildInitialTopography( surface *topo, markers *topo_chain, params model, g
         topo_chain->phase[k] = 0;
     }
     
+
     printf( "Topographic chain initialised with %d markers\n", topo_chain->Nb_part );
 }
 
@@ -284,6 +285,8 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
         //        if (particles->x[np] > x9 && model.user2 == 1) {
         //            particles->phase[np] = 1;
         //        }
+
+        particles->dual[np] = particles->phase[np];
         
     }
 }

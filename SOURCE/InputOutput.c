@@ -1048,6 +1048,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->safe_dt_div     = ReadDou2( fin, "safe_dt_div",  5.0 );
     model->nstagmax        = ReadInt2( fin, "nstagmax",      3 );
     model->noisy           = ReadInt2( fin, "noisy",         1 );  // Prints a lot of info to standard output
+    model->eqn_state       = ReadInt2( fin, "eqn_state",       0 );
 
     // Switches
     model->initial_part    = ReadInt2( fin, "initial_part",    1 ); // Initial particule distribution, 0: MD4.5 style, 1: MD6.0 style

@@ -398,6 +398,9 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
 //    eta_ve                  = 0.5*(eta_up+eta_lo);
     eta_ve = eta_up;
 
+    // printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e\n", eta_el*scaling->eta, eta_cst*scaling->eta, eta_pwl*scaling->eta, eta_lin*scaling->eta, eta_lo*scaling->eta, eta_up*scaling->eta);
+
+
     // Local iterations
     for (it=0; it<nitmax; it++) {
         
@@ -412,8 +415,10 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
         Eii_vis                          = *Eii_pwl + *Eii_exp + *Eii_lin + *Eii_gbs + *Eii_cst;
         r_eta_ve                         = Eii - elastic*Tii/f_ani/(2.0*eta_el) - Eii_vis;
         
+        // printf("%2.2e  %2.2e %2.2e %2.2e %2.2e\n", Eii, elastic*Tii/f_ani/(2.0*eta_el), Eii_vis, *Eii_cst, f_ani);
+
         // Residual check
-        res = fabs(r_eta_ve/Eii);
+        res = fabs(r_eta_ve/Eii); // 
         if (noisy>0 ) printf("%02d Visco-Elastic iterations It., F = %2.2e Frel = %2.2e\n", it, res, res/res0);
         if (it==0) res0 = res;
         if (res < tol/100) break;
@@ -1617,7 +1622,7 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
     int k, p, c0, Ncx=mesh->Nx-1, Ncz=mesh->Nz-1;
     int    phase_diag;
     double rho, rhoold, epsi = 1e-13;
-    printf("Update density fields on mesh\n");
+    // printf("Update density fields on mesh\n");
 
 #pragma omp parallel for shared( mesh, materials ) private( rho, rhoold) firstprivate(Ncx, Ncz, model, epsi)
     for ( c0=0; c0<Ncx*Ncz; c0++ ) {
@@ -1630,7 +1635,6 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
         for ( p=0; p<model->Nb_phases; p++) {
 
             if ( fabs(mesh->phase_perc_n[p][c0])>epsi) {
-
                 // Call density evaluation
                 rho    = EvaluateDensity( p, mesh->T[c0], mesh->p_in[c0], mesh->X_n[c0], model, materials );
                 rhoold = EvaluateDensity( p, mesh->T[c0], mesh->p0_n[c0], mesh->X_n[c0], model, materials );

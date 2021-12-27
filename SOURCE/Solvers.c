@@ -113,6 +113,10 @@ void kspgcr( cholmod_sparse *M, cholmod_dense *b, cholmod_dense *x, cholmod_fact
     //    x      = cholmod_zeros (N, 1, CHOLMOD_REAL, c );
     //    x    = cholmod_allocate_dense( N, 1, N, CHOLMOD_REAL, c );
     
+    // clock_t start, end;
+    // double cpu_time_used;
+    // start = clock();
+
     f      = cholmod_zeros (N, 1, CHOLMOD_REAL, c );
     v      = cholmod_zeros (       N,     1, CHOLMOD_REAL, c );
     val    = cholmod_zeros ( restart,     1, CHOLMOD_REAL, c );
@@ -135,7 +139,11 @@ void kspgcr( cholmod_sparse *M, cholmod_dense *b, cholmod_dense *x, cholmod_fact
         VV[cc]  = (double*) DoodzCalloc( N, sizeof(double));
         SS[cc]  = (double*) DoodzCalloc( N, sizeof(double));
     }
-    
+
+    // end = clock();
+    // cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    // printf("Time 4 allocation = %2.2e\n", cpu_time_used);
+
     copy_cholmod_dense_to_cholmod_dense( f, b );
     cholmod_sdmult ( M, 0, mone, one, x, f, c) ;
     norm_r = cholmod_norm_dense ( f, 2, c );
@@ -164,7 +172,6 @@ void kspgcr( cholmod_sparse *M, cholmod_dense *b, cholmod_dense *x, cholmod_fact
             for (i2=0; i2<i1; i2++) {
                 ((double*)val->x)[i2] = DotProduct( ((double*)v->x), VV[i2], N );
             }
-            
             for(i2=0; i2<i1+1; i2++) {
                 fact = -((double*)val->x)[i2];
                 ArrayPlusScalarArray( ((double*)v->x), fact, VV[i2], N );
@@ -192,12 +199,10 @@ void kspgcr( cholmod_sparse *M, cholmod_dense *b, cholmod_dense *x, cholmod_fact
             }
             if (noisy>1) printf("[%1.4d] %1.4d KSP GCR Residual %1.12e %1.12e\n", ncycles, its, norm_r, norm_r/rnorm0);
             
-            
             // Store arrays
             ArrayEqualArray( VV[i1], ((double*)v->x), N );
             ArrayEqualArray( SS[i1], ((double*)s->x), N );
-            
-            
+
             its++;
         }
         its++;
@@ -2285,10 +2290,10 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
             if (mesh->comp_cells[k]==0) ((double*)D1cm0->x)[i] *= 0.0;
             if (mesh->comp_cells[k]==1 && vol_change == 0 ) ((double*)D1cm0->x)[i]  = mesh->bet_n[k] / model.dt * celvol * matD->d[i]*matD->d[i];
             if (mesh->comp_cells[k]==1 && vol_change == 1 ) ((double*)D1cm0->x)[i]  = mesh->drhodp_n[k] / (mesh->rho_n[k]*model.dt) * celvol * matD->d[i]*matD->d[i];
-            if (mesh->drhodp_n[k]<0.0) {
-                printf("mesh->drhodp_n = %2.2e --- mesh->rho_n = %2.2e\n", mesh->drhodp_n[k]*scaling.rho/scaling.S, mesh->rho_n[k]*scaling.rho);
-            //     exit(1);
-            }
+            // if (mesh->drhodp_n[k]<0.0) {
+            //     printf("mesh->drhodp_n = %2.2e --- mesh->rho_n = %2.2e\n", mesh->drhodp_n[k]*scaling.rho/scaling.S, mesh->rho_n[k]*scaling.rho);
+            // //     exit(1);
+            // }
             // Here Dcm0 is the inverse of the pressure block - This relates to numerics in this incompressible case (penalty) or physics in the compressible case (dt/Beta)
             if (mesh->comp_cells[k]==0) ((double*)Dcm0->x)[i]  *= penalty;
             if (mesh->comp_cells[k]==1) ((double*)Dcm0->x)[i]   = 1.0 /  ((double*)D1cm0->x)[i];

@@ -1,10 +1,10 @@
 **** RESTART ****/
-istep = 000100
+istep = 000001
 irestart = 0
 
 /**** OUTPUT FILES ****/
 writer = 1
-writer_step = 10
+writer_step = 1
 writer_debug = 0
 writer_markers = 0
 
@@ -23,7 +23,7 @@ T   = 400
 /**** SPACE-TIME ****/
 Nx      = 400 //1718
 Nz      = 250
-Nt      = 100
+Nt      = 1
 xmin    = -3000.000000e3
 zmin    =  5000.0000000e3
 xmax    =  3000.000000e3
@@ -39,6 +39,7 @@ rel_tol_div     = 1e-9
 
 /**** SWITCHES ****/
 ismechanical    = 1
+advection       = 1
 dt_constant     = 0
 RK              = 4
 isperiodic_x    = 0
@@ -58,7 +59,7 @@ polar           = 1
 
 
 /**** SETUP DEPENDANT ****/
-EpsBG           = 0 /Background strain rate
+EpsBG           = 1e-30 /Background strain rate
 user0           = 0 /Activate open BC EAST side
 user1           = 1 /Activate upper plate
 user2           = 1 /Activate slab dip 
@@ -73,6 +74,7 @@ Nb_phases = 5
 
 ID   = 0
 rho  = 3325.00
+density_model = 0
 mu   = 1e10
 Cv   = 1050
 k    = 2.3
@@ -95,6 +97,7 @@ Qpwl = 0
 
 ID   = 1
 rho  = 3300.00
+density_model = 0
 mu   = 1e10
 Cv   = 1050
 k    = 2.3
@@ -118,6 +121,7 @@ Qpwl = 0.0
 
 ID   = 2
 rho  = 3325.00
+density_model = 0
 mu   = 1e10
 Cv   = 1050
 k    = 2.3
@@ -140,6 +144,7 @@ Qpwl = 0
 
 ID   = 3
 rho  =  3325.00
+density_model = 0
 mu   = 1e10
 Cv   = 1050
 k    = 2.3
@@ -162,6 +167,7 @@ Qpwl = 0
 
 ID   = 4
 rho  = 3310.00
+density_model = 0
 mu   = 1e10
 Cv   = 1050
 k    = 2.3

@@ -141,12 +141,28 @@ void SetParticles( markers *particles, scale scaling, params model, mat_prop *ma
             Ax = cos( 6.0*2.0*M_PI*particles->x[np] / Lx  );
             Az = sin( 6.0*2.0*M_PI*particles->z[np] / Lz  );
 
-            if (Az<0.0 && Ax<0.0  && particles->dual[np]==1 ) {
-                particles->dual[np] = model.Nb_phases + particles->phase[np]; 
+            if ( ( (Az<0.0 && Ax<0.0) || (Az>0.0 && Ax>0.0) ) && particles->dual[np]==0 ) {
+                particles->dual[np] += model.Nb_phases; 
             }
+    }
 
-            if (Az>0.0 && Ax>0.0  && particles->dual[np]==1 ) {
-                particles->dual[np] = model.Nb_phases + particles->phase[np]; 
+    // Generate checkerboard
+    for ( np=0; np<particles->Nb_part; np++ ) {
+            Ax = cos( 12.0*2.0*M_PI*particles->x[np] / Lx  );
+            Az = sin( 12.0*2.0*M_PI*particles->z[np] / Lz  );
+
+            if ( ( (Az<0.0 && Ax<0.0) || (Az>0.0 && Ax>0.0) ) && particles->dual[np]==1 ) {
+                particles->dual[np] += model.Nb_phases; 
+            }
+    }
+
+    // Generate checkerboard
+    for ( np=0; np<particles->Nb_part; np++ ) {
+            Ax = cos( 24.0*2.0*M_PI*particles->x[np] / Lx  );
+            Az = sin( 24.0*2.0*M_PI*particles->z[np] / Lz  );
+
+            if ( ( (Az<0.0 && Ax<0.0) || (Az>0.0 && Ax>0.0) ) && particles->dual[np]==2 ) {
+                particles->dual[np] += model.Nb_phases; 
             }
     }
 
