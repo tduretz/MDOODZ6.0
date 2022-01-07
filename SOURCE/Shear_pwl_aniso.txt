@@ -43,8 +43,8 @@ isinertial      = 0
 iselastic       = 1
 isthermal       = 0
 line_search     = 1
-free_surf       = 0
-free_surf_stab  = 0
+free_surf       = 1
+free_surf_stab  = 1
 eqn_state       = 0
 thermal_eq      = 0
 subgrid_diff    = 1
@@ -60,7 +60,7 @@ aniso_fstrain   = 0 // finite strain anisotropy activated
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = 1
-shear_style     = 1
+shear_style     = 0
 user0           = 1     / temperature [°C]
 user1           = 0.05  / inclusion radius [m]
 user2           = 0
@@ -96,7 +96,7 @@ eta0 = 1e0
 npwl = 3.0
 Qpwl = 0
 aniso_angle  = 65
-aniso_factor = 1
+aniso_factor = 2
 
 /**** PHASE 2 ****/
 ID   = 1

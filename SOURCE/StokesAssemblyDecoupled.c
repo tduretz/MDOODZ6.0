@@ -94,9 +94,23 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         iVxSW  = iVxW-nx;     iVxNW = iVxW+nx;
         iVzNNW = iVzNW+nxvz; iVzSSW = iVzSW-nxvz;
         iVzSWW = iVzSW-1;    iVzNWW = iVzNW-1;
+        // Valgrind / Audresselles 28/12/21
+        ixySW  = ixyS + nx;
+        ixyNW  = ixyN + nx;
+    }
+
+    if (k==0) { // Valgrind / Audresselles 28/12/21
+        ixySW  = ixyS;
+        ixyNW  = ixyN;
+    }
+
+    if (k==nx-1) { // Valgrind / Audresselles 28/12/21
+        ixySE  = ixyS; 
+        ixyNE  = ixyN; 
     }
     
-    if ( Assemble == 1 ) {
+    
+    
         
         // The computation of FD coefficients is only useful for the purpose of the stiffness/Jacobian matrix assembly
         double  uC=0.0;
@@ -203,27 +217,29 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
 //        vNNW = (1.0/3.0)*inNWc*wN*(D31N*comp + D32N*(comp - 3))/pow(dz, 2);
 //        vNNE = (1.0/3.0)*inNEc*wN*(D31N*comp + D32N*(comp - 3))/pow(dz, 2);
         
-        uW = (1.0/3.0)*(-0.75*D13W*dx*(inN - inS) + dx*inW*(-D31N*wN*(comp*oop - 3) + D31S*wS*(comp*oop - 3) - D32N*comp*oop*wN + D32S*comp*oop*wS) + dz*inW*(D11W*(comp*oop - 3) + D12W*comp*oop))/(pow(dx, 2)*dz);
-        uC = (1.0/3.0)*(dx*(3*dx*(D33N*pow(inN, 2) + D33S*pow(inS, 2)) + dz*(inE - inW)*(-D31N*wN*(comp*oop - 3) + D31S*wS*(comp*oop - 3) - D32N*comp*oop*wN + D32S*comp*oop*wS)) - dz*(0.75*dx*(-D13E + D13W)*(inN - inS) + dz*(D11E*inE*(comp*oop - 3) + D11W*inW*(comp*oop - 3) + D12E*comp*inE*oop + D12W*comp*inW*oop)))/(pow(dx, 2)*pow(dz, 2));
-        uE = (1.0/3.0)*(0.75*D13E*dx*(inN - inS) + dx*inE*(D31N*wN*(comp*oop - 3) - D31S*wS*(comp*oop - 3) + D32N*comp*oop*wN - D32S*comp*oop*wS) + dz*inE*(D11E*(comp*oop - 3) + D12E*comp*oop))/(pow(dx, 2)*dz);
-        uS = (-D33S*dx*pow(inS, 2) + 0.25*dz*inS*(D13E - D13W) + (1.0/3.0)*dz*wS*(inSEc - inSWc)*(D31S*(comp*oop - 3) + D32S*comp*oop))/(dx*pow(dz, 2));
-        uN = (-D33N*dx*pow(inN, 2) + 0.25*dz*inN*(-D13E + D13W) - 1.0/3.0*dz*wN*(inNEc - inNWc)*(D31N*(comp*oop - 3) + D32N*comp*oop))/(dx*pow(dz, 2));
-        vSW = (1.0/3.0)*(-dx*(3*D33S*dz*inS + dx*(D31N*comp*inW*oop*wN + D31S*comp*oop*wS*(inSWc - inW) + D32N*inW*wN*(comp*oop - 3) + D32S*wS*(inSWc - inW)*(comp*oop - 3))) + dz*(dx*inW*(D11W*comp*oop + D12W*(comp*oop - 3)) + 0.75*dz*(D13E + D13W*(inSWW - 1))))/(pow(dx, 2)*pow(dz, 2));
-        vSE = (1.0/3.0)*(dx*(3*D33S*dz*inS + dx*(-D31N*comp*inE*oop*wN + D31S*comp*oop*wS*(inE - inSEc) - D32N*inE*wN*(comp*oop - 3) + D32S*wS*(inE - inSEc)*(comp*oop - 3))) + dz*(-dx*inE*(D11E*comp*oop + D12E*(comp*oop - 3)) + 0.75*dz*(D13E*(inSEE - 1) + D13W)))/(pow(dx, 2)*pow(dz, 2));
-        vNW = (1.0/3.0)*(dx*(3*D33N*dz*inN - dx*(D31N*comp*oop*wN*(inNWc - inW) + D31S*comp*inW*oop*wS + D32N*wN*(inNWc - inW)*(comp*oop - 3) + D32S*inW*wS*(comp*oop - 3))) + dz*(-dx*inW*(D11W*comp*oop + D12W*(comp*oop - 3)) + 0.75*dz*(D13E + D13W*(inNWW - 1))))/(pow(dx, 2)*pow(dz, 2));
-        vNE = (1.0/3.0)*(-dx*(3*D33N*dz*inN + dx*(-D31N*comp*oop*wN*(inE - inNEc) + D31S*comp*inE*oop*wS - D32N*wN*(inE - inNEc)*(comp*oop - 3) + D32S*inE*wS*(comp*oop - 3))) + dz*(dx*inE*(D11E*comp*oop + D12E*(comp*oop - 3)) + 0.75*dz*(D13E*(inNEE - 1) + D13W)))/(pow(dx, 2)*pow(dz, 2));
-        uSW = (1.0/3.0)*(-0.75*D13W*inS + D31S*inSWc*wS*(comp*oop - 3) + D32S*comp*inSWc*oop*wS)/(dx*dz);
-        uSE = (1.0/3.0)*(0.75*D13E*inS - D31S*inSEc*wS*(comp*oop - 3) - D32S*comp*inSEc*oop*wS)/(dx*dz);
-        uNW = (1.0/3.0)*(0.75*D13W*inN - D31N*inNWc*wN*(comp*oop - 3) - D32N*comp*inNWc*oop*wN)/(dx*dz);
-        uNE = (1.0/3.0)*(-0.75*D13E*inN + D31N*inNEc*wN*(comp*oop - 3) + D32N*comp*inNEc*oop*wN)/(dx*dz);
-        vSWW = -0.25*D13W*inSWW/pow(dx, 2);
-        vSEE = -0.25*D13E*inSEE/pow(dx, 2);
-        vNWW = -0.25*D13W*inNWW/pow(dx, 2);
-        vNEE = -0.25*D13E*inNEE/pow(dx, 2);
+       // Audresselles 29/12/21
+        uW = (1.0/3.0)*(-0.75*D13W*dx*(inN*inNWv - inS*inSWv) + dx*inW*(-D31N*wN*(comp*oop - 3) + D31S*wS*(comp*oop - 3) - D32N*comp*oop*wN + D32S*comp*oop*wS) + dz*inW*(D11W*(comp*oop - 3) + D12W*comp*oop))/(pow(dx, 2)*dz);
+        uC = (1.0/3.0)*(dx*(3*dx*(D33N*pow(inN, 2)*inNv + D33S*pow(inS, 2)*inSv) + dz*(inE - inW)*(-D31N*wN*(comp*oop - 3) + D31S*wS*(comp*oop - 3) - D32N*comp*oop*wN + D32S*comp*oop*wS)) - dz*(0.75*dx*(-D13E + D13W)*(pow(inN, 2)*inNv - pow(inS, 2)*inSv) + dz*(D11E*inE*(comp*oop - 3) + D11W*inW*(comp*oop - 3) + D12E*comp*inE*oop + D12W*comp*inW*oop)))/(pow(dx, 2)*pow(dz, 2));
+        uE = (1.0/3.0)*(0.75*D13E*dx*(inN*inNEv - inS*inSEv) + dx*inE*(D31N*wN*(comp*oop - 3) - D31S*wS*(comp*oop - 3) + D32N*comp*oop*wN - D32S*comp*oop*wS) + dz*inE*(D11E*(comp*oop - 3) + D12E*comp*oop))/(pow(dx, 2)*dz);
+        uS = (-D33S*dx*pow(inS, 2)*inSv + 0.25*dz*pow(inS, 2)*inSv*(D13E - D13W) + (1.0/3.0)*dz*wS*(inSEc - inSWc)*(D31S*(comp*oop - 3) + D32S*comp*oop))/(dx*pow(dz, 2));
+        uN = (-D33N*dx*pow(inN, 2)*inNv + 0.25*dz*pow(inN, 2)*inNv*(-D13E + D13W) - 1.0/3.0*dz*wN*(inNEc - inNWc)*(D31N*(comp*oop - 3) + D32N*comp*oop))/(dx*pow(dz, 2));
+        vSW = (1.0/3.0)*(-dx*(3*D33S*dz*inS*inSv + dx*(D31N*comp*inW*oop*wN + D31S*comp*oop*wS*(inSWc - inW) + D32N*inW*wN*(comp*oop - 3) + D32S*wS*(inSWc - inW)*(comp*oop - 3))) + dz*(dx*inW*(D11W*comp*oop + D12W*(comp*oop - 3)) + 0.75*dz*(D13E*inS*inSv - D13W*(inS*inSv - inSWW*inSWv))))/(pow(dx, 2)*pow(dz, 2));
+        vSE = (1.0/3.0)*(dx*(3*D33S*dz*inS*inSv + dx*(-D31N*comp*inE*oop*wN + D31S*comp*oop*wS*(inE - inSEc) - D32N*inE*wN*(comp*oop - 3) + D32S*wS*(inE - inSEc)*(comp*oop - 3))) - dz*(dx*inE*(D11E*comp*oop + D12E*(comp*oop - 3)) + 0.75*dz*(D13E*(inS*inSv - inSEE*inSEv) - D13W*inS*inSv)))/(pow(dx, 2)*pow(dz, 2));
+        vNW = (1.0/3.0)*(dx*(3*D33N*dz*inN*inNv - dx*(D31N*comp*oop*wN*(inNWc - inW) + D31S*comp*inW*oop*wS + D32N*wN*(inNWc - inW)*(comp*oop - 3) + D32S*inW*wS*(comp*oop - 3))) - dz*(dx*inW*(D11W*comp*oop + D12W*(comp*oop - 3)) + 0.75*dz*(-D13E*inN*inNv + D13W*(inN*inNv - inNWW*inNWv))))/(pow(dx, 2)*pow(dz, 2));
+        vNE = (1.0/3.0)*(-dx*(3*D33N*dz*inN*inNv + dx*(-D31N*comp*oop*wN*(inE - inNEc) + D31S*comp*inE*oop*wS - D32N*wN*(inE - inNEc)*(comp*oop - 3) + D32S*inE*wS*(comp*oop - 3))) + dz*(dx*inE*(D11E*comp*oop + D12E*(comp*oop - 3)) + 0.75*dz*(-D13E*(inN*inNv - inNEE*inNEv) + D13W*inN*inNv)))/(pow(dx, 2)*pow(dz, 2));
+        uSW = (1.0/3.0)*(-0.75*D13W*inS*inSWv + D31S*inSWc*wS*(comp*oop - 3) + D32S*comp*inSWc*oop*wS)/(dx*dz);
+        uSE = (1.0/3.0)*(0.75*D13E*inS*inSEv - D31S*inSEc*wS*(comp*oop - 3) - D32S*comp*inSEc*oop*wS)/(dx*dz);
+        uNW = (1.0/3.0)*(0.75*D13W*inN*inNWv - D31N*inNWc*wN*(comp*oop - 3) - D32N*comp*inNWc*oop*wN)/(dx*dz);
+        uNE = (1.0/3.0)*(-0.75*D13E*inN*inNEv + D31N*inNEc*wN*(comp*oop - 3) + D32N*comp*inNEc*oop*wN)/(dx*dz);
+        vSWW = -0.25*D13W*inSWW*inSWv/pow(dx, 2);
+        vSEE = -0.25*D13E*inSEE*inSEv/pow(dx, 2);
+        vNWW = -0.25*D13W*inNWW*inNWv/pow(dx, 2);
+        vNEE = -0.25*D13E*inNEE*inNEv/pow(dx, 2);
         vSSW = (1.0/3.0)*inSWc*wS*(D31S*comp*oop + D32S*(comp*oop - 3))/pow(dz, 2);
         vSSE = (1.0/3.0)*inSEc*wS*(D31S*comp*oop + D32S*(comp*oop - 3))/pow(dz, 2);
         vNNW = (1.0/3.0)*inNWc*wN*(D31N*comp*oop + D32N*(comp*oop - 3))/pow(dz, 2);
         vNNE = (1.0/3.0)*inNEc*wN*(D31N*comp*oop + D32N*(comp*oop - 3))/pow(dz, 2);
+
         
         pW = -inW*one_dx + inW*(D14W*dz + dx*(-D34N*inN*wN + D34S*inS*wS))/(dx*dz);
         pE =  inE*one_dx + inE*(-D14E*dz + dx*(-D34N*inN*wN + D34S*inS*wS))/(dx*dz);
@@ -252,10 +268,11 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         if ( mesh->BCv.type[iVzSWW] == 11 ) vSW -= vSWW;
         if ( mesh->BCv.type[iVzSEE] == 11 ) vSE -= vSEE;
         
-        
-        
         StokesA->b[eqn] *= celvol;
         StokesB->b[eqn] *= celvol;
+
+        if ( Assemble == 1 ) {
+
         //--------------------
         // dsxx/dx - normal stencil
         
@@ -314,7 +331,6 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
         
         //--------------------
         
-        
         // vSWW (Newton)
         if ( (k > 1 ) ||  ( (k==0 || k==1) &&  mesh->BCv.type[iVzSWW] == -1) ) {
             if (mesh->BCv.type[iVzSWW] != 30) AddCoeff2( JtempA[ith], AtempA[ith], eqn, Stokes->eqn_v[iVzSWW],   &(nnzc2A[ith]), vSWW*celvol, mesh->BCv.type[iVzSWW],   mesh->BCv.val[iVzSWW],   StokesA->bbc);
@@ -365,8 +381,8 @@ void Xjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
             }
         }
         
-        // pE && pW
-        if ( mesh->BCp.type[iPrE] != 30 && mesh->BCp.type[c2] != 30 ) {
+        // pE && pW -- Valgrind / Audresselles 28/12/21
+        if ( mesh->BCp.type[iPrE] != 30 && mesh->BCp.type[iPrW] != 30 ) {
             AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[iPrW] - Stokes->neq_mom, &(nnzc2B[ith]), pW*celvol, mesh->BCp.type[iPrW], mesh->BCp.val[iPrW], StokesB->bbc);
             AddCoeff2( JtempB[ith], AtempB[ith], eqn, Stokes->eqn_p[iPrE] - Stokes->neq_mom, &(nnzc2B[ith]), pE*celvol, mesh->BCp.type[iPrE], mesh->BCp.val[iPrE], StokesB->bbc);
         }
@@ -578,27 +594,27 @@ void Zjacobian_InnerNodesDecoupled3( SparseMat *Stokes, SparseMat *StokesA, Spar
 //        uNNW = -0.25*D23N*inN*inNNW*inNWv/pow(dz, 2);
 //        uNNE = -0.25*D23N*inN*inNEv*inNNE/pow(dz, 2);
         
-        vW = (-D33W*dz*pow(inW, 2) + 0.25*dx*inW*(D23N*inN - D23S*inS) + (1.0/3.0)*dx*wW*(inNWc - inSWc)*(D31W*comp*oop + D32W*(comp*oop - 3)))/(pow(dx, 2)*dz);
-        vC = (1.0/3.0)*(-dx*(dx*(D21N*comp*inN*oop + D21S*comp*inS*oop + D22N*inN*(comp*oop - 3) + D22S*inS*(comp*oop - 3)) + 0.75*dz*(inE - inW)*(-D23N*inN + D23S*inS)) + dz*(dx*(inN - inS)*(-D31E*comp*oop*wE + D31W*comp*oop*wW - D32E*wE*(comp*oop - 3) + D32W*wW*(comp*oop - 3)) + 3*dz*(D33E*pow(inE, 2) + D33W*pow(inW, 2))))/(pow(dx, 2)*pow(dz, 2));
-        vE = (-D33E*dz*pow(inE, 2) + 0.25*dx*inE*(-D23N*inN + D23S*inS) - 1.0/3.0*dx*wE*(inNEc - inSEc)*(D31E*comp*oop + D32E*(comp*oop - 3)))/(pow(dx, 2)*dz);
-        vS = (1.0/3.0)*inS*(-0.75*D23S*dz*(inE - inW) + dx*(D21S*comp*oop + D22S*(comp*oop - 3)) + dz*(-D31E*comp*oop*wE + D31W*comp*oop*wW - D32E*wE*(comp*oop - 3) + D32W*wW*(comp*oop - 3)))/(dx*pow(dz, 2));
-        vN = (1.0/3.0)*inN*(0.75*D23N*dz*(inE - inW) + dx*(D21N*comp*oop + D22N*(comp*oop - 3)) + dz*(D31E*comp*oop*wE - D31W*comp*oop*wW + D32E*wE*(comp*oop - 3) - D32W*wW*(comp*oop - 3)))/(dx*pow(dz, 2));
-        uSW = (1.0/3.0)*(dx*(0.75*dx*(D23N*inN + D23S*inS*(inSSW - 1)) + dz*inS*(D21S*(comp*oop - 3) + D22S*comp*oop)) - dz*(3*D33W*dx*inW + dz*(D31E*inS*wE*(comp*oop - 3) - D31W*wW*(inS - inSWc)*(comp*oop - 3) + D32E*comp*inS*oop*wE - D32W*comp*oop*wW*(inS - inSWc))))/(pow(dx, 2)*pow(dz, 2));
-        uSE = (1.0/3.0)*(dx*(0.75*dx*(D23N*inN + D23S*inS*(inSSE - 1)) - dz*inS*(D21S*(comp*oop - 3) + D22S*comp*oop)) + dz*(3*D33E*dx*inE + dz*(D31E*wE*(inS - inSEc)*(comp*oop - 3) - D31W*inS*wW*(comp*oop - 3) + D32E*comp*oop*wE*(inS - inSEc) - D32W*comp*inS*oop*wW)))/(pow(dx, 2)*pow(dz, 2));
-        uNW = (1.0/3.0)*(dx*(0.75*dx*(D23N*inN*(inNNW - 1) + D23S*inS) - dz*inN*(D21N*(comp*oop - 3) + D22N*comp*oop)) + dz*(3*D33W*dx*inW + dz*(-D31E*inN*wE*(comp*oop - 3) + D31W*wW*(inN - inNWc)*(comp*oop - 3) - D32E*comp*inN*oop*wE + D32W*comp*oop*wW*(inN - inNWc))))/(pow(dx, 2)*pow(dz, 2));
-        uNE = (1.0/3.0)*(dx*(0.75*dx*(D23N*inN*(inNNE - 1) + D23S*inS) + dz*inN*(D21N*(comp*oop - 3) + D22N*comp*oop)) - dz*(3*D33E*dx*inE + dz*(-D31E*wE*(inN - inNEc)*(comp*oop - 3) + D31W*inN*wW*(comp*oop - 3) - D32E*comp*oop*wE*(inN - inNEc) + D32W*comp*inN*oop*wW)))/(pow(dx, 2)*pow(dz, 2));
-        vSW = (1.0/3.0)*(-0.75*D23S*inS*inW + D31W*comp*inSWc*oop*wW + D32W*inSWc*wW*(comp*oop - 3))/(dx*dz);
-        vSE = (1.0/3.0)*(0.75*D23S*inE*inS - D31E*comp*inSEc*oop*wE - D32E*inSEc*wE*(comp*oop - 3))/(dx*dz);
-        vNW = (1.0/3.0)*(0.75*D23N*inN*inW - D31W*comp*inNWc*oop*wW - D32W*inNWc*wW*(comp*oop - 3))/(dx*dz);
-        vNE = (1.0/3.0)*(-0.75*D23N*inE*inN + D31E*comp*inNEc*oop*wE + D32E*inNEc*wE*(comp*oop - 3))/(dx*dz);
+        vW = (-D33W*dz*pow(inW, 2)*inWv + 0.25*dx*pow(inW, 2)*inWv*(D23N*inN - D23S*inS) + (1.0/3.0)*dx*wW*(inNWc - inSWc)*(D31W*comp*oop + D32W*(comp*oop - 3)))/(pow(dx, 2)*dz);
+        vC = (1.0/3.0)*(-dx*(dx*(D21N*comp*inN*oop + D21S*comp*inS*oop + D22N*inN*(comp*oop - 3) + D22S*inS*(comp*oop - 3)) + 0.75*dz*(-D23N*inN + D23S*inS)*(pow(inE, 2)*inEv - pow(inW, 2)*inWv)) + dz*(dx*(inN - inS)*(-D31E*comp*oop*wE + D31W*comp*oop*wW - D32E*wE*(comp*oop - 3) + D32W*wW*(comp*oop - 3)) + 3*dz*(D33E*pow(inE, 2)*inEv + D33W*pow(inW, 2)*inWv)))/(pow(dx, 2)*pow(dz, 2));
+        vE = (-D33E*dz*pow(inE, 2)*inEv + 0.25*dx*pow(inE, 2)*inEv*(-D23N*inN + D23S*inS) - 1.0/3.0*dx*wE*(inNEc - inSEc)*(D31E*comp*oop + D32E*(comp*oop - 3)))/(pow(dx, 2)*dz);
+        vS = (1.0/3.0)*inS*(-0.75*D23S*dz*(inE*inSEv - inSWv*inW) + dx*(D21S*comp*oop + D22S*(comp*oop - 3)) + dz*(-D31E*comp*oop*wE + D31W*comp*oop*wW - D32E*wE*(comp*oop - 3) + D32W*wW*(comp*oop - 3)))/(dx*pow(dz, 2));
+        vN = (1.0/3.0)*inN*(0.75*D23N*dz*(inE*inNEv - inNWv*inW) + dx*(D21N*comp*oop + D22N*(comp*oop - 3)) + dz*(D31E*comp*oop*wE - D31W*comp*oop*wW + D32E*wE*(comp*oop - 3) - D32W*wW*(comp*oop - 3)))/(dx*pow(dz, 2));
+        uSW = (1.0/3.0)*(dx*(0.75*dx*(D23N*inN*inW*inWv + D23S*inS*(inSSW*inSWv - inW*inWv)) + dz*inS*(D21S*(comp*oop - 3) + D22S*comp*oop)) - dz*(3*D33W*dx*inW*inWv + dz*(D31E*inS*wE*(comp*oop - 3) - D31W*wW*(inS - inSWc)*(comp*oop - 3) + D32E*comp*inS*oop*wE - D32W*comp*oop*wW*(inS - inSWc))))/(pow(dx, 2)*pow(dz, 2));
+        uSE = (1.0/3.0)*(-dx*(0.75*dx*(-D23N*inE*inEv*inN + D23S*inS*(inE*inEv - inSEv*inSSE)) + dz*inS*(D21S*(comp*oop - 3) + D22S*comp*oop)) + dz*(3*D33E*dx*inE*inEv + dz*(D31E*wE*(inS - inSEc)*(comp*oop - 3) - D31W*inS*wW*(comp*oop - 3) + D32E*comp*oop*wE*(inS - inSEc) - D32W*comp*inS*oop*wW)))/(pow(dx, 2)*pow(dz, 2));
+        uNW = (1.0/3.0)*(dx*(0.75*dx*(D23N*inN*(inNNW*inNWv - inW*inWv) + D23S*inS*inW*inWv) - dz*inN*(D21N*(comp*oop - 3) + D22N*comp*oop)) + dz*(3*D33W*dx*inW*inWv + dz*(-D31E*inN*wE*(comp*oop - 3) + D31W*wW*(inN - inNWc)*(comp*oop - 3) - D32E*comp*inN*oop*wE + D32W*comp*oop*wW*(inN - inNWc))))/(pow(dx, 2)*pow(dz, 2));
+        uNE = (1.0/3.0)*(dx*(0.75*dx*(-D23N*inN*(inE*inEv - inNEv*inNNE) + D23S*inE*inEv*inS) + dz*inN*(D21N*(comp*oop - 3) + D22N*comp*oop)) - dz*(3*D33E*dx*inE*inEv + dz*(-D31E*wE*(inN - inNEc)*(comp*oop - 3) + D31W*inN*wW*(comp*oop - 3) - D32E*comp*oop*wE*(inN - inNEc) + D32W*comp*inN*oop*wW)))/(pow(dx, 2)*pow(dz, 2));
+        vSW = (1.0/3.0)*(-0.75*D23S*inS*inSWv*inW + D31W*comp*inSWc*oop*wW + D32W*inSWc*wW*(comp*oop - 3))/(dx*dz);
+        vSE = (1.0/3.0)*(0.75*D23S*inE*inS*inSEv - D31E*comp*inSEc*oop*wE - D32E*inSEc*wE*(comp*oop - 3))/(dx*dz);
+        vNW = (1.0/3.0)*(0.75*D23N*inN*inNWv*inW - D31W*comp*inNWc*oop*wW - D32W*inNWc*wW*(comp*oop - 3))/(dx*dz);
+        vNE = (1.0/3.0)*(-0.75*D23N*inE*inN*inNEv + D31E*comp*inNEc*oop*wE + D32E*inNEc*wE*(comp*oop - 3))/(dx*dz);
         uSWW = (1.0/3.0)*inSWc*wW*(D31W*(comp*oop - 3) + D32W*comp*oop)/pow(dx, 2);
         uSEE = (1.0/3.0)*inSEc*wE*(D31E*(comp*oop - 3) + D32E*comp*oop)/pow(dx, 2);
         uNWW = (1.0/3.0)*inNWc*wW*(D31W*(comp*oop - 3) + D32W*comp*oop)/pow(dx, 2);
         uNEE = (1.0/3.0)*inNEc*wE*(D31E*(comp*oop - 3) + D32E*comp*oop)/pow(dx, 2);
-        uSSW = -0.25*D23S*inS*inSSW/pow(dz, 2);
-        uSSE = -0.25*D23S*inS*inSSE/pow(dz, 2);
-        uNNW = -0.25*D23N*inN*inNNW/pow(dz, 2);
-        uNNE = -0.25*D23N*inN*inNNE/pow(dz, 2);
+        uSSW = -0.25*D23S*inS*inSSW*inSWv/pow(dz, 2);
+        uSSE = -0.25*D23S*inS*inSEv*inSSE/pow(dz, 2);
+        uNNW = -0.25*D23N*inN*inNNW*inNWv/pow(dz, 2);
+        uNNE = -0.25*D23N*inN*inNEv*inNNE/pow(dz, 2);
         
         pS  = -inS*one_dz + (inS*(D24S*dx + dz*(-D34E*inE*wE + D34W*inW*wW))/(dx*dz));
         pN  =  inN*one_dz + (inN*(-D24N*dx + dz*(-D34E*inE*wE + D34W*inW*wW))/(dx*dz));
