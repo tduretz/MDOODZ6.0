@@ -154,6 +154,7 @@ struct _params {
     // Anisotropy
     int aniso, aniso_fstrain, oop, noise_bg;
     int eqn_state;
+    int residual_form;
 };
 
 // Nparams contains numerical parameters of the non-linear solver

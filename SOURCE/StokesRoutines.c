@@ -887,7 +887,7 @@ void EvaluateStokesResidualDecoupled( SparseMat *Stokes, SparseMat *StokesA, Spa
     Nmodel->resp =  sqrt(Nmodel->resp/ndofp);
 
     // Store initial residuals
-    if (Nmodel->nit == 0) {
+    if ( Nmodel->nit == 0 ) {
         Nmodel->resx0 = Nmodel->resx;
         Nmodel->resz0 = Nmodel->resz;
         Nmodel->resp0 = Nmodel->resp;
@@ -987,7 +987,6 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
 
                     // Elastic force
                     if ( model.iselastic == 1 ) {
-
                         // Inner nodes
                         if (k>0 && k<Nx-1) {
                             if ( inE ) mesh->roger_x[c]  -= 1.0/dx * ( mesh->eta_n[iPrE] / (mesh->mu_n[iPrE]*model.dt)  * mesh->sxxd0[iPrE] );
@@ -995,7 +994,6 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
                             if ( inN ) mesh->roger_x[c]  -= 1.0/dz * ( mesh->eta_s[ixyN] / (mesh->mu_s[ixyN]*model.dt)  * mesh->sxz0[ixyN] );
                             if ( inS ) mesh->roger_x[c]  -= 1.0/dz * (-mesh->eta_s[ixyS] / (mesh->mu_s[ixyS]*model.dt)  * mesh->sxz0[ixyS] );
                         }
-
                     }
                 }
             }
@@ -1066,19 +1064,14 @@ void EvaluateRHS( grid* mesh, params model, scale scaling, double RHO_REF ) {
 //                        }
 //                    }
                     
-                    
                     // Elastic force
-                    if  (model.iselastic == 1 ) {
-
-                        // Backward Euler
+                    if  (model.iselastic == 1 && model.residual_form==0 ) {
                         if ( l>0 && l<Nz-1 ) {
-//                            inW=1.0, inE = 1.0, inS=1.0, inN = 1.0;
                             if ( inN ) mesh->roger_z[c]  -= 1.0/dz * (  mesh->eta_n[iPrN] / (mesh->mu_n[iPrN] *model.dt ) * (mesh->szzd0[iPrN]) );
                             if ( inS ) mesh->roger_z[c]  -= 1.0/dz * ( -mesh->eta_n[iPrS] / (mesh->mu_n[iPrS] *model.dt ) * (mesh->szzd0[iPrS]) );
                             if ( inE ) mesh->roger_z[c]  -= 1.0/dx * (  mesh->eta_s[ixyE] / (mesh->mu_s[ixyE] *model.dt ) *  mesh->sxz0[ixyE]) ;
                             if ( inW ) mesh->roger_z[c]  -= 1.0/dx * ( -mesh->eta_s[ixyW] / (mesh->mu_s[ixyW] *model.dt ) *  mesh->sxz0[ixyW]) ;
                         }
-
                     }
                 }
             }

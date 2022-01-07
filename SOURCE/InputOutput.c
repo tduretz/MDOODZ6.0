@@ -1100,7 +1100,7 @@ void ReadInputFile( char* fin_name, int *istep, int *irestart, int *writer, int 
     model->SmoothSoftening = ReadInt2( fin, "SmoothSoftening", 1); // Activates smooth explicit kinematic softening function
     model->oop             = ReadInt2( fin, "oop",             0); // Out-of-plane strain 
     model->noise_bg        = ReadInt2( fin, "noise_bg",        0); // Background noise generated on the particles --> mesh (used for cohesion)
-
+    model->residual_form   = ReadInt2( fin, "residual_form",   0); // form of residual - to be deleted once everything works with 1
 
     if ( model->shear_style == 1 ) model->isperiodic_x  = 1;
     if ( model->shear_style == 0 ) model->isperiodic_x  = 0;

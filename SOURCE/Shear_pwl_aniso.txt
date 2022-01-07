@@ -16,8 +16,8 @@ V   = 1
 T   = 20
 
 /**** SPACE-TIME ****/
-Nx      = 50
-Nz      = 50
+Nx      = 15
+Nz      = 20
 Nt      = 1
 xmin    = -5.000000e-1
 zmin    = -5.000000e-1
@@ -60,7 +60,7 @@ aniso_fstrain   = 0 // finite strain anisotropy activated
 
 /**** SETUP DEPENDANT ****/
 EpsBG           = 1
-shear_style     = 1
+shear_style     = 0
 user0           = 1     / temperature [°C]
 user1           = 0.05  / inclusion radius [m]
 user2           = 0
@@ -68,7 +68,7 @@ user3           = 0
 
 /**** GRAVITY ****/
 gx = 0.0000
-gz = 0.000
+gz = -1
 
 /**** MAT PROPERTIES ****/
 Nb_phases = 2

@@ -1,10 +1,10 @@
 /**** RESTART ****/
-istep = 00120
+istep = 00055
 irestart = 0
 
 /**** OUTPUT FILES ****/
 writer          = 1
-writer_step     = 10
+writer_step     = 5
 writer_markers  = 0
 writer_debug    = 0
 writer_energies = 0
@@ -43,7 +43,7 @@ ismechanical    = 1
 isperiodic_x    = 0
 ispureshear_ALE = 0
 isinertial      = 0
-iselastic       = 0
+iselastic       = 1
 isthermal       = 0
 line_search     = 0
 free_surf       = 0
