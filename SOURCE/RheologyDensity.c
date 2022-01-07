@@ -590,6 +590,432 @@ double ViscosityConcise( int phase, double G, double T, double P, double d, doub
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
+// void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, Nparams Nmodel, scale *scaling ) {
+
+//     int p, k, l, Nx, Nz, Ncx, Ncz, c0, c1, k1, cond;
+//     double eta, txx1, tzz1, txz1, Pn, Tn, etaVE, VEcoeff=0.0, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, dnew, div_el, div_pl, div_r;
+//     double exx_pwl, exz_pwl, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss;
+//     int average = model->eta_avg, UnsplitDiffReac = model->UnsplitDiffReac;
+//     double Xreac;
+//     double OverS;
+//     double Pcorr, rho;
+//     double Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, el, etae, ani, d0, d1, nx, nz;
+//     double Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det;
+
+//     Nx = mesh->Nx;
+//     Nz = mesh->Nz;
+//     Ncx = Nx-1;
+//     Ncz = Nz-1;
+
+//     InterpCentroidsToVerticesDouble( mesh->div_u,   mesh->div_u_s, mesh, model );
+//     InterpCentroidsToVerticesDouble( mesh->T,       mesh->T_s,     mesh, model );
+//     InterpCentroidsToVerticesDouble( mesh->p_in,    mesh->P_s,     mesh, model );
+//     InterpCentroidsToVerticesDouble( mesh->d0_n,    mesh->d0_s,    mesh, model );
+//     InterpCentroidsToVerticesDouble( mesh->phi0_n,  mesh->phi0_s,  mesh, model ); // ACHTUNG NOT FRICTION ANGLE
+
+//     // Evaluate cell center viscosities
+// #pragma omp parallel for shared( mesh  ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, dnew, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, Xreac, OverS, Pcorr, rho, div_el, div_pl, div_r, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, el, etae, ani, d0, d1, nx, nz, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate( UnsplitDiffReac, materials, scaling, average, model, Ncx, Ncz )
+//     for ( k1=0; k1<Ncx*Ncz; k1++ ) {
+
+//         //    for ( l=0; l<Ncz; l++ ) {
+//         //        for ( k=0; k<Ncx; k++ ) {
+
+//         k      = mesh->kp[k1];
+//         l      = mesh->lp[k1];
+//         c0     = k  + l*(Ncx);
+
+//         mesh->eta_n[c0]       = 0.0;
+//         mesh->eta_phys_n[c0]  = 0.0;
+//         mesh->VE_n[c0]        = 0.0;
+//         mesh->sxxd[c0]        = 0.0;
+//         mesh->szzd[c0]        = 0.0;
+//         mesh->sxz_n[c0]       = 0.0;
+//         mesh->eII_el[c0]      = 0.0;
+//         mesh->eII_pl[c0]      = 0.0;
+//         mesh->eII_pwl[c0]     = 0.0;
+//         mesh->eII_exp[c0]     = 0.0;
+//         mesh->eII_lin[c0]     = 0.0;
+//         mesh->eII_gbs[c0]     = 0.0;
+//         mesh->eII_cst[c0]     = 0.0;
+//         mesh->d_n[c0]         = 0.0;
+//         mesh->exx_el[c0]      = 0.0;
+//         mesh->exx_diss[c0]    = 0.0;
+//         mesh->ezz_el[c0]      = 0.0;
+//         mesh->ezz_diss[c0]    = 0.0;
+//         mesh->p_corr[c0]      = 0.0;                // Achtung baby
+//         mesh->div_u_el[c0]    = 0.0;
+//         mesh->div_u_pl[c0]    = 0.0;
+//         mesh->div_u_r[c0]     = 0.0;
+//         mesh->Wtot[c0]        = 0.0;
+//         mesh->Wel[c0]         = 0.0;
+//         mesh->Wdiss[c0]       = 0.0;
+//         //        X                     =  mesh->Xreac_n[c0]; // Save X first
+//         //        if (model->ProgReac==1) mesh->Xreac_n[c0]    = 0.0;
+//         if ( UnsplitDiffReac == 0 ) mesh->X_n[c0]        = 0.0;
+//         mesh->OverS_n[c0]    = 0.0;
+        
+        
+//         if ( model->VolChangeReac == 1 ) {
+//             mesh->rho_n[c0]  = 0.0;
+// //            mesh->drhodp_n[c0] = 0.0;
+//         }
+        
+//         // Loop on grid nodes
+//         if ( mesh->BCp.type[c0] != 30 && mesh->BCp.type[c0] != 31 ) {
+            
+//             //----------------------------------------------------------//
+//             if ( model->iselastic==1 ) etae      = model->dt*mesh->mu_n[c0];
+//             else                       etae      = 1.0; // set to arbitrary value to avoid division by 0.0
+//             //----------------------------------------------------------//
+//             if ( model->aniso == 0 ) {
+//                 ani = 0.0; d0   = 0.0; d1   = 0.0;
+//             }
+//             else {
+//                 // Director
+//                 nx = mesh->nx0_n[c0];
+//                 nz = mesh->nz0_n[c0];
+//                 // See Anisotropy_v2.ipynb
+//                 if ( model->aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_n[c0];
+//                 if ( model->aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_n[c0];
+//                 d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
+//                 d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
+//             }
+//             //----------------------------------------------------------//
+//             Exx = mesh->exxd[c0]  + mesh->sxxd0[c0] /etae/2.0;
+//             Ezz = mesh->ezzd[c0]  + mesh->szzd0[c0] /etae/2.0;
+//             Exz = mesh->exz_n[c0] + mesh->sxz0_n[c0]/etae/2.0;
+//             gxz = 2.0*Exz;
+            
+// //            double Eii   = sqrt(1.0/2.0*(Exx*Exx + Ezz*Ezz + pow((Exx+Ezz),2) ) + Exz*Exz);
+// //            double Gii   = sqrt(1.0/2.0*(Gxx*Gxx + Gzz*Gzz + pow((Gxx+Gzz),2) ) + Gxz*Gxz);
+// //            printf("Eii=%2.2e Gii=%2.2e\n", Eii, Gii);
+// //            exit(1);
+            
+//             Da11  = 2.0 - 2.0*ani*d0;
+//             Da12  = 2.0*ani*d0;
+//             Da13  = 2.0*ani*d1;
+//             Da22  = 2.0 - 2.0*ani*d0;
+//             Da23  =-2.0*ani*d1;
+//             Da33  = 1.0  + 2.0*ani*(d0 - 0.5);
+//             a11   = Da33 * Da22 - pow(Da23,2);
+//             a12   = Da13 * Da23 - Da33 * Da12;
+//             a13   = Da12 * Da23 - Da13 * Da22;
+//             a22   = Da33 * Da11 - pow(Da13,2);
+//             a23   = Da12 * Da13 - Da11 * Da23;
+//             a33   = Da11 * Da22 - pow(Da12,2);
+//             det   = (Da11 * a11) + (Da12 * a12) + (Da13 * a13);
+//             iDa11 = a11/det; iDa12 = a12/det; iDa13 = a13/det;
+//             iDa22 = a22/det; iDa23 = a23/det;
+//             iDa33 = a33/det;
+//             Exx = mesh->exxd[c0]      + (iDa11*mesh->sxxd0[c0] + iDa12*mesh->szzd0[c0] + iDa13*mesh->sxz0_n[c0])/etae;
+//             Ezz = mesh->ezzd[c0]      + (iDa12*mesh->sxxd0[c0] + iDa22*mesh->szzd0[c0] + iDa23*mesh->sxz0_n[c0])/etae;
+//             Exz = mesh->exz_n[c0]     + (iDa13*mesh->sxxd0[c0] + iDa23*mesh->szzd0[c0] + iDa33*mesh->sxz0_n[c0])/2.0/etae;
+//             gxz = 2.0*mesh->exz_n[c0] + (iDa13*mesh->sxxd0[c0] + iDa23*mesh->szzd0[c0] + iDa33*mesh->sxz0_n[c0])/etae;
+                        
+//             Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
+//             Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
+//             Gxz = Exx*ani*d1 - Ezz*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // Gxz = Exz if isotropic
+
+// //            Gxx = Exx;
+// //            Gzz = Ezz;
+// //            Gxz = Exz;
+            
+// //             Eii   = sqrt(1.0/2.0*(Exx*Exx + Ezz*Ezz + pow((Exx+Ezz),2) ) + Exz*Exz);
+// //             Gii   = sqrt(1.0/2.0*(Gxx*Gxx + Gzz*Gzz + pow((Gxx+Gzz),2) ) + Gxz*Gxz);
+// //            printf("Eii=%2.2e Gii=%2.2e %2.2e %2.2e %2.2e\n", Eii, Gii, ani, d0, mesh->aniso_factor_n[c0]);
+// //            exit(1);
+            
+// //            printf("%2.2e %2.2e\n", Gxz, Exz );
+
+//             // Loop on phases
+//             for ( p=0; p<model->Nb_phases; p++) {
+                                
+//                 cond =  fabs(mesh->phase_perc_n[p][c0])>1.0e-13;
+
+//                 if ( cond == 1 ) {                    
+//                     eta =  ViscosityConcise( p, mesh->mu_n[c0], mesh->T[c0], mesh->p_in[c0], mesh->d0_n[c0], mesh->phi0_n[c0], mesh->X0_n[c0], Exx, Ezz, Exz, Gxx, Gzz, Gxz, mesh->sxxd0[c0], mesh->szzd0[c0], mesh->sxz0_n[c0], materials    , model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &dnew, mesh->strain_n[c0], mesh->dil_n[c0], mesh->fric_n[c0], mesh->C_n[c0], mesh->p0_n[c0], &Xreac, &OverS, &Pcorr, &rho, mesh->bet_n[c0], mesh->div_u[c0], &div_el, &div_pl, &div_r, 1 );
+//                 }
+
+//                 // ARITHMETIC AVERAGE
+//                 if (average == 0) {
+//                     if ( cond == 1 ) mesh->eta_n[c0]       += mesh->phase_perc_n[p][c0] * etaVE;
+//                     if ( cond == 1 ) mesh->eta_phys_n[c0]  += mesh->phase_perc_n[p][c0] * eta;
+//                 }
+//                 if (average == 0 || average == 2 ) {
+//                     if ( cond == 1 ) mesh->sxxd[c0]   += mesh->phase_perc_n[p][c0] * txx1;
+//                     if ( cond == 1 ) mesh->szzd[c0]   += mesh->phase_perc_n[p][c0] * tzz1;
+//                     if ( cond == 1 ) mesh->sxz_n[c0]  += mesh->phase_perc_n[p][c0] * txz1;
+//                 }
+//                 if ( cond == 1 ) mesh->VE_n[c0]       += mesh->phase_perc_n[p][c0] * VEcoeff;
+//                 if ( cond == 1 ) mesh->eII_el[c0]     += mesh->phase_perc_n[p][c0] * eII_el;
+//                 if ( cond == 1 ) mesh->eII_pl[c0]     += mesh->phase_perc_n[p][c0] * eII_pl;
+//                 if ( cond == 1 ) mesh->eII_pwl[c0]    += mesh->phase_perc_n[p][c0] * eII_pwl;
+//                 if ( cond == 1 ) mesh->eII_exp[c0]    += mesh->phase_perc_n[p][c0] * eII_exp;
+//                 if ( cond == 1 ) mesh->eII_lin[c0]    += mesh->phase_perc_n[p][c0] * eII_lin;
+//                 if ( cond == 1 ) mesh->eII_gbs[c0]    += mesh->phase_perc_n[p][c0] * eII_gbs;
+//                 if ( cond == 1 ) mesh->eII_cst[c0]    += mesh->phase_perc_n[p][c0] * eII_cst;
+//                 if ( cond == 1 ) mesh->d_n[c0]        += mesh->phase_perc_n[p][c0] * 1.0/dnew;
+
+//                 if ( cond == 1 ) mesh->exx_el[c0]     += mesh->phase_perc_n[p][c0] * exx_el;
+//                 if ( cond == 1 ) mesh->exx_diss[c0]   += mesh->phase_perc_n[p][c0] * exx_diss;
+//                 if ( cond == 1 ) mesh->ezz_el[c0]     += mesh->phase_perc_n[p][c0] * ezz_el;
+//                 if ( cond == 1 ) mesh->ezz_diss[c0]   += mesh->phase_perc_n[p][c0] * ezz_diss;
+//                 if ( cond == 1 ) mesh->Wtot[c0]       += mesh->phase_perc_n[p][c0] * ( txx1*mesh->exxd[c0] + tzz1*mesh->ezzd[c0] + (txx1+tzz1)*(mesh->exxd[c0]+mesh->ezzd[c0]) + 2.0*txz1*mesh->exz_n[c0] );
+//                 if ( cond == 1 ) mesh->Wdiss[c0]      += mesh->phase_perc_n[p][c0] * ( txx1*exx_diss + tzz1*ezz_diss + (txx1+tzz1)*(exx_diss+ezz_diss) + 2.0*txz1*exz_diss );
+//                 if ( cond == 1 ) mesh->Wel[c0]        += mesh->phase_perc_n[p][c0] * ( txx1*exx_el + tzz1*ezz_el + (txx1+tzz1)*(exx_el+ezz_el) + 2.0*txz1*exz_el );
+                
+//                 if (cond == 1 && mesh->Wdiss[c0]<0.0) {printf("negative dissipation: you crazy! --> Wdiss = %2.2e\n", mesh->Wdiss[c0]*scaling->S*scaling->E); }
+
+//                 if ( cond == 1 ) mesh->p_corr[c0]      += mesh->phase_perc_n[p][c0] * Pcorr;
+//                 if ( cond == 1 ) mesh->div_u_el[c0]    += mesh->phase_perc_n[p][c0] * div_el;
+//                 if ( cond == 1 ) mesh->div_u_pl[c0]    += mesh->phase_perc_n[p][c0] * div_pl;
+//                 if ( cond == 1 ) mesh->div_u_r[c0]     += mesh->phase_perc_n[p][c0] * div_r;
+
+//                 if ( cond == 1 && UnsplitDiffReac == 0) mesh->X_n[c0]         += mesh->phase_perc_n[p][c0] * Xreac;
+//                 if ( cond == 1 ) mesh->OverS_n[c0]     += mesh->phase_perc_n[p][c0] * OverS;
+
+//                 // HARMONIC AVERAGE
+//                 if (average == 1) {
+//                     if ( cond == 1 ) mesh->sxxd[c0]       += mesh->phase_perc_n[p][c0] * 1.0/txx1;
+//                     if ( cond == 1 ) mesh->szzd[c0]       += mesh->phase_perc_n[p][c0] * 1.0/tzz1;
+//                     if ( cond == 1 ) mesh->sxz_n[c0]      += mesh->phase_perc_n[p][c0] * 1.0/txz1;
+//                     if ( cond == 1 ) mesh->eta_n[c0]      += mesh->phase_perc_n[p][c0] * 1.0/etaVE;
+//                     if ( cond == 1 ) mesh->eta_phys_n[c0] += mesh->phase_perc_n[p][c0] * 1.0/eta;
+//                 }
+
+//                 // GEOMETRIC AVERAGE
+//                 if (average == 2) {
+//                     if ( cond == 1 ) mesh->eta_n[c0]      += mesh->phase_perc_n[p][c0] * log(etaVE);
+//                     if ( cond == 1 ) mesh->eta_phys_n[c0] += mesh->phase_perc_n[p][c0] * log(eta);
+//                 }
+                
+//                 // Volume changes
+//                 if ( model->VolChangeReac == 1 ) {
+//                     if ( cond == 1 ) mesh->rho_n[c0]       += mesh->phase_perc_n[p][c0] * (rho);
+//                     // if ( cond == 1 ) mesh->rho_n[c0]       += mesh->phase_perc_n[p][c0] * 1.0/(rho);
+//                     // if ( cond == 1 ) mesh->rho_n[c0]       += mesh->phase_perc_n[p][c0] * log(rho);
+//                 }
+                
+//             }
+
+//             mesh->d_n[c0]          = 1.0/mesh->d_n[c0];
+
+//             if ( model->VolChangeReac == 1 ) {
+//                 // mesh->rho_n[c0]      = 1.0/(mesh->rho_n[c0]); 
+//                 // mesh->rho_n[c0]      = exp(mesh->rho_n[c0]); 
+//             }
+
+//             // HARMONIC AVERAGE
+//             if (average == 1) {
+//                 mesh->sxxd[c0]       = 1.0/mesh->sxxd[c0];
+//                 mesh->szzd[c0]       = 1.0/mesh->szzd[c0];
+//                 mesh->sxz_n[c0]      = 1.0/mesh->sxz_n[c0];
+//                 mesh->eta_n[c0]      = 1.0/mesh->eta_n[c0];
+//                 mesh->eta_phys_n[c0] = 1.0/mesh->eta_phys_n[c0];
+
+//                 if (isinf (mesh->eta_phys_n[c0]) ) {
+//                     printf("Inf: Problem on cell centers:\n");
+//                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_n[p][c0]);
+//                     printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e\n", eta, mesh->mu_n[c0], mesh->T[c0], mesh->p_in[c0], mesh->d0_n[c0], mesh->phi_n[c0], mesh->exxd[c0], mesh->exz_n[c0], mesh->sxxd0[c0], mesh->sxz0_n[c0]);
+//                     printf("flag %d nb part cell = %d cell index = %d\n", mesh->BCp.type[c0],mesh->nb_part_cell[c0], c0);
+//                     printf("x=%2.2e z=%2.2e\n", mesh->xc_coord[k]*scaling->L/1000.0, mesh->zc_coord[l]*scaling->L/1000.0);
+//                     exit(1);
+//                 }
+//                 if (isnan (mesh->eta_phys_n[c0]) ) {
+//                     printf("NaN: Problem on cell centers:\n");
+//                     printf("ProgReac %d\n", model->ProgReac);
+//                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_n[p][c0]);
+//                     printf("%2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e %2.2e\n", eta, mesh->mu_n[c0], mesh->T[c0], mesh->p_in[c0], mesh->d0_n[c0], mesh->phi_n[c0], mesh->exxd[c0], mesh->exz_n[c0], mesh->sxxd0[c0], mesh->sxz0_n[c0]);
+//                     printf("flag %d nb part cell = %d cell index = %d\n", mesh->BCp.type[c0],mesh->nb_part_cell[c0], c0);
+//                     printf("x=%2.2e z=%2.2e\n", mesh->xc_coord[k]*scaling->L/1000.0, mesh->zc_coord[l]*scaling->L/1000.0);
+//                     exit(1);
+//                 }
+//             }
+//             // GEOMETRIC AVERAGE
+//             if (average == 2) {
+//                 mesh->eta_n[c0]      = exp(mesh->eta_n[c0]);
+//                 mesh->eta_phys_n[c0] = exp(mesh->eta_phys_n[c0]);
+//             }
+
+// //            // ACHTUNG!!!! THIS IS HARD-CODED
+//             // Anisotropy
+// //            if (model->aniso==1) {
+// //                double dumxx = mesh->sxxd[c0];
+// //                double dumzz = mesh->szzd[c0];
+// //
+// ////                printf("%2.6e ", mesh->sxxd[c0]);
+// ////                printf("%2.6e ", mesh->szzd[c0]);
+// //                mesh->sxxd[c0] =  mesh->D11_n[c0]*mesh->exxd[c0] + mesh->D12_n[c0]*mesh->ezzd[c0] +  2.0*mesh->D13_n[c0]*mesh->exz_n[c0];
+// //                mesh->szzd[c0] =  mesh->D21_n[c0]*mesh->exxd[c0] + mesh->D22_n[c0]*mesh->ezzd[c0] +  2.0*mesh->D23_n[c0]*mesh->exz_n[c0];
+// ////                printf("%2.6e %2.2e\n", mesh->szzd[c0], mesh->szzd[c0]-dumzz);
+// //
+// //            }
+
+//         }
+//     }
+//    // printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+//    // printf("Cell centrer rheology updated\n");
+//    // printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+
+//     // Calculate vertices viscosity
+
+// #pragma omp parallel for shared( mesh ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, dnew, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, Xreac, OverS, Pcorr, rho, div_el, div_pl, div_r, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, el, etae, ani, d0, d1, nx, nz, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate( UnsplitDiffReac, materials, scaling, average, model, Nx, Nz )
+//     for ( k1=0; k1<Nx*Nz; k1++ ) {
+
+//         k  = mesh->kn[k1];
+//         l  = mesh->ln[k1];
+//         c1 = k + l*Nx;
+
+//         mesh->VE_s[c1]       = 0.0;
+//         mesh->sxz[c1]        = 0.0;
+//         mesh->eta_phys_s[c1] = 0.0;
+//         mesh->eta_s[c1]      = 0.0;
+//         mesh->exz_el[c1]     = 0.0;
+//         mesh->exz_diss[c1]   = 0.0;
+
+//         if (UnsplitDiffReac == 0) mesh->X_s[c1]        = 0.0;
+//         //        X                    = mesh->Xreac_s[c1];
+//         mesh->OverS_s[c1]    = 0.0;
+
+//         if ( mesh->BCg.type[c1] != 30 ) {
+            
+//             if ( model->iselastic==1   ) etae      = model->dt*mesh->mu_s[c1];
+//             else           etae      = 1.0; // set to arbitrary value to avoid division by 0.0
+//             //----------------------------------------------------------//
+//             if ( model->aniso == 0 ) {
+//                 ani = 0.0; d0   = 0.0; d1   = 0.0;
+//             }
+//             else {
+//                 // Director
+//                 nx = mesh->nx0_s[c1];
+//                 nz = mesh->nz0_s[c1];
+//                 // See Anisotropy_v2.ipynb
+//                 if ( model->aniso_fstrain  == 0 ) ani = 1.0 - 1.0 / mesh->aniso_factor_s[c1];
+//                 if ( model->aniso_fstrain  == 1 ) ani = 1.0 - 1.0 / mesh->FS_AR_s[c1];
+//                 d0   =  2.0*pow(nx, 2.0)*pow(nz, 2.0);
+//                 d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
+//             }
+//             //----------------------------------------------------------//
+// //            Exx = mesh->exxd_s[c1] + mesh->sxxd0_s[c1]/etae/2.0;
+// //            Ezz = mesh->ezzd_s[c1] + mesh->szzd0_s[c1]/etae/2.0;
+// //            Exz = mesh->exz[c1]    + mesh->sxz0[c1]   /etae/2.0;
+// //            gxz = 2.0*Exz;
+            
+//             Da11  = 2.0 - 2.0*ani*d0;
+//             Da12  = 2.0*ani*d0;
+//             Da13  = 2.0*ani*d1;
+//             Da22  = 2.0 - 2.0*ani*d0;
+//             Da23  =-2.0*ani*d1;
+//             Da33  = 1.0  + 2.0*ani*(d0 - 0.5);
+//             a11   = Da33 * Da22 - pow(Da23,2);
+//             a12   = Da13 * Da23 - Da33 * Da12;
+//             a13   = Da12 * Da23 - Da13 * Da22;
+//             a22   = Da33 * Da11 - pow(Da13,2);
+//             a23   = Da12 * Da13 - Da11 * Da23;
+//             a33   = Da11 * Da22 - pow(Da12,2);
+//             det   = (Da11 * a11) + (Da12 * a12) + (Da13 * a13);
+//             iDa11 = a11/det; iDa12 = a12/det; iDa13 = a13/det;
+//             iDa22 = a22/det; iDa23 = a23/det;
+//             iDa33 = a33/det;
+//             Exx = mesh->exxd_s[c1]  + (iDa11*mesh->sxxd0_s[c1] + iDa12*mesh->szzd0_s[c1] + iDa13*mesh->sxz0[c1])/etae;
+//             Ezz = mesh->ezzd_s[c1]  + (iDa12*mesh->sxxd0_s[c1] + iDa22*mesh->szzd0_s[c1] + iDa23*mesh->sxz0[c1])/etae;
+//             Exz = mesh->exz[c1]     + (iDa13*mesh->sxxd0_s[c1] + iDa23*mesh->szzd0_s[c1] + iDa33*mesh->sxz0[c1])/2.0/etae;
+//             gxz = 2.0*mesh->exz[c1] + (iDa13*mesh->sxxd0_s[c1] + iDa23*mesh->szzd0_s[c1] + iDa33*mesh->sxz0[c1])/etae;
+            
+            
+// //            mesh->D31_s[c1]*mesh->exxd_s[c1] + mesh->D32_s[c1]*mesh->ezzd_s[c1] + 2.0*mesh->D33_s[c1]*mesh->exz[c1];
+//             Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
+//             Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
+//             Gxz = Exx*ani*d1 - Ezz*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // Gxz = Exz if isotropic
+            
+// //            Gxx = Exx;
+// //            Gzz = Ezz;
+// //            Gxz = Exz;
+            
+// //            double Eii   = sqrt(1.0/2.0*(Exx*Exx + Ezz*Ezz + pow((Exx+Ezz),2) ) + Exz*Exz);
+// //            double Gii   = sqrt(1.0/2.0*(Gxx*Gxx + Gzz*Gzz + pow((Gxx+Gzz),2) ) + Gxz*Gxz);
+// //            if (Gii/Eii<.999) printf("Eii=%2.2e Gii=%2.2e\n", Eii, Gii);
+        
+//             // Loop on phases
+//             for ( p=0; p<model->Nb_phases; p++) {
+
+//                 cond = fabs(mesh->phase_perc_s[p][c1])>1.0e-13;
+
+//                 if ( cond == 1 ) {
+
+//                 eta =  ViscosityConcise( p, mesh->mu_s[c1], mesh->T_s[c1], mesh->P_s[c1], mesh->d0_s[c1], mesh->phi0_s[c1], mesh->X0_s[c1], Exx, Ezz, Exz, Gxx, Gzz, Gxz, mesh->sxxd0_s[c1], mesh->szzd0_s[c1], mesh->sxz0[c1], materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &dnew, mesh->strain_s[c1], mesh->dil_s[c1], mesh->fric_s[c1], mesh->C_s[c1], mesh->p0_s[c1], &Xreac, &OverS, &Pcorr, &rho, mesh->bet_s[c1], mesh->div_u_s[c1], &div_el, &div_pl, &div_r, 1 );
+                    
+//                 }
+
+//                 if (average ==0) {
+//                     if ( cond == 1 ) mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] * etaVE;
+//                     if ( cond == 1 ) mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] * eta;
+//                 }
+
+//                 if (average ==0 || average==2) {
+//                     if ( cond == 1 ) mesh->sxz[c1]    += mesh->phase_perc_s[p][c1] * txz1;
+// //                    printf("p=%d txz1=%2.6e exz=%2.6e Gxz=%2.6e\n", p, txz1, Exz, Gxz);
+//                 }
+//                 if ( cond == 1 ) mesh->VE_s[c1]       += mesh->phase_perc_s[p][c1] * VEcoeff;
+//                 if ( cond == 1 ) mesh->exz_el[c1]     += mesh->phase_perc_s[p][c1] * exz_el;
+//                 if ( cond == 1 ) mesh->exz_diss[c1]   += mesh->phase_perc_s[p][c1] * exz_diss;
+//                 if ( cond == 1 ) mesh->OverS_s[c1]    += mesh->phase_perc_s[p][c1] * OverS;
+//                 if ( cond == 1 && UnsplitDiffReac == 0) mesh->X_s[c1]        += mesh->phase_perc_s[p][c1] * Xreac;
+
+//                 if (average == 1) {
+//                     if ( cond == 1 ) mesh->sxz[c1]        += mesh->phase_perc_s[p][c1] * 1.0/txz1;
+//                     if ( cond == 1 ) mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] * 1.0/etaVE;
+//                     if ( cond == 1 ) mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] * 1.0/eta;
+//                 }
+//                 if (average == 2) {
+//                     if ( cond == 1 ) mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] * log(etaVE);
+//                     if ( cond == 1 ) mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] * log(eta);
+//                 }
+//             }
+//             // HARMONIC AVERAGE
+//             if (average == 1) {
+//                 mesh->sxz[c1]        = 1.0/mesh->sxz[c1];
+//                 mesh->eta_s[c1]      = 1.0/mesh->eta_s[c1];
+//                 mesh->eta_phys_s[c1] = 1.0/mesh->eta_phys_s[c1];
+//                 if (isinf (mesh->eta_phys_s[c1]) ) {
+//                     printf("Inf: Problem on cell vertices:\n");
+//                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_s[p][c1]);
+//                     printf("%2.2e %2.2e %2.2e %2.2e %2.2e \n", mesh->mu_s[c1], mesh->exxd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->sxz0[c1]);
+//                     printf("x=%2.2e z=%2.2e\n", mesh->xg_coord[k]*scaling->L/1000, mesh->zg_coord[l]*scaling->L/1000);
+//                     exit(1);
+//                 }
+//                 if (isnan (mesh->eta_phys_s[c1]) ) {
+//                     printf("Nan: Problem on cell vertices:\n");
+//                     for ( p=0; p<model->Nb_phases; p++) printf("phase %d vol=%2.2e\n", p, mesh->phase_perc_s[p][c1]);
+//                     printf("%2.2e %2.2e %2.2e %2.2e %2.2e \n", mesh->mu_s[c1],  mesh->exxd_s[c1], mesh->exz[c1], mesh->sxxd0_s[c1], mesh->sxz0[c1]);
+//                     printf("x=%2.2e z=%2.2e\n", mesh->xg_coord[k]*scaling->L/1000, mesh->zg_coord[l]*scaling->L/1000);
+//                     exit(1);
+//                 }
+//             }
+//             // GEOMETRIC AVERAGE
+//             if (average == 2) {
+//                 mesh->eta_s[c1]       = exp(mesh->eta_s[c1]);
+//                 mesh->eta_phys_s[c1]  = exp(mesh->eta_phys_s[c1]);
+//             }
+
+//             // ACHTUNG!!!! THIS IS HARD-CODED
+//             // Anisotropy
+// //            if (model->aniso==1) {
+// //                double dum = mesh->sxz[c1];
+// //                //                printf("Stress computed from anisotropy");
+// ////                               printf("%2.6e ", dum);
+// //                mesh->sxz[c1] =  mesh->D31_s[c1]*mesh->exxd_s[c1] + mesh->D32_s[c1]*mesh->ezzd_s[c1] + 2.0*mesh->D33_s[c1]*mesh->exz[c1];
+// ////                 printf("%2.6e %2.2e\n", mesh->sxz[c1], mesh->sxz[c1]-dum);
+// //
+// //            }
+
+
+//         }
+//     }
+// }
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
 void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, Nparams Nmodel, scale *scaling ) {
 
     int p, k, l, Nx, Nz, Ncx, Ncz, c0, c1, k1, cond;
@@ -599,14 +1025,15 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
     double Xreac;
     double OverS;
     double Pcorr, rho;
-    double Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, el, etae, ani, d0, d1, nx, nz;
+    double Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, etae, ani, d0, d1, nx, nz;
     double Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det;
+    double el = 0.0;
+    if (model->iselastic==1) el = 1.0;
 
-    Nx = mesh->Nx;
-    Nz = mesh->Nz;
-    Ncx = Nx-1;
-    Ncz = Nz-1;
-
+    Nx  = mesh->Nx;  Ncx = Nx-1;
+    Nz  = mesh->Nz;  Ncz = Nz-1;
+   
+    // Stuff to be interpolated to vertices
     InterpCentroidsToVerticesDouble( mesh->div_u,   mesh->div_u_s, mesh, model );
     InterpCentroidsToVerticesDouble( mesh->T,       mesh->T_s,     mesh, model );
     InterpCentroidsToVerticesDouble( mesh->p_in,    mesh->P_s,     mesh, model );
@@ -614,7 +1041,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
     InterpCentroidsToVerticesDouble( mesh->phi0_n,  mesh->phi0_s,  mesh, model ); // ACHTUNG NOT FRICTION ANGLE
 
     // Evaluate cell center viscosities
-#pragma omp parallel for shared( mesh  ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, dnew, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, Xreac, OverS, Pcorr, rho, div_el, div_pl, div_r, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, el, etae, ani, d0, d1, nx, nz, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate( UnsplitDiffReac, materials, scaling, average, model, Ncx, Ncz )
+// #pragma omp parallel for shared( mesh ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, dnew, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, Xreac, OverS, Pcorr, rho, div_el, div_pl, div_r, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, etae, ani, d0, d1, nx, nz, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate( el, UnsplitDiffReac, materials, scaling, average, model, Ncx, Ncz )
     for ( k1=0; k1<Ncx*Ncz; k1++ ) {
 
         //    for ( l=0; l<Ncz; l++ ) {
@@ -681,40 +1108,44 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 d1   = nx*nz*(-pow(nx, 2.0) + pow(nz, 2.0));
             }
             //----------------------------------------------------------//
-            Exx = mesh->exxd[c0]  + mesh->sxxd0[c0] /etae/2.0;
-            Ezz = mesh->ezzd[c0]  + mesh->szzd0[c0] /etae/2.0;
-            Exz = mesh->exz_n[c0] + mesh->sxz0_n[c0]/etae/2.0;
-            gxz = 2.0*Exz;
+            // Exx = mesh->exxd[c0]  + mesh->sxxd0[c0] /etae/2.0;
+            // Ezz = mesh->ezzd[c0]  + mesh->szzd0[c0] /etae/2.0;
+            // Exz = mesh->exz_n[c0] + mesh->sxz0_n[c0]/etae/2.0;
+            // gxz = 2.0*Exz;
             
 //            double Eii   = sqrt(1.0/2.0*(Exx*Exx + Ezz*Ezz + pow((Exx+Ezz),2) ) + Exz*Exz);
 //            double Gii   = sqrt(1.0/2.0*(Gxx*Gxx + Gzz*Gzz + pow((Gxx+Gzz),2) ) + Gxz*Gxz);
 //            printf("Eii=%2.2e Gii=%2.2e\n", Eii, Gii);
 //            exit(1);
             
+            //
             Da11  = 2.0 - 2.0*ani*d0;
             Da12  = 2.0*ani*d0;
             Da13  = 2.0*ani*d1;
             Da22  = 2.0 - 2.0*ani*d0;
             Da23  =-2.0*ani*d1;
             Da33  = 1.0  + 2.0*ani*(d0 - 0.5);
+            //
             a11   = Da33 * Da22 - pow(Da23,2);
             a12   = Da13 * Da23 - Da33 * Da12;
             a13   = Da12 * Da23 - Da13 * Da22;
             a22   = Da33 * Da11 - pow(Da13,2);
             a23   = Da12 * Da13 - Da11 * Da23;
             a33   = Da11 * Da22 - pow(Da12,2);
+            //
             det   = (Da11 * a11) + (Da12 * a12) + (Da13 * a13);
             iDa11 = a11/det; iDa12 = a12/det; iDa13 = a13/det;
             iDa22 = a22/det; iDa23 = a23/det;
             iDa33 = a33/det;
-            Exx = mesh->exxd[c0]      + (iDa11*mesh->sxxd0[c0] + iDa12*mesh->szzd0[c0] + iDa13*mesh->sxz0_n[c0])/etae;
-            Ezz = mesh->ezzd[c0]      + (iDa12*mesh->sxxd0[c0] + iDa22*mesh->szzd0[c0] + iDa23*mesh->sxz0_n[c0])/etae;
-            Exz = mesh->exz_n[c0]     + (iDa13*mesh->sxxd0[c0] + iDa23*mesh->szzd0[c0] + iDa33*mesh->sxz0_n[c0])/2.0/etae;
-            gxz = 2.0*mesh->exz_n[c0] + (iDa13*mesh->sxxd0[c0] + iDa23*mesh->szzd0[c0] + iDa33*mesh->sxz0_n[c0])/etae;
-                        
-            Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
-            Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
-            Gxz = Exx*ani*d1 - Ezz*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // Gxz = Exz if isotropic
+            //
+            Exx   = mesh->exxd[c0]      + el*(iDa11*mesh->sxxd0[c0] + iDa12*mesh->szzd0[c0] + iDa13*mesh->sxz0_n[c0])/etae;
+            Ezz   = mesh->ezzd[c0]      + el*(iDa12*mesh->sxxd0[c0] + iDa22*mesh->szzd0[c0] + iDa23*mesh->sxz0_n[c0])/etae;
+            Exz   = mesh->exz_n[c0]     + el*(iDa13*mesh->sxxd0[c0] + iDa23*mesh->szzd0[c0] + iDa33*mesh->sxz0_n[c0])/2.0/etae;
+            gxz   = 2.0*mesh->exz_n[c0] + el*(iDa13*mesh->sxxd0[c0] + iDa23*mesh->szzd0[c0] + iDa33*mesh->sxz0_n[c0])/etae;
+            //          
+            Gxx   = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
+            Gzz   = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
+            Gxz   = Exx*ani*d1 - Ezz*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // Gxz = Exz if isotropic
 
 //            Gxx = Exx;
 //            Gzz = Ezz;
@@ -734,66 +1165,64 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
 
                 if ( cond == 1 ) {                    
                     eta =  ViscosityConcise( p, mesh->mu_n[c0], mesh->T[c0], mesh->p_in[c0], mesh->d0_n[c0], mesh->phi0_n[c0], mesh->X0_n[c0], Exx, Ezz, Exz, Gxx, Gzz, Gxz, mesh->sxxd0[c0], mesh->szzd0[c0], mesh->sxz0_n[c0], materials    , model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &dnew, mesh->strain_n[c0], mesh->dil_n[c0], mesh->fric_n[c0], mesh->C_n[c0], mesh->p0_n[c0], &Xreac, &OverS, &Pcorr, &rho, mesh->bet_n[c0], mesh->div_u[c0], &div_el, &div_pl, &div_r, 1 );
-                }
-
-                // ARITHMETIC AVERAGE
-                if (average == 0) {
-                    if ( cond == 1 ) mesh->eta_n[c0]       += mesh->phase_perc_n[p][c0] * etaVE;
-                    if ( cond == 1 ) mesh->eta_phys_n[c0]  += mesh->phase_perc_n[p][c0] * eta;
-                }
-                if (average == 0 || average == 2 ) {
-                    if ( cond == 1 ) mesh->sxxd[c0]   += mesh->phase_perc_n[p][c0] * txx1;
-                    if ( cond == 1 ) mesh->szzd[c0]   += mesh->phase_perc_n[p][c0] * tzz1;
-                    if ( cond == 1 ) mesh->sxz_n[c0]  += mesh->phase_perc_n[p][c0] * txz1;
-                }
-                if ( cond == 1 ) mesh->VE_n[c0]       += mesh->phase_perc_n[p][c0] * VEcoeff;
-                if ( cond == 1 ) mesh->eII_el[c0]     += mesh->phase_perc_n[p][c0] * eII_el;
-                if ( cond == 1 ) mesh->eII_pl[c0]     += mesh->phase_perc_n[p][c0] * eII_pl;
-                if ( cond == 1 ) mesh->eII_pwl[c0]    += mesh->phase_perc_n[p][c0] * eII_pwl;
-                if ( cond == 1 ) mesh->eII_exp[c0]    += mesh->phase_perc_n[p][c0] * eII_exp;
-                if ( cond == 1 ) mesh->eII_lin[c0]    += mesh->phase_perc_n[p][c0] * eII_lin;
-                if ( cond == 1 ) mesh->eII_gbs[c0]    += mesh->phase_perc_n[p][c0] * eII_gbs;
-                if ( cond == 1 ) mesh->eII_cst[c0]    += mesh->phase_perc_n[p][c0] * eII_cst;
-                if ( cond == 1 ) mesh->d_n[c0]        += mesh->phase_perc_n[p][c0] * 1.0/dnew;
-
-                if ( cond == 1 ) mesh->exx_el[c0]     += mesh->phase_perc_n[p][c0] * exx_el;
-                if ( cond == 1 ) mesh->exx_diss[c0]   += mesh->phase_perc_n[p][c0] * exx_diss;
-                if ( cond == 1 ) mesh->ezz_el[c0]     += mesh->phase_perc_n[p][c0] * ezz_el;
-                if ( cond == 1 ) mesh->ezz_diss[c0]   += mesh->phase_perc_n[p][c0] * ezz_diss;
-                if ( cond == 1 ) mesh->Wtot[c0]       += mesh->phase_perc_n[p][c0] * ( txx1*mesh->exxd[c0] + tzz1*mesh->ezzd[c0] + (txx1+tzz1)*(mesh->exxd[c0]+mesh->ezzd[c0]) + 2.0*txz1*mesh->exz_n[c0] );
-                if ( cond == 1 ) mesh->Wdiss[c0]      += mesh->phase_perc_n[p][c0] * ( txx1*exx_diss + tzz1*ezz_diss + (txx1+tzz1)*(exx_diss+ezz_diss) + 2.0*txz1*exz_diss );
-                if ( cond == 1 ) mesh->Wel[c0]        += mesh->phase_perc_n[p][c0] * ( txx1*exx_el + tzz1*ezz_el + (txx1+tzz1)*(exx_el+ezz_el) + 2.0*txz1*exz_el );
                 
-                if (cond == 1 && mesh->Wdiss[c0]<0.0) {printf("negative dissipation: you crazy! --> Wdiss = %2.2e\n", mesh->Wdiss[c0]*scaling->S*scaling->E); }
+                    // printf("%2.2e %2.2e %2.2e\n", eta, etaVE, 1.0/(1.0/(materials->mu[p]*model->dt) + 1.0/materials->eta0[p]) );
 
-                if ( cond == 1 ) mesh->p_corr[c0]      += mesh->phase_perc_n[p][c0] * Pcorr;
-                if ( cond == 1 ) mesh->div_u_el[c0]    += mesh->phase_perc_n[p][c0] * div_el;
-                if ( cond == 1 ) mesh->div_u_pl[c0]    += mesh->phase_perc_n[p][c0] * div_pl;
-                if ( cond == 1 ) mesh->div_u_r[c0]     += mesh->phase_perc_n[p][c0] * div_r;
+                    switch ( average ) {  
+                    case 0 :
+                        // ARITHMETIC AVERAGE
+                        mesh->eta_n[c0]       += mesh->phase_perc_n[p][c0] * etaVE;
+                        mesh->eta_phys_n[c0]  += mesh->phase_perc_n[p][c0] * eta;
+                        break;
+                    case 1 :
+                        // HARMONIC AVERAGE
+                        mesh->eta_n[c0]      += mesh->phase_perc_n[p][c0] * 1.0/etaVE;
+                        mesh->eta_phys_n[c0] += mesh->phase_perc_n[p][c0] * 1.0/eta;
+                        break;
+                    case 2 :
+                        // GEOMETRIC AVERAGE
+                        mesh->eta_n[c0]      += mesh->phase_perc_n[p][c0] * log(etaVE);
+                        mesh->eta_phys_n[c0] += mesh->phase_perc_n[p][c0] * log(eta);
+                        break;
+                    }
 
-                if ( cond == 1 && UnsplitDiffReac == 0) mesh->X_n[c0]         += mesh->phase_perc_n[p][c0] * Xreac;
-                if ( cond == 1 ) mesh->OverS_n[c0]     += mesh->phase_perc_n[p][c0] * OverS;
+                    // printf("%2.4e %2.4e\n", txx1,  2.0*etaVE*Gxx);
 
-                // HARMONIC AVERAGE
-                if (average == 1) {
-                    if ( cond == 1 ) mesh->sxxd[c0]       += mesh->phase_perc_n[p][c0] * 1.0/txx1;
-                    if ( cond == 1 ) mesh->szzd[c0]       += mesh->phase_perc_n[p][c0] * 1.0/tzz1;
-                    if ( cond == 1 ) mesh->sxz_n[c0]      += mesh->phase_perc_n[p][c0] * 1.0/txz1;
-                    if ( cond == 1 ) mesh->eta_n[c0]      += mesh->phase_perc_n[p][c0] * 1.0/etaVE;
-                    if ( cond == 1 ) mesh->eta_phys_n[c0] += mesh->phase_perc_n[p][c0] * 1.0/eta;
-                }
+                    mesh->VE_n[c0]       += mesh->phase_perc_n[p][c0] * VEcoeff;
+                    mesh->eII_el[c0]     += mesh->phase_perc_n[p][c0] * eII_el;
+                    mesh->eII_pl[c0]     += mesh->phase_perc_n[p][c0] * eII_pl;
+                    mesh->eII_pwl[c0]    += mesh->phase_perc_n[p][c0] * eII_pwl;
+                    mesh->eII_exp[c0]    += mesh->phase_perc_n[p][c0] * eII_exp;
+                    mesh->eII_lin[c0]    += mesh->phase_perc_n[p][c0] * eII_lin;
+                    mesh->eII_gbs[c0]    += mesh->phase_perc_n[p][c0] * eII_gbs;
+                    mesh->eII_cst[c0]    += mesh->phase_perc_n[p][c0] * eII_cst;
+                    mesh->d_n[c0]        += mesh->phase_perc_n[p][c0] * 1.0/dnew;
 
-                // GEOMETRIC AVERAGE
-                if (average == 2) {
-                    if ( cond == 1 ) mesh->eta_n[c0]      += mesh->phase_perc_n[p][c0] * log(etaVE);
-                    if ( cond == 1 ) mesh->eta_phys_n[c0] += mesh->phase_perc_n[p][c0] * log(eta);
-                }
-                
-                // Volume changes
-                if ( model->VolChangeReac == 1 ) {
-                    if ( cond == 1 ) mesh->rho_n[c0]       += mesh->phase_perc_n[p][c0] * (rho);
-                    // if ( cond == 1 ) mesh->rho_n[c0]       += mesh->phase_perc_n[p][c0] * 1.0/(rho);
-                    // if ( cond == 1 ) mesh->rho_n[c0]       += mesh->phase_perc_n[p][c0] * log(rho);
+                    mesh->exx_el[c0]     += mesh->phase_perc_n[p][c0] * exx_el;
+                    mesh->exx_diss[c0]   += mesh->phase_perc_n[p][c0] * exx_diss;
+                    mesh->ezz_el[c0]     += mesh->phase_perc_n[p][c0] * ezz_el;
+                    mesh->ezz_diss[c0]   += mesh->phase_perc_n[p][c0] * ezz_diss;
+                    mesh->Wtot[c0]       += mesh->phase_perc_n[p][c0] * ( txx1*mesh->exxd[c0] + tzz1*mesh->ezzd[c0] + (txx1+tzz1)*(mesh->exxd[c0]+mesh->ezzd[c0]) + 2.0*txz1*mesh->exz_n[c0] );
+                    mesh->Wdiss[c0]      += mesh->phase_perc_n[p][c0] * ( txx1*exx_diss + tzz1*ezz_diss + (txx1+tzz1)*(exx_diss+ezz_diss) + 2.0*txz1*exz_diss );
+                    mesh->Wel[c0]        += mesh->phase_perc_n[p][c0] * ( txx1*exx_el + tzz1*ezz_el + (txx1+tzz1)*(exx_el+ezz_el) + 2.0*txz1*exz_el );
+                    
+                    if (mesh->Wdiss[c0]<0.0) {printf("negative dissipation: you crazy! --> Wdiss = %2.2e\n", mesh->Wdiss[c0]*scaling->S*scaling->E); }
+
+                    mesh->p_corr[c0]      += mesh->phase_perc_n[p][c0] * Pcorr;
+                    mesh->div_u_el[c0]    += mesh->phase_perc_n[p][c0] * div_el;
+                    mesh->div_u_pl[c0]    += mesh->phase_perc_n[p][c0] * div_pl;
+                    mesh->div_u_r[c0]     += mesh->phase_perc_n[p][c0] * div_r;
+
+                    if ( UnsplitDiffReac == 0 ) mesh->X_n[c0]         += mesh->phase_perc_n[p][c0] * Xreac;
+                    mesh->OverS_n[c0]     += mesh->phase_perc_n[p][c0] * OverS;
+                    
+                    // Volume changes
+                    if ( model->VolChangeReac == 1 ) {
+                        mesh->rho_n[c0]       += mesh->phase_perc_n[p][c0] * (rho);
+                        // mesh->rho_n[c0]       += mesh->phase_perc_n[p][c0] * 1.0/(rho);
+                        // mesh->rho_n[c0]       += mesh->phase_perc_n[p][c0] * log(rho);
+                    }
+
                 }
                 
             }
@@ -806,10 +1235,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
             }
 
             // HARMONIC AVERAGE
-            if (average == 1) {
-                mesh->sxxd[c0]       = 1.0/mesh->sxxd[c0];
-                mesh->szzd[c0]       = 1.0/mesh->szzd[c0];
-                mesh->sxz_n[c0]      = 1.0/mesh->sxz_n[c0];
+            if ( average == 1 ) {
                 mesh->eta_n[c0]      = 1.0/mesh->eta_n[c0];
                 mesh->eta_phys_n[c0] = 1.0/mesh->eta_phys_n[c0];
 
@@ -832,10 +1258,17 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 }
             }
             // GEOMETRIC AVERAGE
-            if (average == 2) {
+            if ( average == 2 ) {
                 mesh->eta_n[c0]      = exp(mesh->eta_n[c0]);
                 mesh->eta_phys_n[c0] = exp(mesh->eta_phys_n[c0]);
             }
+
+            // Final stress update
+            mesh->sxxd[c0] = 2.0*mesh->eta_n[c0]*Gxx;
+            mesh->szzd[c0] = 2.0*mesh->eta_n[c0]*Gzz;    
+
+            // mesh->sxxd[c0] = 2.0*mesh->eta_n[c0]*(mesh->exxd[c0]  + mesh->sxxd0[c0] /etae /2.0);
+            // mesh->szzd[c0] = 2.0*mesh->eta_n[c0]*(mesh->ezzd[c0]  + mesh->szzd0[c0] /etae /2.0);            
 
 //            // ACHTUNG!!!! THIS IS HARD-CODED
             // Anisotropy
@@ -859,7 +1292,7 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
 
     // Calculate vertices viscosity
 
-#pragma omp parallel for shared( mesh ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, dnew, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, Xreac, OverS, Pcorr, rho, div_el, div_pl, div_r, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, el, etae, ani, d0, d1, nx, nz, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate( UnsplitDiffReac, materials, scaling, average, model, Nx, Nz )
+// #pragma omp parallel for shared( mesh ) private( cond, k, l, k1, p, eta, c1, c0, txx1, tzz1, txz1, etaVE, VEcoeff, eII_el, eII_pl, eII_pwl, eII_exp, eII_lin, eII_gbs, eII_cst, dnew, exx_el, ezz_el, exz_el, exx_diss, ezz_diss, exz_diss, Xreac, OverS, Pcorr, rho, div_el, div_pl, div_r, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz, etae, ani, d0, d1, nx, nz, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate( el, UnsplitDiffReac, materials, scaling, average, model, Nx, Nz )
     for ( k1=0; k1<Nx*Nz; k1++ ) {
 
         k  = mesh->kn[k1];
@@ -901,12 +1334,14 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
 //            Exz = mesh->exz[c1]    + mesh->sxz0[c1]   /etae/2.0;
 //            gxz = 2.0*Exz;
             
+            //
             Da11  = 2.0 - 2.0*ani*d0;
             Da12  = 2.0*ani*d0;
             Da13  = 2.0*ani*d1;
             Da22  = 2.0 - 2.0*ani*d0;
             Da23  =-2.0*ani*d1;
             Da33  = 1.0  + 2.0*ani*(d0 - 0.5);
+            //
             a11   = Da33 * Da22 - pow(Da23,2);
             a12   = Da13 * Da23 - Da33 * Da12;
             a13   = Da12 * Da23 - Da13 * Da22;
@@ -914,16 +1349,16 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
             a23   = Da12 * Da13 - Da11 * Da23;
             a33   = Da11 * Da22 - pow(Da12,2);
             det   = (Da11 * a11) + (Da12 * a12) + (Da13 * a13);
+            //
             iDa11 = a11/det; iDa12 = a12/det; iDa13 = a13/det;
             iDa22 = a22/det; iDa23 = a23/det;
             iDa33 = a33/det;
-            Exx = mesh->exxd_s[c1]  + (iDa11*mesh->sxxd0_s[c1] + iDa12*mesh->szzd0_s[c1] + iDa13*mesh->sxz0[c1])/etae;
-            Ezz = mesh->ezzd_s[c1]  + (iDa12*mesh->sxxd0_s[c1] + iDa22*mesh->szzd0_s[c1] + iDa23*mesh->sxz0[c1])/etae;
-            Exz = mesh->exz[c1]     + (iDa13*mesh->sxxd0_s[c1] + iDa23*mesh->szzd0_s[c1] + iDa33*mesh->sxz0[c1])/2.0/etae;
-            gxz = 2.0*mesh->exz[c1] + (iDa13*mesh->sxxd0_s[c1] + iDa23*mesh->szzd0_s[c1] + iDa33*mesh->sxz0[c1])/etae;
-            
-            
-//            mesh->D31_s[c1]*mesh->exxd_s[c1] + mesh->D32_s[c1]*mesh->ezzd_s[c1] + 2.0*mesh->D33_s[c1]*mesh->exz[c1];
+            //
+            Exx = mesh->exxd_s[c1]  + el*(iDa11*mesh->sxxd0_s[c1] + iDa12*mesh->szzd0_s[c1] + iDa13*mesh->sxz0[c1])/etae;
+            Ezz = mesh->ezzd_s[c1]  + el*(iDa12*mesh->sxxd0_s[c1] + iDa22*mesh->szzd0_s[c1] + iDa23*mesh->sxz0[c1])/etae;
+            Exz = mesh->exz[c1]     + el*(iDa13*mesh->sxxd0_s[c1] + iDa23*mesh->szzd0_s[c1] + iDa33*mesh->sxz0[c1])/2.0/etae;
+            gxz = 2.0*mesh->exz[c1] + el*(iDa13*mesh->sxxd0_s[c1] + iDa23*mesh->szzd0_s[c1] + iDa33*mesh->sxz0[c1])/etae;
+            //            
             Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
             Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
             Gxz = Exx*ani*d1 - Ezz*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);  // Gxz = Exz if isotropic
@@ -943,38 +1378,34 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
 
                 if ( cond == 1 ) {
 
-                eta =  ViscosityConcise( p, mesh->mu_s[c1], mesh->T_s[c1], mesh->P_s[c1], mesh->d0_s[c1], mesh->phi0_s[c1], mesh->X0_s[c1], Exx, Ezz, Exz, Gxx, Gzz, Gxz, mesh->sxxd0_s[c1], mesh->szzd0_s[c1], mesh->sxz0[c1], materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &dnew, mesh->strain_s[c1], mesh->dil_s[c1], mesh->fric_s[c1], mesh->C_s[c1], mesh->p0_s[c1], &Xreac, &OverS, &Pcorr, &rho, mesh->bet_s[c1], mesh->div_u_s[c1], &div_el, &div_pl, &div_r, 1 );
-                    
-                }
+                    eta =  ViscosityConcise( p, mesh->mu_s[c1], mesh->T_s[c1], mesh->P_s[c1], mesh->d0_s[c1], mesh->phi0_s[c1], mesh->X0_s[c1], Exx, Ezz, Exz, Gxx, Gzz, Gxz, mesh->sxxd0_s[c1], mesh->szzd0_s[c1], mesh->sxz0[c1], materials, model, scaling, &txx1, &tzz1, &txz1, &etaVE, &VEcoeff, &eII_el, &eII_pl, &eII_pwl, &eII_exp, &eII_lin, &eII_gbs, &eII_cst, &exx_el, &ezz_el, &exz_el, &exx_diss, &ezz_diss, &exz_diss, &dnew, mesh->strain_s[c1], mesh->dil_s[c1], mesh->fric_s[c1], mesh->C_s[c1], mesh->p0_s[c1], &Xreac, &OverS, &Pcorr, &rho, mesh->bet_s[c1], mesh->div_u_s[c1], &div_el, &div_pl, &div_r, 1 );
 
-                if (average ==0) {
-                    if ( cond == 1 ) mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] * etaVE;
-                    if ( cond == 1 ) mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] * eta;
-                }
+                    switch ( average ) {  
+                    case 0 : 
+                        mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] * etaVE;
+                        mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] * eta;
+                        break;
+                    case 1:
+                        mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] * 1.0/etaVE;
+                        mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] * 1.0/eta;
+                        break;
+                    case 2:
+                        mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] * log(etaVE);
+                        mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] * log(eta);
+                        break;
+                    }
+                    mesh->VE_s[c1]       += mesh->phase_perc_s[p][c1] * VEcoeff;
+                    mesh->exz_el[c1]     += mesh->phase_perc_s[p][c1] * exz_el;
+                    mesh->exz_diss[c1]   += mesh->phase_perc_s[p][c1] * exz_diss;
+                    mesh->OverS_s[c1]    += mesh->phase_perc_s[p][c1] * OverS;
+                    if (UnsplitDiffReac == 0) mesh->X_s[c1]        += mesh->phase_perc_s[p][c1] * Xreac;
 
-                if (average ==0 || average==2) {
-                    if ( cond == 1 ) mesh->sxz[c1]    += mesh->phase_perc_s[p][c1] * txz1;
-//                    printf("p=%d txz1=%2.6e exz=%2.6e Gxz=%2.6e\n", p, txz1, Exz, Gxz);
-                }
-                if ( cond == 1 ) mesh->VE_s[c1]       += mesh->phase_perc_s[p][c1] * VEcoeff;
-                if ( cond == 1 ) mesh->exz_el[c1]     += mesh->phase_perc_s[p][c1] * exz_el;
-                if ( cond == 1 ) mesh->exz_diss[c1]   += mesh->phase_perc_s[p][c1] * exz_diss;
-                if ( cond == 1 ) mesh->OverS_s[c1]    += mesh->phase_perc_s[p][c1] * OverS;
-                if ( cond == 1 && UnsplitDiffReac == 0) mesh->X_s[c1]        += mesh->phase_perc_s[p][c1] * Xreac;
 
-                if (average == 1) {
-                    if ( cond == 1 ) mesh->sxz[c1]        += mesh->phase_perc_s[p][c1] * 1.0/txz1;
-                    if ( cond == 1 ) mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] * 1.0/etaVE;
-                    if ( cond == 1 ) mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] * 1.0/eta;
-                }
-                if (average == 2) {
-                    if ( cond == 1 ) mesh->eta_s[c1]      += mesh->phase_perc_s[p][c1] * log(etaVE);
-                    if ( cond == 1 ) mesh->eta_phys_s[c1] += mesh->phase_perc_s[p][c1] * log(eta);
                 }
             }
             // HARMONIC AVERAGE
             if (average == 1) {
-                mesh->sxz[c1]        = 1.0/mesh->sxz[c1];
+                // mesh->sxz[c1]        = 1.0/mesh->sxz[c1];
                 mesh->eta_s[c1]      = 1.0/mesh->eta_s[c1];
                 mesh->eta_phys_s[c1] = 1.0/mesh->eta_phys_s[c1];
                 if (isinf (mesh->eta_phys_s[c1]) ) {
@@ -998,21 +1429,31 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
                 mesh->eta_phys_s[c1]  = exp(mesh->eta_phys_s[c1]);
             }
 
-            // ACHTUNG!!!! THIS IS HARD-CODED
-            // Anisotropy
+            // Final stress update
+            mesh->sxz[c1] = 2.0*mesh->eta_s[c1]*Gxz;
+            // mesh->sxz[c1] = 2.0*mesh->eta_s[c1]*(mesh->exz[c1]    + mesh->sxz0[c1]   /etae/2.0);
+
+            // if (l==0 || k==0 || l==Nz-1 || k==Nx-1) mesh->sxz[c1] = 0.0;
+
+//             // ACHTUNG!!!! THIS IS HARD-CODED
+//            // Anisotropy
 //            if (model->aniso==1) {
 //                double dum = mesh->sxz[c1];
 //                //                printf("Stress computed from anisotropy");
-////                               printf("%2.6e ", dum);
+// //                               printf("%2.6e ", dum);
 //                mesh->sxz[c1] =  mesh->D31_s[c1]*mesh->exxd_s[c1] + mesh->D32_s[c1]*mesh->ezzd_s[c1] + 2.0*mesh->D33_s[c1]*mesh->exz[c1];
-////                 printf("%2.6e %2.2e\n", mesh->sxz[c1], mesh->sxz[c1]-dum);
-//
+// //                 printf("%2.6e %2.2e\n", mesh->sxz[c1], mesh->sxz[c1]-dum);
+
 //            }
 
 
         }
     }
+    // printf("Txz:\n");
+    // Print2DArrayDouble( mesh->sxz,  mesh->Nx, mesh->Nz, scaling->S );
+
 }
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------ M-Doodz -----------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/

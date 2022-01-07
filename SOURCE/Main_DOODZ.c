@@ -230,10 +230,11 @@ int main( int nargs, char *args[] ) {
             // MinMaxArrayTag( mesh.rho_s,      scaling.rho, (mesh.Nx-0)*(mesh.Nz-0), "rho_s     ", mesh.BCg.type );
             // MinMaxArrayTag( mesh.rho_n,      scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n     ", mesh.BCp.type );
             // exit(1);
-            MinMaxArray( mesh.u_in,  scaling.V, (mesh.Nx)*(mesh.Nz+1),   "Vx. grid" );
-            MinMaxArray( mesh.v_in,  scaling.V, (mesh.Nx+1)*(mesh.Nz),   "Vz. grid" );
-            MinMaxArray( mesh.p_in,  scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "       P" );
-            
+            if ( model.noisy == 1 ) {
+                MinMaxArray( mesh.u_in,  scaling.V, (mesh.Nx)*(mesh.Nz+1),   "Vx. grid" );
+                MinMaxArray( mesh.v_in,  scaling.V, (mesh.Nx+1)*(mesh.Nz),   "Vz. grid" );
+                MinMaxArray( mesh.p_in,  scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "       P" );
+            }
             // Initial solution fields (Fine mesh)
 #ifdef _NEW_INPUT_
             SetBCs_new( &mesh, &model, scaling , &particles, &materials );
@@ -535,9 +536,7 @@ int main( int nargs, char *args[] ) {
             //     P2Mastah( &model, particles, materials.rho, &mesh, mesh.rho_n, mesh.BCp.type,  0, 0, interp, cent, model.itp_stencil);
             // }
             
-            MinMaxArrayTag( mesh.rho_s,      scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s     ", mesh.BCg.type );
-            MinMaxArrayTag( mesh.rho_n,      scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n     ", mesh.BCp.type );
-            MinMaxArrayTag( mesh.rho0_n,     scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho0_n    ", mesh.BCp.type );
+            
             
             // Free surface - subgrid density correction
             if ( model.free_surf == 1 ) {
@@ -664,6 +663,10 @@ int main( int nargs, char *args[] ) {
             MinMaxArrayTag( mesh.T0_n,     scaling.T,   (mesh.Nx-1)*(mesh.Nz-1), "T       ", mesh.BCt.type );
             MinMaxArrayTag( mesh.p_in,     scaling.S,   (mesh.Nx-1)*(mesh.Nz-1), "P       ", mesh.BCt.type );
             MinMaxArrayI  ( mesh.comp_cells, 1.0, (mesh.Nx-1)*(mesh.Nz-1), "comp_cells" );
+            MinMaxArrayTag( mesh.rho_s,      scaling.rho, (mesh.Nx)*(mesh.Nz),     "rho_s     ", mesh.BCg.type );
+            MinMaxArrayTag( mesh.rho_n,      scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho_n     ", mesh.BCp.type );
+            MinMaxArrayTag( mesh.rho0_n,     scaling.rho, (mesh.Nx-1)*(mesh.Nz-1), "rho0_n    ", mesh.BCp.type );
+           
             
             for (int p=0; p<model.Nb_phases; p++) {
                 printf("Phase number %d:\n", p);
@@ -780,6 +783,7 @@ int main( int nargs, char *args[] ) {
                 if ( model.Newton == 1 ) { printf("*** Newton it. %02d of %02d (step = %05d) ***\n", Nmodel.nit, Nmodel.nit_max, model.step); Newt_on[Nmodel.nit] = 1;}
                 printf("**********************************************\n");
                 
+                // Update non-linear rheology
                 UpdateNonLinearity( &mesh, &particles, &topo_chain, &topo, materials, &model, &Nmodel, scaling, 0, 0.0 );
                 RheologicalOperators( &mesh, &model, &scaling, 0 );                               // ??????????? déjà fait dans UpdateNonLinearity
                 NonNewtonianViscosityGrid (     &mesh, &materials, &model, Nmodel, &scaling );    // ??????????? déjà fait dans UpdateNonLinearity
@@ -815,8 +819,8 @@ int main( int nargs, char *args[] ) {
                 
                 // Build discrete system of equations - Jacobian
                 ViscosityDerivatives( &mesh, &materials, &model, Nmodel, &scaling );
-                if ( model.Newton          == 1 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
-                if ( model.Newton          == 1 ) BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_corr, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
+                if ( model.Newton == 1 && Nmodel.nit > 0 ) RheologicalOperators( &mesh, &model, &scaling, 1 );
+                if ( model.Newton == 1 )                   BuildJacobianOperatorDecoupled( &mesh, model, 0, mesh.p_corr, mesh.p_in, mesh.u_in, mesh.v_in,  &Jacob,  &JacobA,  &JacobB,  &JacobC,   &JacobD, 1 );
                     
                 
                 //                MinMaxArrayTag( mesh.detadexx_n,      scaling.eta, (mesh.Nx-1)*(mesh.Nz-1),     "detadexx_n     ", mesh.BCg.type );
@@ -995,7 +999,6 @@ int main( int nargs, char *args[] ) {
             MinMaxArray( mesh.v_in,  scaling.V, (mesh.Nx+1)*(mesh.Nz),   "Vz. grid" );
             MinMaxArray( mesh.p_in,  scaling.S, (mesh.Nx-1)*(mesh.Nz-1), "       P" );
             MinMaxArray( mesh.div_u, scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "  div(V)" );
-            MinMaxArray( mesh.Qrho,  scaling.E, (mesh.Nx-1)*(mesh.Nz-1), "  Qrho  " );
             
             printf("--------------------------------------------------------------\n");
             int i, nit;
@@ -1056,9 +1059,12 @@ int main( int nargs, char *args[] ) {
         
         // Grain size evolution
         UpdateParticleGrainSize( &mesh, scaling, model, &particles, &materials );
-        MinMaxArrayTag( mesh.d0_n   , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d0", mesh.BCp.type );
-        MinMaxArrayTag( mesh.d_n    , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d ", mesh.BCp.type );
-        MinMaxArrayPart( particles.d, scaling.L, particles.Nb_part, "d on markers", particles.phase ) ;
+        
+        if ( model.noisy == 1 ) {
+            MinMaxArrayTag( mesh.d0_n   , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d0", mesh.BCp.type );
+            MinMaxArrayTag( mesh.d_n    , scaling.L, (mesh.Nx-1)*(mesh.Nz-1), "d ", mesh.BCp.type );
+            MinMaxArrayPart( particles.d, scaling.L, particles.Nb_part, "d on markers", particles.phase ) ;
+        }
                 
         // Update phi on the particles
         UpdateParticlePhi( &mesh, scaling, model, &particles, &materials );
@@ -1121,11 +1127,11 @@ int main( int nargs, char *args[] ) {
             double dt_sub;
             EvaluateCourantCriterion( mesh.u_in, mesh.v_in, &model, scaling, &mesh, 0 );
             
-            if ( model.dt < dt_solve ) { // if dt advection is lower than dt used for thermo-mechanical solve then split dt
+            if ( model.dt < 0.95*dt_solve ) { // if dt advection is lower than dt used for thermo-mechanical solve then split dt
                 nsub   = ceil(dt_solve/model.dt);
                 dt_sub = dt_solve / nsub;
-                printf("dt advection = %2.2e --- dt_solve = %2.2e\n", model.dt*scaling.t, dt_solve*scaling.t );
-                printf("dt is %lf larger than dt_solve: need sub %d substeps of %2.2e s\n", dt_solve/model.dt, nsub , dt_sub*scaling.t );
+                printf("dt advection = %2.9e --- dt_solve = %2.9e\n", model.dt*scaling.t, dt_solve*scaling.t );
+                printf("dt is %lf larger than dt_solve: need %d substeps of %2.2e s\n", dt_solve/model.dt, nsub , dt_sub*scaling.t );
                 printf("So: nsub*dt_sub = %2.2e for dt_solve = %2.2e\n", nsub*dt_sub*scaling.t, dt_solve*scaling.t);
                 model.dt = dt_sub;
             }
