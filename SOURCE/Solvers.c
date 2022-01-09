@@ -2586,6 +2586,7 @@ void KillerSolver( SparseMat *matA,  SparseMat *matB,  SparseMat *matC,  SparseM
         //        SumArray(fp->x, 1.0, matC->neq, "fp");
 
         if (k==0) maxdiv0 = maxdiv;
+        // if (k==0) maxru0 = maxru;
 
         if ( noisy > 0 ) {
 

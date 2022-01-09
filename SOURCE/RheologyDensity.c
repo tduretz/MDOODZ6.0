@@ -1264,8 +1264,22 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
             }
 
             // Final stress update
-            mesh->sxxd[c0] = 2.0*mesh->eta_n[c0]*Gxx;
-            mesh->szzd[c0] = 2.0*mesh->eta_n[c0]*Gzz;    
+            // if ( model->residual_form == 0 ) {
+            //     Exx   = mesh->exxd[c0];//      + el*(iDa11*mesh->sxxd0[c0] + iDa12*mesh->szzd0[c0] + iDa13*mesh->sxz0_n[c0])/etae;
+            //     Ezz   = mesh->ezzd[c0];//      + el*(iDa12*mesh->sxxd0[c0] + iDa22*mesh->szzd0[c0] + iDa23*mesh->sxz0_n[c0])/etae;
+            //     Exz   = mesh->exz_n[c0];//     + el*(iDa13*mesh->sxxd0[c0] + iDa23*mesh->szzd0[c0] + iDa33*mesh->sxz0_n[c0])/2.0/etae;
+            //     gxz   = 2.0*mesh->exz_n[c0];// + el*(iDa13*mesh->sxxd0[c0] + iDa23*mesh->szzd0[c0] + iDa33*mesh->sxz0_n[c0])/etae;
+            //     //          
+            //     Gxx   = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
+            //     Gzz   = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
+            //     Gxz   = Exx*ani*d1 - Ezz*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5);
+            //     mesh->sxxd[c0] = 2.0*mesh->eta_n[c0]*Gxx;
+            //     mesh->szzd[c0] = 2.0*mesh->eta_n[c0]*Gzz;
+            // }
+            // if ( model->residual_form == 1 ) {
+                mesh->sxxd[c0] = 2.0*mesh->eta_n[c0]*Gxx;
+                mesh->szzd[c0] = 2.0*mesh->eta_n[c0]*Gzz;
+            // }    
 
             // mesh->sxxd[c0] = 2.0*mesh->eta_n[c0]*(mesh->exxd[c0]  + mesh->sxxd0[c0] /etae /2.0);
             // mesh->szzd[c0] = 2.0*mesh->eta_n[c0]*(mesh->ezzd[c0]  + mesh->szzd0[c0] /etae /2.0);            
@@ -1430,6 +1444,18 @@ void NonNewtonianViscosityGrid( grid *mesh, mat_prop *materials, params *model, 
             }
 
             // Final stress update
+            // if ( model->residual_form == 0 ) {
+            //     Exx = mesh->exxd_s[c1];//  + el*(iDa11*mesh->sxxd0_s[c1] + iDa12*mesh->szzd0_s[c1] + iDa13*mesh->sxz0[c1])/etae;
+            //     Ezz = mesh->ezzd_s[c1];//  + el*(iDa12*mesh->sxxd0_s[c1] + iDa22*mesh->szzd0_s[c1] + iDa23*mesh->sxz0[c1])/etae;
+            //     Exz = mesh->exz[c1];//     + el*(iDa13*mesh->sxxd0_s[c1] + iDa23*mesh->szzd0_s[c1] + iDa33*mesh->sxz0[c1])/2.0/etae;
+            //     gxz = 2.0*mesh->exz[c1];// + el*(iDa13*mesh->sxxd0_s[c1] + iDa23*mesh->szzd0_s[c1] + iDa33*mesh->sxz0[c1])/etae;
+            //     //            
+            //     Gxx = Exx*(1.0 - ani*d0) + Ezz*ani*d0 + gxz*ani*d1;
+            //     Gzz = Ezz*(1.0 - ani*d0) + Exx*ani*d0 - gxz*ani*d1;
+            //     Gxz = Exx*ani*d1 - Ezz*ani*d1 + gxz*(ani*(d0 - 0.5) + 0.5); 
+            //     mesh->sxz[c1] = 2.0*mesh->eta_s[c1]*Gxz;
+            // }
+            // if ( model->residual_form == 1 ) mesh->sxz[c1] = 2.0*mesh->eta_s[c1]*Gxz;
             mesh->sxz[c1] = 2.0*mesh->eta_s[c1]*Gxz;
             // mesh->sxz[c1] = 2.0*mesh->eta_s[c1]*(mesh->exz[c1]    + mesh->sxz0[c1]   /etae/2.0);
 

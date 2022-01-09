@@ -1,6 +1,6 @@
 /**** RESTART ****/
-istep = 00055
-irestart = 0
+istep = 01000
+irestart = 1
 
 /**** OUTPUT FILES ****/
 writer          = 1
@@ -18,7 +18,7 @@ T   = 20
 /**** SPACE-TIME ****/
 Nx      = 100
 Nz      = 100
-Nt      = 300
+Nt      = 1000
 xmin    = -5.000000e-1
 zmin    = -5.000000e-1
 xmax    =  5.000000e-1
@@ -50,7 +50,7 @@ free_surf       = 0
 free_surf_stab  = 0
 eqn_state       = 0
 thermal_eq      = 0
-subgrid_diff    = 1
+subgrid_diff    = 2
 shear_heat      = 1
 adiab_heat      = 0
 fstrain         = 1
@@ -79,7 +79,7 @@ Nb_phases = 2
 /**** PHASE 1 ****/
 ID   = 0
 rho  = 2700.00 / matrix
-mu   = 10
+mu   = 1e3
 Cv   = 1050
 k    = 2.5
 Qr   = 0
@@ -104,7 +104,7 @@ aniso_factor = 10.0
 /**** PHASE 2 ****/
 ID   = 1
 rho  = 2700.00 / inclusion
-mu   = 10
+mu   = 1e3
 Cv   = 1050
 k    = 2.5
 Qr   = 0
