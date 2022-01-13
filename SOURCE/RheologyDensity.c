@@ -1582,7 +1582,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
     if ( Jacobian==1 ) { 
 
         // Loop on cell centers
-#pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae, K, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate ( model, dt, comp, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz )
+#pragma omp parallel for shared( mesh ) private ( nx, nz, ani, d0, d1, etae, K, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz ) firstprivate ( model, dt, comp )
         for (k=0; k<Ncx*Ncz; k++) {
 
             if ( mesh->BCp.type[k] != 30 && mesh->BCp.type[k] != 31 ) {
@@ -1662,7 +1662,7 @@ void RheologicalOperators( grid* mesh, params* model, scale* scaling, int Jacobi
         }
 
         // Loop on cell vertices
-#pragma omp parallel for shared( mesh )  private ( nx, nz, ani, d0, d1, etae, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det ) firstprivate ( model, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz )
+#pragma omp parallel for shared( mesh )  private ( nx, nz, ani, d0, d1, etae, Da11, Da12, Da13, Da22, Da23, Da33, iDa11, iDa12, iDa13, iDa22, iDa23, iDa33, a11, a12, a13, a22, a23, a33, det, Exx, Ezz, Exz, gxz, Gxx, Gzz, Gxz  ) firstprivate ( model)
         for (k=0; k<Nx*Nz; k++) {
 
             if ( mesh->BCg.type[k] != 30 ) {
@@ -2091,7 +2091,7 @@ void UpdateDensity( grid* mesh, markers* particles, mat_prop *materials, params 
     double rho, rhoold, epsi = 1e-13;
     // printf("Update density fields on mesh\n");
 
-#pragma omp parallel for shared( mesh, materials ) private( rho, rhoold) firstprivate(Ncx, Ncz, model, epsi)
+#pragma omp parallel for shared( mesh, materials ) private( rho, rhoold, c0, p) firstprivate(Ncx, Ncz, model, epsi)
     for ( c0=0; c0<Ncx*Ncz; c0++ ) {
 
         // Initialise

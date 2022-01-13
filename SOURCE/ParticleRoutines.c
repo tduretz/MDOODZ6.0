@@ -3274,7 +3274,7 @@ void P2Mastah ( params *model, markers particles, DoodzFP* mat_prop, grid *mesh,
     
     // Initialisation
     if ( prop == 1 ) {
-#pragma omp parallel for shared ( mesh ) private( i, k ) firstprivate( Nx, Nz, nthreads, model, centroid ) schedule( static )
+#pragma omp parallel for shared ( mesh ) private( i, k, p ) firstprivate( Nx, Nz, nthreads, model, centroid ) schedule( static )
         for ( i=0; i<Nx*Nz; i++ ) {
             for (p=0; p<model->Nb_phases; p++) {
                 if (centroid==0) mesh->phase_perc_s[p][i] = 0.0;
@@ -3471,7 +3471,7 @@ void P2Mastah ( params *model, markers particles, DoodzFP* mat_prop, grid *mesh,
         }
 
     // Final reduction
-#pragma omp parallel for shared ( BmWm, Wm, BMWM, WM, Wm_ph, mesh ) private( i, k ) firstprivate( Nx, Nz, nthreads, model, centroid, prop) schedule( static )
+#pragma omp parallel for shared ( BmWm, Wm, BMWM, WM, Wm_ph, mesh ) private( i, k, p ) firstprivate( Nx, Nz, nthreads, model, centroid, prop) schedule( static )
     for ( i=0; i<Nx*Nz; i++ ) {
         for ( k=0; k<nthreads; k++ ) {
             WM[i]   += Wm[k][i];
@@ -3494,7 +3494,7 @@ void P2Mastah ( params *model, markers particles, DoodzFP* mat_prop, grid *mesh,
     //--------------------------------------------------------------
     
     
-#pragma omp parallel for shared ( NodeField, BMWM, WM, Nx, Nz, mesh, NodeType ) private( i ) firstprivate ( avg ) schedule( static )
+#pragma omp parallel for shared ( NodeField, BMWM, WM, Nx, Nz, mesh, NodeType ) private( i, p ) firstprivate ( avg ) schedule( static )
         for (i=0;i<Nx*Nz;i++) {
             
             if ( fabs(WM[i])<1e-30  || (NodeType[i]==30 || NodeType[i]==31) ) {
