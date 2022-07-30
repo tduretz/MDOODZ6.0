@@ -1,0 +1,1479 @@
+
+********************************************************
+************ Starting MDOODZ 6.0 simulation ************
+********************************************************
+Warning : Parameter 'input_file' not found in the setup file, running with default value blah.bin
+Warning : Parameter 'auto_penalty' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'decoupled_solve' not found in the setup file, running with default value 1
+Warning : Parameter 'safe_mode' not found in the setup file, running with default value 0
+Warning : Parameter 'safe_dt_div' not found in the setup file, running with default value 5.00e+00
+Warning : Parameter 'nstagmax' not found in the setup file, running with default value 3
+Warning : Parameter 'initial_part' not found in the setup file, running with default value 1
+Warning : Parameter 'initial_noise' not found in the setup file, running with default value 0
+Warning : Parameter 'line_search_min' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'cooling_time' not found in the setup file, running with default value 3.16e+16
+Warning : Parameter 'surf_processes' not found in the setup file, running with default value 0
+Warning : Parameter 'surf_remesh' not found in the setup file, running with default value 1
+Warning : Parameter 'cpc' not found in the setup file, running with default value 1
+Warning : Parameter 'loc_iter' not found in the setup file, running with default value 1
+Warning : Parameter 'therm_pert' not found in the setup file, running with default value 0
+Warning : Parameter 'rec_T_P_x_z' not found in the setup file, running with default value 0
+Warning : Parameter 'delete_breakpoints' not found in the setup file, running with default value 1
+Warning : Parameter 'topografix' not found in the setup file, running with default value 0
+Warning : Parameter 'compressible' not found in the setup file, running with default value 0
+Warning : Parameter 'no_markers' not found in the setup file, running with default value 0
+Warning : Parameter 'StressRotation' not found in the setup file, running with default value 1
+Warning : Parameter 'StressUpdate' not found in the setup file, running with default value 0
+Warning : Parameter 'polar' not found in the setup file, running with default value 0
+Warning : Parameter 'ProgReac' not found in the setup file, running with default value 0
+Warning : Parameter 'NoReturn' not found in the setup file, running with default value 0
+Warning : Parameter 'UnsplitDiffReac' not found in the setup file, running with default value 0
+Warning : Parameter 'VolChangeReac' not found in the setup file, running with default value 0
+Warning : Parameter 'Plith_trick' not found in the setup file, running with default value 0
+Warning : Parameter 'DirectNeighbour' not found in the setup file, running with default value 0
+Warning : Parameter 'Reseed' not found in the setup file, running with default value 1
+Warning : Parameter 'ConservInterp' not found in the setup file, running with default value 0
+Warning : Parameter 'SmoothSoftening' not found in the setup file, running with default value 1
+Warning : Parameter 'oop' not found in the setup file, running with default value 0
+Warning : Parameter 'noise_bg' not found in the setup file, running with default value 0
+Warning : Parameter 'DivBG' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'PrBG' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'surf_diff' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'surf_ised1' not found in the setup file, running with default value 0
+Warning : Parameter 'surf_ised2' not found in the setup file, running with default value 0
+Warning : Parameter 'surf_sedirate' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'surf_baselev' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'surf_Winc' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'surf_Vinc' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'therm_pert_x0' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'therm_pert_z0' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'therm_pert_rad' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'therm_pert_dT' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'force_act_vol_ast' not found in the setup file, running with default value 0
+Warning : Parameter 'act_vol_dis_ast' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'act_vol_dif_ast' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'user4' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'user5' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'user6' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'user7' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'user8' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'dt_max' not found in the setup file, running with default value 1.00e+20
+Warning : Parameter 'eta_avg' not found in the setup file, running with default value 0
+Warning : Parameter 'itp_stencil' not found in the setup file, running with default value 1
+Warning : Parameter 'nexp_radial_basis' not found in the setup file, running with default value 1.00e+00
+Warning : Parameter 'diffuse_X' not found in the setup file, running with default value 0
+Warning : Parameter 'diffuse_avg' not found in the setup file, running with default value 0
+Warning : Parameter 'diffusion_length' not found in the setup file, running with default value 0.00e+00
+Warning : Parameter 'psi' not found in the setup file, running with default value 0.00
+Warning : Parameter 'pref_pwl' not found in the setup file, running with default value 1.00
+Warning : Parameter 'gs' not found in the setup file, running with default value 0.00
+Warning : Parameter 'gs_ref' not found in the setup file, running with default value 0.00
+Warning : Parameter 'coh_soft' not found in the setup file, running with default value 0.00
+Warning : Parameter 'phi_soft' not found in the setup file, running with default value 0.00
+Warning : Parameter 'psi_soft' not found in the setup file, running with default value 0.00
+Warning : Parameter 'is_tensile' not found in the setup file, running with default value 0.00
+Warning : Parameter 'Ce' not found in the setup file, running with default value 1.00e+90
+Warning : Parameter 'phie' not found in the setup file, running with default value 30.00
+Warning : Parameter 'psie' not found in the setup file, running with default value 0.00
+Warning : Parameter 'plss' not found in the setup file, running with default value 1.00
+Warning : Parameter 'plse' not found in the setup file, running with default value 2.00
+Warning : Parameter 'reac_soft' not found in the setup file, running with default value 0.00
+Warning : Parameter 'reac_phase' not found in the setup file, running with default value 0.00
+Warning : Parameter 'Pr' not found in the setup file, running with default value 0.00
+Warning : Parameter 'dPr' not found in the setup file, running with default value 0.00
+Warning : Parameter 'tau_kin' not found in the setup file, running with default value 0.00
+Warning : Parameter 'k_chem' not found in the setup file, running with default value 0.00
+Warning : Parameter 'density_model' not found in the setup file, running with default value 3.00
+Warning : Parameter 'phase_diagram' not found in the setup file, running with default value -1.00
+Warning : Parameter 'n_vp' not found in the setup file, running with default value 1.00
+Warning : Parameter 'eta_vp' not found in the setup file, running with default value 0.00
+Warning : Parameter 'phase_mix' not found in the setup file, running with default value 0.00
+Warning : Parameter 'phase_mix' not found in the setup file, running with default value 0.00
+----------------------------------------- MODEL DOMAIN ------------------------------------------
+Xmin   = -0.0  km         Xmax   = 0.0  km     Nx   = 100    dx   = 0.01 m
+Zmin   = -0.0  km         Zmax   = 0.0  km      Nz   = 100    dz   = 0.01 m
+-------------------------------------------- PHASE: 0 -------------------------------------------
+rho    = 2.70e+03 kg/m^3     mu = 1.00e+01 Pa
+Cv     = 1.05e+03 J/kg/K      k = 2.50e+00 W/m/K      Qr = 0.00e+00 W/m3
+C      = 1.00e+90 Pa        phi = 3.00e+01 deg      Slim = 5.00e+11 Pa
+alp    = 1.00e-05 1/T        T0 = 2.73e+02 K         bet = 1.00e-11 1/Pa       P0 = 1.00e+05 Pa       drho = 0.00e+00 kg/m^3 
+prefactor for power-law: 1.00e+00
+C_end    = 1.00e+90 Pa        Phi_end = 3.00e+01 deg         pls_start = 1.00e+00        pls_end = 2.00e+00 
+eta0_vp   = 0.00e+00  Pa.s^(1/n)         n_vp   = 1.00e+00
+Flow law settings:
+--->   Power law viscosity activated 
+'Homemade' power law flow of the form: eta = eta0 * exp(-Q/n/R/T) * Eii^(1/n - 1):
+t = 0  n = 3.0  m = 0.0  r = 0.0  Q = 0.00e+00 J  V = 0.00e+00 m^3  A = 1.00e-03 Pa^-n/s  f = 0.00e+00 Pa  a = 0.0  F = 1.00
+Warning : Parameter 'psi' not found in the setup file, running with default value 0.00
+Warning : Parameter 'pref_pwl' not found in the setup file, running with default value 1.00
+Warning : Parameter 'gs' not found in the setup file, running with default value 0.00
+Warning : Parameter 'gs_ref' not found in the setup file, running with default value 0.00
+Warning : Parameter 'coh_soft' not found in the setup file, running with default value 0.00
+Warning : Parameter 'phi_soft' not found in the setup file, running with default value 0.00
+Warning : Parameter 'psi_soft' not found in the setup file, running with default value 0.00
+Warning : Parameter 'is_tensile' not found in the setup file, running with default value 0.00
+Warning : Parameter 'Ce' not found in the setup file, running with default value 1.00e+90
+Warning : Parameter 'phie' not found in the setup file, running with default value 30.00
+Warning : Parameter 'psie' not found in the setup file, running with default value 0.00
+Warning : Parameter 'plss' not found in the setup file, running with default value 1.00
+Warning : Parameter 'plse' not found in the setup file, running with default value 2.00
+Warning : Parameter 'reac_soft' not found in the setup file, running with default value 0.00
+Warning : Parameter 'reac_phase' not found in the setup file, running with default value 0.00
+Warning : Parameter 'Pr' not found in the setup file, running with default value 0.00
+Warning : Parameter 'dPr' not found in the setup file, running with default value 0.00
+Warning : Parameter 'tau_kin' not found in the setup file, running with default value 0.00
+Warning : Parameter 'k_chem' not found in the setup file, running with default value 0.00
+Warning : Parameter 'density_model' not found in the setup file, running with default value 3.00
+Warning : Parameter 'phase_diagram' not found in the setup file, running with default value -1.00
+Warning : Parameter 'n_vp' not found in the setup file, running with default value 1.00
+Warning : Parameter 'eta_vp' not found in the setup file, running with default value 0.00
+Warning : Parameter 'phase_mix' not found in the setup file, running with default value 0.00
+Warning : Parameter 'phase_mix' not found in the setup file, running with default value 1.00
+----------------------------------------- MODEL DOMAIN ------------------------------------------
+Xmin   = -0.0  km         Xmax   = 0.0  km     Nx   = 100    dx   = 0.01 m
+Zmin   = -0.0  km         Zmax   = 0.0  km      Nz   = 100    dz   = 0.01 m
+-------------------------------------------- PHASE: 1 -------------------------------------------
+rho    = 2.70e+03 kg/m^3     mu = 1.00e+01 Pa
+Cv     = 1.05e+03 J/kg/K      k = 2.50e+00 W/m/K      Qr = 0.00e+00 W/m3
+C      = 1.00e+90 Pa        phi = 3.00e+01 deg      Slim = 5.00e+11 Pa
+alp    = 1.00e-05 1/T        T0 = 2.73e+02 K         bet = 1.00e-11 1/Pa       P0 = 1.00e+05 Pa       drho = 0.00e+00 kg/m^3 
+prefactor for power-law: 1.00e+00
+C_end    = 1.00e+90 Pa        Phi_end = 3.00e+01 deg         pls_start = 1.00e+00        pls_end = 2.00e+00 
+eta0_vp   = 0.00e+00  Pa.s^(1/n)         n_vp   = 1.00e+00
+Flow law settings:
+--->    Constant viscosity activated 
+eta0 = 1.00e+00 Pa.s
+Phase 0 ---  density model 3 
+Phase 1 ---  density model 3 
+Warning : Parameter 'def_maps' not found in the setup file, running with default value 0
+Warning : Parameter 'let_res_grow' not found in the setup file, running with default value 0
+Warning : Parameter 'Pic2NewtCond' not found in the setup file, running with default value 1.00e-01
+Warning : Parameter 'nit_Pic_max' not found in the setup file, running with default value 10
+Warning : Parameter 'abs_tol_u' not found in the setup file, running with default value 1.00e-06
+Warning : Parameter 'abs_tol_p' not found in the setup file, running with default value 1.00e-06
+Warning : Parameter 'rel_tol_u' not found in the setup file, running with default value 1.00e-06
+Warning : Parameter 'rel_tol_p' not found in the setup file, running with default value 1.00e-06
+*************************************
+****** Allocate and initialise ******
+*************************************
+Allocation of grid arrays !
+Memory succesfully allocated : 
+Diantre, que c'est bon!
+*************************************
+******* Initialize particles ********
+*************************************
+Velocity and pressure were initialised
+Boundary conditions were set up
+Initial particle spacing : dxm = 0.003367 dzm = 0.003367 m
+Initial number of particles = 88209
+USING NEW PART IN CELL
+Velocity and pressure were initialised
+Boundary conditions were set up
+Velocity field was set to background pure shear
+min(Vx. grid) = -1.010101e+00 max(Vx. grid) = 1.010101e+00
+min(Vz. grid) = 0.000000e+00 max(Vz. grid) = 0.000000e+00
+min(       P) = 0.000000e+00 max(       P) = 0.000000e+00
+*************************************
+****** Initialize temperature *******
+*************************************
+Velocity and pressure were initialised
+Boundary conditions were set up
+*************************************
+******** Initialize pressure ********
+*************************************
+min(P initial ) = 0.000000e+00 max(P initial ) = 0.000000e+00
+min(P initial ) = 0.000000e+00 max(P initial ) = 0.000000e+00
+min(P initial ) = 0.000000e+00 max(P initial ) = 0.000000e+00
+min(P initial ) = 0.000000e+00 max(P initial ) = 0.000000e+00
+min(P initial ) = 0.000000e+00 max(P initial ) = 0.000000e+00
+min(P initial ) = 0.000000e+00 max(P initial ) = 0.000000e+00
+min(P initial ) = 0.000000e+00 max(P initial ) = 0.000000e+00
+min(P initial ) = 0.000000e+00 max(P initial ) = 0.000000e+00
+min(P initial ) = 0.000000e+00 max(P initial ) = 0.000000e+00
+min(P initial ) = 0.000000e+00 max(P initial ) = 0.000000e+00
+*************************************
+******* Initialize grain size *******
+*************************************
+*************************************
+******** Initialize density *********
+*************************************
+*************************************
+****** Initialize composition *******
+*************************************
+-----> Finite strain aspect ratio updated
+*************************************
+******* Initialize viscosity ********
+*************************************
+Number of phases : 2
+*************************************
+******** Initialize timestep ********
+*************************************
+min. Maxwell = 1.00e+100 s, max. Maxwell = 0.00e+00 s
+Suggested dt = 1.00e-01 s, VE dt = 0.00e+00 s
+Initial timestep = 1.00e-01 s
+*************************************
+*** Write initial file or restart ***
+*************************************
+*****************************************************
+****************** Time step 00001 ******************
+*****************************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = 0.00e+00 m/s / Max Vzm = 0.00e+00 m/s
+Fixed timestep dt = 1.00e-01 s
+Selected dt = 1.00e-01
+-----> Finite strain aspect ratio updated
+** Time for particles interpolations I = 0.851048 sec
+Velocity and pressure were initialised
+Boundary conditions were set up
+Velocity field was set to background pure shear
+Linear systems allocated
+neq_tot = 29304, neq_mom = 19503, neq_cont = 9801
+Run CHOLMOD analysis yes/no: 1 
+**********************************************
+*** Newton it. 00 of 20 (step = 00001) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 3.495105e-04 --- Fu rel. = 1.000000e+00
+Fv abs. = 3.613991e-04 --- Fv rel. = 1.000000e+00
+Fp abs. = 0.000000e+00 --- Fp rel. = nan
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky analysis = 0.240947 sec
+** Time for Cholesky factorization = 0.539408 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 3.554743e-04
+Fp = 0.000000e+00
+PH comp it. 0. its_KSP = 04: max. cont. = 8.38e-07 - rel. max. div. = 1.00e+00 / max. mom. = 6.68e-07 - rel. max. mom. = 6.65e-05
+PH comp it. 1. its_KSP = 02: max. cont. = 7.16e-09 - rel. max. div. = 8.54e-03 / max. mom. = 4.44e-07 - rel. max. mom. = 4.42e-05
+PH comp it. 2. its_KSP = 02: max. cont. = 6.45e-11 - rel. max. div. = 7.70e-05 / max. mom. = 6.59e-09 - rel. max. mom. = 6.56e-07
+** PH - iterations = 0.656658 sec - its_KSP_tot = 08
+Fu = 9.758836e-11
+Fv = 1.381963e-10
+Fp = 5.597012e-12
+** Time for direct Stokes solver = 0.665812 sec
+**********************************************
+*** Newton it. 01 of 20 (step = 00001) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 4.042079e-07 --- Fu rel. = 1.156497e-03
+Fv abs. = 4.119596e-07 --- Fv rel. = 1.139902e-03
+Fp abs. = 5.597012e-12 --- Fp rel. = inf
+---- Non-linear residual ----
+Non-linear solver converged to abs_tol_u = 1.00e-06 abs_tol_p = 1.00e-06 rel_tol_u = 1.00e-06 rel_tol_p = 1.00e-06
+Cleaning up Cholesky factors --- nit = 01
+min(Vx. grid) = -1.010195e+00 max(Vx. grid) = 1.010192e+00
+min(Vz. grid) = -2.922242e-02 max(Vz. grid) = 2.964001e-02
+min(       P) = -8.283058e-01 max(       P) = 7.528043e-01
+min(  div(V)) = -5.255130e-07 max(  div(V)) = 6.320215e-07
+--------------------------------------------------------------
+New. it. 00: abs: |Fx| = 3.50e-04 - |Fz| = 3.61e-04 - |Fp| = 0.00e+00 --- rel: |Fx| = 1.00e+00 - |Fz| = 1.00e+00 - |Fp| = nan
+New. it. 01: abs: |Fx| = 4.04e-07 - |Fz| = 4.12e-07 - |Fp| = 5.60e-12 --- rel: |Fx| = 1.16e-03 - |Fz| = 1.14e-03 - |Fp| = inf
+--------------------------------------------------------------
+DOING GNU PLOTTING!
+min(eta grid  ) = 1.000000e+00 max(eta grid  ) = 1.455375e+03
+min(eta_s) = 1.000000e+00 max(eta_s) = 1.455375e+03
+min(eta phys part  ) = 1.000000e+00 max(eta phys part  ) = 1.314255e+03
+No subgrid diffusion for stress tensor component update
+*************************************
+************** Advection ************
+*************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -2.92e-02 m/s / Max Vzm = 2.96e-02 m/s
+Fixed timestep dt = 1.00e-01 s
+************** Advection step 000 of 001: dtsub = 1.00e-01 **************
+** Time for Roger Gunther = 0.230404 sec --- using conservative interpolation: 0
+-----> Deformation gradient tensor Updated
+** Time for advection solver = 0.306819 sec
+USING NEW PART IN CELL
+OLD NUMBER OF MARKERS = 88209
+NEW NUMBER OF MARKERS = 121569
+USING NEW PART IN CELL
+After re-seeding :
+Initial number of particles = 88209
+New number of particles     = 121569
+** Time for CountPartCell = 0.689375 sec
+** Total timestep calculation time = 2.690103 sec
+** Model time = 1.00e-01 sec
+** Current dt = 1.00e-01 sec, Old dt = 1.00e-01 sec
+*****************************************************
+****************** Time step 00002 ******************
+*****************************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -2.92e-02 m/s / Max Vzm = 2.96e-02 m/s
+Fixed timestep dt = 1.00e-01 s
+Selected dt = 1.00e-01
+-----> Finite strain aspect ratio updated
+** Time for particles interpolations I = 0.918074 sec
+Velocity and pressure were initialised
+Boundary conditions were set up
+Velocity field was set to background pure shear
+Linear systems allocated
+neq_tot = 29304, neq_mom = 19503, neq_cont = 9801
+Run CHOLMOD analysis yes/no: 1 
+**********************************************
+*** Newton it. 00 of 20 (step = 00002) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 5.863935e-04 --- Fu rel. = 1.000000e+00
+Fv abs. = 6.398067e-04 --- Fv rel. = 1.000000e+00
+Fp abs. = 5.597012e-12 --- Fp rel. = 1.000000e+00
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky analysis = 0.298460 sec
+** Time for Cholesky factorization = 0.731642 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 6.135460e-04
+Fp = 5.597012e-12
+PH comp it. 0. its_KSP = 04: max. cont. = 1.38e-06 - rel. max. div. = 1.00e+00 / max. mom. = 5.87e-07 - rel. max. mom. = 2.76e-05
+PH comp it. 1. its_KSP = 02: max. cont. = 1.25e-08 - rel. max. div. = 9.02e-03 / max. mom. = 6.80e-07 - rel. max. mom. = 3.19e-05
+PH comp it. 2. its_KSP = 02: max. cont. = 1.07e-10 - rel. max. div. = 7.71e-05 / max. mom. = 1.22e-08 - rel. max. mom. = 5.72e-07
+PH comp it. 3. its_KSP = 02: max. cont. = 9.54e-13 - rel. max. div. = 6.90e-07 / max. mom. = 1.74e-10 - rel. max. mom. = 8.18e-09
+** PH - iterations = 0.888526 sec - its_KSP_tot = 10
+Fu = 2.865471e-12
+Fv = 4.419083e-12
+Fp = 6.498656e-14
+** Time for direct Stokes solver = 0.897552 sec
+**********************************************
+*** Newton it. 01 of 20 (step = 00002) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 2.590044e-06 --- Fu rel. = 4.416904e-03
+Fv abs. = 2.967263e-06 --- Fv rel. = 4.637749e-03
+Fp abs. = 6.498656e-14 --- Fp rel. = 1.161094e-02
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky factorization = 0.550567 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 2.784092e-06
+Fp = 6.498656e-14
+PH comp it. 0. its_KSP = 04: max. cont. = 3.00e-09 - rel. max. div. = 1.00e+00 / max. mom. = 2.55e-09 - rel. max. mom. = 2.63e-05
+** PH - iterations = 0.614570 sec - its_KSP_tot = 04
+Fu = 8.593687e-11
+Fv = 8.125872e-11
+Fp = 2.201768e-10
+** Time for direct Stokes solver = 0.623527 sec
+**********************************************
+*** Newton it. 02 of 20 (step = 00002) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 1.001601e-10 --- Fu rel. = 1.708069e-07
+Fv abs. = 9.454841e-11 --- Fv rel. = 1.477765e-07
+Fp abs. = 2.201768e-10 --- Fp rel. = 3.933828e+01
+---- Non-linear residual ----
+Non-linear solver converged to abs_tol_u = 1.00e-06 abs_tol_p = 1.00e-06 rel_tol_u = 1.00e-06 rel_tol_p = 1.00e-06
+Cleaning up Cholesky factors --- nit = 02
+min(Vx. grid) = -1.010194e+00 max(Vx. grid) = 1.010197e+00
+min(Vz. grid) = -4.628403e-02 max(Vz. grid) = 4.423552e-02
+min(       P) = -1.951617e+00 max(       P) = 1.690150e+00
+min(  div(V)) = -2.752485e-05 max(  div(V)) = 2.936114e-05
+--------------------------------------------------------------
+New. it. 00: abs: |Fx| = 5.86e-04 - |Fz| = 6.40e-04 - |Fp| = 5.60e-12 --- rel: |Fx| = 1.00e+00 - |Fz| = 1.00e+00 - |Fp| = 1.00e+00
+New. it. 01: abs: |Fx| = 2.59e-06 - |Fz| = 2.97e-06 - |Fp| = 6.50e-14 --- rel: |Fx| = 4.42e-03 - |Fz| = 4.64e-03 - |Fp| = 1.16e-02
+New. it. 02: abs: |Fx| = 1.00e-10 - |Fz| = 9.45e-11 - |Fp| = 2.20e-10 --- rel: |Fx| = 1.71e-07 - |Fz| = 1.48e-07 - |Fp| = 3.93e+01
+--------------------------------------------------------------
+DOING GNU PLOTTING!
+min(eta grid  ) = 1.000000e+00 max(eta grid  ) = 6.032335e+02
+min(eta_s) = 1.000000e+00 max(eta_s) = 6.032335e+02
+min(eta phys part  ) = 1.000000e+00 max(eta phys part  ) = 5.975104e+02
+No subgrid diffusion for stress tensor component update
+*************************************
+************** Advection ************
+*************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -4.63e-02 m/s / Max Vzm = 4.42e-02 m/s
+Fixed timestep dt = 1.00e-01 s
+************** Advection step 000 of 001: dtsub = 1.00e-01 **************
+** Time for Roger Gunther = 0.233533 sec --- using conservative interpolation: 0
+-----> Deformation gradient tensor Updated
+** Time for advection solver = 0.340752 sec
+USING NEW PART IN CELL
+OLD NUMBER OF MARKERS = 121569
+NEW NUMBER OF MARKERS = 146925
+USING NEW PART IN CELL
+After re-seeding :
+Initial number of particles = 88209
+New number of particles     = 146925
+** Time for CountPartCell = 0.729589 sec
+** Total timestep calculation time = 3.730236 sec
+** Model time = 2.00e-01 sec
+** Current dt = 1.00e-01 sec, Old dt = 1.00e-01 sec
+*****************************************************
+****************** Time step 00003 ******************
+*****************************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -4.63e-02 m/s / Max Vzm = 4.42e-02 m/s
+Fixed timestep dt = 1.00e-01 s
+Selected dt = 1.00e-01
+-----> Finite strain aspect ratio updated
+** Time for particles interpolations I = 0.998226 sec
+Velocity and pressure were initialised
+Boundary conditions were set up
+Velocity field was set to background pure shear
+Linear systems allocated
+neq_tot = 29304, neq_mom = 19503, neq_cont = 9801
+Run CHOLMOD analysis yes/no: 1 
+**********************************************
+*** Newton it. 00 of 20 (step = 00003) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 9.025829e-04 --- Fu rel. = 1.000000e+00
+Fv abs. = 1.186249e-03 --- Fv rel. = 1.000000e+00
+Fp abs. = 2.201768e-10 --- Fp rel. = 1.000000e+00
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky analysis = 0.396551 sec
+** Time for Cholesky factorization = 0.713243 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 1.053289e-03
+Fp = 2.201768e-10
+PH comp it. 0. its_KSP = 04: max. cont. = 2.27e-06 - rel. max. div. = 1.00e+00 / max. mom. = 8.57e-07 - rel. max. mom. = 2.01e-05
+PH comp it. 1. its_KSP = 02: max. cont. = 2.04e-08 - rel. max. div. = 8.99e-03 / max. mom. = 1.26e-06 - rel. max. mom. = 2.96e-05
+PH comp it. 2. its_KSP = 02: max. cont. = 1.71e-10 - rel. max. div. = 7.54e-05 / max. mom. = 1.84e-08 - rel. max. mom. = 4.32e-07
+PH comp it. 3. its_KSP = 02: max. cont. = 1.55e-12 - rel. max. div. = 6.84e-07 / max. mom. = 4.11e-10 - rel. max. mom. = 9.65e-09
+** PH - iterations = 0.878976 sec - its_KSP_tot = 10
+Fu = 5.710949e-12
+Fv = 9.012571e-12
+Fp = 9.426498e-14
+** Time for direct Stokes solver = 0.887085 sec
+**********************************************
+*** Newton it. 01 of 20 (step = 00003) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 2.230201e-05 --- Fu rel. = 2.470910e-02
+Fv abs. = 2.278499e-05 --- Fv rel. = 1.920760e-02
+Fp abs. = 9.426498e-14 --- Fp rel. = 4.281331e-04
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky factorization = 0.605433 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 2.254357e-05
+Fp = 9.426498e-14
+PH comp it. 0. its_KSP = 04: max. cont. = 4.26e-08 - rel. max. div. = 1.00e+00 / max. mom. = 2.19e-08 - rel. max. mom. = 3.08e-05
+PH comp it. 1. its_KSP = 02: max. cont. = 3.88e-10 - rel. max. div. = 9.11e-03 / max. mom. = 1.08e-08 - rel. max. mom. = 1.52e-05
+PH comp it. 2. its_KSP = 02: max. cont. = 3.72e-12 - rel. max. div. = 8.72e-05 / max. mom. = 7.91e-11 - rel. max. mom. = 1.11e-07
+** PH - iterations = 0.719373 sec - its_KSP_tot = 08
+Fu = 2.155584e-12
+Fv = 2.115304e-12
+Fp = 2.114972e-13
+** Time for direct Stokes solver = 0.727972 sec
+**********************************************
+*** Newton it. 02 of 20 (step = 00003) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 1.465308e-08 --- Fu rel. = 1.623460e-05
+Fv abs. = 1.454204e-08 --- Fv rel. = 1.225884e-05
+Fp abs. = 2.114972e-13 --- Fp rel. = 9.605788e-04
+---- Non-linear residual ----
+Non-linear solver converged to abs_tol_u = 1.00e-06 abs_tol_p = 1.00e-06 rel_tol_u = 1.00e-06 rel_tol_p = 1.00e-06
+Cleaning up Cholesky factors --- nit = 02
+min(Vx. grid) = -1.010294e+00 max(Vx. grid) = 1.010289e+00
+min(Vz. grid) = -4.464504e-02 max(Vz. grid) = 4.750681e-02
+min(       P) = -2.808234e+00 max(       P) = 2.834664e+00
+min(  div(V)) = -2.636271e-08 max(  div(V)) = 3.643129e-08
+--------------------------------------------------------------
+New. it. 00: abs: |Fx| = 9.03e-04 - |Fz| = 1.19e-03 - |Fp| = 2.20e-10 --- rel: |Fx| = 1.00e+00 - |Fz| = 1.00e+00 - |Fp| = 1.00e+00
+New. it. 01: abs: |Fx| = 2.23e-05 - |Fz| = 2.28e-05 - |Fp| = 9.43e-14 --- rel: |Fx| = 2.47e-02 - |Fz| = 1.92e-02 - |Fp| = 4.28e-04
+New. it. 02: abs: |Fx| = 1.47e-08 - |Fz| = 1.45e-08 - |Fp| = 2.11e-13 --- rel: |Fx| = 1.62e-05 - |Fz| = 1.23e-05 - |Fp| = 9.61e-04
+--------------------------------------------------------------
+DOING GNU PLOTTING!
+min(eta grid  ) = 1.000000e+00 max(eta grid  ) = 2.757434e+02
+min(eta_s) = 1.000000e+00 max(eta_s) = 2.757434e+02
+min(eta phys part  ) = 1.000000e+00 max(eta phys part  ) = 2.695642e+02
+No subgrid diffusion for stress tensor component update
+*************************************
+************** Advection ************
+*************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -4.46e-02 m/s / Max Vzm = 4.75e-02 m/s
+Fixed timestep dt = 1.00e-01 s
+************** Advection step 000 of 001: dtsub = 1.00e-01 **************
+** Time for Roger Gunther = 0.414846 sec --- using conservative interpolation: 0
+-----> Deformation gradient tensor Updated
+** Time for advection solver = 0.539721 sec
+USING NEW PART IN CELL
+OLD NUMBER OF MARKERS = 146925
+NEW NUMBER OF MARKERS = 161998
+USING NEW PART IN CELL
+After re-seeding :
+Initial number of particles = 88209
+New number of particles     = 161998
+** Time for CountPartCell = 0.872671 sec
+** Total timestep calculation time = 3.873836 sec
+** Model time = 3.00e-01 sec
+** Current dt = 1.00e-01 sec, Old dt = 1.00e-01 sec
+*****************************************************
+****************** Time step 00004 ******************
+*****************************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -4.46e-02 m/s / Max Vzm = 4.75e-02 m/s
+Fixed timestep dt = 1.00e-01 s
+Selected dt = 1.00e-01
+-----> Finite strain aspect ratio updated
+** Time for particles interpolations I = 1.175173 sec
+Velocity and pressure were initialised
+Boundary conditions were set up
+Velocity field was set to background pure shear
+Linear systems allocated
+neq_tot = 29304, neq_mom = 19503, neq_cont = 9801
+Run CHOLMOD analysis yes/no: 1 
+**********************************************
+*** Newton it. 00 of 20 (step = 00004) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 1.145434e-03 --- Fu rel. = 1.000000e+00
+Fv abs. = 1.619669e-03 --- Fv rel. = 1.000000e+00
+Fp abs. = 2.114972e-13 --- Fp rel. = 1.000000e+00
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky analysis = 0.596205 sec
+** Time for Cholesky factorization = 0.888683 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 1.401551e-03
+Fp = 2.114972e-13
+PH comp it. 0. its_KSP = 04: max. cont. = 2.62e-06 - rel. max. div. = 1.00e+00 / max. mom. = 2.48e-06 - rel. max. mom. = 6.04e-05
+PH comp it. 1. its_KSP = 02: max. cont. = 2.43e-08 - rel. max. div. = 9.24e-03 / max. mom. = 1.72e-06 - rel. max. mom. = 4.18e-05
+PH comp it. 2. its_KSP = 02: max. cont. = 2.46e-10 - rel. max. div. = 9.36e-05 / max. mom. = 1.68e-08 - rel. max. mom. = 4.10e-07
+PH comp it. 3. its_KSP = 03: max. cont. = 2.22e-12 - rel. max. div. = 8.47e-07 / max. mom. = 2.39e-11 - rel. max. mom. = 5.83e-10
+** PH - iterations = 1.075665 sec - its_KSP_tot = 11
+Fu = 5.815525e-13
+Fv = 7.232941e-13
+Fp = 1.571162e-13
+** Time for direct Stokes solver = 1.085509 sec
+**********************************************
+*** Newton it. 01 of 20 (step = 00004) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 4.899238e-05 --- Fu rel. = 4.277190e-02
+Fv abs. = 5.678200e-05 --- Fv rel. = 3.505777e-02
+Fp abs. = 1.571162e-13 --- Fp rel. = 7.428760e-01
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky factorization = 0.826968 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 5.301068e-05
+Fp = 1.571162e-13
+PH comp it. 0. its_KSP = 04: max. cont. = 9.43e-08 - rel. max. div. = 1.00e+00 / max. mom. = 2.10e-07 - rel. max. mom. = 1.43e-04
+PH comp it. 1. its_KSP = 02: max. cont. = 6.67e-10 - rel. max. div. = 7.07e-03 / max. mom. = 4.05e-08 - rel. max. mom. = 2.75e-05
+PH comp it. 2. its_KSP = 02: max. cont. = 5.73e-12 - rel. max. div. = 6.08e-05 / max. mom. = 3.68e-10 - rel. max. mom. = 2.50e-07
+** PH - iterations = 0.943129 sec - its_KSP_tot = 08
+Fu = 7.875451e-12
+Fv = 7.356867e-12
+Fp = 7.242975e-13
+** Time for direct Stokes solver = 0.951282 sec
+**********************************************
+*** Newton it. 02 of 20 (step = 00004) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 7.074723e-08 --- Fu rel. = 6.176458e-05
+Fv abs. = 7.997456e-08 --- Fv rel. = 4.937709e-05
+Fp abs. = 7.242975e-13 --- Fp rel. = 3.424620e+00
+---- Non-linear residual ----
+Non-linear solver converged to abs_tol_u = 1.00e-06 abs_tol_p = 1.00e-06 rel_tol_u = 1.00e-06 rel_tol_p = 1.00e-06
+Cleaning up Cholesky factors --- nit = 02
+min(Vx. grid) = -1.010630e+00 max(Vx. grid) = 1.010611e+00
+min(Vz. grid) = -4.659317e-02 max(Vz. grid) = 4.462056e-02
+min(       P) = -3.355639e+00 max(       P) = 3.515279e+00
+min(  div(V)) = -3.844990e-08 max(  div(V)) = 5.615247e-08
+--------------------------------------------------------------
+New. it. 00: abs: |Fx| = 1.15e-03 - |Fz| = 1.62e-03 - |Fp| = 2.11e-13 --- rel: |Fx| = 1.00e+00 - |Fz| = 1.00e+00 - |Fp| = 1.00e+00
+New. it. 01: abs: |Fx| = 4.90e-05 - |Fz| = 5.68e-05 - |Fp| = 1.57e-13 --- rel: |Fx| = 4.28e-02 - |Fz| = 3.51e-02 - |Fp| = 7.43e-01
+New. it. 02: abs: |Fx| = 7.07e-08 - |Fz| = 8.00e-08 - |Fp| = 7.24e-13 --- rel: |Fx| = 6.18e-05 - |Fz| = 4.94e-05 - |Fp| = 3.42e+00
+--------------------------------------------------------------
+DOING GNU PLOTTING!
+min(eta grid  ) = 4.835048e-01 max(eta grid  ) = 1.894677e+02
+min(eta_s) = 4.835048e-01 max(eta_s) = 1.894677e+02
+min(eta phys part  ) = 4.972853e-01 max(eta phys part  ) = 1.741295e+02
+No subgrid diffusion for stress tensor component update
+*************************************
+************** Advection ************
+*************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -4.66e-02 m/s / Max Vzm = 4.46e-02 m/s
+Fixed timestep dt = 1.00e-01 s
+************** Advection step 000 of 001: dtsub = 1.00e-01 **************
+** Time for Roger Gunther = 0.675840 sec --- using conservative interpolation: 0
+-----> Deformation gradient tensor Updated
+** Time for advection solver = 0.810581 sec
+USING NEW PART IN CELL
+OLD NUMBER OF MARKERS = 161998
+NEW NUMBER OF MARKERS = 175374
+USING NEW PART IN CELL
+After re-seeding :
+Initial number of particles = 88209
+New number of particles     = 175374
+** Time for CountPartCell = 1.145376 sec
+** Total timestep calculation time = 4.146499 sec
+** Model time = 4.00e-01 sec
+** Current dt = 1.00e-01 sec, Old dt = 1.00e-01 sec
+*****************************************************
+****************** Time step 00005 ******************
+*****************************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -4.66e-02 m/s / Max Vzm = 4.46e-02 m/s
+Fixed timestep dt = 1.00e-01 s
+Selected dt = 1.00e-01
+-----> Finite strain aspect ratio updated
+** Time for particles interpolations I = 0.473230 sec
+Velocity and pressure were initialised
+Boundary conditions were set up
+Velocity field was set to background pure shear
+Linear systems allocated
+neq_tot = 29304, neq_mom = 19503, neq_cont = 9801
+Run CHOLMOD analysis yes/no: 1 
+**********************************************
+*** Newton it. 00 of 20 (step = 00005) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 1.350443e-03 --- Fu rel. = 1.000000e+00
+Fv abs. = 1.883214e-03 --- Fv rel. = 1.000000e+00
+Fp abs. = 7.242975e-13 --- Fp rel. = 1.000000e+00
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky analysis = 0.890685 sec
+** Time for Cholesky factorization = 1.247170 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 1.637292e-03
+Fp = 7.242975e-13
+PH comp it. 0. its_KSP = 04: max. cont. = 3.06e-06 - rel. max. div. = 1.00e+00 / max. mom. = 1.80e-06 - rel. max. mom. = 3.91e-05
+PH comp it. 1. its_KSP = 02: max. cont. = 2.15e-08 - rel. max. div. = 7.03e-03 / max. mom. = 1.07e-06 - rel. max. mom. = 2.32e-05
+PH comp it. 2. its_KSP = 02: max. cont. = 2.21e-10 - rel. max. div. = 7.22e-05 / max. mom. = 1.30e-08 - rel. max. mom. = 2.83e-07
+PH comp it. 3. its_KSP = 02: max. cont. = 1.88e-12 - rel. max. div. = 6.16e-07 / max. mom. = 4.44e-10 - rel. max. mom. = 9.64e-09
+** PH - iterations = 0.381697 sec - its_KSP_tot = 10
+Fu = 9.989344e-12
+Fv = 7.144026e-12
+Fp = 1.827692e-13
+** Time for direct Stokes solver = 1.389692 sec
+**********************************************
+*** Newton it. 01 of 20 (step = 00005) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 5.834515e-05 --- Fu rel. = 4.320444e-02
+Fv abs. = 1.164040e-04 --- Fv rel. = 6.181136e-02
+Fp abs. = 1.827692e-13 --- Fp rel. = 2.523399e-01
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky factorization = 1.068605 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 9.193083e-05
+Fp = 1.827692e-13
+PH comp it. 0. its_KSP = 04: max. cont. = 1.62e-07 - rel. max. div. = 1.00e+00 / max. mom. = 1.83e-07 - rel. max. mom. = 7.12e-05
+PH comp it. 1. its_KSP = 02: max. cont. = 1.66e-09 - rel. max. div. = 1.03e-02 / max. mom. = 8.14e-08 - rel. max. mom. = 3.17e-05
+PH comp it. 2. its_KSP = 02: max. cont. = 2.08e-11 - rel. max. div. = 1.29e-04 / max. mom. = 8.13e-10 - rel. max. mom. = 3.17e-07
+** PH - iterations = 0.189557 sec - its_KSP_tot = 08
+Fu = 2.947594e-11
+Fv = 2.171348e-11
+Fp = 1.822432e-12
+** Time for direct Stokes solver = 1.196596 sec
+**********************************************
+*** Newton it. 02 of 20 (step = 00005) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 1.301066e-07 --- Fu rel. = 9.634359e-05
+Fv abs. = 1.574810e-07 --- Fv rel. = 8.362353e-05
+Fp abs. = 1.822432e-12 --- Fp rel. = 2.516137e+00
+---- Non-linear residual ----
+Non-linear solver converged to abs_tol_u = 1.00e-06 abs_tol_p = 1.00e-06 rel_tol_u = 1.00e-06 rel_tol_p = 1.00e-06
+Cleaning up Cholesky factors --- nit = 02
+min(Vx. grid) = -1.011425e+00 max(Vx. grid) = 1.011392e+00
+min(Vz. grid) = -5.125274e-02 max(Vz. grid) = 5.054166e-02
+min(       P) = -3.567147e+00 max(       P) = 3.763042e+00
+min(  div(V)) = -4.694420e-08 max(  div(V)) = 2.042591e-07
+--------------------------------------------------------------
+New. it. 00: abs: |Fx| = 1.35e-03 - |Fz| = 1.88e-03 - |Fp| = 7.24e-13 --- rel: |Fx| = 1.00e+00 - |Fz| = 1.00e+00 - |Fp| = 1.00e+00
+New. it. 01: abs: |Fx| = 5.83e-05 - |Fz| = 1.16e-04 - |Fp| = 1.83e-13 --- rel: |Fx| = 4.32e-02 - |Fz| = 6.18e-02 - |Fp| = 2.52e-01
+New. it. 02: abs: |Fx| = 1.30e-07 - |Fz| = 1.57e-07 - |Fp| = 1.82e-12 --- rel: |Fx| = 9.63e-05 - |Fz| = 8.36e-05 - |Fp| = 2.52e+00
+--------------------------------------------------------------
+DOING GNU PLOTTING!
+min(eta grid  ) = 3.280971e-01 max(eta grid  ) = 1.279044e+02
+min(eta_s) = 3.280971e-01 max(eta_s) = 1.279044e+02
+min(eta phys part  ) = 3.386416e-01 max(eta phys part  ) = 1.178327e+02
+No subgrid diffusion for stress tensor component update
+*************************************
+************** Advection ************
+*************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -5.13e-02 m/s / Max Vzm = 5.05e-02 m/s
+Fixed timestep dt = 1.00e-01 s
+************** Advection step 000 of 001: dtsub = 1.00e-01 **************
+** Time for Roger Gunther = 0.942887 sec --- using conservative interpolation: 0
+-----> Deformation gradient tensor Updated
+** Time for advection solver = 1.094356 sec
+USING NEW PART IN CELL
+OLD NUMBER OF MARKERS = 175374
+NEW NUMBER OF MARKERS = 186050
+USING NEW PART IN CELL
+After re-seeding :
+Initial number of particles = 88209
+New number of particles     = 186050
+** Time for CountPartCell = 0.405710 sec
+** Total timestep calculation time = 3.406749 sec
+** Model time = 5.00e-01 sec
+** Current dt = 1.00e-01 sec, Old dt = 1.00e-01 sec
+*****************************************************
+****************** Time step 00006 ******************
+*****************************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -5.13e-02 m/s / Max Vzm = 5.05e-02 m/s
+Fixed timestep dt = 1.00e-01 s
+Selected dt = 1.00e-01
+-----> Finite strain aspect ratio updated
+** Time for particles interpolations I = 0.747715 sec
+Velocity and pressure were initialised
+Boundary conditions were set up
+Velocity field was set to background pure shear
+Linear systems allocated
+neq_tot = 29304, neq_mom = 19503, neq_cont = 9801
+Run CHOLMOD analysis yes/no: 1 
+**********************************************
+*** Newton it. 00 of 20 (step = 00006) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 1.779537e-03 --- Fu rel. = 1.000000e+00
+Fv abs. = 1.910361e-03 --- Fv rel. = 1.000000e+00
+Fp abs. = 1.822432e-12 --- Fp rel. = 1.000000e+00
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky analysis = 0.167660 sec
+** Time for Cholesky factorization = 0.452942 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 1.845776e-03
+Fp = 1.822432e-12
+PH comp it. 0. its_KSP = 04: max. cont. = 3.03e-06 - rel. max. div. = 1.00e+00 / max. mom. = 4.38e-06 - rel. max. mom. = 9.62e-05
+PH comp it. 1. its_KSP = 02: max. cont. = 2.00e-08 - rel. max. div. = 6.61e-03 / max. mom. = 2.36e-06 - rel. max. mom. = 5.19e-05
+PH comp it. 2. its_KSP = 03: max. cont. = 2.12e-10 - rel. max. div. = 6.99e-05 / max. mom. = 2.22e-09 - rel. max. mom. = 4.88e-08
+** PH - iterations = 0.593517 sec - its_KSP_tot = 09
+Fu = 8.139787e-11
+Fv = 7.610300e-11
+Fp = 1.364381e-11
+** Time for direct Stokes solver = 0.601531 sec
+**********************************************
+*** Newton it. 01 of 20 (step = 00006) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 9.620495e-05 --- Fu rel. = 5.406178e-02
+Fv abs. = 2.393774e-04 --- Fv rel. = 1.253048e-01
+Fp abs. = 1.364381e-11 --- Fp rel. = 7.486597e+00
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky factorization = 0.305269 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 1.820893e-04
+Fp = 1.364381e-11
+PH comp it. 0. its_KSP = 05: max. cont. = 4.62e-07 - rel. max. div. = 1.00e+00 / max. mom. = 7.43e-08 - rel. max. mom. = 1.10e-05
+PH comp it. 1. its_KSP = 02: max. cont. = 3.73e-09 - rel. max. div. = 8.07e-03 / max. mom. = 4.38e-07 - rel. max. mom. = 6.50e-05
+PH comp it. 2. its_KSP = 02: max. cont. = 3.89e-11 - rel. max. div. = 8.42e-05 / max. mom. = 4.12e-09 - rel. max. mom. = 6.13e-07
+** PH - iterations = 0.439849 sec - its_KSP_tot = 09
+Fu = 1.260947e-10
+Fv = 8.868887e-11
+Fp = 2.033321e-12
+** Time for direct Stokes solver = 1.446586 sec
+**********************************************
+*** Newton it. 02 of 20 (step = 00006) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 1.240954e-06 --- Fu rel. = 6.973466e-04
+Fv abs. = 9.454275e-07 --- Fv rel. = 4.948947e-04
+Fp abs. = 2.033321e-12 --- Fp rel. = 1.115718e+00
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky factorization = 1.129037 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 1.103875e-06
+Fp = 2.033321e-12
+PH comp it. 0. its_KSP = 05: max. cont. = 3.12e-09 - rel. max. div. = 1.00e+00 / max. mom. = 3.58e-10 - rel. max. mom. = 6.58e-06
+** PH - iterations = 0.203354 sec - its_KSP_tot = 05
+Fu = 1.590660e-11
+Fv = 1.356876e-11
+Fp = 1.021411e-10
+** Time for direct Stokes solver = 1.211930 sec
+**********************************************
+*** Newton it. 03 of 20 (step = 00006) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 7.171992e-11 --- Fu rel. = 4.030257e-08
+Fv abs. = 7.174764e-11 --- Fv rel. = 3.755712e-08
+Fp abs. = 1.021411e-10 --- Fp rel. = 5.604658e+01
+---- Non-linear residual ----
+Non-linear solver converged to abs_tol_u = 1.00e-06 abs_tol_p = 1.00e-06 rel_tol_u = 1.00e-06 rel_tol_p = 1.00e-06
+Cleaning up Cholesky factors --- nit = 03
+min(Vx. grid) = -1.012028e+00 max(Vx. grid) = 1.012043e+00
+min(Vz. grid) = -1.161828e-01 max(Vz. grid) = 1.124171e-01
+min(       P) = -3.660240e+00 max(       P) = 5.034437e+00
+min(  div(V)) = -3.654080e-05 max(  div(V)) = 3.058213e-05
+--------------------------------------------------------------
+New. it. 00: abs: |Fx| = 1.78e-03 - |Fz| = 1.91e-03 - |Fp| = 1.82e-12 --- rel: |Fx| = 1.00e+00 - |Fz| = 1.00e+00 - |Fp| = 1.00e+00
+New. it. 01: abs: |Fx| = 9.62e-05 - |Fz| = 2.39e-04 - |Fp| = 1.36e-11 --- rel: |Fx| = 5.41e-02 - |Fz| = 1.25e-01 - |Fp| = 7.49e+00
+New. it. 02: abs: |Fx| = 1.24e-06 - |Fz| = 9.45e-07 - |Fp| = 2.03e-12 --- rel: |Fx| = 6.97e-04 - |Fz| = 4.95e-04 - |Fp| = 1.12e+00
+New. it. 03: abs: |Fx| = 7.17e-11 - |Fz| = 7.17e-11 - |Fp| = 1.02e-10 --- rel: |Fx| = 4.03e-08 - |Fz| = 3.76e-08 - |Fp| = 5.60e+01
+--------------------------------------------------------------
+DOING GNU PLOTTING!
+min(eta grid  ) = 2.824907e-01 max(eta grid  ) = 1.462477e+02
+min(eta_s) = 2.824907e-01 max(eta_s) = 1.462477e+02
+min(eta phys part  ) = 2.878430e-01 max(eta phys part  ) = 1.219262e+02
+No subgrid diffusion for stress tensor component update
+*************************************
+************** Advection ************
+*************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -1.16e-01 m/s / Max Vzm = 1.12e-01 m/s
+Fixed timestep dt = 1.00e-01 s
+************** Advection step 000 of 001: dtsub = 1.00e-01 **************
+** Time for Roger Gunther = 1.002577 sec --- using conservative interpolation: 0
+-----> Deformation gradient tensor Updated
+** Time for advection solver = 1.165151 sec
+USING NEW PART IN CELL
+OLD NUMBER OF MARKERS = 186050
+NEW NUMBER OF MARKERS = 193507
+USING NEW PART IN CELL
+After re-seeding :
+Initial number of particles = 88209
+New number of particles     = 193507
+** Time for CountPartCell = 0.460688 sec
+** Total timestep calculation time = 4.461501 sec
+** Model time = 6.00e-01 sec
+** Current dt = 1.00e-01 sec, Old dt = 1.00e-01 sec
+*****************************************************
+****************** Time step 00007 ******************
+*****************************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -1.16e-01 m/s / Max Vzm = 1.12e-01 m/s
+Fixed timestep dt = 1.00e-01 s
+Selected dt = 1.00e-01
+-----> Finite strain aspect ratio updated
+** Time for particles interpolations I = 0.810897 sec
+Velocity and pressure were initialised
+Boundary conditions were set up
+Velocity field was set to background pure shear
+Linear systems allocated
+neq_tot = 29304, neq_mom = 19503, neq_cont = 9801
+Run CHOLMOD analysis yes/no: 1 
+**********************************************
+*** Newton it. 00 of 20 (step = 00007) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 4.097744e-03 --- Fu rel. = 1.000000e+00
+Fv abs. = 3.442117e-03 --- Fv rel. = 1.000000e+00
+Fp abs. = 1.021411e-10 --- Fp rel. = 1.000000e+00
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky analysis = 0.226611 sec
+** Time for Cholesky factorization = 0.508924 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 3.785814e-03
+Fp = 1.021411e-10
+PH comp it. 0. its_KSP = 05: max. cont. = 3.13e-06 - rel. max. div. = 1.00e+00 / max. mom. = 3.70e-06 - rel. max. mom. = 3.81e-05
+PH comp it. 1. its_KSP = 02: max. cont. = 2.13e-08 - rel. max. div. = 6.81e-03 / max. mom. = 7.93e-06 - rel. max. mom. = 8.17e-05
+PH comp it. 2. its_KSP = 03: max. cont. = 3.18e-10 - rel. max. div. = 1.01e-04 / max. mom. = 1.40e-08 - rel. max. mom. = 1.45e-07
+PH comp it. 3. its_KSP = 03: max. cont. = 2.10e-12 - rel. max. div. = 6.72e-07 / max. mom. = 1.34e-10 - rel. max. mom. = 1.39e-09
+** PH - iterations = 0.713309 sec - its_KSP_tot = 13
+Fu = 4.414466e-12
+Fv = 5.287080e-12
+Fp = 1.650012e-13
+** Time for direct Stokes solver = 0.720425 sec
+**********************************************
+*** Newton it. 01 of 20 (step = 00007) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 1.209814e-04 --- Fu rel. = 2.952390e-02
+Fv abs. = 1.946795e-04 --- Fv rel. = 5.655807e-02
+Fp abs. = 1.650012e-13 --- Fp rel. = 1.615425e-03
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky factorization = 0.402346 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 1.618928e-04
+Fp = 1.650012e-13
+PH comp it. 0. its_KSP = 06: max. cont. = 3.12e-07 - rel. max. div. = 1.00e+00 / max. mom. = 8.60e-08 - rel. max. mom. = 1.86e-05
+PH comp it. 1. its_KSP = 02: max. cont. = 1.34e-09 - rel. max. div. = 4.30e-03 / max. mom. = 5.21e-07 - rel. max. mom. = 1.12e-04
+PH comp it. 2. its_KSP = 03: max. cont. = 2.98e-11 - rel. max. div. = 9.53e-05 / max. mom. = 2.37e-09 - rel. max. mom. = 5.12e-07
+** PH - iterations = 0.566325 sec - its_KSP_tot = 11
+Fu = 7.576940e-11
+Fv = 6.629683e-11
+Fp = 1.942573e-12
+** Time for direct Stokes solver = 0.575557 sec
+**********************************************
+*** Newton it. 02 of 20 (step = 00007) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 9.239316e-07 --- Fu rel. = 2.254732e-04
+Fv abs. = 1.000529e-06 --- Fv rel. = 2.906725e-04
+Fp abs. = 1.942573e-12 --- Fp rel. = 1.901853e-02
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky factorization = 1.367512 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 9.627978e-07
+Fp = 1.942573e-12
+PH comp it. 0. its_KSP = 05: max. cont. = 1.41e-09 - rel. max. div. = 1.00e+00 / max. mom. = 3.28e-09 - rel. max. mom. = 7.61e-05
+** PH - iterations = 0.441056 sec - its_KSP_tot = 05
+Fu = 9.426670e-11
+Fv = 8.020789e-11
+Fp = 8.260381e-11
+** Time for direct Stokes solver = 1.449374 sec
+**********************************************
+*** Newton it. 03 of 20 (step = 00007) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 1.039614e-10 --- Fu rel. = 2.537041e-08
+Fv abs. = 8.696757e-11 --- Fv rel. = 2.526572e-08
+Fp abs. = 8.260381e-11 --- Fp rel. = 8.087227e-01
+---- Non-linear residual ----
+Non-linear solver converged to abs_tol_u = 1.00e-06 abs_tol_p = 1.00e-06 rel_tol_u = 1.00e-06 rel_tol_p = 1.00e-06
+Cleaning up Cholesky factors --- nit = 03
+min(Vx. grid) = -1.012867e+00 max(Vx. grid) = 1.012947e+00
+min(Vz. grid) = -1.244006e-01 max(Vz. grid) = 1.222109e-01
+min(       P) = -3.492022e+00 max(       P) = 5.179747e+00
+min(  div(V)) = -2.922725e-05 max(  div(V)) = 1.380425e-05
+--------------------------------------------------------------
+New. it. 00: abs: |Fx| = 4.10e-03 - |Fz| = 3.44e-03 - |Fp| = 1.02e-10 --- rel: |Fx| = 1.00e+00 - |Fz| = 1.00e+00 - |Fp| = 1.00e+00
+New. it. 01: abs: |Fx| = 1.21e-04 - |Fz| = 1.95e-04 - |Fp| = 1.65e-13 --- rel: |Fx| = 2.95e-02 - |Fz| = 5.66e-02 - |Fp| = 1.62e-03
+New. it. 02: abs: |Fx| = 9.24e-07 - |Fz| = 1.00e-06 - |Fp| = 1.94e-12 --- rel: |Fx| = 2.25e-04 - |Fz| = 2.91e-04 - |Fp| = 1.90e-02
+New. it. 03: abs: |Fx| = 1.04e-10 - |Fz| = 8.70e-11 - |Fp| = 8.26e-11 --- rel: |Fx| = 2.54e-08 - |Fz| = 2.53e-08 - |Fp| = 8.09e-01
+--------------------------------------------------------------
+DOING GNU PLOTTING!
+min(eta grid  ) = 2.151798e-01 max(eta grid  ) = 2.525680e+03
+min(eta_s) = 2.151798e-01 max(eta_s) = 2.525680e+03
+min(eta phys part  ) = 2.177455e-01 max(eta phys part  ) = 2.365835e+03
+No subgrid diffusion for stress tensor component update
+*************************************
+************** Advection ************
+*************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -1.24e-01 m/s / Max Vzm = 1.22e-01 m/s
+Fixed timestep dt = 1.00e-01 s
+************** Advection step 000 of 001: dtsub = 1.00e-01 **************
+** Time for Roger Gunther = 0.254508 sec --- using conservative interpolation: 0
+-----> Deformation gradient tensor Updated
+** Time for advection solver = 0.419561 sec
+USING NEW PART IN CELL
+OLD NUMBER OF MARKERS = 193507
+NEW NUMBER OF MARKERS = 199582
+USING NEW PART IN CELL
+After re-seeding :
+Initial number of particles = 88209
+New number of particles     = 199582
+** Time for CountPartCell = 0.694693 sec
+** Total timestep calculation time = 4.695410 sec
+** Model time = 7.00e-01 sec
+** Current dt = 1.00e-01 sec, Old dt = 1.00e-01 sec
+*****************************************************
+****************** Time step 00008 ******************
+*****************************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -1.24e-01 m/s / Max Vzm = 1.22e-01 m/s
+Fixed timestep dt = 1.00e-01 s
+Selected dt = 1.00e-01
+-----> Finite strain aspect ratio updated
+** Time for particles interpolations I = 1.058578 sec
+Velocity and pressure were initialised
+Boundary conditions were set up
+Velocity field was set to background pure shear
+Linear systems allocated
+neq_tot = 29304, neq_mom = 19503, neq_cont = 9801
+Run CHOLMOD analysis yes/no: 1 
+**********************************************
+*** Newton it. 00 of 20 (step = 00008) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 6.057095e-03 --- Fu rel. = 1.000000e+00
+Fv abs. = 6.567121e-03 --- Fv rel. = 1.000000e+00
+Fp abs. = 8.260381e-11 --- Fp rel. = 1.000000e+00
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky analysis = 0.475984 sec
+** Time for Cholesky factorization = 0.786745 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 6.315964e-03
+Fp = 8.260381e-11
+PH comp it. 0. its_KSP = 05: max. cont. = 3.95e-06 - rel. max. div. = 1.00e+00 / max. mom. = 6.21e-06 - rel. max. mom. = 3.68e-05
+PH comp it. 1. its_KSP = 03: max. cont. = 4.06e-08 - rel. max. div. = 1.03e-02 / max. mom. = 2.81e-06 - rel. max. mom. = 1.66e-05
+PH comp it. 2. its_KSP = 03: max. cont. = 4.71e-10 - rel. max. div. = 1.19e-04 / max. mom. = 3.28e-08 - rel. max. mom. = 1.94e-07
+PH comp it. 3. its_KSP = 03: max. cont. = 5.53e-12 - rel. max. div. = 1.40e-06 / max. mom. = 2.78e-10 - rel. max. mom. = 1.65e-09
+** PH - iterations = 1.003223 sec - its_KSP_tot = 14
+Fu = 1.051761e-11
+Fv = 1.316280e-11
+Fp = 3.486009e-13
+** Time for direct Stokes solver = 1.012114 sec
+**********************************************
+*** Newton it. 01 of 20 (step = 00008) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 1.227247e-04 --- Fu rel. = 2.026131e-02
+Fv abs. = 1.810676e-04 --- Fv rel. = 2.757184e-02
+Fp abs. = 3.486009e-13 --- Fp rel. = 4.220156e-03
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky factorization = 0.708012 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 1.545265e-04
+Fp = 3.486009e-13
+PH comp it. 0. its_KSP = 06: max. cont. = 1.83e-07 - rel. max. div. = 1.00e+00 / max. mom. = 8.16e-08 - rel. max. mom. = 2.85e-05
+PH comp it. 1. its_KSP = 03: max. cont. = 1.80e-09 - rel. max. div. = 9.84e-03 / max. mom. = 1.32e-07 - rel. max. mom. = 4.61e-05
+PH comp it. 2. its_KSP = 03: max. cont. = 1.93e-11 - rel. max. div. = 1.05e-04 / max. mom. = 1.46e-09 - rel. max. mom. = 5.11e-07
+** PH - iterations = 0.883198 sec - its_KSP_tot = 12
+Fu = 5.568649e-11
+Fv = 6.300767e-11
+Fp = 2.107475e-12
+** Time for direct Stokes solver = 0.891405 sec
+**********************************************
+*** Newton it. 02 of 20 (step = 00008) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 3.831299e-07 --- Fu rel. = 6.325308e-05
+Fv abs. = 5.006035e-07 --- Fv rel. = 7.622875e-05
+Fp abs. = 2.107475e-12 --- Fp rel. = 2.551305e-02
+---- Non-linear residual ----
+Non-linear solver converged to abs_tol_u = 1.00e-06 abs_tol_p = 1.00e-06 rel_tol_u = 1.00e-06 rel_tol_p = 1.00e-06
+Cleaning up Cholesky factors --- nit = 02
+min(Vx. grid) = -1.011474e+00 max(Vx. grid) = 1.011841e+00
+min(Vz. grid) = -1.317911e-01 max(Vz. grid) = 1.327380e-01
+min(       P) = -3.696480e+00 max(       P) = 7.765615e+00
+min(  div(V)) = -2.406785e-07 max(  div(V)) = 1.892167e-07
+--------------------------------------------------------------
+New. it. 00: abs: |Fx| = 6.06e-03 - |Fz| = 6.57e-03 - |Fp| = 8.26e-11 --- rel: |Fx| = 1.00e+00 - |Fz| = 1.00e+00 - |Fp| = 1.00e+00
+New. it. 01: abs: |Fx| = 1.23e-04 - |Fz| = 1.81e-04 - |Fp| = 3.49e-13 --- rel: |Fx| = 2.03e-02 - |Fz| = 2.76e-02 - |Fp| = 4.22e-03
+New. it. 02: abs: |Fx| = 3.83e-07 - |Fz| = 5.01e-07 - |Fp| = 2.11e-12 --- rel: |Fx| = 6.33e-05 - |Fz| = 7.62e-05 - |Fp| = 2.55e-02
+--------------------------------------------------------------
+DOING GNU PLOTTING!
+min(eta grid  ) = 2.334066e-01 max(eta grid  ) = 1.282340e+03
+min(eta_s) = 2.334066e-01 max(eta_s) = 1.282340e+03
+min(eta phys part  ) = 2.352462e-01 max(eta phys part  ) = 1.179479e+03
+No subgrid diffusion for stress tensor component update
+*************************************
+************** Advection ************
+*************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -1.32e-01 m/s / Max Vzm = 1.33e-01 m/s
+Fixed timestep dt = 1.00e-01 s
+************** Advection step 000 of 001: dtsub = 1.00e-01 **************
+** Time for Roger Gunther = 0.702671 sec --- using conservative interpolation: 0
+-----> Deformation gradient tensor Updated
+** Time for advection solver = 0.872440 sec
+USING NEW PART IN CELL
+OLD NUMBER OF MARKERS = 199582
+NEW NUMBER OF MARKERS = 204719
+USING NEW PART IN CELL
+After re-seeding :
+Initial number of particles = 88209
+New number of particles     = 204719
+** Time for CountPartCell = 1.141757 sec
+** Total timestep calculation time = 4.142531 sec
+** Model time = 8.00e-01 sec
+** Current dt = 1.00e-01 sec, Old dt = 1.00e-01 sec
+*****************************************************
+****************** Time step 00009 ******************
+*****************************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -1.32e-01 m/s / Max Vzm = 1.33e-01 m/s
+Fixed timestep dt = 1.00e-01 s
+Selected dt = 1.00e-01
+-----> Finite strain aspect ratio updated
+** Time for particles interpolations I = 0.506477 sec
+Velocity and pressure were initialised
+Boundary conditions were set up
+Velocity field was set to background pure shear
+Linear systems allocated
+neq_tot = 29304, neq_mom = 19503, neq_cont = 9801
+Run CHOLMOD analysis yes/no: 1 
+**********************************************
+*** Newton it. 00 of 20 (step = 00009) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 6.695339e-03 --- Fu rel. = 1.000000e+00
+Fv abs. = 6.554523e-03 --- Fv rel. = 1.000000e+00
+Fp abs. = 2.107475e-12 --- Fp rel. = 1.000000e+00
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky analysis = 0.924959 sec
+** Time for Cholesky factorization = 1.214270 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 6.625662e-03
+Fp = 2.107475e-12
+PH comp it. 0. its_KSP = 05: max. cont. = 8.33e-06 - rel. max. div. = 1.00e+00 / max. mom. = 1.07e-05 - rel. max. mom. = 6.41e-05
+PH comp it. 1. its_KSP = 03: max. cont. = 6.95e-08 - rel. max. div. = 8.35e-03 / max. mom. = 3.44e-06 - rel. max. mom. = 2.05e-05
+PH comp it. 2. its_KSP = 03: max. cont. = 6.33e-10 - rel. max. div. = 7.61e-05 / max. mom. = 3.64e-08 - rel. max. mom. = 2.18e-07
+PH comp it. 3. its_KSP = 03: max. cont. = 6.55e-12 - rel. max. div. = 7.86e-07 / max. mom. = 3.56e-10 - rel. max. mom. = 2.13e-09
+** PH - iterations = 0.424239 sec - its_KSP_tot = 14
+Fu = 1.058274e-11
+Fv = 1.211600e-11
+Fp = 3.212876e-13
+** Time for direct Stokes solver = 1.432106 sec
+**********************************************
+*** Newton it. 01 of 20 (step = 00009) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 1.608554e-04 --- Fu rel. = 2.402499e-02
+Fv abs. = 2.057934e-04 --- Fv rel. = 3.139716e-02
+Fp abs. = 3.212876e-13 --- Fp rel. = 1.524515e-01
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky factorization = 1.101159 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 1.845830e-04
+Fp = 3.212876e-13
+PH comp it. 0. its_KSP = 06: max. cont. = 2.52e-07 - rel. max. div. = 1.00e+00 / max. mom. = 1.67e-07 - rel. max. mom. = 7.92e-05
+PH comp it. 1. its_KSP = 03: max. cont. = 2.22e-09 - rel. max. div. = 8.83e-03 / max. mom. = 1.23e-07 - rel. max. mom. = 5.83e-05
+PH comp it. 2. its_KSP = 03: max. cont. = 2.04e-11 - rel. max. div. = 8.11e-05 / max. mom. = 1.35e-09 - rel. max. mom. = 6.41e-07
+** PH - iterations = 0.276453 sec - its_KSP_tot = 12
+Fu = 6.790045e-11
+Fv = 8.034102e-11
+Fp = 2.998582e-12
+** Time for direct Stokes solver = 1.283858 sec
+**********************************************
+*** Newton it. 02 of 20 (step = 00009) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 6.319286e-07 --- Fu rel. = 9.438336e-05
+Fv abs. = 6.499662e-07 --- Fv rel. = 9.916301e-05
+Fp abs. = 2.998582e-12 --- Fp rel. = 1.422832e+00
+---- Non-linear residual ----
+Non-linear solver converged to abs_tol_u = 1.00e-06 abs_tol_p = 1.00e-06 rel_tol_u = 1.00e-06 rel_tol_p = 1.00e-06
+Cleaning up Cholesky factors --- nit = 02
+min(Vx. grid) = -1.011883e+00 max(Vx. grid) = 1.012007e+00
+min(Vz. grid) = -1.768853e-01 max(Vz. grid) = 1.821039e-01
+min(       P) = -5.221514e+00 max(       P) = 8.754617e+00
+min(  div(V)) = -2.035998e-07 max(  div(V)) = 2.000890e-07
+--------------------------------------------------------------
+New. it. 00: abs: |Fx| = 6.70e-03 - |Fz| = 6.55e-03 - |Fp| = 2.11e-12 --- rel: |Fx| = 1.00e+00 - |Fz| = 1.00e+00 - |Fp| = 1.00e+00
+New. it. 01: abs: |Fx| = 1.61e-04 - |Fz| = 2.06e-04 - |Fp| = 3.21e-13 --- rel: |Fx| = 2.40e-02 - |Fz| = 3.14e-02 - |Fp| = 1.52e-01
+New. it. 02: abs: |Fx| = 6.32e-07 - |Fz| = 6.50e-07 - |Fp| = 3.00e-12 --- rel: |Fx| = 9.44e-05 - |Fz| = 9.92e-05 - |Fp| = 1.42e+00
+--------------------------------------------------------------
+DOING GNU PLOTTING!
+min(eta grid  ) = 2.508077e-01 max(eta grid  ) = 8.869573e+02
+min(eta_s) = 2.508077e-01 max(eta_s) = 8.869573e+02
+min(eta phys part  ) = 2.537464e-01 max(eta phys part  ) = 7.075159e+02
+No subgrid diffusion for stress tensor component update
+*************************************
+************** Advection ************
+*************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -1.77e-01 m/s / Max Vzm = 1.82e-01 m/s
+Fixed timestep dt = 1.00e-01 s
+************** Advection step 000 of 001: dtsub = 1.00e-01 **************
+** Time for Roger Gunther = 1.113854 sec --- using conservative interpolation: 0
+-----> Deformation gradient tensor Updated
+** Time for advection solver = 1.288005 sec
+USING NEW PART IN CELL
+OLD NUMBER OF MARKERS = 204719
+NEW NUMBER OF MARKERS = 208960
+USING NEW PART IN CELL
+After re-seeding :
+Initial number of particles = 88209
+New number of particles     = 208960
+** Time for CountPartCell = 0.549382 sec
+** Total timestep calculation time = 3.550213 sec
+** Model time = 9.00e-01 sec
+** Current dt = 1.00e-01 sec, Old dt = 1.00e-01 sec
+*****************************************************
+****************** Time step 00010 ******************
+*****************************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -1.77e-01 m/s / Max Vzm = 1.82e-01 m/s
+Fixed timestep dt = 1.00e-01 s
+Selected dt = 1.00e-01
+-----> Finite strain aspect ratio updated
+** Time for particles interpolations I = 0.923335 sec
+Velocity and pressure were initialised
+Boundary conditions were set up
+Velocity field was set to background pure shear
+Linear systems allocated
+neq_tot = 29304, neq_mom = 19503, neq_cont = 9801
+Run CHOLMOD analysis yes/no: 1 
+**********************************************
+*** Newton it. 00 of 20 (step = 00010) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 6.457491e-03 --- Fu rel. = 1.000000e+00
+Fv abs. = 7.017616e-03 --- Fv rel. = 1.000000e+00
+Fp abs. = 2.998582e-12 --- Fp rel. = 1.000000e+00
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky analysis = 0.348368 sec
+** Time for Cholesky factorization = 0.646806 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 6.741951e-03
+Fp = 2.998582e-12
+PH comp it. 0. its_KSP = 05: max. cont. = 7.94e-06 - rel. max. div. = 1.00e+00 / max. mom. = 1.10e-05 - rel. max. mom. = 1.13e-04
+PH comp it. 1. its_KSP = 03: max. cont. = 5.73e-08 - rel. max. div. = 7.21e-03 / max. mom. = 3.52e-06 - rel. max. mom. = 3.61e-05
+PH comp it. 2. its_KSP = 03: max. cont. = 5.06e-10 - rel. max. div. = 6.38e-05 / max. mom. = 3.39e-08 - rel. max. mom. = 3.48e-07
+PH comp it. 3. its_KSP = 03: max. cont. = 6.09e-12 - rel. max. div. = 7.66e-07 / max. mom. = 4.96e-10 - rel. max. mom. = 5.08e-09
+** PH - iterations = 0.863763 sec - its_KSP_tot = 14
+Fu = 2.201406e-11
+Fv = 2.444434e-11
+Fp = 3.934081e-13
+** Time for direct Stokes solver = 0.871230 sec
+**********************************************
+*** Newton it. 01 of 20 (step = 00010) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 1.823284e-04 --- Fu rel. = 2.823518e-02
+Fv abs. = 1.922652e-04 --- Fv rel. = 2.739751e-02
+Fp abs. = 3.934081e-13 --- Fp rel. = 1.311980e-01
+---- Non-linear residual ----
+---- Solve Stokes in a decoupled/segregated fashion and defect correction mode, lsolver = 2 ----
+Killer solver...
+Preparing Matrices...
+Penalty factor = 9.80e+05
+Construct preconditionner:   PC  = 1/2 * (J'+ J)
+Compute Schur complement 1:  Jt  = J  - grad*(PPI*div)
+Compute Schur complement 2:  Jts = PC - grad*(PPI*div)
+Cholesky factors of Jts...
+** Time for Cholesky factorization = 0.599755 sec
+Powell-Hestenes iterations, noisy = 1...
+Initial residual:
+Fu = 1.873375e-04
+Fp = 3.934081e-13
+PH comp it. 0. its_KSP = 06: max. cont. = 2.87e-07 - rel. max. div. = 1.00e+00 / max. mom. = 1.30e-07 - rel. max. mom. = 5.81e-05
+PH comp it. 1. its_KSP = 03: max. cont. = 1.92e-09 - rel. max. div. = 6.71e-03 / max. mom. = 9.56e-08 - rel. max. mom. = 4.27e-05
+PH comp it. 2. its_KSP = 03: max. cont. = 1.61e-11 - rel. max. div. = 5.61e-05 / max. mom. = 1.73e-09 - rel. max. mom. = 7.71e-07
+** PH - iterations = 0.784111 sec - its_KSP_tot = 12
+Fu = 9.143662e-11
+Fv = 8.195260e-11
+Fp = 2.919647e-12
+** Time for direct Stokes solver = 0.794428 sec
+**********************************************
+*** Newton it. 02 of 20 (step = 00010) ***
+**********************************************
+Number of momentum equations: 19503
+---- Non-linear residual ----
+Fu abs. = 7.538107e-07 --- Fu rel. = 1.167343e-04
+Fv abs. = 9.120038e-07 --- Fv rel. = 1.299592e-04
+Fp abs. = 2.919647e-12 --- Fp rel. = 9.736758e-01
+---- Non-linear residual ----
+Non-linear solver converged to abs_tol_u = 1.00e-06 abs_tol_p = 1.00e-06 rel_tol_u = 1.00e-06 rel_tol_p = 1.00e-06
+Cleaning up Cholesky factors --- nit = 02
+min(Vx. grid) = -1.011930e+00 max(Vx. grid) = 1.011995e+00
+min(Vz. grid) = -1.542437e-01 max(Vz. grid) = 1.543054e-01
+min(       P) = -6.355046e+00 max(       P) = 5.236950e+00
+min(  div(V)) = -1.836346e-07 max(  div(V)) = 1.578054e-07
+--------------------------------------------------------------
+New. it. 00: abs: |Fx| = 6.46e-03 - |Fz| = 7.02e-03 - |Fp| = 3.00e-12 --- rel: |Fx| = 1.00e+00 - |Fz| = 1.00e+00 - |Fp| = 1.00e+00
+New. it. 01: abs: |Fx| = 1.82e-04 - |Fz| = 1.92e-04 - |Fp| = 3.93e-13 --- rel: |Fx| = 2.82e-02 - |Fz| = 2.74e-02 - |Fp| = 1.31e-01
+New. it. 02: abs: |Fx| = 7.54e-07 - |Fz| = 9.12e-07 - |Fp| = 2.92e-12 --- rel: |Fx| = 1.17e-04 - |Fz| = 1.30e-04 - |Fp| = 9.74e-01
+--------------------------------------------------------------
+DOING GNU PLOTTING!
+min(eta grid  ) = 2.021005e-01 max(eta grid  ) = 2.672690e+04
+min(eta_s) = 2.021005e-01 max(eta_s) = 2.672690e+04
+min(eta phys part  ) = 2.081699e-01 max(eta phys part  ) = 2.318377e+04
+No subgrid diffusion for stress tensor component update
+*************************************
+************** Advection ************
+*************************************
+Min Vxm = -1.01e+00 m/s / Max Vxm = 1.01e+00 m/s
+Min Vzm = -1.54e-01 m/s / Max Vzm = 1.54e-01 m/s
+Fixed timestep dt = 1.00e-01 s
+************** Advection step 000 of 001: dtsub = 1.00e-01 **************
+** Time for Roger Gunther = 0.632431 sec --- using conservative interpolation: 0
+-----> Deformation gradient tensor Updated
+** Time for advection solver = 0.811453 sec
+USING NEW PART IN CELL
+OLD NUMBER OF MARKERS = 208960
+NEW NUMBER OF MARKERS = 212404
+USING NEW PART IN CELL
+After re-seeding :
+Initial number of particles = 88209
+New number of particles     = 212404
+** Time for CountPartCell = 1.074049 sec
+*************************************
+********* Write output files ********
+*************************************
+Loading phase proportions - Nb_phases = 2:
+** Time for Breakpoint file write = 0.227165 sec
+** Time for Output file write = 0.535319 sec
+** Total timestep calculation time = 4.535328 sec
+** Model time = 1.00e+00 sec
+** Current dt = 1.00e-01 sec, Old dt = 1.00e-01 sec
+
+********************************************************
+************* Ending MDOODZ 6.0 simulation *************
+********************************************************

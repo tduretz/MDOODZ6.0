@@ -3,8 +3,8 @@ istep =00400
 irestart = 0
 
 /**** OUTPUT FILES ****/
-writer = 1
-writer_step = 10
+writer = 0
+writer_step = 1
 writer_markers = 0
 writer_debug   = 0
 
@@ -18,9 +18,9 @@ V   = 1e0
 T   = 1
  
 /**** SPACE-TIME ****/
-Nx   = 101
-Nz   = 101
-Nt   = 400
+Nx   = 51
+Nz   = 51
+Nt   = 1
 xmin = -0.5000000
 zmin = -0.5000000
 xmax =  0.5000000

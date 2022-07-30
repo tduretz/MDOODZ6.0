@@ -1,6 +1,6 @@
 /**** RESTART ****/
-istep = 00024
-irestart = 1
+istep = 00030
+irestart = 0
 
 /**** OUTPUT FILES ****/
 writer          = 1
@@ -18,7 +18,7 @@ T   = 3.3197e+04
 /**** SPACE-TIME ****/
 Nx      = 101
 Nz      = 101
-Nt      = 50
+Nt      = 30
 xmin    = -25.000000e3
 zmin    = -25.000000e3
 xmax    =  25.000000e3
@@ -127,9 +127,14 @@ Nz_part  = 4
 min_part_cell = 16
 
 /**** NON-LINEAR ITERATIONS ****/
-Newton  = 1 
-nit_max = 10
-tol_u   = 5e-10
-tol_p   = 5e-10
-mineta  = 1e19
-maxeta  = 1e25
+Newton        = 1
+nit_max       = 50
+Picard2Newton = 1
+Pic2NewtCond  = 5e-2
+rel_tol_KSP   = 5e-4
+abs_tol_u     = 1e-10
+abs_tol_p     = 1e-10
+rel_tol_u     = 1e-10
+rel_tol_p     = 1e-10
+mineta        = 1e15
+maxeta        = 1e28
