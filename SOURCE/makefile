@@ -1,13 +1,13 @@
 # MDOODZ 6.0 makefile
 
 # Compiler
-CC = /opt/local/bin/gcc-mp-8
+CC = /usr/bin/gcc
 
 #---------------------------------------------------#
 # C flags
 CFLAGS = -std=c99 -D _UMFPACK_ -I ./
 
-ifeq ($(OPT),yes)	
+ifeq ($(OPT),yes)
 	CFLAGS += -O3 -ftree-vectorize -funroll-loops
 else
 	CFLAGS += -g -Wall  -O0 -fno-inline -fno-omit-frame-pointer
@@ -16,7 +16,7 @@ endif
 ifeq ($(OMP),yes)
 	CFLAGS += -fopenmp -D _OMP_
 else
-	CFLAGS += -Wno-unknown-pragmas 
+	CFLAGS += -Wno-unknown-pragmas
 endif
 
 ifeq ($(VG),yes)
